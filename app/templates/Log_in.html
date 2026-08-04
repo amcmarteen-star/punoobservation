@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Log-In - PunoObservation</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <h2>Log In to PunoObservation</h2>
+
+    <!-- Error Message passed directly from route -->
+    {% if error %}
+        <p style="color: red;">{{ error }}</p>
+    {% endif %}
+
+    <!-- Flashed Messages Container (e.g. redirected from registration or logout) -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <p style="color: green;">{{ message }}</p>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+    
+    <form action="{{ url_for('auth.login') }}" method="POST" id="log_in_form">
+        <div>
+            <label for="username">Username: </label>
+            <input type="text" id="username" name="username" required>
+        </div>
+        <br>
+        <div>
+            <label for="password">Password: </label>
+            <input type="password" id="password" name="password" required>
+        </div>
+        <br>
+        <button type="submit">Log in</button>
+    </form>
+
+    <div>
+        <p>Don't have an Account? <a href="{{ url_for('auth.register') }}">Register</a></p>
+    </div>
+
+</body>
+</html>

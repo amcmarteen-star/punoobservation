@@ -1,0 +1,16 @@
+Flask>=3.0.0
+Flask-SQLAlchemy>=3.1.1
+psycopg2-binary>=2.9.9
+GeoAlchemy2>=0.14.0
+Werkzeug>=3.0.0 #security password hashing
+Pillow>=10.0.0 #for extracting data from photos(gps cam)
+
+# open terminal
+# pip install -r requirements.txt
+
+if creating an account thru terminal
+
+#open terminal
+flask create-user officer1 officer1@puno.org officer123 --role field_officer
+                    |               |               |           |
+                    (username)  (email)         (password)     (role, e.g. admin, field_officer, normal_user)

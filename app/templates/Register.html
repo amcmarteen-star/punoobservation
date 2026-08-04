@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register - PunoObservation</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <h2>Create Account</h2>
+
+    {% if error %}
+        <p style="color: red;">{{ error }}</p>
+    {% endif %}
+
+    <form action="{{ url_for('auth.register') }}" method="POST" id="register_form">
+        <div>
+            <label for="username">Username: </label>
+            <input type="text" id="username" name="username" required>
+            <br><br>
+            <label for="email_address">Email: </label>
+            <input type="email" name="email_address" id="email_address" required>
+        </div>
+        <br>
+        <div>
+            <label for="organization_id">Organization / Affiliation:</label>
+            <select name="organization_id" id="organization_id">
+                <option value="" selected>None / Individual User</option>
+                {% if organizations %}
+                    {% for org in organizations %}
+                        <option value="{{ org.organization_id }}">
+                            {{ org.organization_name }} ({{ org.organization_type }})
+                        </option>
+                    {% endfor %}
+                {% endif %}
+            </select>
+        </div>
+        <br>
+        <div>
+            <label for="password">Password: </label>
+            <input type="password" name="password" id="password" required>
+            <br><br>
+            <label for="confirmPassword">Confirm Password: </label>
+            <input type="password" name="confirmPassword" id="confirmPassword" required>
+        </div>
+
+        <p id="error-message" style="color: red; display: none;">
+            Passwords do not match!
+        </p>
+
+        <br>
+        <button type="submit">Register</button>
+    </form>
+
+    <div>
+        <p>Already have an account? <a href="{{ url_for('auth.login') }}">Log in</a></p>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>

@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GIS Map - PunoObservation</title>
+    
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+</head>
+<body>
+
+    <div>
+        <a href="{{ url_for('dashboard.index') }}">← Back to Dashboard</a>
+        <h2>Interactive GIS Map</h2>
+    </div>
+
+    <!-- Map Canvas Container -->
+    <div id="map" style="height: 600px; width: 100%;"></div>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        // Initialize Map centered on the Philippines
+        const map = L.map('map').setView([13.0, 122.0], 6);
+
+        // Add OpenStreetMap base tile layer
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 18,
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
+    </script>
+
+</body>
+</html>
