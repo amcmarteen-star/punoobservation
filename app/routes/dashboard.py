@@ -29,4 +29,4 @@ def index():
 @login_required
 def gis_map():
     """Renders the full interactive GIS Map page."""
-    return render_template('gis_map.html')
+    return render_template('GIS_map.html')

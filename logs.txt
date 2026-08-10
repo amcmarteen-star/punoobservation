@@ -1,0 +1,10 @@
+Aug 03
+    Created the proect layouts
+Aug 04
+     Log In, SIgn Up
+Aug 05
+    Created Database
+    Created Map and added boundaries
+
+Aug 07
+    revised Map 

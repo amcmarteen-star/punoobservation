@@ -1,74 +1,65 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard - PunoObservation</title>
-</head>
-<body>
+{% extends "base.html" %}
 
-    <!-- Header Section -->
-    <div>
+{% block title %}Dashboard - PuNoObservation{% endblock %}
+{% set active_page = 'dashboard' %}
+
+{% block content %}
+
+    <div class="page-header">
         <h2>Welcome, {{ session.username }}!</h2>
         <p><strong>Role:</strong> {{ session.role }}</p>
-        <a href="{{ url_for('auth.logout') }}">Log Out</a>
     </div>
-
-    <hr>
-
-    <!-- Flashed Messages -->
-    {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-            {% for category, message in messages %}
-                <p style="color: green;">{{ message }}</p>
-            {% endfor %}
-        {% endif %}
-    {% endwith %}
 
     <!-- Overview Statistics -->
-    <div>
-        <h3>Overview</h3>
-        <ul>
-            <li>Active Reforestation Sites: {{ total_sites }}</li>
-            <li>Target Trees Planted: {{ total_trees }}</li>
-            <li>Verified Field Reports: {{ total_reports }}</li>
-        </ul>
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-icon">🏞️</div>
+            <div class="stat-details">
+                <h3>{{ total_sites }}</h3>
+                <p>Active Reforestation Sites</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">🌳</div>
+            <div class="stat-details">
+                <h3>{{ total_trees }}</h3>
+                <p>Target Trees Planted</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">✅</div>
+            <div class="stat-details">
+                <h3>{{ total_reports }}</h3>
+                <p>Verified Field Reports</p>
+            </div>
+        </div>
     </div>
 
-    <hr>
-
     <!-- Main Navigation Action -->
-    <div>
+    <div class="card">
         <h3>Reforestation Mapping</h3>
         <p>Click below to open the full-screen interactive spatial boundary map.</p>
-        
-        <!-- GIS Map Redirect Button -->
         <a href="{{ url_for('dashboard.gis_map') }}">
-            <button type="button" style="padding: 10px 20px; font-size: 16px; cursor: pointer;">
-                🗺️ Open GIS Map
-            </button>
+            <button type="button" class="btn-primary">🗺️ Open GIS Map</button>
         </a>
     </div>
 
-    <hr>
-
     <!-- Role Panel -->
     {% if session.role == 'admin' %}
-        <div>
+        <div class="card">
             <h3>Admin Panel</h3>
             <p>You have full system access to manage users and system settings.</p>
         </div>
     {% elif session.role == 'field_officer' %}
-        <div>
+        <div class="card">
             <h3>Field Officer Panel</h3>
             <p>You can upload photo monitoring reports and update site data.</p>
         </div>
     {% else %}
-        <div>
+        <div class="card">
             <h3>User Activity</h3>
             <p>Select the GIS Map button above to inspect reforestation polygons and field report details.</p>
         </div>
     {% endif %}
 
-</body>
-</html>
+{% endblock %}

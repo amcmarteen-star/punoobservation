@@ -14,3 +14,5 @@ if creating an account thru terminal
 flask create-user officer1 officer1@puno.org officer123 --role field_officer
                     |               |               |           |
                     (username)  (email)         (password)     (role, e.g. admin, field_officer, normal_user)
+
+                    

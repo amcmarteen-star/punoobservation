@@ -1,0 +1,5 @@
+fix zooming when districts are chosen: fix center ex: district 5 center district 5, both district center between both districts
+
+use border when no district filter is added
+
+add district legends

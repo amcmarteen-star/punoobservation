@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}PuNoObservation{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    {% block extra_head %}{% endblock %}
+</head>
+<body class="app-body">
+
+<div class="app-shell">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+        <div class="sidebar-logo">
+            <span class="logo-icon">🌳</span>
+            <span class="logo-text">PuNoObservation</span>
+        </div>
+
+        <div class="role-pill">
+            <span class="role-dot"></span>
+            {{ session.role|capitalize if session.role else "Guest" }}
+        </div>
+
+        <nav class="sidebar-nav">
+            <p class="nav-section-title">Field Modules</p>
+            <a href="{{ url_for('dashboard.gis_map') }}"
+               class="nav-link {% if active_page == 'gis_map' %}active{% endif %}">
+                🗺️ Interactive GIS Map
+            </a>
+            <a href="#" class="nav-link {% if active_page == 'sites' %}active{% endif %}">
+                🏞️ Reforestation Sites
+            </a>
+            <a href="#" class="nav-link {% if active_page == 'inventory' %}active{% endif %}">
+                📋 Tree Inventory
+            </a>
+            <a href="#" class="nav-link {% if active_page == 'species' %}active{% endif %}">
+                🌱 Species Recommendation
+            </a>
+
+            <p class="nav-section-title">Reports & Data</p>
+            <a href="#" class="nav-link {% if active_page == 'reports' %}active{% endif %}">
+                📄 Reports
+            </a>
+            <a href="#" class="nav-link {% if active_page == 'analytics' %}active{% endif %}">
+                📊 Analytics
+            </a>
+
+            {% if session.role == 'admin' %}
+            <p class="nav-section-title">Administration</p>
+            <a href="#" class="nav-link {% if active_page == 'users' %}active{% endif %}">
+                👤 User Management
+            </a>
+            <a href="#" class="nav-link {% if active_page == 'reference' %}active{% endif %}">
+                🗂️ Reference Dataset
+            </a>
+            <a href="#" class="nav-link {% if active_page == 'settings' %}active{% endif %}">
+                ⚙️ System Settings
+            </a>
+            {% endif %}
+        </nav>
+
+        <a href="{{ url_for('auth.logout') }}" class="sign-out">
+            ⏻ Sign Out
+        </a>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <div class="main-area">
+        {% block topbar %}{% endblock %}
+
+        <main class="page-content {% block content_class %}{% endblock %}">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    <div class="flash-messages">
+                        {% for category, message in messages %}
+                            <div class="alert alert-{{ category }}">{{ message }}</div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            {% endwith %}
+
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+
+</div>
+
+{% block extra_scripts %}{% endblock %}
+</body>
+</html>
