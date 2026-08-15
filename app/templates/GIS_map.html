@@ -1,103 +1,245 @@
-{% extends "base.html" %}
-
-{% block title %}GIS Map - PuNoObservation{% endblock %}
-{% set active_page = 'gis_map' %}
-
-{% block extra_head %}
+{% extends "base.html" %} {% block title %}GIS Map - PuNoObservation{% endblock
+%} {% set active_page = 'gis_map' %} {% block extra_head %}
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <style>
-    /* map page need full space, kill page-content padding */
-    .page-content.map-page {
-        padding: 0;
-        max-width: none;
-    }
-    #map {
-        height: calc(100vh - 64px); /* minus topbar height */
-        width: 100%;
-        background-color: #121212;
-    }
-    .map-topbar {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 0.8rem 1.5rem;
-        background-color: #ffffff;
-        border-bottom: 1px solid #e2e8f0;
-        font-size: 0.9rem;
-        color: #334155;
-    }
-    .map-topbar .filter-group {
-        display: flex;
-        align-items: center;
-        gap: 1rem;
-    }
-    .map-topbar .filter-group label {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.3rem;
-        cursor: pointer;
-        font-weight: 500;
-        color: #475569;
-    }
+  /* map page need full space, kill page-content padding */
+  .page-content.map-page {
+    padding: 0;
+    max-width: none;
+  }
+
+  #map {
+    width: 100%;
+    background-color: #121212;
+  }
+
+  .map-topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.8rem 1.5rem;
+    background-color: #ffffff;
+    border-bottom: 1px solid #e2e8f0;
+    font-size: 0.9rem;
+    color: #334155;
+  }
+
+  .map-topbar .filter-group {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .map-topbar .filter-group label {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    cursor: pointer;
+    font-weight: 500;
+    color: #475569;
+  }
+
+  /* map-wrap now FLEX row: map on left, panel takes real space on right (no more float-over) */
+  .map-wrap {
+    position: relative;
+    height: calc(100vh - 64px);
+    width: 100%;
+    display: flex;
+  }
+
+  .map-wrap #map {
+    flex: 1 1 auto;
+    height: 100%;
+    min-width: 0; /* let flex shrink map even though leaflet likes to fight this */
+  }
+
+  /* panel is now a REAL flex child, width 0 when closed, slides open to push map */
+  .muni-panel {
+    flex: 0 0 auto;
+    width: 0;
+    height: 100%;
+    overflow: hidden;
+    background-color: #ffffff;
+    box-shadow: -4px 0 18px rgba(0, 0, 0, 0.12);
+    transition: width 0.3s ease;
+    font-size: 0.9rem;
+    color: #1e293b;
+  }
+
+  .muni-panel.active {
+    width: 320px;
+  }
+
+  /* fixed-width inner wrapper so content doesn't reflow/squash while width animates */
+  .muni-panel-inner {
+    width: 320px;
+    height: 100%;
+    overflow-y: auto;
+  }
+
+  .muni-panel .panel-header {
+    background-color: #14532d;
+    color: #ffffff;
+    padding: 1rem 1.1rem;
+    position: relative;
+  }
+
+  .muni-panel .panel-eyebrow {
+    text-transform: uppercase;
+    font-size: 0.68rem;
+    letter-spacing: 0.05em;
+    color: #86efac;
+    margin: 0 0 0.2rem 0;
+  }
+
+  .muni-panel .panel-header h3 {
+    margin: 0 0 0.15rem 0;
+    font-size: 1.1rem;
+    padding-right: 1.4rem;
+  }
+
+  .muni-panel .panel-subtext {
+    font-size: 0.78rem;
+    color: #bbf7d0;
+    margin: 0;
+  }
+
+  .muni-panel .close-btn {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    background: none;
+    border: none;
+    font-size: 1rem;
+    cursor: pointer;
+    color: #ffffff;
+    opacity: 0.85;
+  }
+
+  .muni-panel .panel-body {
+    padding: 1rem 1.1rem;
+  }
+
+  .muni-panel .stat-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.6rem;
+    margin-bottom: 0.4rem;
+  }
+
+  .muni-panel .stat-box {
+    background-color: #14532d;
+    color: #ffffff;
+    border-radius: 8px;
+    padding: 0.7rem 0.8rem;
+  }
+
+  .muni-panel .stat-box .stat-num {
+    font-size: 1.25rem;
+    font-weight: 700;
+    display: block;
+  }
+
+  .muni-panel .stat-box .stat-label {
+    font-size: 0.72rem;
+    color: #bbf7d0;
+  }
+
+  .muni-panel .info-title {
+    text-transform: uppercase;
+    font-size: 0.7rem;
+    letter-spacing: 0.05em;
+    color: #94a3b8;
+    margin: 1rem 0 0.4rem 0;
+  }
+
+  .muni-panel .stat-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.4rem 0;
+    border-bottom: 1px solid #eef1f5;
+  }
+
+  .muni-panel .stat-row:last-child {
+    border-bottom: none;
+  }
+
+  .muni-panel .stat-row .stat-label {
+    color: #64748b;
+  }
+
+  .muni-panel .placeholder-text {
+    color: #94a3b8;
+    padding: 1rem 1.1rem;
+  }
 </style>
-{% endblock %}
+{% endblock %} {% block content_class %}map-page{% endblock %}
 
-{% block content_class %}map-page{% endblock %}
+{% block global_topbar %}{% endblock %}
 
-{% block topbar %}
+{% block topbar%}
 <div class="map-topbar">
-    <div style="font-weight: 600;">Eastern Pangasinan</div>
-    <div class="filter-group">
-        <span>Filter District:</span>
-        <label><input type="radio" name="districtFilter" value="all" checked onchange="filterDistricts(this.value)"> All</label>
-        <label><input type="radio" name="districtFilter" value="5" onchange="filterDistricts(this.value)"> District 5</label>
-        <label><input type="radio" name="districtFilter" value="6" onchange="filterDistricts(this.value)"> District 6</label>
-    </div>
+  <div style="font-weight: 600">Eastern Pangasinan</div>
+  <div class="filter-group">
+    <span>Filter District:</span>
+    <label><input type="radio" name="districtFilter" value="all" checked onchange="filterDistricts(this.value)" />
+      All</label>
+    <label><input type="radio" name="districtFilter" value="5" onchange="filterDistricts(this.value)" />
+      District 5</label>
+    <label><input type="radio" name="districtFilter" value="6" onchange="filterDistricts(this.value)" />
+      District 6</label>
+  </div>
 </div>
 {% endblock %}
 
 {% block content %}
-<div id="map"></div>
+<div class="map-wrap">
+  <div id="map"></div>
+
+  <div id="muni-panel" class="muni-panel">
+    <div class="muni-panel-inner" id="muni-panel-inner"></div>
+  </div>
+</div>
 {% endblock %}
 
 {% block extra_scripts %}
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-  const EasternpangasinanBounds = L.latLngBounds(
-    L.latLng(15.5, 120.5),
-    L.latLng(16.4, 120.9)
+  const pangasinanBounds = L.latLngBounds(
+    L.latLng(15.5, 119.7),
+    L.latLng(16.4, 122.9),
   );
 
-  const map = L.map('map', {
+  const map = L.map("map", {
     preferCanvas: true,
     center: [15.95, 120.55],
     zoom: 11,
     minZoom: 9,
     maxZoom: 18,
-    maxBounds: EasternpangasinanBounds,
-    maxBoundsViscosity: 1.0
+    maxBounds: pangasinanBounds,
+    maxBoundsViscosity: 1.0,
   });
 
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
     maxZoom: 19,
-    attribution: '© OpenStreetMap contributors'
+    attribution: "© OpenStreetMap contributors",
   }).addTo(map);
 
-  // Declare layer variables globally so filterDistricts can access them
-  let district5Layer, district6Layer;
+  let district5Layer, district6Layer, focusGroup;
 
   function extractAllPolygonRings(geojsonData) {
-    const feature = geojsonData.features ? geojsonData.features[0] : geojsonData;
+    const feature = geojsonData.features
+      ? geojsonData.features[0]
+      : geojsonData;
     const geom = feature.geometry;
     const rings = [];
 
     if (geom.type === "Polygon") {
-      return geom.coordinates.map(ring => ring.map(pt => [pt[1], pt[0]]));
-    }
-    else if (geom.type === "MultiPolygon") {
-      geom.coordinates.forEach(polygon => {
-        polygon.forEach(ring => {
-          rings.push(ring.map(pt => [pt[1], pt[0]]));
+      return geom.coordinates.map((ring) => ring.map((pt) => [pt[1], pt[0]]));
+    } else if (geom.type === "MultiPolygon") {
+      geom.coordinates.forEach((polygon) => {
+        polygon.forEach((ring) => {
+          rings.push(ring.map((pt) => [pt[1], pt[0]]));
         });
       });
       return rings;
@@ -110,7 +252,7 @@
       const [provinceRes, dist5Res, dist6Res] = await Promise.all([
         fetch("/static/geojson/pangasinan.geojson"),
         fetch("/static/geojson/district5.geojson"),
-        fetch("/static/geojson/district6.geojson")
+        fetch("/static/geojson/district6.geojson"),
       ]);
 
       const provinceData = await provinceRes.json();
@@ -118,48 +260,185 @@
       const district6Data = await dist6Res.json();
 
       const provinceRings = extractAllPolygonRings(provinceData);
-      const outerWorld = [[90, -180], [90, 180], [-90, 180], [-90, -180]];
+      const outerWorld = [
+        [90, -180],
+        [90, 180],
+        [-90, 180],
+        [-90, -180],
+      ];
 
       L.polygon([outerWorld, ...provinceRings], {
-        color: '#000000',
-        fillColor: '#000000',
+        color: "#000000",
+        fillColor: "#000000",
         fillOpacity: 0.75,
-        interactive: false
+        interactive: false,
       }).addTo(map);
 
+      // shared click handler -- fetch real Location/Site data, show in right panel
+      const muniPanel = document.getElementById("muni-panel");
+      const muniPanelInner = document.getElementById("muni-panel-inner");
+
+      // after panel width transition finishes, map container is actually resized --
+      // THIS is the moment we recalc the zoom so the shape truly "perfectly fits"
+      // the now-smaller visible map area (not the old full-width area).
+      function refitAfterPanelTransition(targetBounds) {
+        muniPanel.addEventListener(
+          "transitionend",
+          function handler(ev) {
+            if (ev.propertyName !== "width") return;
+            muniPanel.removeEventListener("transitionend", handler);
+            map.invalidateSize();
+            if (targetBounds) {
+              map.flyToBounds(targetBounds, { padding: [30, 30], duration: 0.5 });
+            }
+          },
+          { once: true }
+        );
+      }
+
+      window.closeMuniPanel = function () {
+        muniPanel.classList.remove("active");
+        // panel closing = map gets wider again, zoom back out to full district view
+        refitAfterPanelTransition(focusGroup ? focusGroup.getBounds() : null);
+      };
+
+      async function onMunicipalityClick(e) {
+        const layer = e.target;
+        const townName = layer.feature.properties.NAME_2;
+
+        const wasAlreadyOpen = muniPanel.classList.contains("active");
+        muniPanel.classList.add("active");
+        muniPanelInner.innerHTML = `<p class="placeholder-text">Loading ${townName}...</p>`;
+
+        if (wasAlreadyOpen) {
+          // panel already open, map size not changing -- zoom right away
+          map.flyToBounds(layer.getBounds(), { padding: [40, 40], duration: 0.6 });
+        } else {
+          // panel about to open and push the map -- wait for resize, THEN zoom
+          refitAfterPanelTransition(layer.getBounds());
+        }
+
+        try {
+          const res = await fetch(
+            `/api/municipality/${encodeURIComponent(townName)}`,
+          );
+          const data = await res.json();
+
+          if (data.found) {
+            muniPanelInner.innerHTML = `
+              <div class="panel-header">
+                <button class="close-btn" onclick="closeMuniPanel()">✕</button>
+                <p class="panel-eyebrow">Municipality</p>
+                <h3>${data.municipality}</h3>
+                <p class="panel-subtext">${data.province}, ${data.region}</p>
+              </div>
+              <div class="panel-body">
+                <div class="stat-grid">
+                  <div class="stat-box">
+                    <span class="stat-num">${data.site_count}</span>
+                    <span class="stat-label">Reforestation Sites</span>
+                  </div>
+                  <div class="stat-box">
+                    <span class="stat-num">${data.tree_total}</span>
+                    <span class="stat-label">Target Trees</span>
+                  </div>
+                </div>
+                <p class="info-title">Location Info</p>
+                <div class="stat-row"><span class="stat-label">Province</span><span>${data.province}</span></div>
+                <div class="stat-row"><span class="stat-label">Region</span><span>${data.region}</span></div>
+              </div>
+            `;
+          } else {
+            muniPanelInner.innerHTML = `
+              <div class="panel-header">
+                <button class="close-btn" onclick="closeMuniPanel()">✕</button>
+                <p class="panel-eyebrow">Municipality</p>
+                <h3>${townName}</h3>
+                <p class="panel-subtext">No records yet</p>
+              </div>
+              <div class="panel-body">
+                <p class="placeholder-text" style="padding:0;">No reforestation data in the database for this municipality yet.</p>
+              </div>
+            `;
+          }
+        } catch (err) {
+          muniPanelInner.innerHTML = `
+            <div class="panel-header">
+              <button class="close-btn" onclick="closeMuniPanel()">✕</button>
+              <h3>${townName}</h3>
+            </div>
+            <div class="panel-body">
+              <p class="placeholder-text" style="padding:0;">Error loading data.</p>
+            </div>
+          `;
+          console.error("Municipality fetch failed:", err);
+        }
+      }
+
       district5Layer = L.geoJSON(district5Data, {
-        style: { color: '#FF7800', weight: 2, lineJoin: 'round', fillColor: '#FF7800', fillOpacity: 0.4 },
-        onEachFeature: (feature, layer) => layer.bindPopup(`<b>District 5</b>`)
+        style: {
+          color: "#FF7800",
+          weight: 2,
+          lineJoin: "round",
+          fillColor: "#FF7800",
+          fillOpacity: 0.4,
+        },
+        onEachFeature: (feature, layer) => {
+          layer.on("click", onMunicipalityClick);
+          layer.on("mouseover", () => layer.setStyle({ fillOpacity: 0.7 }));
+          layer.on("mouseout", () => layer.setStyle({ fillOpacity: 0.4 }));
+        },
       }).addTo(map);
 
       district6Layer = L.geoJSON(district6Data, {
-        style: { color: '#9B51E0', weight: 2, lineJoin: 'round', fillColor: '#9B51E0', fillOpacity: 0.4 },
-        onEachFeature: (feature, layer) => layer.bindPopup(`<b>District 6</b>`)
+        style: {
+          color: "#9B51E0",
+          weight: 2,
+          lineJoin: "round",
+          fillColor: "#9B51E0",
+          fillOpacity: 0.4,
+        },
+        onEachFeature: (feature, layer) => {
+          layer.on("click", onMunicipalityClick);
+          layer.on("mouseover", () => layer.setStyle({ fillOpacity: 0.7 }));
+          layer.on("mouseout", () => layer.setStyle({ fillOpacity: 0.4 }));
+        },
       }).addTo(map);
 
-      const focusGroup = L.featureGroup([district5Layer, district6Layer]);
-      map.fitBounds(focusGroup.getBounds(), { padding: [60, 60] });
-      map.on('moveend', () => console.log(map.getCenter(), map.getZoom()));
+      focusGroup = L.featureGroup([district5Layer, district6Layer]);
+      map.fitBounds(focusGroup.getBounds(), { padding: [20, 20] });
 
+      // expose for the district filter radios
+      window.filterDistricts = function (value) {
+        let targetBounds;
+
+        if (value === "all") {
+          if (!map.hasLayer(district5Layer)) map.addLayer(district5Layer);
+          if (!map.hasLayer(district6Layer)) map.addLayer(district6Layer);
+          targetBounds = focusGroup.getBounds();
+        } else if (value === "5") {
+          if (!map.hasLayer(district5Layer)) map.addLayer(district5Layer);
+          map.removeLayer(district6Layer);
+          targetBounds = district5Layer.getBounds();
+        } else if (value === "6") {
+          if (!map.hasLayer(district6Layer)) map.addLayer(district6Layer);
+          map.removeLayer(district5Layer);
+          targetBounds = district6Layer.getBounds();
+        }
+
+        const wasOpen = muniPanel.classList.contains("active");
+        muniPanel.classList.remove("active");
+
+        if (wasOpen) {
+          // panel closing = map about to resize -- wait for that BEFORE zooming
+          refitAfterPanelTransition(targetBounds);
+        } else {
+          // panel already closed, map size unchanged -- zoom right away
+          map.flyToBounds(targetBounds, { padding: [30, 30], duration: 0.6 });
+        }
+      };
     } catch (error) {
-      console.error('Error loading GeoJSON files:', error);
-    }
-  }
-
-  function filterDistricts(value) {
-    if (value === 'all') {
-      if (!map.hasLayer(district5Layer)) map.addLayer(district5Layer);
-      if (!map.hasLayer(district6Layer)) map.addLayer(district6Layer);
-      const focusGroup = L.featureGroup([district5Layer, district6Layer]);
-      map.fitBounds(focusGroup.getBounds(), { padding: [60, 60] });
-    } else if (value === '5') {
-      if (!map.hasLayer(district5Layer)) map.addLayer(district5Layer);
-      if (map.hasLayer(district6Layer)) map.removeLayer(district6Layer);
-      map.fitBounds(district5Layer.getBounds(), { padding: [60, 60] });
-    } else if (value === '6') {
-      if (map.hasLayer(district5Layer)) map.removeLayer(district5Layer);
-      if (!map.hasLayer(district6Layer)) map.addLayer(district6Layer);
-      map.fitBounds(district6Layer.getBounds(), { padding: [60, 60] });
+      console.error("Error loading GeoJSON files:", error);
     }
   }
 

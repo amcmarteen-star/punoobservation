@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+
+{% block title %}Notifications - PuNoObservation{% endblock %}
+{% set active_page = 'notifications' %}
+
+{% block content %}
+
+<div class="page-header">
+    <h2>Notifications</h2>
+</div>
+
+<div class="card">
+    {% if notifications %}
+        <ul class="notif-page-list">
+            {% for n in notifications %}
+                <li class="notif-page-item {% if not n.is_read %}unread{% endif %}"
+                    data-id="{{ n.notification_id }}">
+                    <div class="notif-page-item-main">
+                        <span class="notif-type-tag">{{ n.notification_type }}</span>
+                        <p class="notif-message">{{ n.message }}</p>
+                    </div>
+                    {% if not n.is_read %}
+                        <button class="notif-mark-read-btn" onclick="markNotificationRead({{ n.notification_id }}, this)">
+                            Mark as read
+                        </button>
+                    {% endif %}
+                </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p class="placeholder-text">No notifications yet.</p>
+    {% endif %}
+</div>
+
+{% endblock %}

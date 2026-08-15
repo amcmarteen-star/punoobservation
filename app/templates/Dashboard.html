@@ -5,29 +5,35 @@
 
 {% block content %}
 
-    <div class="page-header">
-        <h2>Welcome, {{ session.username }}!</h2>
-        <p><strong>Role:</strong> {{ session.role }}</p>
+    <div class="page-header page-header-row">
+        <div>
+            <h2>Welcome, {{ session.username }}!</h2>
+            <p><strong>Role:</strong> {{ session.role }}</p>
+        </div>
+        <div id="dashboard-clock" class="dashboard-clock">
+            <span id="clock-time" class="clock-time">--:--:--</span>
+            <span id="clock-date" class="clock-date">Loading date...</span>
+        </div>
     </div>
 
     <!-- Overview Statistics -->
     <div class="stats-grid">
         <div class="stat-card">
-            <div class="stat-icon">🏞️</div>
+            <div class="stat-icon">Icon</div>
             <div class="stat-details">
                 <h3>{{ total_sites }}</h3>
                 <p>Active Reforestation Sites</p>
             </div>
         </div>
         <div class="stat-card">
-            <div class="stat-icon">🌳</div>
+            <div class="stat-icon">Icon</div>
             <div class="stat-details">
                 <h3>{{ total_trees }}</h3>
                 <p>Target Trees Planted</p>
             </div>
         </div>
         <div class="stat-card">
-            <div class="stat-icon">✅</div>
+            <div class="stat-icon">Icon</div>
             <div class="stat-details">
                 <h3>{{ total_reports }}</h3>
                 <p>Verified Field Reports</p>
@@ -40,7 +46,7 @@
         <h3>Reforestation Mapping</h3>
         <p>Click below to open the full-screen interactive spatial boundary map.</p>
         <a href="{{ url_for('dashboard.gis_map') }}">
-            <button type="button" class="btn-primary">🗺️ Open GIS Map</button>
+            <button type="button" class="btn-primary">Open GIS Map</button>
         </a>
     </div>
 
@@ -62,4 +68,34 @@
         </div>
     {% endif %}
 
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    function updateDashboardClock() {
+        const now = new Date();
+ 
+        const timeStr = now.toLocaleTimeString('en-PH', {
+            timeZone: 'Asia/Manila',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+            hour12: true
+        });
+ 
+        const dateStr = now.toLocaleDateString('en-PH', {
+            timeZone: 'Asia/Manila',
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        });
+ 
+        document.getElementById('clock-time').textContent = timeStr;
+        document.getElementById('clock-date').textContent = dateStr;
+    }
+ 
+    updateDashboardClock();
+    setInterval(updateDashboardClock, 1000);
+</script>
 {% endblock %}

@@ -3,7 +3,8 @@ from datetime import datetime
 from werkzeug.security import generate_password_hash, check_password_hash
 from geoalchemy2 import Geometry
 from app.extensions import db
-
+from datetime import datetime
+from zoneinfo import ZoneInfo
 
 class Location(db.Model):
     __tablename__ = 'location'
@@ -143,3 +144,8 @@ class Notification(db.Model):
     notification_type = db.Column(db.String(100), nullable=False)
     message = db.Column(db.Text, nullable=False)
     is_read = db.Column(db.Boolean, nullable=False, default=False)
+    created_at = db.Column(
+        db.DateTime,
+        nullable = False,
+        default = lambda: datetime.now(ZoneInfo("Asia/Manila"))
+    )

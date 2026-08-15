@@ -8,3 +8,6 @@ Aug 05
 
 Aug 07
     revised Map 
+
+Aug 10
+    municipalities are now interactable
