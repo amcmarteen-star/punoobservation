@@ -249,15 +249,17 @@
 
   async function loadMapData() {
     try {
-      const [provinceRes, dist5Res, dist6Res] = await Promise.all([
+      const [provinceRes, dist5Res, dist6Res, barangayRes] = await Promise.all([
         fetch("/static/geojson/pangasinan.geojson"),
         fetch("/static/geojson/district5.geojson"),
         fetch("/static/geojson/district6.geojson"),
+        fetch("/static/geojson/barangay.geojson"),
       ]);
 
       const provinceData = await provinceRes.json();
       const district5Data = await dist5Res.json();
       const district6Data = await dist6Res.json();
+      const barangayData = await barangayRes.json();
 
       const provinceRings = extractAllPolygonRings(provinceData);
       const outerWorld = [
@@ -273,6 +275,53 @@
         fillOpacity: 0.75,
         interactive: false,
       }).addTo(map);
+
+      // --- BARANGAY BORDERS (hidden by default, only show for clicked municipality) ---
+      // barangay.geojson spells town names without spaces (e.g. "SanManuel") while
+      // district5/6.geojson use spaces (e.g. "San Manuel") -- normalize both sides
+      // before comparing so they still match correctly.
+      function normalizeName(str) {
+        return (str || "").toLowerCase().replace(/[\s.\-]/g, "");
+      }
+
+      let currentBarangayLayer = null;
+
+      function showBarangaysFor(townName) {
+        if (currentBarangayLayer) {
+          map.removeLayer(currentBarangayLayer);
+          currentBarangayLayer = null;
+        }
+
+        const target = normalizeName(townName);
+        const matchedFeatures = barangayData.features.filter(
+          (f) => normalizeName(f.properties.NAME_2) === target
+        );
+
+        if (matchedFeatures.length === 0) {
+          console.warn(`No barangay match found for "${townName}"`);
+          return;
+        }
+
+        currentBarangayLayer = L.geoJSON(
+          { type: "FeatureCollection", features: matchedFeatures },
+          {
+            style: {
+              color: "#1e293b",
+              weight: 1,
+              dashArray: "3,3",
+              fillOpacity: 0,
+              interactive: false,
+            },
+          }
+        ).addTo(map);
+      }
+
+      function clearBarangays() {
+        if (currentBarangayLayer) {
+          map.removeLayer(currentBarangayLayer);
+          currentBarangayLayer = null;
+        }
+      }
 
       // shared click handler -- fetch real Location/Site data, show in right panel
       const muniPanel = document.getElementById("muni-panel");
@@ -298,6 +347,7 @@
 
       window.closeMuniPanel = function () {
         muniPanel.classList.remove("active");
+        clearBarangays();
         // panel closing = map gets wider again, zoom back out to full district view
         refitAfterPanelTransition(focusGroup ? focusGroup.getBounds() : null);
       };
@@ -305,6 +355,8 @@
       async function onMunicipalityClick(e) {
         const layer = e.target;
         const townName = layer.feature.properties.NAME_2;
+
+        showBarangaysFor(townName);
 
         const wasAlreadyOpen = muniPanel.classList.contains("active");
         muniPanel.classList.add("active");
@@ -428,6 +480,7 @@
 
         const wasOpen = muniPanel.classList.contains("active");
         muniPanel.classList.remove("active");
+        clearBarangays();
 
         if (wasOpen) {
           // panel closing = map about to resize -- wait for that BEFORE zooming
