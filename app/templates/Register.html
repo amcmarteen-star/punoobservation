@@ -6,56 +6,97 @@
     <title>Register - PunoObservation</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
-<body>
-    <h2>Create Account</h2>
+<body class="login-page register-page">
+    <div class="login-shell">
+        <aside class="brand-panel">
+            <div class="brand-top">
+                <div class="brand-header">
+                    <img src="{{ url_for('static', filename='images/puno_logo.png') }}" alt="PuNoObservation Logo" class="logo-box" />
+                    <div class="brand-copy">
+                        <div class="brand-name">PuNoObservation</div>
+                        <div class="brand-title">DECISION SUPPORT SYSTEM</div>
+                    </div>
+                </div>
+            </div>
 
-    {% if error %}
-        <p style="color: red;">{{ error }}</p>
-    {% endif %}
+            <div class="brand-content">
+                <h1>Reforestation<br>Management<br>Platform</h1>
+                <p>
+                    A web-based decision support system for tree species recommendation and reforestation
+                    management with geospatial visualization across Eastern Pangasinan.
+                </p>
 
-    <form action="{{ url_for('auth.register') }}" method="POST" id="register_form">
-        <div>
-            <label for="username">Username: </label>
-            <input type="text" id="username" name="username" required>
-            <br><br>
-            <label for="email_address">Email: </label>
-            <input type="email" name="email_address" id="email_address" required>
-        </div>
-        <br>
-        <div>
-            <label for="organization_id">Organization / Affiliation:</label>
-            <select name="organization_id" id="organization_id">
-                <option value="" selected>None / Individual User</option>
-                {% if organizations %}
-                    {% for org in organizations %}
-                        <option value="{{ org.organization_id }}">
-                            {{ org.organization_name }} ({{ org.organization_type }})
-                        </option>
-                    {% endfor %}
+                <div class="chip-row">
+                    <span>GIS Mapping</span>
+                    <span>Species Recommendation</span>
+                    <span>Tree Inventory</span>
+                    <span>Analytics</span>
+                    <span>Reports</span>
+                </div>
+            </div>
+
+            <div class="brand-footer">
+                Pangasinan DENR • Eastern Pangasinan Region I
+                <br>
+                © 2026 PuNoObservation. Capstone Project.
+            </div>
+        </aside>
+
+        <main class="auth-panel">
+            <div class="auth-wrapper register-wrapper">
+                <h2>Create account</h2>
+
+                {% if error %}
+                    <p class="form-alert">{{ error }}</p>
                 {% endif %}
-            </select>
-        </div>
-        <br>
-        <div>
-            <label for="password">Password: </label>
-            <input type="password" name="password" id="password" required>
-            <br><br>
-            <label for="confirmPassword">Confirm Password: </label>
-            <input type="password" name="confirmPassword" id="confirmPassword" required>
-        </div>
 
-        <p id="error-message" style="color: red; display: none;">
-            Passwords do not match!
-        </p>
+                <form action="{{ url_for('auth.register') }}" method="POST" id="register_form" class="login-form register-form">
+                    <div class="field-group">
+                        <label for="username">Username</label>
+                        <input type="text" id="username" name="username" placeholder="Enter your username" required>
+                    </div>
 
-        <br>
-        <button type="submit">Register</button>
-    </form>
+                    <div class="field-group">
+                        <label for="email_address">Email address</label>
+                        <input type="email" name="email_address" id="email_address" placeholder="yourname@denr.gov.ph" required>
+                    </div>
 
-    <div>
-        <p>Already have an account? <a href="{{ url_for('auth.login') }}">Log in</a></p>
+                    <div class="field-group">
+                        <label for="organization_id">Organization / Affiliation</label>
+                        <select name="organization_id" id="organization_id">
+                            <option value="" selected>None / Individual User</option>
+                            {% if organizations %}
+                                {% for org in organizations %}
+                                    <option value="{{ org.organization_id }}">
+                                        {{ org.organization_name }} ({{ org.organization_type }})
+                                    </option>
+                                {% endfor %}
+                            {% endif %}
+                        </select>
+                    </div>
+
+                    <div class="field-group">
+                        <label for="password">Password</label>
+                        <input type="password" name="password" id="password" placeholder="Enter your password" required>
+                    </div>
+
+                    <div class="field-group">
+                        <label for="confirmPassword">Confirm password</label>
+                        <input type="password" name="confirmPassword" id="confirmPassword" placeholder="Confirm your password" required>
+                    </div>
+
+                    <p id="error-message" class="password-error" style="display: none;">
+                        Passwords do not match!
+                    </p>
+
+                    <button type="submit" class="primary-btn">Sign Up</button>
+                </form>
+
+                <p class="register-link">Already have an account? <a href="{{ url_for('auth.login') }}">Log in</a></p>
+            </div>
+        </main>
     </div>
 
-    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+    <script src="{{ url_for('static', filename='javascript/script.js') }}"></script>
 </body>
 </html>
