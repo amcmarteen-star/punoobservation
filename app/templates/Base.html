@@ -45,7 +45,7 @@
             Interactive GIS Map
           </a>
           <a
-            href="#"
+            href="{{url_for('dashboard.Reforestation_sites') }}"
             class="nav-link {% if active_page == 'sites' %}active{% endif %}"
           >
             Reforestation Sites
@@ -100,13 +100,13 @@
           {% if session.role == 'admin' %}
           <p class="nav-section-title">Administration</p>
           <a
-            href="#"
+            href="{{ url_for('admin.user_management') }}"
             class="nav-link {% if active_page == 'users' %}active{% endif %}"
           >
             User Management
           </a>
           <a
-            href="#"
+            href="{{ url_for('admin.reference_dataset') }}"
             class="nav-link {% if active_page == 'reference' %}active{% endif %}"
           >
             Reference Dataset

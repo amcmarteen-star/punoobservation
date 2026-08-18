@@ -4,6 +4,7 @@ from app.utils.decorators import login_required
 from app.models import Site, ReforestationRecord, MonitoringReport, Location, Notification
 from app.extensions import db
 from sqlalchemy import func
+from collections import defaultdict
 
 dashboard_bp = Blueprint('dashboard', __name__)
 
@@ -34,40 +35,68 @@ def gis_map():
 
 @dashboard_bp.route('/api/municipality/<name>')
 def municipality_info(name):
-    """
-    Called by GIS_map.html when a municipality shape is clicked.
-    'name' comes from geojson property NAME_2 (e.g. 'Binalonan').
-    Matches against Location.municipality (case-insensitive, exact match).
-    """
     location = Location.query.filter(
         func.lower(Location.municipality) == name.lower()
     ).first()
 
     if not location:
-        # No DB record yet for this town -- still return something usable
-        return jsonify({
-            "found": False,
-            "municipality": name
+        return jsonify({"found": False, "municipality": name})
+
+    sites_data = []
+    for site in location.sites:
+        totals = db.session.query(
+            func.sum(ReforestationRecord.target_quantity),
+            func.sum(ReforestationRecord.actual_quantity_planted)
+        ).filter(ReforestationRecord.site_id == site.site_id).first()
+
+        sites_data.append({
+            "site_id": site.site_id,
+            "site_name": site.site_name,
+            "barangay": location.barangay,
+            "municipality": location.municipality,
+            "site_code": site.site_code,
+            "area_size_ha": site.area_size_ha,
+            "year_contracted": site.year_contracted,
+            "date_established": site.date_established.strftime('%Y-%m-%d') if site.date_established else None,
+            "target_trees": totals[0] or 0,
+            "actual_trees": totals[1] or 0,
         })
-
-    site_count = len(location.sites)
-
-    tree_total = db.session.query(
-        func.sum(ReforestationRecord.target_quantity)
-    ).join(
-        Site, ReforestationRecord.record_id == Site.site_id
-    ).filter(
-        Site.location_id == location.location_id
-    ).scalar() or 0
 
     return jsonify({
         "found": True,
         "municipality": location.municipality,
         "province": location.province,
         "region": location.region,
-        "site_count": site_count,
-        "tree_total": tree_total
+        "site_count": len(sites_data),
+        "tree_total": sum(s["target_trees"] for s in sites_data),
+        "sites": sites_data
     })
+
+#Reforestation Sites
+@dashboard_bp.route('/sites')
+@login_required
+def Reforestation_sites():
+    sites = (
+        Site.query
+        .join(Location)
+        .order_by(Location.municipality, Location.barangay, Site.site_name)
+        .all()
+    )
+
+    grouped = defaultdict(lambda: defaultdict(list))
+    for s in sites:
+        grouped[s.location.municipality][s.location.barangay].append(s)
+
+    # seedling totals per site
+    totals = db.session.query(
+        ReforestationRecord.site_id,
+        func.sum(ReforestationRecord.target_quantity).label('target_total'),
+        func.sum(ReforestationRecord.actual_quantity_planted).label('actual_total')
+    ).group_by(ReforestationRecord.site_id).all()
+
+    site_totals = {t.site_id: t for t in totals}
+
+    return render_template('Sites.html', grouped=grouped, site_totals=site_totals)
 
 @dashboard_bp.route('/notifications')
 @login_required
