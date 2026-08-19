@@ -1,0 +1,104 @@
+{% extends "Base.html" %}
+{% block title %}Reforestation Sites{% endblock %}
+{% block content %}
+
+<div class="page-header mb-4">
+    <h2 class="fw-bold text-dark">Reforestation Sites</h2>
+</div>
+
+{% for municipality, barangays in grouped.items() %}
+    <div class="mb-4">
+        <h4 class="text-success fw-bold border-bottom pb-2">{{ municipality }}</h4>
+        
+        {% for barangay, sites in barangays.items() %}
+            <h5 class="mt-3 text-secondary fw-semibold">📍 {{ barangay }}</h5>
+            
+            <div class="table-card mt-2">
+                <div class="table-scroll-container">
+                    <table class="table custom-table align-middle">
+                        <thead>
+                            <tr>
+                                <th>Site Name</th>
+                                {% if session.get('role') == 'admin' %}
+                                <th>Site Code</th>
+                                <th>Zone</th>
+                                <th>LOA/Contract Code</th>
+                                {% endif %}
+                                <th>PENRO</th>
+                                <th>CENRO</th>
+                                <th>District</th>
+                                <th>Land Class</th>
+                                <th>Land Use</th>
+                                <th>Contact Person</th>
+                                <th>Component</th>
+                                <th>Commodity</th>
+                                <th>Year</th>
+                                <th class="text-end">Area Size (ha)</th>
+                                <th class="text-end">Area Contracted (ha)</th>
+                                <th>Executed Date</th>
+                                <th>Expiry Date</th>
+                                {% if session.get('role') == 'admin' %}
+                                <th class="text-end">Project Cost (3yr)</th>
+                                <th class="text-end">Retention Fee</th>
+                                <th>Retention Paid Date</th>
+                                <th class="text-end">Land Improvement</th>
+                                <th class="text-end">CIP Amount</th>
+                                {% endif %}
+                                <th class="text-end">Target Seedlings</th>
+                                <th class="text-end">Actual Planted</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for s in sites %}
+                            <tr>
+                                <td>{{ s.site_name }}</td>
+                                {% if session.get('role') == 'admin' %}
+                                    <td><code>{{ s.site_code or '—' }}</code></td>
+                                    <td>
+                                        {% if s.zone_type == 'Production' %}
+                                            <span class="badge-zone-production">Production</span>
+                                        {% elif s.zone_type == 'Protection' %}
+                                            <span class="badge-zone-protection">Protection</span>
+                                        {% else %}
+                                            <span class="text-muted">—</span>
+                                        {% endif %}
+                                    </td>
+                                    <td><code>{{ s.loa_contract_code or '—' }}</code></td>
+                                {% endif %}
+                                <td>{{ s.penro or '—' }}</td>
+                                <td>{{ s.cenro or '—' }}</td>
+                                <td>{{ s.congressional_district or '—' }}</td>
+                                <td>{{ s.land_classification or '—' }}</td>
+                                <td>{{ s.major_land_use or '—' }}</td>
+                                <td>{{ s.contact_person or '—' }}</td>
+                                <td>{{ s.component or '—' }}</td>
+                                <td>{{ s.commodity or '—' }}</td>
+                                <td>{{ s.year_contracted or '—' }}</td>
+                                <td class="num-cell">{{ s.area_size_ha }}</td>
+                                <td class="num-cell">{{ s.area_contracted_ha or '—' }}</td>
+                                <td>{{ s.date_contract_executed or '—' }}</td>
+                                <td>{{ s.date_contract_expiry or '—' }}</td>
+                                {% if session.get('role') == 'admin' %}
+                                    <td class="num-cell">{% if s.project_cost_3yr %}₱{{ "{:,.2f}".format(s.project_cost_3yr) }}{% else %}—{% endif %}</td>
+                                    <td class="num-cell">{% if s.retention_fee_amount_paid %}₱{{ "{:,.2f}".format(s.retention_fee_amount_paid) }}{% else %}—{% endif %}</td>
+                                    <td>{{ s.retention_fee_date_paid or '—' }}</td>
+                                    <td class="num-cell">{% if s.amount_under_land_improvement %}₱{{ "{:,.2f}".format(s.amount_under_land_improvement) }}{% else %}—{% endif %}</td>
+                                    <td class="num-cell">{% if s.amount_still_in_cip %}₱{{ "{:,.2f}".format(s.amount_still_in_cip) }}{% else %}—{% endif %}</td>
+                                {% endif %}
+                                <td class="num-cell fw-semibold">
+                                    {{ "{:,}".format(site_totals.get(s.site_id).target_total) if site_totals.get(s.site_id) and site_totals.get(s.site_id).target_total else '—' }}
+                                </td>
+                                <td class="num-cell fw-semibold text-success">
+                                    {{ "{:,}".format(site_totals.get(s.site_id).actual_total) if site_totals.get(s.site_id) and site_totals.get(s.site_id).actual_total else '—' }}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+{% endfor %}
+
+{% endblock %}

@@ -1,0 +1,68 @@
+{% extends "Base.html" %}
+{% block title %}Manage Users{% endblock %}
+{% set active_page = 'users' %}
+
+{% block content %}
+
+<h2 class="mb-4">Users</h2>
+
+<!-- search bar -->
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <form method="GET" class="d-flex gap-2 w-100">
+        <input type="text" name="q" class="form-control"
+               placeholder="Search username, email, or role..."
+               value="{{ search }}">
+        <button type="submit" class="btn btn-primary">Search</button>
+        {% if search %}
+            <a href="{{ url_for('admin.user_management') }}" class="btn btn-outline-secondary">Clear</a>
+        {% endif %}
+    </form>
+</div>
+
+<div class="table-card mt-2">
+    <table class="table-scroll-container">
+        <thead class="table custom-table align-middle">
+            <tr>
+                <th>ID</th>
+                <th>Username</th>
+                <th>Email</th>
+                <th>Role</th>
+                <th>Org ID</th>
+                <th class="text-center">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for u in users %}
+            <tr>
+                <td>{{ u.user_id }}</td>
+                <td>{{ u.username }}</td>
+                <td>{{ u.email_address }}</td>
+                <td>
+                    {% if u.role == 'admin' %}
+                        <span class="badge bg-dark">Admin</span>
+                    {% elif u.role == 'field_officer' %}
+                        <span class="badge bg-primary">Field Officer</span>
+                    {% else %}
+                        <span class="badge bg-success">Normal User</span>
+                    {% endif %}
+                </td>
+                <td>{{ u.organization_id or '—' }}</td>
+                <td class="p-2">
+                    <div class="d-flex flex-row gap-2 w-100">
+                        <form method="POST"
+                              action="{{ url_for('admin.delete_user', user_id=u.user_id) }}"
+                              onsubmit="return confirm('Delete user and all related data?');"
+                              class="w-100">
+                            <button type="submit" class="btn btn-outline-danger btn-sm w-100">
+                                Delete
+                            </button>
+                        </form>
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% endblock %}

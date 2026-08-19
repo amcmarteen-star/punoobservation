@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block title %}Reference Dataset - PuNoObservation{% endblock %}
+{% set active_page = 'reference' %}
+
+{% block content %}
+
+<div class="page-header">
+    <h2>Reference Dataset</h2>
+    <p>Import official DENR NGP contract-profile Excel files. Matches sites by Site Code -- re-uploading the same file safely updates existing records instead of duplicating them.</p>
+</div>
+
+<div class="card">
+    <h3>Upload DENR NGP Excel File</h3>
+    <p class="placeholder-text">
+        Accepted sheets: <strong>2021</strong>, <strong>2022</strong>, <strong>2023</strong>, <strong>Retention Fee</strong>.
+        Other sheets in the file (e.g. Summary) are ignored automatically.
+    </p>
+
+    <form action="{{ url_for('admin.import_denr_data') }}" method="POST" enctype="multipart/form-data" class="upload-form">
+        <input type="file" name="excel_file" accept=".xlsx,.xls" required class="upload-file-input">
+        <button type="submit" class="btn-primary">Upload &amp; Import</button>
+    </form>
+</div>
+
+<div class="card">
+    <h3>What Gets Imported</h3>
+    <ul class="import-info-list">
+        <li>Site Code, Zone Type, LOA/Contract Code, Year Contracted</li>
+        <li>Area Contracted (ha) and Actual Area Planted (ha)</li>
+        <li>Contract execution &amp; expiry dates</li>
+        <li>Project cost, retention fee amount &amp; date paid, land improvement amounts</li>
+        <li>Number of seedlings (target vs actually planted), survival rate, validation date</li>
+        <li>Municipality &amp; Barangay -- auto-created in Location table if not already there</li>
+        <li>Partner/Contractor -- auto-created in Organization table if not already there</li>
+    </ul>
+    <p class="placeholder-text" style="margin-top:0.8rem;">
+        Note: tree species matching is not built yet -- imported reforestation records are
+        tagged "Unspecified (Pending Match)" for now and can be updated once that feature is ready.
+    </p>
+</div>
+
+{% endblock %}

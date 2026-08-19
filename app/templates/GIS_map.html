@@ -1,6 +1,9 @@
 {% extends "base.html" %} {% block title %}GIS Map - PuNoObservation{% endblock
 %} {% set active_page = 'gis_map' %} {% block extra_head %}
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<link
+  rel="stylesheet"
+  href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+/>
 <style>
   /* map page need full space, kill page-content padding */
   .page-content.map-page {
@@ -173,26 +176,43 @@
     padding: 1rem 1.1rem;
   }
 </style>
-{% endblock %} {% block content_class %}map-page{% endblock %}
-
-{% block global_topbar %}{% endblock %}
-
-{% block topbar%}
+{% endblock %} {% block content_class %}map-page{% endblock %} {% block
+global_topbar %}{% endblock %} {% block topbar%}
 <div class="map-topbar">
   <div style="font-weight: 600">Eastern Pangasinan</div>
   <div class="filter-group">
     <span>Filter District:</span>
-    <label><input type="radio" name="districtFilter" value="all" checked onchange="filterDistricts(this.value)" />
-      All</label>
-    <label><input type="radio" name="districtFilter" value="5" onchange="filterDistricts(this.value)" />
-      District 5</label>
-    <label><input type="radio" name="districtFilter" value="6" onchange="filterDistricts(this.value)" />
-      District 6</label>
+    <label
+      ><input
+        type="radio"
+        name="districtFilter"
+        value="all"
+        checked
+        onchange="filterDistricts(this.value)"
+      />
+      All</label
+    >
+    <label
+      ><input
+        type="radio"
+        name="districtFilter"
+        value="5"
+        onchange="filterDistricts(this.value)"
+      />
+      District 5</label
+    >
+    <label
+      ><input
+        type="radio"
+        name="districtFilter"
+        value="6"
+        onchange="filterDistricts(this.value)"
+      />
+      District 6</label
+    >
   </div>
 </div>
-{% endblock %}
-
-{% block content %}
+{% endblock %} {% block content %}
 <div class="map-wrap">
   <div id="map"></div>
 
@@ -200,9 +220,7 @@
     <div class="muni-panel-inner" id="muni-panel-inner"></div>
   </div>
 </div>
-{% endblock %}
-
-{% block extra_scripts %}
+{% endblock %} {% block extra_scripts %}
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
   const pangasinanBounds = L.latLngBounds(
@@ -294,7 +312,7 @@
 
         const target = normalizeName(townName);
         const matchedFeatures = barangayData.features.filter(
-          (f) => normalizeName(f.properties.NAME_2) === target
+          (f) => normalizeName(f.properties.NAME_2) === target,
         );
 
         if (matchedFeatures.length === 0) {
@@ -312,7 +330,7 @@
               fillOpacity: 0,
               interactive: false,
             },
-          }
+          },
         ).addTo(map);
       }
 
@@ -338,10 +356,13 @@
             muniPanel.removeEventListener("transitionend", handler);
             map.invalidateSize();
             if (targetBounds) {
-              map.flyToBounds(targetBounds, { padding: [30, 30], duration: 0.5 });
+              map.flyToBounds(targetBounds, {
+                padding: [30, 30],
+                duration: 0.5,
+              });
             }
           },
-          { once: true }
+          { once: true },
         );
       }
 
@@ -364,7 +385,10 @@
 
         if (wasAlreadyOpen) {
           // panel already open, map size not changing -- zoom right away
-          map.flyToBounds(layer.getBounds(), { padding: [40, 40], duration: 0.6 });
+          map.flyToBounds(layer.getBounds(), {
+            padding: [40, 40],
+            duration: 0.6,
+          });
         } else {
           // panel about to open and push the map -- wait for resize, THEN zoom
           refitAfterPanelTransition(layer.getBounds());
@@ -399,6 +423,25 @@
                 <div class="stat-row"><span class="stat-label">Province</span><span>${data.province}</span></div>
                 <div class="stat-row"><span class="stat-label">Region</span><span>${data.region}</span></div>
               </div>
+              <p class="info-title"> Sites in ${data.municipality}</p>
+                ${
+                  data.sites.length
+                    ? data.sites
+                        .map(
+                          (s) => `
+                  <div class="site-card">
+                    <div class="site-card-title">${s.site_name}</div>
+                    <div class="stat-row"><span class="stat-label">Barangay</span><span>${s.barangay}</span></div>
+                    <div class="stat-row"><span class="stat-label">Site Code</span><span>${s.site_code || "—"}</span></div>
+                    <div class="stat-row"><span class="stat-label">Area</span><span>${s.area_size_ha} ha</span></div>
+                    <div class="stat-row"><span class="stat-label">Target Trees</span><span>${s.target_trees}</span></div>
+                    <div class="stat-row"><span class="stat-label">Actual Planted</span><span>${s.actual_trees}</span></div>
+                  </div>
+                `,
+                        )
+                        .join("")
+                    : `<p class="placeholder-text" style="padding:0;">No sites recorded.</p>`
+                }
             `;
           } else {
             muniPanelInner.innerHTML = `

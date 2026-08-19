@@ -2,6 +2,9 @@ import click
 from flask import Flask
 from app.config import Config
 from app.extensions import db
+from flask_migrate import Migrate
+
+migrate = Migrate()  # no app yet
 
 def create_app():
     app = Flask(__name__)
@@ -9,12 +12,16 @@ def create_app():
 
     db.init_app(app)
 
+    migrate.init_app(app,db)
+
     # Register Blueprints
     from app.routes.auth import auth_bp
     from app.routes.dashboard import dashboard_bp
+    from app.routes.admin import admin_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(dashboard_bp)
+    app.register_blueprint(admin_bp)
 
     with app.app_context():
         from app import models
