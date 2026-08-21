@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PuNoObservation - Grow forests with a little green genius</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/landing.css') }}">
+</head>
+<body class="landing-page">
+
+    <div class="landing-nav-wrap">
+        <nav class="landing-nav">
+            <a href="{{ url_for('dashboard.home') }}" class="landing-brand">
+                <span class="landing-logo-box">
+                    <img src="{{ url_for('static', filename='images/puno_logo.png') }}" alt="PuNoObservation Logo">
+                </span>
+                PuNo<span class="accent">Observation</span>
+            </a>
+            <div class="landing-nav-links">
+                <a href="#how-it-works">How it works</a>
+                <a href="#features">Features</a>
+                <a href="#impact">Impact</a>
+                <a href="#stories">Stories</a>
+            </div>
+            <div class="landing-nav-actions">
+                <a href="{{ url_for('auth.login') }}" class="signin">Sign in</a>
+                <a href="{{ url_for('auth.register') }}" class="landing-pill-btn primary sm">Get started</a>
+            </div>
+        </nav>
+    </div>
+
+    <header class="landing-hero">
+        <span class="landing-blob blob-1"></span>
+        <span class="landing-blob blob-2"></span>
+
+        <div class="landing-container landing-hero-grid">
+            <div class="landing-hero-copy">
+                <span class="landing-badge-pill">
+                    <span class="landing-ping"></span>
+                    Live across 500+ reforestation sites
+                </span>
+
+                <h1>
+                    Grow forests with a little
+                    <span class="highlight-wrap">
+                        <span class="highlight">green genius</span>
+                        <svg class="underline-svg" viewBox="0 0 200 14" preserveAspectRatio="none">
+                            <path d="M2 9 C 50 2, 150 2, 198 8" stroke="#FFC94D" stroke-width="5" stroke-linecap="round" fill="none"/>
+                        </svg>
+                    </span>
+                </h1>
+
+                <p class="lead">
+                    PuNoObservation maps your planting sites, recommends the right native species
+                    for every patch of soil, and tracks each tree as it grows.
+                </p>
+
+                <div class="landing-hero-buttons">
+                    <a href="{{ url_for('auth.register') }}" class="landing-pill-btn primary">
+                        Start planting
+                        <svg class="landing-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+                    </a>
+                    <a href="{{ url_for('dashboard.gis_map') }}" class="landing-pill-btn ghost">
+                        <svg class="landing-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2V6Z"/><path d="M9 4v14M15 6v14"/></svg>
+                        Explore the map
+                    </a>
+                </div>
+
+                <div class="landing-trust">
+                    <div class="landing-trust-avatars">
+                        <img src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=80&h=80&fit=crop&auto=format" alt="Field officer">
+                        <img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=80&h=80&fit=crop&auto=format" alt="Field officer">
+                        <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&h=80&fit=crop&auto=format" alt="Field officer">
+                        <img src="https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=80&h=80&fit=crop&auto=format" alt="Field officer">
+                    </div>
+                    <div>
+                        <div class="landing-trust-stars">
+                            <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 22 12 18.56 5.82 22 7 14.14l-5-4.87 6.91-1.01L12 2z"/></svg>
+                            <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 22 12 18.56 5.82 22 7 14.14l-5-4.87 6.91-1.01L12 2z"/></svg>
+                            <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 22 12 18.56 5.82 22 7 14.14l-5-4.87 6.91-1.01L12 2z"/></svg>
+                            <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 22 12 18.56 5.82 22 7 14.14l-5-4.87 6.91-1.01L12 2z"/></svg>
+                            <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 22 12 18.56 5.82 22 7 14.14l-5-4.87 6.91-1.01L12 2z"/></svg>
+                        </div>
+                        <div class="landing-trust-text">Trusted by <strong>DENR &amp; CENRO</strong> officers</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="landing-stage">
+                <div class="landing-spotlight"></div>
+
+                <svg class="landing-sapling" viewBox="0 0 320 320" fill="none">
+                    <defs>
+                        <linearGradient id="potGrad" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stop-color="#E0A172"/>
+                            <stop offset="100%" stop-color="#C08552"/>
+                        </linearGradient>
+                        <linearGradient id="leafGrad" x1="0" y1="0" x2="1" y2="1">
+                            <stop offset="0%" stop-color="#5FCB81"/>
+                            <stop offset="100%" stop-color="#2E9E5B"/>
+                        </linearGradient>
+                        <linearGradient id="leafGrad2" x1="0" y1="0" x2="1" y2="1">
+                            <stop offset="0%" stop-color="#7BD99A"/>
+                            <stop offset="100%" stop-color="#3DB36B"/>
+                        </linearGradient>
+                        <radialGradient id="mound" cx="0.5" cy="0.4" r="0.6">
+                            <stop offset="0%" stop-color="#DCF3E4"/>
+                            <stop offset="100%" stop-color="#BCE6CB"/>
+                        </radialGradient>
+                    </defs>
+
+                    <ellipse cx="160" cy="265" rx="120" ry="34" fill="url(#mound)"/>
+
+                    <path d="M112 214 h96 l-12 56 a8 8 0 0 1 -8 6 h-56 a8 8 0 0 1 -8 -6 Z" fill="url(#potGrad)"/>
+                    <rect x="104" y="200" width="112" height="22" rx="11" fill="#E8B486"/>
+                    <path d="M132 230 q28 10 56 0" stroke="#A86F44" stroke-width="4" stroke-linecap="round" opacity="0.5" fill="none"/>
+
+                    <ellipse cx="160" cy="206" rx="48" ry="9" fill="#6B4A2F"/>
+
+                    <g class="stem-group">
+                        <path d="M160 206 C158 170 162 140 160 108" stroke="#2E9E5B" stroke-width="9" stroke-linecap="round" fill="none"/>
+                        <path class="leaf-left" d="M159 150 C120 150 96 124 94 96 C128 96 156 118 159 150 Z" fill="url(#leafGrad)"/>
+                        <path class="leaf-right" d="M161 134 C200 134 224 108 226 80 C192 80 164 102 161 134 Z" fill="url(#leafGrad2)"/>
+                        <path class="leaf-top" d="M160 110 C150 84 158 56 175 42 C185 70 178 98 160 110 Z" fill="url(#leafGrad)"/>
+                    </g>
+                </svg>
+
+                <span class="landing-sparkle" style="top:18%; left:30%; width:28px; height:28px; animation-delay:0s;">
+                    <svg viewBox="0 0 24 24" fill="#FFC94D"><path d="M12 0c.6 5.4 6 10.8 12 11.4-6 .6-11.4 6-12 12-.6-6-6-11.4-12-12C6 10.8 11.4 5.4 12 0Z"/></svg>
+                </span>
+                <span class="landing-sparkle" style="top:30%; right:24%; width:20px; height:20px; animation-delay:0.6s;">
+                    <svg viewBox="0 0 24 24" fill="#7bd99a"><path d="M12 0c.6 5.4 6 10.8 12 11.4-6 .6-11.4 6-12 12-.6-6-6-11.4-12-12C6 10.8 11.4 5.4 12 0Z"/></svg>
+                </span>
+                <span class="landing-sparkle" style="top:55%; left:20%; width:22px; height:22px; animation-delay:1.1s;">
+                    <svg viewBox="0 0 24 24" fill="#FFC94D"><path d="M12 0c.6 5.4 6 10.8 12 11.4-6 .6-11.4 6-12 12-.6-6-6-11.4-12-12C6 10.8 11.4 5.4 12 0Z"/></svg>
+                </span>
+                <span class="landing-sparkle" style="top:12%; right:34%; width:16px; height:16px; animation-delay:1.6s;">
+                    <svg viewBox="0 0 24 24" fill="#5baedc"><path d="M12 0c.6 5.4 6 10.8 12 11.4-6 .6-11.4 6-12 12-.6-6-6-11.4-12-12C6 10.8 11.4 5.4 12 0Z"/></svg>
+                </span>
+
+                <div class="landing-floaty landing-float-card" style="top:1.5rem; left:-0.5rem; animation-delay:0.3s;">
+                    <span class="landing-float-icon" style="background:#dcf3e4;">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="#2e9e5b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 20h10"/><path d="M10 20c0-4.4 3.6-8 8-8"/><path d="M9.5 12C7 9.5 6.5 6 7 3.5 9.5 4 12.5 4.5 14.5 7c1.7 2.1 2 4.5 1.7 6.5-2.4-.3-4.8-1-6.7-1.5Z"/></svg>
+                    </span>
+                    <div class="landing-float-text">
+                        <div class="label">Best match</div>
+                        <div class="value">Narra &middot; 94%</div>
+                    </div>
+                </div>
+
+                <div class="landing-floaty landing-float-card" style="top:6rem; right:-0.5rem; animation-delay:0.9s;">
+                    <span class="landing-float-icon" style="background:#fff1cf;">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="#f5a623" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+                    </span>
+                    <div class="landing-float-text">
+                        <div class="label">Survival rate</div>
+                        <div class="value">85.7% &uarr;</div>
+                    </div>
+                </div>
+
+                <div class="landing-floaty landing-float-card" style="bottom:2.5rem; left:0; animation-delay:1.3s;">
+                    <span class="landing-float-icon" style="background:#dceffb;">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="#3a7bd5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+                    </span>
+                    <div class="landing-float-text">
+                        <div class="label">Active sites</div>
+                        <div class="value">512 mapped</div>
+                    </div>
+                </div>
+
+                <div class="landing-floaty landing-float-badge" style="bottom:7rem; right:-0.25rem; background:linear-gradient(135deg,#5baedc,#3a7bd5); animation-delay:0.5s;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 7h.01M3.4 18.4a9 9 0 1 1 6.2 2.6c-.5 0-1-.5-1-1V17H6a1 1 0 0 1-1-1v-2.6a9 9 0 0 1-1.6-1Z"/></svg>
+                </div>
+                <div class="landing-floaty landing-float-badge" style="top:0.5rem; right:30%; width:2.7rem; height:2.7rem; background:linear-gradient(135deg,#7bd99a,#2e9e5b); animation-delay:1.5s;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/></svg>
+                </div>
+                <div class="landing-floaty landing-float-badge" style="bottom:0.5rem; left:30%; width:2.7rem; height:2.7rem; background:linear-gradient(135deg,#a0d8ef,#5baedc); animation-delay:0.8s;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5C6 11.1 5 13 5 15a7 7 0 0 0 7 7Z"/></svg>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <section class="landing-section" id="how-it-works">
+        <div class="landing-container">
+            <div class="landing-section-head">
+                <span class="landing-tag-pill green">
+                    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.582a.5.5 0 0 1 0 .962L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/></svg>
+                    Three simple steps
+                </span>
+                <h2>From bare soil to thriving forest</h2>
+            </div>
+            <div class="landing-steps">
+                <div class="landing-step-card">
+                    <span class="landing-step-num">01</span>
+                    <span class="landing-step-icon" style="background:#dcf3e4;">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="#2e9e5b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2V6Z"/><path d="M9 4v14M15 6v14"/></svg>
+                    </span>
+                    <h3>Map your land</h3>
+                    <p>Draw planting sites on an interactive map and pull in soil, slope and climate layers automatically.</p>
+                </div>
+                <div class="landing-step-card">
+                    <span class="landing-step-num">02</span>
+                    <span class="landing-step-icon" style="background:#fff1cf;">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="#f5a623" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a7 7 0 0 0-7 7c0 2.4 1.2 4 2.3 5.1.6.6 1 1.5 1.1 2.4"/><path d="M9 16.5h6"/><path d="M9.7 19.5h4.6"/><path d="M12 2a7 7 0 0 1 7 7c0 2.4-1.2 4-2.3 5.1-.6.6-1 1.5-1.1 2.4"/></svg>
+                    </span>
+                    <h3>Get smart picks</h3>
+                    <p>Our model ranks native species by suitability so every patch gets the tree most likely to thrive.</p>
+                </div>
+                <div class="landing-step-card">
+                    <span class="landing-step-num">03</span>
+                    <span class="landing-step-icon" style="background:#dceffb;">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="#3a7bd5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 7l-8.5 8.5-5-5L2 17"/><path d="M16 7h6v6"/></svg>
+                    </span>
+                    <h3>Watch it grow</h3>
+                    <p>Log plantings and survival, then track canopy and carbon gains season after season.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="landing-section" id="features">
+        <div class="landing-container landing-feature-grid">
+            <div class="landing-feature-photo">
+                <img src="https://images.unsplash.com/photo-1448375240586-882707db888b?w=900&h=700&fit=crop&auto=format" alt="Aerial view of a lush forest canopy">
+                <div class="landing-floaty landing-feature-chip landing-float-card" style="animation-delay:0.4s;">
+                    <span class="landing-float-icon" style="background:#dcf3e4;">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="#2e9e5b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/></svg>
+                    </span>
+                    <div class="landing-float-text">
+                        <div class="label">Canopy this season</div>
+                        <div class="value">+12.4 hectares</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="landing-feature-copy">
+                <span class="landing-tag-pill gold">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/></svg>
+                    Built for the field
+                </span>
+                <h2>Everything a reforestation team needs</h2>
+                <div class="landing-feature-list">
+                    <div class="landing-feature-item">
+                        <span class="icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a7 7 0 0 0-7 7c0 2.4 1.2 4 2.3 5.1.6.6 1 1.5 1.1 2.4"/><path d="M9 16.5h6"/><path d="M9.7 19.5h4.6"/><path d="M12 2a7 7 0 0 1 7 7c0 2.4-1.2 4-2.3 5.1-.6.6-1 1.5-1.1 2.4"/></svg>
+                        </span>
+                        <div>
+                            <h4>AI species recommendations</h4>
+                            <p>Suitability scoring tuned to Philippine native species and local conditions.</p>
+                        </div>
+                    </div>
+                    <div class="landing-feature-item">
+                        <span class="icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+                        </span>
+                        <div>
+                            <h4>Geospatial site monitoring</h4>
+                            <p>Layer soil, elevation, and land-use data over every planting boundary.</p>
+                        </div>
+                    </div>
+                    <div class="landing-feature-item">
+                        <span class="icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 7l-8.5 8.5-5-5L2 17"/><path d="M16 7h6v6"/></svg>
+                        </span>
+                        <div>
+                            <h4>Growth &amp; survival tracking</h4>
+                            <p>Dashboards that turn field logs into clear progress for DENR reporting.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="landing-section" id="impact">
+        <div class="landing-container">
+            <div class="landing-counter-panel" id="counter-panel">
+                <span class="glow"></span>
+                <span class="deco-icon d-1">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/></svg>
+                </span>
+                <span class="deco-icon d-2">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 14V2M9 22V2M17 6H7a4 4 0 0 0 0 8h10"/></svg>
+                </span>
+
+                <span class="landing-tag-pill live">
+                    <span class="landing-ping"></span>
+                    Counting live
+                </span>
+                <div class="landing-counter-num" id="counter-trees">0</div>
+                <p class="landing-counter-caption">trees planted and tracked nationwide</p>
+
+                <div class="landing-counter-stats">
+                    <div class="stat"><strong id="counter-ha">0 ha</strong><span>Hectares restored</span></div>
+                    <div class="stat"><strong id="counter-species">0+</strong><span>Native species</span></div>
+                    <div class="stat"><strong id="counter-survival">0%</strong><span>Survival rate</span></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="landing-section" id="stories">
+        <div class="landing-container">
+            <div class="landing-section-head">
+                <span class="landing-tag-pill blue">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21c3 0 7-1 7-8V5c0-1.25-.756-2.017-2-2H4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V21z"/><path d="M15 21c3 0 7-1 7-8V5c0-1.25-.757-2.017-2-2h-4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2h.75c0 2.25.25 4-2.75 4v4z"/></svg>
+                    Loved in the field
+                </span>
+                <h2>Stories from the people planting</h2>
+            </div>
+            <div class="landing-testimonials">
+                <div class="landing-testi-card">
+                    <div class="stars">
+                        <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 22 12 18.56 5.82 22 7 14.14l-5-4.87 6.91-1.01L12 2z"/></svg>
+                        <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 22 12 18.56 5.82 22 7 14.14l-5-4.87 6.91-1.01L12 2z"/></svg>
+                        <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 22 12 18.56 5.82 22 7 14.14l-5-4.87 6.91-1.01L12 2z"/></svg>
+                        <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 22 12 18.56 5.82 22 7 14.14l-5-4.87 6.91-1.01L12 2z"/></svg>
+                        <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 22 12 18.56 5.82 22 7 14.14l-5-4.87 6.91-1.01L12 2z"/></svg>
+                    </div>
+                    <p>"We cut species-selection time from weeks to an afternoon. The suitability scores match what our foresters know on the ground."</p>
+                    <div class="landing-testi-person">
+                        <img src="https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?w=96&h=96&fit=crop&auto=format" alt="Engr. Marisol Cruz">
+                        <div>
+                            <strong>Engr. Marisol Cruz</strong>
+                            <span>CENRO, Nueva Vizcaya</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="landing-testi-card">
+                    <div class="stars">
+                        <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 22 12 18.56 5.82 22 7 14.14l-5-4.87 6.91-1.01L12 2z"/></svg>
+                        <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 22 12 18.56 5.82 22 7 14.14l-5-4.87 6.91-1.01L12 2z"/></svg>
+                        <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 22 12 18.56 5.82 22 7 14.14l-5-4.87 6.91-1.01L12 2z"/></svg>
+                        <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 22 12 18.56 5.82 22 7 14.14l-5-4.87 6.91-1.01L12 2z"/></svg>
+                        <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 22 12 18.56 5.82 22 7 14.14l-5-4.87 6.91-1.01L12 2z"/></svg>
+                    </div>
+                    <p>"Mapping every site in one place finally gave our region a clear picture of survival rates across watersheds."</p>
+                    <div class="landing-testi-person">
+                        <img src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=96&h=96&fit=crop&auto=format" alt="Dario Mendoza">
+                        <div>
+                            <strong>Dario Mendoza</strong>
+                            <span>DENR Field Coordinator</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="landing-testi-card">
+                    <div class="stars">
+                        <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 22 12 18.56 5.82 22 7 14.14l-5-4.87 6.91-1.01L12 2z"/></svg>
+                        <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 22 12 18.56 5.82 22 7 14.14l-5-4.87 6.91-1.01L12 2z"/></svg>
+                        <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 22 12 18.56 5.82 22 7 14.14l-5-4.87 6.91-1.01L12 2z"/></svg>
+                        <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 22 12 18.56 5.82 22 7 14.14l-5-4.87 6.91-1.01L12 2z"/></svg>
+                        <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 22 12 18.56 5.82 22 7 14.14l-5-4.87 6.91-1.01L12 2z"/></svg>
+                    </div>
+                    <p>"The live dashboards make our quarterly reporting almost effortless — and the team genuinely enjoys using it."</p>
+                    <div class="landing-testi-person">
+                        <img src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=96&h=96&fit=crop&auto=format" alt="Liza Fernandez">
+                        <div>
+                            <strong>Liza Fernandez</strong>
+                            <span>Reforestation NGO Lead</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="landing-section">
+        <div class="landing-container">
+            <div class="landing-cta">
+                <span class="blob-a"></span>
+                <span class="blob-b"></span>
+                <div class="landing-floaty landing-float-badge" style="top:2rem; left:2.5rem; background:linear-gradient(135deg,#7bd99a,#2e9e5b); animation-delay:0.2s;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 20h10"/><path d="M10 20c0-4.4 3.6-8 8-8"/><path d="M9.5 12C7 9.5 6.5 6 7 3.5 9.5 4 12.5 4.5 14.5 7c1.7 2.1 2 4.5 1.7 6.5-2.4-.3-4.8-1-6.7-1.5Z"/></svg>
+                </div>
+                <div class="landing-floaty landing-float-badge" style="bottom:2.5rem; right:3rem; background:linear-gradient(135deg,#ffd770,#f5a623); animation-delay:0.7s;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+                </div>
+
+                <div class="landing-cta-content">
+                    <h2>Ready to plant smarter?</h2>
+                    <p>Join the teams restoring the Philippines, one well-chosen tree at a time.</p>
+                    <div class="landing-cta-buttons">
+                        <a href="{{ url_for('auth.register') }}" class="landing-pill-btn primary">
+                            Get started free
+                            <svg class="landing-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+                        </a>
+                        <a href="{{ url_for('auth.login') }}" class="landing-pill-btn ghost">Book a demo</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer class="landing-footer">
+        <div class="landing-container landing-footer-grid">
+            <div>
+                <div class="landing-footer-brand">
+                    <span class="landing-logo-box">
+                        <img src="{{ url_for('static', filename='images/puno_logo.png') }}" alt="PuNoObservation Logo">
+                    </span>
+                    <span>PuNoObservation</span>
+                </div>
+                <p class="tagline">Decision support for tree species recommendation and reforestation management.</p>
+            </div>
+            <div>
+                <h5>Product</h5>
+                <ul>
+                    <li><a href="{{ url_for('dashboard.gis_map') }}">Map view</a></li>
+                    <li><a href="{{ url_for('auth.login') }}">Dashboard</a></li>
+                    <li><a href="#features">Species library</a></li>
+                    <li><a href="#features">Reports</a></li>
+                </ul>
+            </div>
+            <div>
+                <h5>Organization</h5>
+                <ul>
+                    <li><a href="#">About</a></li>
+                    <li><a href="#">For DENR</a></li>
+                    <li><a href="#">For NGOs</a></li>
+                    <li><a href="#">Contact</a></li>
+                </ul>
+            </div>
+            <div>
+                <h5>Resources</h5>
+                <ul>
+                    <li><a href="#">Guides</a></li>
+                    <li><a href="#">Data sources</a></li>
+                    <li><a href="#">API</a></li>
+                    <li><a href="#">Support</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="landing-footer-bottom">
+            &copy; 2026 PuNoObservation &middot; Growing greener decisions &#127793;
+        </div>
+    </footer>
+
+    <script>
+        (function () {
+            function countUp(el, target, duration, formatter) {
+                var start = performance.now();
+                function tick(now) {
+                    var p = Math.min((now - start) / duration, 1);
+                    var eased = 1 - Math.pow(1 - p, 3);
+                    el.textContent = formatter(Math.floor(eased * target));
+                    if (p < 1) requestAnimationFrame(tick);
+                }
+                requestAnimationFrame(tick);
+            }
+
+            var panel = document.getElementById('counter-panel');
+            if (!panel) return;
+
+            var started = false;
+            var observer = new IntersectionObserver(function (entries) {
+                entries.forEach(function (entry) {
+                    if (entry.isIntersecting && !started) {
+                        started = true;
+                        countUp(document.getElementById('counter-trees'), 2102946, 2000, function (v) { return v.toLocaleString(); });
+                        countUp(document.getElementById('counter-ha'), 18420, 2000, function (v) { return v.toLocaleString() + ' ha'; });
+                        countUp(document.getElementById('counter-species'), 186, 2000, function (v) { return v + '+'; });
+                        countUp(document.getElementById('counter-survival'), 86, 2000, function (v) { return v + '%'; });
+                    }
+                });
+            }, { threshold: 0.4 });
+            observer.observe(panel);
+        })();
+    </script>
+
+</body>
+</html>

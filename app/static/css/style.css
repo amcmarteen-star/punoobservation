@@ -529,9 +529,17 @@
 body.login-page {
     margin: 0;
     min-height: 100vh;
-    background: #f4f5f4;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    color: #1f2937;
+    background: #f4fbf4;
+    font-family: 'Nunito', system-ui, sans-serif;
+    color: #3a5446;
+}
+
+body.login-page h1,
+body.login-page h2,
+body.login-page h3,
+body.login-page .brand-name {
+    font-family: 'Fredoka', 'Nunito', sans-serif;
+    letter-spacing: -0.01em;
 }
 
 .login-shell {
@@ -544,7 +552,7 @@ body.login-page {
     position: relative;
     flex: 1.12;
     padding: 2.4rem 3.2rem 1.7rem 3.4rem;
-    background: #0d3632;
+    background: linear-gradient(160deg, #1f8a4c 0%, #13653a 100%);
     color: #f4f7f5;
     overflow: hidden;
     display: flex;
@@ -555,8 +563,26 @@ body.login-page {
 .brand-panel::before {
     content: "";
     position: absolute;
-    inset: 0;
-    background: none;
+    top: -5rem;
+    left: -5rem;
+    width: 18rem;
+    height: 18rem;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.08);
+    filter: blur(60px);
+    pointer-events: none;
+}
+
+.brand-panel::after {
+    content: "";
+    position: absolute;
+    bottom: -4rem;
+    right: -3rem;
+    width: 16rem;
+    height: 16rem;
+    border-radius: 50%;
+    background: rgba(255, 201, 77, 0.15);
+    filter: blur(60px);
     pointer-events: none;
 }
 
@@ -672,18 +698,66 @@ body.login-page {
 
 .auth-panel {
     flex: 0.9;
-    background: #f2f2f2;
+    background: #f4fbf4;
     position: relative;
     display: flex;
     justify-content: center;
     align-items: center;
     padding: 2.5rem 2rem 2rem;
+    overflow: hidden;
+}
+
+.auth-panel::before {
+    content: "";
+    position: absolute;
+    top: -6rem;
+    right: -6rem;
+    width: 20rem;
+    height: 20rem;
+    border-radius: 50%;
+    background: #bfe9cf;
+    filter: blur(70px);
+    opacity: 0.55;
+    z-index: 0;
+}
+
+.auth-panel::after {
+    content: "";
+    position: absolute;
+    bottom: -6rem;
+    left: -6rem;
+    width: 18rem;
+    height: 18rem;
+    border-radius: 50%;
+    background: #ffe6a8;
+    filter: blur(70px);
+    opacity: 0.45;
+    z-index: 0;
 }
 
 .auth-wrapper {
+    position: relative;
+    z-index: 1;
     width: min(100%, 540px);
-    background: rgba(255, 255, 255, 0.35);
-    border-radius: .5rem;
+    background: #ffffff;
+    border: 1px solid #e3f2e9;
+    border-radius: 2rem;
+    padding: 2.6rem 2.6rem 2.2rem;
+    box-shadow: 0 20px 45px rgba(19, 101, 58, 0.1);
+}
+
+.auth-sparkle {
+    position: absolute;
+    color: #ffc94d;
+    font-size: 1.3rem;
+    z-index: 1;
+    animation: authSparkleTwinkle 2.4s ease-in-out infinite;
+    pointer-events: none;
+}
+
+@keyframes authSparkleTwinkle {
+    0%, 100% { opacity: 0.3; transform: scale(0.8) rotate(0deg); }
+    50% { opacity: 1; transform: scale(1.15) rotate(90deg); }
 }
 
 .auth-wrapper h2 {
@@ -710,9 +784,9 @@ body.login-page {
 .role-tab {
     flex: 1;
     min-width: 0;
-    border: 1px solid rgba(37, 107, 91, 0.35);
+    border: 1px solid rgba(21, 128, 61, 0.35);
     background: #f5faf7;
-    color: #1f6f5f;
+    color: #15803d;
     border-radius: 0.95rem;
     padding: 0.9rem 0.65rem;
     font-size: 0.94rem;
@@ -725,17 +799,17 @@ body.login-page {
 }
 
 .role-tab.active {
-    background: #f1e6ff;
-    border-color: rgba(154, 110, 232, 0.3);
-    box-shadow: inset 0 0 0 1px rgba(154, 110, 232, 0.15);
+    background: rgba(56, 189, 248, 0.15);
+    border-color: rgba(56, 189, 248, 0.35);
+    box-shadow: inset 0 0 0 1px rgba(56, 189, 248, 0.15);
 }
 
 .role-tab:nth-child(2).active {
-    background: #e3f8ee;
+    background: #dcfce7;
 }
 
 .role-tab:nth-child(3).active {
-    background: #eaf7ff;
+    background: rgba(59, 130, 246, 0.12);
 }
 
 .register-page .auth-wrapper {
@@ -763,9 +837,9 @@ body.login-page {
 .register-form input,
 .register-form select {
     width: 100%;
-    border: 1px solid rgba(136, 148, 150, 0.55);
-    border-radius: 0.8rem;
-    background: rgba(255, 255, 255, 0.38);
+    border: 1px solid rgba(46, 158, 91, 0.22);
+    border-radius: 1.1rem;
+    background: #eaf6ee;
     padding: 1rem 1rem;
     font-size: 1.05rem;
     color: #1d2b2d;
@@ -779,8 +853,8 @@ body.login-page {
 
 .register-form input:focus,
 .register-form select:focus {
-    border-color: rgba(16, 126, 98, 0.8);
-    box-shadow: 0 0 0 3px rgba(16, 126, 98, 0.08);
+    border-color: rgba(31, 138, 76, 0.8);
+    box-shadow: 0 0 0 3px rgba(31, 138, 76, 0.08);
 }
 
 .register-form select {
@@ -865,13 +939,14 @@ body.login-page {
 
 .input-wrap input {
     width: 100%;
-    border: 1px solid rgba(136, 148, 150, 0.5);
-    border-radius: 0.8rem;
-    background: rgba(255, 255, 255, 0.42);
+    border: 1px solid rgba(46, 158, 91, 0.22);
+    border-radius: 1.1rem;
+    background: #eaf6ee;
     padding: 1rem 3rem 1rem 1rem;
     font-size: 1.05rem;
     color: #1d2b2d;
     outline: none;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .input-wrap input::placeholder {
@@ -879,8 +954,8 @@ body.login-page {
 }
 
 .input-wrap input:focus {
-    border-color: rgba(16, 126, 98, 0.8);
-    box-shadow: 0 0 0 3px rgba(16, 126, 98, 0.08);
+    border-color: rgba(31, 138, 76, 0.8);
+    box-shadow: 0 0 0 3px rgba(31, 138, 76, 0.08);
 }
 
 .field-icon {
@@ -896,15 +971,22 @@ body.login-page {
 
 .primary-btn {
     border: none;
-    border-radius: 0.9rem;
-    background: linear-gradient(180deg, #0d7e5a, #0a6d4e);
+    border-radius: 999px;
+    font-family: 'Fredoka', 'Nunito', sans-serif;
+    background: linear-gradient(135deg, #34b06a 0%, #1f8a4c 100%);
     color: #fff;
     min-height: 3.6rem;
     font-size: 1.05rem;
-    font-weight: 700;
+    font-weight: 600;
     cursor: pointer;
     margin-top: 0.5rem;
-    box-shadow: 0 8px 18px rgba(13, 126, 90, 0.2);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    box-shadow: 0 10px 22px rgba(31, 138, 76, 0.3);
+}
+
+.primary-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 14px 28px rgba(31, 138, 76, 0.4);
 }
 
 .register-link {
@@ -915,7 +997,7 @@ body.login-page {
 }
 
 .register-link a {
-    color: #107d5c;
+    color: #1f8a4c;
     text-decoration: none;
     font-weight: 700;
 }
@@ -961,15 +1043,15 @@ body.login-page {
 }
 
 .access-icon.purple {
-    color: #7a6ef2;
+    color: #38bdf8;
 }
 
 .access-icon.green {
-    color: #2f9f71;
+    color: #22c55e;
 }
 
 .access-icon.blue {
-    color: #2b90d9;
+    color: #3b82f6;
 }
 
 .access-item strong {
@@ -1001,7 +1083,7 @@ body.login-page {
     width: 2.7rem;
     height: 2.7rem;
     border-radius: 50%;
-    background: rgba(15, 62, 43, 0.9);
+    background: rgba(20, 83, 45, 0.9);
     color: #fff;
     display: grid;
     place-items: center;

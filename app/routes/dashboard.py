@@ -10,8 +10,9 @@ dashboard_bp = Blueprint('dashboard', __name__)
 
 @dashboard_bp.route('/')
 def home():
-    # landing page removed -- guests land straight on the GIS map
-    return redirect(url_for('dashboard.gis_map'))
+    if session.get('user_id'):
+        return redirect(url_for('dashboard.index'))
+    return render_template('Landing.html')
 
 @dashboard_bp.route('/dashboard')
 @login_required
