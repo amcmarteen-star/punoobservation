@@ -15,18 +15,20 @@
       <!-- SIDEBAR -->
       <aside class="sidebar">
         <a href="{{ url_for('dashboard.index') }}" class="sidebar-logo">
-          <span class="logo-icon">🌳</span>
+          <img src="{{ url_for('static', filename='images/puno_logo.png') }}" alt="PuNoObservation Logo" class="logo-icon" />
           <span class="logo-text">PuNoObservation</span>
         </a>
 
         <div class="role-pill">
-          <span class="role-dot"></span>
           {% if session.username %}
+          <span class="role-avatar">{{ session.username[0]|upper }}</span>
           <div class="role-pill-text">
             <span class="role-pill-username">{{ session.username }}</span>
             <span class="role-pill-role">{{ session.role|capitalize }}</span>
           </div>
-          {% else %} Guest {% endif %}
+          {% else %}
+          <span class="role-dot"></span> Guest
+          {% endif %}
         </div>
 
         <nav class="sidebar-nav">

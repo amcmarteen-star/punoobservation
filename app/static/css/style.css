@@ -165,7 +165,9 @@
 }
 
 .logo-icon {
-    font-size: 1.4rem;
+    width: 1.8rem;
+    height: 1.8rem;
+    object-fit: contain;
 }
 
 .role-pill {
@@ -186,6 +188,20 @@
     border-radius: 50%;
     background-color: #22c55e;
     display: inline-block;
+    flex-shrink: 0;
+}
+
+.role-avatar {
+    width: 2rem;
+    height: 2rem;
+    border-radius: 50%;
+    background-color: #22c55e;
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 0.85rem;
     flex-shrink: 0;
 }
 
