@@ -4,7 +4,7 @@ Flask-Migrate>=4.0.0
 psycopg2-binary>=2.9.9
 GeoAlchemy2>=0.14.0
 Werkzeug>=3.0.0 
-Pillow>=10.0.0 
 pandas
 openpyxl
 python-dateutil
+Flask-Migrate>=4.0.0

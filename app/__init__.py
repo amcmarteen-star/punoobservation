@@ -25,7 +25,6 @@ def create_app():
 
     with app.app_context():
         from app import models
-        db.create_all()
 
     # CLI Command to create privileged users
     @app.cli.command("create-user")
