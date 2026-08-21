@@ -8,6 +8,6 @@ class Config:
     # PostgreSQL with PostGIS (fallback to local database.db if testing with SQLite)
     SQLALCHEMY_DATABASE_URI = os.environ.get(
         'DATABASE_URL', 
-        'postgresql://postgres:admin@localhost:5432/punoobservation'
+        'postgresql://postgres:1234@localhost:5432/punoobservation'
     )
     SQLALCHEMY_TRACK_MODIFICATIONS = False

@@ -6,40 +6,125 @@
     <title>Log-In - PunoObservation</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
-<body>
-    <h2>Log In to PunoObservation</h2>
+<body class="login-page">
+    <div class="login-shell">
+        <aside class="brand-panel">
+            <div class="brand-top">
+                <div class="brand-header">
+                    <img src="{{ url_for('static', filename='images/puno_logo.png') }}" alt="PuNoObservation Logo" class="logo-box" />
+                    <div class="brand-copy">
+                        <div class="brand-name">PuNoObservation</div>
+                        <div class="brand-title">DECISION SUPPORT SYSTEM</div>
+                    </div>
+                </div>
+            </div>
 
-    <!-- Error Message passed directly from route -->
-    {% if error %}
-        <p style="color: red;">{{ error }}</p>
-    {% endif %}
+            <div class="brand-content">
+                <!-- <img src="{{ url_for('static', filename='images/puno_logo.png') }}" alt="PuNoObservation Logo" class="brand-icon-box" /> -->
+                <h1>Reforestation<br>Management<br>Platform</h1>
+                <p>
+                    A web-based decision support system for tree species recommendation and reforestation
+                    management with geospatial visualization across Eastern Pangasinan.
+                </p>
 
-    <!-- Flashed Messages Container (e.g. redirected from registration or logout) -->
-    {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-            {% for category, message in messages %}
-                <p style="color: green;">{{ message }}</p>
-            {% endfor %}
-        {% endif %}
-    {% endwith %}
-    
-    <form action="{{ url_for('auth.login') }}" method="POST" id="log_in_form">
-        <div>
-            <label for="username">Username: </label>
-            <input type="text" id="username" name="username" required>
-        </div>
-        <br>
-        <div>
-            <label for="password">Password: </label>
-            <input type="password" id="password" name="password" required>
-        </div>
-        <br>
-        <button type="submit">Log in</button>
-    </form>
+                <div class="chip-row">
+                    <span>GIS Mapping</span>
+                    <span>Species Recommendation</span>
+                    <span>Tree Inventory</span>
+                    <span>Analytics</span>
+                    <span>Reports</span>
+                </div>
+            </div>
 
-    <div>
-        <p>Don't have an Account? <a href="{{ url_for('auth.register') }}">Register</a></p>
+            <div class="brand-footer">
+                Pangasinan DENR • Eastern Pangasinan Region I
+                <br>
+                © 2026 PuNoObservation. Capstone Project.
+            </div>
+        </aside>
+
+        <main class="auth-panel">
+            <div class="auth-wrapper">
+                <h2>Welcome back</h2>
+                <!-- <p class="subtitle">Sign in to access the platform</p>
+
+                <div class="role-tabs" aria-label="User roles">
+                    <button type="button" class="role-tab active">
+                        <span class="tab-icon">◉</span>
+                        <span>Admin</span>
+                    </button>
+                    <button type="button" class="role-tab">
+                        <span class="tab-icon">◌</span>
+                        <span>Officer</span>
+                    </button>
+                    <button type="button" class="role-tab">
+                        <span class="tab-icon">◌</span>
+                        <span>NGO / Rep</span>
+                    </button>
+                </div>
+
+                <div class="divider">or enter credentials</div> -->
+
+                {% if error %}
+                    <p class="form-alert">{{ error }}</p>
+                {% endif %}
+
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <p class="flash-message {{ category }}">{{ message }}</p>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+
+                <form action="{{ url_for('auth.login') }}" method="POST" id="log_in_form" class="login-form">
+                    <div class="field-group">
+                        <label for="username">Email address</label>
+                        <div class="input-wrap">
+                            <input type="text" id="username" name="username" placeholder="yourname@denr.gov.ph" required>
+                            <span class="field-icon"></span>
+                        </div>
+                    </div>
+
+                    <div class="field-group">
+                        <label for="password">Password</label>
+                        <div class="input-wrap">
+                            <input type="password" id="password" name="password" placeholder="Enter your password" required>
+                            <span class="field-icon field-icon-eye"></span>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="primary-btn">Sign In</button>
+                </form>
+
+                <p class="register-link">Don't have an account? <a href="{{ url_for('auth.register') }}">Sign up</a></p>
+
+                <!-- <div class="access-box">
+                    <h3>ACCESS LEVELS</h3>
+                    <div class="access-item">
+                        <span class="access-icon purple">◌</span>
+                        <div>
+                            <strong>Administrator</strong>
+                            <p>Full access — inbox, reports, user management, database</p>
+                        </div>
+                    </div>
+                    <div class="access-item">
+                        <span class="access-icon green">◌</span>
+                        <div>
+                            <strong>Field Officer</strong>
+                            <p>Field data — GIS map, inventory, sites, submit reports</p>
+                        </div>
+                    </div>
+                    <div class="access-item">
+                        <span class="access-icon blue">◌</span>
+                        <div>
+                            <strong>NGO / Representative</strong>
+                            <p>Public view — map, location overview, reforestation requests</p>
+                        </div>
+                    </div>
+                </div> -->
+            </div>
+        </main>
     </div>
-
 </body>
 </html>
