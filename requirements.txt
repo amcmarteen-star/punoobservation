@@ -7,4 +7,3 @@ Werkzeug>=3.0.0
 pandas
 openpyxl
 python-dateutil
-Flask-Migrate>=4.0.0
