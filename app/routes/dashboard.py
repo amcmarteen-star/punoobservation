@@ -35,38 +35,40 @@ def gis_map():
 
 @dashboard_bp.route('/api/municipality/<name>')
 def municipality_info(name):
-    location = Location.query.filter(
+    locations = Location.query.filter(
         func.lower(Location.municipality) == name.lower()
-    ).first()
+    ).all()
 
-    if not location:
+    if not locations:
         return jsonify({"found": False, "municipality": name})
 
     sites_data = []
-    for site in location.sites:
-        totals = db.session.query(
-            func.sum(ReforestationRecord.target_quantity),
-            func.sum(ReforestationRecord.actual_quantity_planted)
-        ).filter(ReforestationRecord.site_id == site.site_id).first()
+    for location in locations:
+        for site in location.sites:
+            totals = db.session.query(
+                func.sum(ReforestationRecord.target_quantity),
+                func.sum(ReforestationRecord.actual_quantity_planted)
+            ).filter(ReforestationRecord.site_id == site.site_id).first()
 
-        sites_data.append({
-            "site_id": site.site_id,
-            "site_name": site.site_name,
-            "barangay": location.barangay,
-            "municipality": location.municipality,
-            "site_code": site.site_code,
-            "area_size_ha": site.area_size_ha,
-            "year_contracted": site.year_contracted,
-            "date_established": site.date_established.strftime('%Y-%m-%d') if site.date_established else None,
-            "target_trees": totals[0] or 0,
-            "actual_trees": totals[1] or 0,
-        })
+            sites_data.append({
+                "site_id": site.site_id,
+                "site_name": site.site_name,
+                "barangay": location.barangay,
+                "municipality": location.municipality,
+                "site_code": site.site_code,
+                "area_size_ha": site.area_size_ha,
+                "year_contracted": site.year_contracted,
+                "date_established": site.date_established.strftime('%Y-%m-%d') if site.date_established else None,
+                "target_trees": totals[0] or 0,
+                "actual_trees": totals[1] or 0,
+            })
 
+    first = locations[0]
     return jsonify({
         "found": True,
-        "municipality": location.municipality,
-        "province": location.province,
-        "region": location.region,
+        "municipality": first.municipality,
+        "province": first.province,
+        "region": first.region,
         "site_count": len(sites_data),
         "tree_total": sum(s["target_trees"] for s in sites_data),
         "sites": sites_data

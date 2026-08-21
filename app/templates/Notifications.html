@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+{% extends "Base.html" %}
 
 {% block title %}Notifications - PuNoObservation{% endblock %}
 {% set active_page = 'notifications' %}
@@ -20,7 +20,7 @@
                         <p class="notif-message">{{ n.message }}</p>
                     </div>
                     {% if not n.is_read %}
-                        <button class="notif-mark-read-btn" onclick="markNotificationRead({{ n.notification_id }}, this)">
+                        <button class="notif-mark-read-btn" onclick="markNotificationRead({{ n.notification_id }}, this.closest('li'))">
                             Mark as read
                         </button>
                     {% endif %}

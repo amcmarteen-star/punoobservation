@@ -11,7 +11,6 @@ def register():
         email_address = request.form.get('email_address', '').strip().lower()
         password = request.form.get('password', '')
         confirm_password = request.form.get('confirmPassword', '').strip()
-        role = request.form.get('role', 'normal_user')
         organization_id = request.form.get('organization_id')
 
         if not username or not password or not email_address:
@@ -30,7 +29,7 @@ def register():
         new_user = User(
             username=username,
             email_address=email_address,
-            role=role,
+            role="normal user",
             organization_id=int(organization_id) if organization_id else None
         )
         new_user.set_password(password)

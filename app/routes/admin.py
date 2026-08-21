@@ -1,5 +1,5 @@
 # app/routes/admin.py
-from flask import Blueprint, render_template, request, flash, redirect, url_for
+from flask import Blueprint, render_template, request, flash, redirect, url_for, session
 from app.extensions import db
 from app.models import User, Location, Organization, Site, TreeSpecie, ReforestationRecord
 from app.utils.decorators import admin_required
@@ -42,7 +42,7 @@ def create_field_officer():
     db.session.commit()
 
     flash(f"User {username} successfully created as {role}.", "success")
-    return redirect(url_for('admin.manage_users'))
+    return redirect(url_for('admin.user_management'))
 
 
 # ============================================================
@@ -183,6 +183,10 @@ def user_management():
 @admin_bp.route('/users/<int:user_id>/delete', methods=['POST'])
 @admin_required
 def delete_user(user_id):
+    if user_id == session.get('user_id'):
+        flash("You cannot delete your own account.", "danger")
+        return redirect(url_for('admin.user_management'))
+
     user = User.query.get_or_404(user_id)
     db.session.delete(user)
     db.session.commit()
@@ -193,7 +197,7 @@ def delete_user(user_id):
 @admin_bp.route('/reference-dataset', methods=['GET'])
 @admin_required
 def reference_dataset():
-    return render_template('ReferenceDataset.html')
+    return render_template('Referencedataset.html')
 
 
 @admin_bp.route('/reference-dataset/import', methods=['POST'])
