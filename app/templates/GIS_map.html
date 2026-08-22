@@ -175,6 +175,15 @@
     color: #94a3b8;
     padding: 1rem 1.1rem;
   }
+
+  .muni-panel .site-card-title {
+  word-break: break-word;
+}
+
+.muni-panel .stat-row span {
+  min-width: 0;
+  word-break: break-word;
+}
 </style>
 {% endblock %} {% block content_class %}map-page{% endblock %} {% block
 global_topbar %}{% endblock %} {% block topbar%}
@@ -422,7 +431,7 @@ global_topbar %}{% endblock %} {% block topbar%}
                 <p class="info-title">Location Info</p>
                 <div class="stat-row"><span class="stat-label">Province</span><span>${data.province}</span></div>
                 <div class="stat-row"><span class="stat-label">Region</span><span>${data.region}</span></div>
-              </div>
+
               <p class="info-title"> Sites in ${data.municipality}</p>
                 ${
                   data.sites.length
@@ -442,6 +451,7 @@ global_topbar %}{% endblock %} {% block topbar%}
                         .join("")
                     : `<p class="placeholder-text" style="padding:0;">No sites recorded.</p>`
                 }
+              </div>
             `;
           } else {
             muniPanelInner.innerHTML = `

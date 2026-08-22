@@ -7,3 +7,4 @@ pandas
 openpyxl
 python-dateutil
 Flask-Migrate>=4.0.0
+python-dotenv

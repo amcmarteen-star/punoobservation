@@ -1134,7 +1134,8 @@ body.login-page {
 
 /* Custom Table Base */
 .custom-table {
-    width: 100%;
+    width: max-content;
+    min-width: 100%;
     margin-bottom: 0;
     white-space: nowrap;
     font-size: 0.85rem;
@@ -1220,3 +1221,6 @@ body.login-page {
     border-radius: 4px;
     font-weight: 600;
 }
+
+
+
