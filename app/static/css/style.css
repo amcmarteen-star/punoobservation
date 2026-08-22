@@ -119,6 +119,13 @@
     box-sizing: border-box;
 }
 
+/* Always reserve room for the scrollbar. Without this, a short page (log in)
+   has no scrollbar and a tall one (sign up) does, so the viewport width jumps
+   between them and right-anchored art appears to shift. */
+html {
+    scrollbar-gutter: stable;
+}
+
 .app-body {
     margin: 0;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -543,54 +550,68 @@ body.login-page .brand-name {
 }
 
 .login-shell {
+    position: relative;
     display: flex;
     min-height: 100vh;
     width: 100%;
+    background: #f4fbf4;
+    /* `clip` rather than `hidden`: hidden would make this a scroll container
+       and break the sticky brand panel below. */
+    overflow: clip;
+}
+
+/* Decorative blobs live on the shell so the blur never gets clipped at the
+   seam between the two panels (which would show up as a hard vertical line). */
+.login-shell::before {
+    content: "";
+    position: absolute;
+    top: -8rem;
+    left: -8rem;
+    width: 34rem;
+    height: 34rem;
+    border-radius: 50%;
+    background: #bfe9cf;
+    filter: blur(80px);
+    opacity: 0.55;
+    pointer-events: none;
+    z-index: 0;
+}
+
+.login-shell::after {
+    content: "";
+    position: absolute;
+    bottom: -10rem;
+    left: 16%;
+    width: 32rem;
+    height: 32rem;
+    border-radius: 50%;
+    background: #ffe6a8;
+    filter: blur(80px);
+    opacity: 0.45;
+    pointer-events: none;
+    z-index: 0;
 }
 
 .brand-panel {
-    position: relative;
+    position: sticky;
+    top: 0;
+    align-self: flex-start;
+    height: 100vh;
+    z-index: 1;
     flex: 1.12;
     padding: 2.4rem 3.2rem 1.7rem 3.4rem;
-    background: linear-gradient(160deg, #1f8a4c 0%, #13653a 100%);
-    color: #f4f7f5;
-    overflow: hidden;
+    background: transparent;
+    color: #3a5446;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-}
-
-.brand-panel::before {
-    content: "";
-    position: absolute;
-    top: -5rem;
-    left: -5rem;
-    width: 18rem;
-    height: 18rem;
-    border-radius: 50%;
-    background: rgba(255, 255, 255, 0.08);
-    filter: blur(60px);
-    pointer-events: none;
-}
-
-.brand-panel::after {
-    content: "";
-    position: absolute;
-    bottom: -4rem;
-    right: -3rem;
-    width: 16rem;
-    height: 16rem;
-    border-radius: 50%;
-    background: rgba(255, 201, 77, 0.15);
-    filter: blur(60px);
-    pointer-events: none;
 }
 
 .brand-top,
 .brand-content,
 .brand-footer {
     position: relative;
-    z-index: 1;
+    z-index: 2;
 }
 
 .brand-header {
@@ -623,19 +644,20 @@ body.login-page .brand-name {
     font-weight: 700;
     line-height: 1;
     letter-spacing: -0.05em;
-    color: #edf7f3;
+    color: #1b5e3f;
 }
 
 .brand-title {
     font-size: 0.9rem;
     letter-spacing: 0.16rem;
-    color: rgba(227, 240, 232, 0.82);
+    color: #4a6555;
     font-weight: 600;
 }
 
 .brand-content {
     margin-top: 3.8rem;
     margin-left: 0.5rem;
+    max-width: 34rem;
 }
 
 /* .brand-icon-box {
@@ -653,19 +675,20 @@ body.login-page .brand-name {
 
 .brand-content h1 {
     margin: 0;
-    font-size: clamp(3rem, 4vw, 5rem);
-    line-height: 0.94;
-    letter-spacing: -0.06em;
-    font-weight: 800;
+    font-size: clamp(2.4rem, 3.4vw, 3.6rem);
+    line-height: 1.02;
+    letter-spacing: -0.03em;
+    font-weight: 700;
     max-width: 540px;
+    color: #163a29;
 }
 
 .brand-content p {
-    max-width: 700px;
+    max-width: 32rem;
     margin-top: 1.7rem;
     font-size: 1.05rem;
     line-height: 1.65;
-    color: rgba(236, 244, 238, 0.8);
+    color: #4a6555;
 }
 
 .chip-row {
@@ -673,7 +696,7 @@ body.login-page .brand-name {
     flex-wrap: wrap;
     gap: 0.8rem 0.95rem;
     margin-top: 2.2rem;
-    max-width: 650px;
+    max-width: 32rem;
 }
 
 .chip-row span {
@@ -682,57 +705,124 @@ body.login-page .brand-name {
     justify-content: center;
     padding: 0.55rem 1rem;
     border-radius: 999px;
-    border: 1px solid rgba(192, 224, 204, 0.34);
-    background: rgba(255, 255, 255, 0.03);
-    color: #edf6f1;
-    font-size: 0.96rem;
+    border: 1px solid #cbe6d5;
+    background: #ffffff;
+    color: #1b5e3f;
+    font-weight: 600;
+    font-size: 0.92rem;
     line-height: 1;
+    box-shadow: 0 2px 8px rgba(19, 101, 58, 0.06);
 }
 
 .brand-footer {
     margin-top: 2.5rem;
-    color: rgba(231, 239, 233, 0.75);
+    color: #7d9488;
     font-size: 0.9rem;
     letter-spacing: 0.02em;
 }
 
+/* ---- Animated sapling on the brand panel (matches landing page) ---- */
+.brand-stage {
+    position: absolute;
+    right: 1.5rem;
+    bottom: 3rem;
+    width: 20rem;
+    height: 20rem;
+    z-index: 0;
+    pointer-events: none;
+}
+
+.brand-spotlight {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: 18rem;
+    height: 18rem;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(255, 239, 191, 0.9) 0%, rgba(220, 243, 228, 0.4) 45%, transparent 70%);
+    animation: brandSpotlight 5s ease-in-out infinite;
+}
+
+@keyframes brandSpotlight {
+    0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.85; }
+    50% { transform: translate(-50%, -50%) scale(1.06); opacity: 1; }
+}
+
+.brand-sapling {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: 16rem;
+    filter: drop-shadow(0 18px 22px rgba(19, 101, 58, 0.16));
+}
+
+.brand-sapling .stem-group {
+    transform-origin: 160px 206px;
+    animation: brandSaplingSway 5s ease-in-out infinite;
+}
+
+@keyframes brandSaplingSway {
+    0%, 100% { transform: rotate(-2deg); }
+    50% { transform: rotate(2deg); }
+}
+
+.brand-sapling .leaf-left {
+    transform-origin: 159px 150px;
+    animation: brandLeafA 4s ease-in-out infinite;
+}
+
+@keyframes brandLeafA {
+    0%, 100% { transform: rotate(-5deg); }
+    50% { transform: rotate(4deg); }
+}
+
+.brand-sapling .leaf-right {
+    transform-origin: 161px 134px;
+    animation: brandLeafB 4.4s ease-in-out infinite 0.4s;
+}
+
+@keyframes brandLeafB {
+    0%, 100% { transform: rotate(5deg); }
+    50% { transform: rotate(-4deg); }
+}
+
+.brand-sapling .leaf-top {
+    transform-origin: 160px 110px;
+    animation: brandLeafC 5s ease-in-out infinite 0.2s;
+}
+
+@keyframes brandLeafC {
+    0%, 100% { transform: rotate(3deg) scale(1); }
+    50% { transform: rotate(-5deg) scale(1.04); }
+}
+
+.brand-sparkle {
+    position: absolute;
+    animation: brandSparkle 2.2s ease-in-out infinite;
+}
+
+@keyframes brandSparkle {
+    0%, 100% { transform: scale(0) rotate(0deg); opacity: 0; }
+    50% { transform: scale(1) rotate(90deg); opacity: 1; }
+}
+
+@media (max-width: 1200px) {
+    .brand-stage {
+        display: none;
+    }
+}
+
 .auth-panel {
     flex: 0.9;
-    background: #f4fbf4;
+    background: transparent;
     position: relative;
+    z-index: 1;
     display: flex;
     justify-content: center;
     align-items: center;
     padding: 2.5rem 2rem 2rem;
-    overflow: hidden;
-}
-
-.auth-panel::before {
-    content: "";
-    position: absolute;
-    top: -6rem;
-    right: -6rem;
-    width: 20rem;
-    height: 20rem;
-    border-radius: 50%;
-    background: #bfe9cf;
-    filter: blur(70px);
-    opacity: 0.55;
-    z-index: 0;
-}
-
-.auth-panel::after {
-    content: "";
-    position: absolute;
-    bottom: -6rem;
-    left: -6rem;
-    width: 18rem;
-    height: 18rem;
-    border-radius: 50%;
-    background: #ffe6a8;
-    filter: blur(70px);
-    opacity: 0.45;
-    z-index: 0;
 }
 
 .auth-wrapper {
@@ -743,7 +833,6 @@ body.login-page .brand-name {
     border: 1px solid #e3f2e9;
     border-radius: 2rem;
     padding: 2.6rem 2.6rem 2.2rem;
-    box-shadow: 0 20px 45px rgba(19, 101, 58, 0.1);
 }
 
 .auth-sparkle {
@@ -812,17 +901,7 @@ body.login-page .brand-name {
     background: rgba(59, 130, 246, 0.12);
 }
 
-.register-page .auth-wrapper {
-    width: min(100%, 600px);
-}
-
-.register-page .auth-panel {
-    padding-top: 2rem;
-    padding-bottom: 2rem;
-}
-
 .register-page h2 {
-    font-size: clamp(2.4rem, 3vw, 4rem);
     margin-bottom: 1.5rem;
 }
 
@@ -1098,6 +1177,10 @@ body.login-page .brand-name {
     }
 
     .brand-panel {
+        /* stacked layout: drop the sticky full-height pin from desktop */
+        position: relative;
+        height: auto;
+        align-self: auto;
         min-height: 50vh;
         padding-bottom: 2rem;
     }
