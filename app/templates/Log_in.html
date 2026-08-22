@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Log-In - PunoObservation</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body class="login-page">
@@ -41,9 +44,13 @@
                 <br>
                 © 2026 PuNoObservation. Capstone Project.
             </div>
+
+            {% include 'partials/_sapling.html' %}
         </aside>
 
         <main class="auth-panel">
+            <span class="auth-sparkle" style="top: 3rem; right: 4rem; animation-delay: 0s;">&#10022;</span>
+            <span class="auth-sparkle" style="bottom: 4rem; left: 3rem; font-size: 1rem; animation-delay: 1s;">&#10022;</span>
             <div class="auth-wrapper">
                 <h2>Welcome back</h2>
                 <!-- <p class="subtitle">Sign in to access the platform</p>
