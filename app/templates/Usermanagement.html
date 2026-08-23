@@ -1,68 +1,268 @@
 {% extends "Base.html" %}
-{% block title %}Manage Users{% endblock %}
+{% block title %}User Management - PuNoObservation{% endblock %}
 {% set active_page = 'users' %}
+
+{% set total = users|length %}
+{% set admins = users|selectattr('role', 'equalto', 'admin')|list|length %}
+{% set officers = users|selectattr('role', 'equalto', 'field_officer')|list|length %}
+{% set normals = users|selectattr('role', 'equalto', 'normal_user')|list|length %}
 
 {% block content %}
 
-<h2 class="mb-4">Users</h2>
-
-<!-- search bar -->
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <form method="GET" class="d-flex gap-2 w-100">
-        <input type="text" name="q" class="form-control"
-               placeholder="Search username, email, or role..."
-               value="{{ search }}">
-        <button type="submit" class="btn btn-primary">Search</button>
-        {% if search %}
-            <a href="{{ url_for('admin.user_management') }}" class="btn btn-outline-secondary">Clear</a>
-        {% endif %}
-    </form>
+<div class="um-header">
+    <div>
+        <h2>User Management</h2>
+        <p class="um-subtitle">Add, manage, and control access for all system users</p>
+    </div>
+    <button type="button" class="um-btn-add" onclick="umOpen('um-add-modal')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 5v14M5 12h14"/>
+        </svg>
+        Add User
+    </button>
 </div>
 
-<div class="table-card mt-2">
-    <table class="table-scroll-container">
-        <thead class="table custom-table align-middle">
+<div class="um-stats">
+    <div class="um-stat accent-green">
+        <div class="um-stat-top">
+            <span class="um-stat-label">Total Users</span>
+            <span class="um-stat-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                </svg>
+            </span>
+        </div>
+        <div class="um-stat-value">{{ total }}</div>
+        <p class="um-stat-sub">registered accounts</p>
+        <div class="um-bar"><span style="width: 100%;"></span></div>
+    </div>
+
+    <div class="um-stat accent-blue">
+        <div class="um-stat-top">
+            <span class="um-stat-label">Admins</span>
+            <span class="um-stat-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                </svg>
+            </span>
+        </div>
+        <div class="um-stat-value">{{ admins }}</div>
+        <p class="um-stat-sub">with full access</p>
+        <div class="um-bar"><span style="width: {{ (admins / total * 100) | round | int if total else 0 }}%;"></span></div>
+    </div>
+
+    <div class="um-stat accent-teal">
+        <div class="um-stat-top">
+            <span class="um-stat-label">Field Officers</span>
+            <span class="um-stat-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6M22 11h-6"/>
+                </svg>
+            </span>
+        </div>
+        <div class="um-stat-value">{{ officers }}</div>
+        <p class="um-stat-sub">field accounts</p>
+        <div class="um-bar"><span style="width: {{ (officers / total * 100) | round | int if total else 0 }}%;"></span></div>
+    </div>
+
+    <div class="um-stat accent-amber">
+        <div class="um-stat-top">
+            <span class="um-stat-label">Normal Users</span>
+            <span class="um-stat-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="3" width="18" height="18" rx="2"/><path d="m9 12 2 2 4-4"/>
+                </svg>
+            </span>
+        </div>
+        <div class="um-stat-value">{{ normals }}</div>
+        <p class="um-stat-sub">standard accounts</p>
+        <div class="um-bar"><span style="width: {{ (normals / total * 100) | round | int if total else 0 }}%;"></span></div>
+    </div>
+</div>
+
+<form method="GET" class="um-toolbar">
+    <div class="um-search-wrap">
+        <span class="um-search-icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
+            </svg>
+        </span>
+        <input type="text" name="q" class="um-search-input"
+               placeholder="Search username, email, or role..."
+               value="{{ search }}">
+    </div>
+    <button type="submit" class="um-btn-ghost">Search</button>
+    {% if search %}
+        <a href="{{ url_for('admin.user_management') }}" class="um-btn-ghost">Clear</a>
+    {% endif %}
+</form>
+
+<div class="um-table-card">
+    {% if users %}
+    <table class="um-table">
+        <thead>
             <tr>
-                <th>ID</th>
-                <th>Username</th>
+                <th>Name</th>
                 <th>Email</th>
                 <th>Role</th>
-                <th>Org ID</th>
-                <th class="text-center">Actions</th>
+                <th>Organization</th>
+                <th>Actions</th>
             </tr>
         </thead>
         <tbody>
             {% for u in users %}
             <tr>
-                <td>{{ u.user_id }}</td>
-                <td>{{ u.username }}</td>
+                <td>
+                    <div class="um-name-cell">
+                        <span class="um-avatar {% if u.role == 'admin' %}av-admin{% elif u.role == 'field_officer' %}av-officer{% endif %}">
+                            {{ u.username[:2]|upper }}
+                        </span>
+                        <span class="um-name">
+                            {{ u.username }}
+                            {% if u.user_id == session.user_id %}<span class="um-you">You</span>{% endif %}
+                        </span>
+                    </div>
+                </td>
                 <td>{{ u.email_address }}</td>
                 <td>
                     {% if u.role == 'admin' %}
-                        <span class="badge bg-dark">Admin</span>
+                        <span class="um-role role-admin">Administrator</span>
                     {% elif u.role == 'field_officer' %}
-                        <span class="badge bg-primary">Field Officer</span>
+                        <span class="um-role role-officer">Field Officer</span>
                     {% else %}
-                        <span class="badge bg-success">Normal User</span>
+                        <span class="um-role role-user">Normal User</span>
                     {% endif %}
                 </td>
-                <td>{{ u.organization_id or '—' }}</td>
-                <td class="p-2">
-                    <div class="d-flex flex-row gap-2 w-100">
-                        <form method="POST"
-                              action="{{ url_for('admin.delete_user', user_id=u.user_id) }}"
-                              onsubmit="return confirm('Delete user and all related data?');"
-                              class="w-100">
-                            <button type="submit" class="btn btn-outline-danger btn-sm w-100">
-                                Delete
-                            </button>
-                        </form>
-                    </div>
+                <td>
+                    {% if u.organization %}
+                        {{ u.organization.organization_name }}
+                    {% else %}
+                        <span class="um-muted">&mdash;</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if u.user_id == session.user_id %}
+                        <button type="button" class="um-btn-danger" disabled
+                                title="You cannot delete your own account">Delete</button>
+                    {% else %}
+                        <button type="button" class="um-btn-danger"
+                                onclick="umConfirmDelete('{{ u.username|e }}', '{{ u.role|replace('_', ' ')|title }}', '{{ url_for('admin.delete_user', user_id=u.user_id) }}')">
+                            Delete
+                        </button>
+                    {% endif %}
                 </td>
             </tr>
             {% endfor %}
         </tbody>
     </table>
+    {% else %}
+    <div class="um-empty">
+        <span class="um-empty-icon">&#128101;</span>
+        {% if search %}
+            <strong>No users match "{{ search }}"</strong>
+            <p>Try a different username, email, or role.</p>
+        {% else %}
+            <strong>No users yet</strong>
+            <p>Add the first account using the button above.</p>
+        {% endif %}
+    </div>
+    {% endif %}
 </div>
+
+<!-- Delete confirmation modal -->
+<div class="um-modal-overlay" id="um-delete-modal">
+    <div class="um-modal">
+        <div class="um-modal-head">
+            <h3>Delete User Account</h3>
+            <button type="button" class="um-modal-close" onclick="umClose('um-delete-modal')">&times;</button>
+        </div>
+        <div class="um-modal-body">
+            <div class="um-warn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><path d="M12 9v4M12 17h.01"/>
+                </svg>
+                <span>
+                    Permanently delete the account of <strong id="um-del-name"></strong>
+                    (<span id="um-del-role"></span>)? This also removes their related
+                    records and cannot be undone.
+                </span>
+            </div>
+        </div>
+        <form method="POST" id="um-delete-form" class="um-modal-foot">
+            <button type="button" class="um-btn-cancel" onclick="umClose('um-delete-modal')">Cancel</button>
+            <button type="submit" class="um-btn-confirm-danger">Yes, Delete</button>
+        </form>
+    </div>
+</div>
+
+<!-- Add user modal -->
+<div class="um-modal-overlay" id="um-add-modal">
+    <div class="um-modal">
+        <div class="um-modal-head">
+            <h3>Add New User</h3>
+            <button type="button" class="um-modal-close" onclick="umClose('um-add-modal')">&times;</button>
+        </div>
+        <form method="POST" action="{{ url_for('admin.create_field_officer') }}">
+            <div class="um-modal-body">
+                <div class="um-field">
+                    <label for="um-username">Username</label>
+                    <input type="text" id="um-username" name="username" placeholder="e.g. juandelacruz" required>
+                </div>
+                <div class="um-field">
+                    <label for="um-email">Email</label>
+                    <input type="email" id="um-email" name="email_address" placeholder="e.g. juan@denr.gov.ph" required>
+                </div>
+                <div class="um-field">
+                    <label for="um-password">Temporary Password</label>
+                    <input type="password" id="um-password" name="password" placeholder="Set an initial password" required>
+                </div>
+                <div class="um-field">
+                    <label for="um-role">Role</label>
+                    <select id="um-role" name="role">
+                        <option value="field_officer">Field Officer</option>
+                        <option value="normal_user">Normal User</option>
+                        <option value="admin">Administrator</option>
+                    </select>
+                </div>
+            </div>
+            <div class="um-modal-foot">
+                <button type="button" class="um-btn-cancel" onclick="umClose('um-add-modal')">Cancel</button>
+                <button type="submit" class="um-btn-confirm">Add User</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    function umOpen(id) {
+        document.getElementById(id).classList.add('open');
+    }
+
+    function umClose(id) {
+        document.getElementById(id).classList.remove('open');
+    }
+
+    function umConfirmDelete(name, role, action) {
+        document.getElementById('um-del-name').textContent = name;
+        document.getElementById('um-del-role').textContent = role;
+        document.getElementById('um-delete-form').setAttribute('action', action);
+        umOpen('um-delete-modal');
+    }
+
+    // close when clicking the dark backdrop, or on Escape
+    document.querySelectorAll('.um-modal-overlay').forEach(function (overlay) {
+        overlay.addEventListener('click', function (e) {
+            if (e.target === overlay) overlay.classList.remove('open');
+        });
+    });
+
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') {
+            document.querySelectorAll('.um-modal-overlay.open').forEach(function (o) {
+                o.classList.remove('open');
+            });
+        }
+    });
+</script>
 
 {% endblock %}

@@ -31,7 +31,6 @@
           {% endif %}
         </div>
 
-
       <nav class="sidebar-nav">
         <a href="{{ url_for('dashboard.index') }}"
           class="nav-link {% if active_page == 'dashboard' %}active{% endif %}">
@@ -47,12 +46,13 @@
           class="nav-link {% if active_page == 'sites' %}active{% endif %}">
           Reforestation Sites
         </a>
-          <a
-            href="{{ url_for('dashboard.recommendations') }}"
-            class="nav-link {% if active_page == 'recommendations' %}active{% endif %}"
-          >
-            Species Recommendation
-          </a>
+        <a href="#" class="nav-link {% if active_page == 'inventory' %}active{% endif %}">
+          Tree Recommendation
+        </a>
+        <a href="#" class="nav-link {% if active_page == 'species' %}active{% endif %}">
+          Species Recommendation
+        </a>
+
         <!-- Notifications kept separate from the role-split section below,
                since every logged-in role gets notifications regardless of role -->
         <p class="nav-section-title">Notifications</p>
@@ -62,13 +62,13 @@
         </a>
 
         {% if session.role == 'field_officer' %}
-        <!-- <p class="nav-section-title">Reports & Data</p> -->
-        <!-- <a href="#" class="nav-link {% if active_page == 'reports' %}active{% endif %}">
+        <p class="nav-section-title">Reports & Data</p>
+        <a href="#" class="nav-link {% if active_page == 'reports' %}active{% endif %}">
           Reports
         </a>
         <a href="#" class="nav-link {% if active_page == 'analytics' %}active{% endif %}">
           Analytics
-        </a> -->
+        </a>
         {% elif session.role == 'normal_user' %}
         <p class="nav-section-title">Requests</p>
         <a href="#" class="nav-link {% if active_page == 'request' %}active{% endif %}">
@@ -84,9 +84,9 @@
           class="nav-link {% if active_page == 'reference' %}active{% endif %}">
           Reference Dataset
         </a>
-        <!-- <a href="#" class="nav-link {% if active_page == 'settings' %}active{% endif %}">
+        <a href="#" class="nav-link {% if active_page == 'settings' %}active{% endif %}">
           System Settings
-        </a> -->
+        </a>
         {% endif %}
       </nav>
 
