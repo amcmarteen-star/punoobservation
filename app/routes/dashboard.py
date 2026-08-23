@@ -1,10 +1,12 @@
 # app/routes/dashboard.py
-from flask import Blueprint, render_template, session, jsonify, redirect, url_for
+from flask import Blueprint, render_template, session, jsonify, redirect, url_for, request
 from app.utils.decorators import login_required
 from app.models import Site, ReforestationRecord, MonitoringReport, Location, Notification
 from app.extensions import db
 from sqlalchemy import func
 from collections import defaultdict
+from app.services.recommender import recommend_for_location
+
 
 dashboard_bp = Blueprint('dashboard', __name__)
 
@@ -161,3 +163,117 @@ def mark_notification_read(notification_id):
     notif.is_read = True
     db.session.commit()
     return jsonify({"success": True})
+
+
+@dashboard_bp.route('/recommendations')
+def recommendations():
+    """
+    Species recommendation page.
+ 
+    Shows a municipality/barangay picker. When a barangay is chosen,
+    runs the engine and shows the ranked species.
+ 
+    Open to guests, same as the GIS map, so the panel can see it
+    without logging in.
+    """
+    municipalities = [
+        m[0] for m in db.session.query(Location.municipality)
+        .filter(Location.elevation_m.isnot(None))
+        .distinct()
+        .order_by(Location.municipality)
+        .all()
+    ]
+ 
+    selected_muni = request.args.get('municipality', '')
+    selected_brgy = request.args.get('barangay', '')
+ 
+    barangays = []
+    if selected_muni:
+        barangays = (
+            Location.query
+            .filter(Location.municipality == selected_muni)
+            .filter(Location.elevation_m.isnot(None))
+            .order_by(Location.barangay)
+            .all()
+        )
+ 
+    result = None
+    if selected_muni and selected_brgy:
+        location = (
+            Location.query
+            .filter(Location.municipality == selected_muni)
+            .filter(Location.barangay == selected_brgy)
+            .first()
+        )
+        if location:
+            result = recommend_for_location(location, top_k=5)
+ 
+    return render_template(
+        'Recommendations.html',
+        active_page='recommendations',
+        municipalities=municipalities,
+        barangays=barangays,
+        selected_muni=selected_muni,
+        selected_brgy=selected_brgy,
+        result=result,
+    )
+ 
+ 
+@dashboard_bp.route('/api/recommend/<int:location_id>')
+def api_recommend(location_id):
+    """
+    JSON recommendations for one barangay.
+ 
+    Used by the GIS map info panel. Open to guests.
+    """
+    location = Location.query.get(location_id)
+    if location is None:
+        return jsonify({"found": False, "reason": "Barangay not found."}), 404
+ 
+    return jsonify(recommend_for_location(location, top_k=5))
+ 
+ 
+@dashboard_bp.route('/api/recommend')
+def api_recommend_by_name():
+    """
+    JSON recommendations looked up by municipality and barangay name.
+ 
+    Used by the GIS map, which knows names but not location ids.
+    Matching is case-insensitive and ignores spaces, because
+    barangay.geojson writes 'SanManuel' while the database may hold
+    'San Manuel'.
+    """
+    muni = request.args.get('municipality', '')
+    brgy = request.args.get('barangay', '')
+ 
+    if not muni or not brgy:
+        return jsonify({
+            "found": False,
+            "reason": "Provide both municipality and barangay."
+        }), 400
+ 
+    def squash(col):
+        """Strip spaces, dots and dashes, then lowercase - in SQL."""
+        expr = func.lower(col)
+        for ch in (' ', '.', '-'):
+            expr = func.replace(expr, ch, '')
+        return expr
+ 
+    def squash_py(s):
+        return s.lower().replace(' ', '').replace('.', '').replace('-', '')
+ 
+    location = (
+        Location.query
+        .filter(squash(Location.municipality) == squash_py(muni))
+        .filter(squash(Location.barangay) == squash_py(brgy))
+        .first()
+    )
+ 
+    if location is None:
+        return jsonify({
+            "found": False,
+            "reason": f"No data for {brgy}, {muni}."
+        }), 404
+ 
+    return jsonify(recommend_for_location(location, top_k=5))
+ 

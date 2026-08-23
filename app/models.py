@@ -15,6 +15,15 @@ class Location(db.Model):
     province = db.Column(db.String(100), nullable=False)
     municipality = db.Column(db.String(100), nullable=False)
     barangay = db.Column(db.String(100), nullable=False)
+        # --- Site characteristics (Objective 1) ---
+    latitude = db.Column(db.Float, nullable=True)
+    longitude = db.Column(db.Float, nullable=True)
+    elevation_m = db.Column(db.Float, nullable=True)
+    avg_temp_c = db.Column(db.Float, nullable=True)
+    annual_rainfall_mm = db.Column(db.Float, nullable=True)
+    soil_type = db.Column(db.String(100), nullable=True)
+    soil_texture = db.Column(db.String(50), nullable=True)
+    agro_ecological_zone = db.Column(db.String(50), nullable=True)
 
     # Relationship to Site
     sites = db.relationship('Site', backref='location', lazy=True)
@@ -99,7 +108,17 @@ class TreeSpecie(db.Model):
     specie_name = db.Column(db.String(100), nullable=False)
     scientific_name = db.Column(db.String(150), nullable=True)
     native_to = db.Column(db.String(100), nullable=True)
-
+        # --- Ecological tolerance ranges (Objective 2) ---
+    min_rainfall_mm = db.Column(db.Float, nullable=True)
+    max_rainfall_mm = db.Column(db.Float, nullable=True)
+    min_elevation_m = db.Column(db.Float, nullable=True)
+    max_elevation_m = db.Column(db.Float, nullable=True)
+    min_temp_c = db.Column(db.Float, nullable=True)
+    max_temp_c = db.Column(db.Float, nullable=True)
+    preferred_soil = db.Column(db.String(200), nullable=True)
+    source = db.Column(db.String(300), nullable=True)
+    is_reference = db.Column(db.Boolean, default=False, server_default=db.false(), nullable=False)
+    
     # Relationship
     reforestation_records = db.relationship('ReforestationRecord', backref='species', lazy=True)
 

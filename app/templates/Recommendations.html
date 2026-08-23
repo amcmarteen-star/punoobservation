@@ -1,0 +1,371 @@
+{% extends "Base.html" %}
+{% block title %}Species Recommendation - PuNoObservation{% endblock %}
+
+{% block extra_head %}
+<style>
+  .rec-picker {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    padding: 1.25rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .profile-strip {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+  }
+
+  .profile-chip {
+    background: #14532d;
+    color: #ffffff;
+    border-radius: 8px;
+    padding: 0.65rem 1rem;
+    min-width: 140px;
+  }
+
+  .profile-chip .label {
+    display: block;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    opacity: 0.75;
+  }
+
+  .profile-chip .value {
+    display: block;
+    font-size: 1.05rem;
+    font-weight: 700;
+    margin-top: 2px;
+  }
+
+  .results-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin: 1.25rem 0 0.6rem;
+  }
+
+  .rank-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: #14532d;
+    color: #fff;
+    font-weight: 700;
+    font-size: 0.8rem;
+  }
+
+  /* ranks 6 and below are muted so the top 5 still read as the answer */
+  .rank-badge.muted {
+    background: #cbd5e1;
+    color: #475569;
+  }
+
+  .score-bar-track {
+    background: #e2e8f0;
+    border-radius: 4px;
+    height: 8px;
+    width: 110px;
+    overflow: hidden;
+  }
+
+  .score-bar-fill {
+    background: #16a34a;
+    height: 100%;
+  }
+
+  .score-bar-fill.muted {
+    background: #94a3b8;
+  }
+
+  .in-range-yes {
+    background: #dcfce7;
+    color: #15803d;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 600;
+  }
+
+  .in-range-no {
+    background: #fef3c7;
+    color: #92400e;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 600;
+  }
+
+  .sci-name {
+    font-style: italic;
+    color: #64748b;
+    font-size: 0.8rem;
+  }
+
+  .method-note {
+    background: #f8fafc;
+    border-left: 3px solid #94a3b8;
+    padding: 0.9rem 1.1rem;
+    margin-top: 1.5rem;
+    font-size: 0.85rem;
+    color: #475569;
+  }
+
+  .empty-state {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: #64748b;
+  }
+
+  /* rows past the top 5 start hidden */
+  tr.beyond-top.is-hidden {
+    display: none;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="page-header mb-4">
+  <h2 class="fw-bold text-dark">Species Recommendation</h2>
+  <p class="text-secondary mb-0">
+    Pick a barangay to see which tree species suit its measured
+    elevation, temperature, rainfall and soil.
+  </p>
+</div>
+
+<!-- ============ PICKER ============ -->
+<div class="rec-picker">
+  <form method="GET" class="row g-3 align-items-end">
+
+    <div class="col-md-5">
+      <label for="municipality" class="form-label fw-semibold">Municipality</label>
+      <select name="municipality" id="municipality" class="form-select"
+              onchange="this.form.barangay.value=''; this.form.submit();">
+        <option value="">Choose a municipality</option>
+        {% for m in municipalities %}
+          <option value="{{ m }}" {% if m == selected_muni %}selected{% endif %}>
+            {{ m }}
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="col-md-5">
+      <label for="barangay" class="form-label fw-semibold">Barangay</label>
+      <select name="barangay" id="barangay" class="form-select"
+              {% if not barangays %}disabled{% endif %}
+              onchange="this.form.submit();">
+        <option value="">
+          {% if barangays %}Choose a barangay{% else %}Pick a municipality first{% endif %}
+        </option>
+        {% for b in barangays %}
+          <option value="{{ b.barangay }}"
+                  {% if b.barangay == selected_brgy %}selected{% endif %}>
+            {{ b.barangay }}
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="col-md-2">
+      <noscript>
+        <button type="submit" class="btn btn-success w-100">Show</button>
+      </noscript>
+    </div>
+
+  </form>
+</div>
+
+
+{% if result and result.found %}
+
+  <!-- ============ SITE PROFILE ============ -->
+  <h4 class="text-success fw-bold border-bottom pb-2">
+    {{ result.barangay }}, {{ result.municipality }}
+  </h4>
+
+  <div class="profile-strip mt-3">
+    <div class="profile-chip">
+      <span class="label">Elevation</span>
+      <span class="value">{{ result.site_profile.elevation_m | round(0) | int }} m</span>
+    </div>
+    <div class="profile-chip">
+      <span class="label">Avg temperature</span>
+      <span class="value">{{ result.site_profile.avg_temp_c }} &deg;C</span>
+    </div>
+    <div class="profile-chip">
+      <span class="label">Annual rainfall</span>
+      <span class="value">{{ result.site_profile.annual_rainfall_mm | round(0) | int }} mm</span>
+    </div>
+    <div class="profile-chip">
+      <span class="label">Soil texture</span>
+      <span class="value">{{ result.site_profile.soil_texture or '—' }}</span>
+    </div>
+    <div class="profile-chip">
+      <span class="label">Agro-ecological zone</span>
+      <span class="value">{{ result.site_profile.agro_ecological_zone or '—' }}</span>
+    </div>
+  </div>
+
+  <p class="text-secondary small mb-0">
+    Soil series: {{ result.site_profile.soil_type or 'not recorded' }}
+  </p>
+
+  <!-- ============ RESULTS HEADER + TOGGLE ============ -->
+  <div class="results-bar">
+    <div>
+      <span class="fw-semibold text-dark" id="resultCount">
+        Showing top 5 of {{ result.total_species }} species
+      </span>
+    </div>
+    <button type="button" id="toggleAll" class="btn btn-outline-success btn-sm">
+      Show all {{ result.total_species }} species
+    </button>
+  </div>
+
+  <!-- ============ RESULTS TABLE ============ -->
+  <div class="table-card">
+    <div class="table-scroll-container">
+      <table class="table custom-table align-middle">
+        <thead>
+          <tr>
+            <th>Rank</th>
+            <th>Species</th>
+            <th>Similarity</th>
+            <th>Within published ranges</th>
+            <th>Elevation</th>
+            <th>Temperature</th>
+            <th>Rainfall</th>
+            <th>Preferred soil</th>
+            <th>Features used</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in result.all_scores %}
+          <tr class="{% if loop.index > 5 %}beyond-top is-hidden{% endif %}">
+            <td>
+              <span class="rank-badge {% if loop.index > 5 %}muted{% endif %}">
+                {{ loop.index }}
+              </span>
+            </td>
+            <td>
+              <div class="fw-semibold">{{ r.specie_name }}</div>
+              {% if r.scientific_name %}
+                <div class="sci-name">{{ r.scientific_name }}</div>
+              {% endif %}
+            </td>
+            <td>
+              <div class="d-flex align-items-center gap-2">
+                <div class="score-bar-track">
+                  <div class="score-bar-fill {% if loop.index > 5 %}muted{% endif %}"
+                       style="width: {{ (r.similarity * 100) | round(0) | int }}%;"></div>
+                </div>
+                <span class="fw-semibold">{{ r.similarity }}</span>
+              </div>
+            </td>
+            <td>
+              {% if r.within_all_ranges %}
+                <span class="in-range-yes">Yes</span>
+              {% else %}
+                <span class="in-range-no">Outside</span>
+              {% endif %}
+            </td>
+            <td>{{ r.elevation_range }}</td>
+            <td>{{ r.temperature_range }}</td>
+            <td>{{ r.rainfall_range }}</td>
+            <td>{{ r.preferred_soil or '—' }}</td>
+            <td class="num-cell">{{ r.features_used }} of 4</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ============ METHOD NOTE ============ -->
+  <div class="method-note">
+    <strong>How this is calculated.</strong>
+    Site characteristics are encoded and normalised to a common scale, then
+    compared against each species' published ecological profile using
+    <strong>{{ result.method }}</strong>. Species are ranked in descending
+    order of similarity. All {{ result.total_species }} species in the
+    reference dataset are scored; the top 5 are shown by default.
+    <br><br>
+    <strong>Within published ranges</strong> is a separate check. It reports
+    whether this barangay falls inside every tolerance range published for
+    that species. A species can rank highly and still sit outside its
+    published range, because similarity compares the midpoint of a range
+    rather than the range itself.
+    <br><br>
+    Published ranges describe optimal growing conditions, not survival
+    limits. Recommendations are decision-support only and do not replace
+    professional field assessment.
+    {% if result.all_scores and result.all_scores[0].source %}
+      <br><br>
+      Species data source: {{ result.all_scores[0].source }}.
+    {% endif %}
+  </div>
+
+  <script>
+    (function () {
+      const btn = document.getElementById('toggleAll');
+      const label = document.getElementById('resultCount');
+      const rows = document.querySelectorAll('tr.beyond-top');
+      const total = {{ result.total_species }};
+
+      let expanded = false;
+
+      btn.addEventListener('click', function () {
+        expanded = !expanded;
+
+        rows.forEach(function (row) {
+          row.classList.toggle('is-hidden', !expanded);
+        });
+
+        if (expanded) {
+          btn.textContent = 'Show top 5 only';
+          label.textContent = 'Showing all ' + total + ' species';
+        } else {
+          btn.textContent = 'Show all ' + total + ' species';
+          label.textContent = 'Showing top 5 of ' + total + ' species';
+        }
+      });
+    })();
+  </script>
+
+{% elif result and not result.found %}
+
+  <div class="empty-state">
+    <h5>No site data for this barangay</h5>
+    <p>{{ result.reason }}</p>
+  </div>
+
+{% elif selected_muni %}
+
+  <div class="empty-state">
+    <p>Choose a barangay to see recommendations.</p>
+  </div>
+
+{% else %}
+
+  <div class="empty-state">
+    <h5>Choose a municipality to begin</h5>
+    <p>
+      Recommendations cover all 478 barangays in Districts 5 and 6
+      of Eastern Pangasinan.
+    </p>
+  </div>
+
+{% endif %}
+
+{% endblock %}

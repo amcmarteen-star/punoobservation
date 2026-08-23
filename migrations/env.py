@@ -71,6 +71,10 @@ def run_migrations_offline():
     with context.begin_transaction():
         context.run_migrations()
 
+def include_object(object, name, type_, reflected, compare_to):
+    if type_ == "table" and name in ("spatial_ref_sys", "geography_columns", "geometry_columns"):
+        return False
+    return True
 
 def run_migrations_online():
     """Run migrations in 'online' mode.
@@ -100,6 +104,7 @@ def run_migrations_online():
         context.configure(
             connection=connection,
             target_metadata=get_metadata(),
+            include_object=include_object, 
             **conf_args
         )
 
