@@ -1,7 +1,7 @@
 # app/models.py
 from datetime import datetime
 from werkzeug.security import generate_password_hash, check_password_hash
-from geoalchemy2 import Geometry
+# from geoalchemy2 import Geometry
 from app.extensions import db
 from datetime import datetime
 from zoneinfo import ZoneInfo
@@ -62,7 +62,7 @@ class Site(db.Model):
     organization_id = db.Column(db.Integer, db.ForeignKey('organization.organization_id'), nullable=False)
     site_name = db.Column(db.String(150), nullable=False)
     area_size_ha = db.Column(db.Float, nullable=False)
-    land_map_boundary = db.Column(Geometry('POLYGON', srid=4326), nullable=True)
+    # land_map_boundary = db.Column(Geometry('POLYGON', srid=4326), nullable=True)
     date_established = db.Column(db.Date, nullable=False, default=datetime.utcnow)
     site_status = db.Column(db.String(50), nullable=False, default='Active')
     climate_zone = db.Column(db.String(100), nullable=True)
@@ -142,7 +142,7 @@ class MonitoringPhoto(db.Model):
     photo_id = db.Column(db.Integer, primary_key=True)
     report_id = db.Column(db.Integer, db.ForeignKey('monitoring_report.report_id'), nullable=False)
     photo_url = db.Column(db.String(255), nullable=False)
-    gps_point = db.Column(Geometry('POINT', srid=4326), nullable=True)
+    # gps_point = db.Column(Geometry('POINT', srid=4326), nullable=True)
     date_time_taken = db.Column(db.DateTime, nullable=True)
     upload_time = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
     inside_boundary = db.Column(db.Boolean, nullable=False, default=False)
