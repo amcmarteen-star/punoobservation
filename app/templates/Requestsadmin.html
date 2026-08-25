@@ -1,0 +1,205 @@
+{% extends "Base.html" %}
+{% block title %}Review Requests - PuNoObservation{% endblock %}
+
+{% block extra_head %}
+<style>
+  .count-strip {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .count-chip {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 0.7rem 1.1rem;
+    min-width: 130px;
+    text-decoration: none;
+    color: inherit;
+    transition: border-color 0.15s;
+  }
+
+  .count-chip:hover,
+  .count-chip.active {
+    border-color: #16a34a;
+    color: inherit;
+  }
+
+  .count-chip .num {
+    display: block;
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: #14532d;
+  }
+
+  .count-chip .lbl {
+    display: block;
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #64748b;
+  }
+
+  .status-pill {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+  }
+
+  .status-submitted    { background: #e0f2fe; color: #075985; }
+  .status-under-review { background: #fef3c7; color: #92400e; }
+  .status-approved     { background: #dcfce7; color: #15803d; }
+  .status-rejected     { background: #fee2e2; color: #991b1b; }
+
+  .review-form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    min-width: 220px;
+  }
+
+  .review-form select,
+  .review-form input {
+    font-size: 0.8rem;
+    padding: 0.25rem 0.4rem;
+  }
+
+  .empty-state {
+    text-align: center;
+    padding: 2.5rem 1rem;
+    color: #64748b;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="page-header mb-4">
+  <h2 class="fw-bold text-dark">Review Requests</h2>
+  <p class="text-secondary mb-0">
+    Reforestation site requests submitted by users. Setting a status
+    notifies the person who submitted it.
+  </p>
+</div>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    {% for category, message in messages %}
+      <div class="alert alert-{{ 'danger' if category == 'danger' else 'success' }}">
+        {{ message }}
+      </div>
+    {% endfor %}
+  {% endif %}
+{% endwith %}
+
+<!-- ============ COUNTS / FILTER ============ -->
+<div class="count-strip">
+  <a href="{{ url_for('admin.review_requests') }}"
+     class="count-chip {% if not status_filter %}active{% endif %}">
+    <span class="num">{{ total_count }}</span>
+    <span class="lbl">All</span>
+  </a>
+  {% for label, n in counts.items() %}
+    <a href="{{ url_for('admin.review_requests', status=label) }}"
+       class="count-chip {% if status_filter == label %}active{% endif %}">
+      <span class="num">{{ n }}</span>
+      <span class="lbl">{{ label }}</span>
+    </a>
+  {% endfor %}
+</div>
+
+<!-- ============ TABLE ============ -->
+{% if all_requests %}
+  <div class="table-card">
+    <div class="table-scroll-container">
+      <table class="table custom-table align-middle">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Requested By</th>
+            <th>Location</th>
+            <th>Type</th>
+            <th class="text-end">Area (ha)</th>
+            <th>Description</th>
+            <th>Contact</th>
+            <th>Submitted</th>
+            <th>Status</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in all_requests %}
+          <tr>
+            <td class="num-cell">{{ r.request_id }}</td>
+            <td>
+              {% if r.requester %}
+                <div class="fw-semibold">{{ r.requester.username }}</div>
+                <div class="text-secondary small">{{ r.requester.role }}</div>
+              {% else %}
+                —
+              {% endif %}
+            </td>
+            <td>
+              {% if r.location %}
+                <div class="fw-semibold">{{ r.location.barangay }}</div>
+                <div class="text-secondary small">{{ r.location.municipality }}</div>
+              {% else %}
+                —
+              {% endif %}
+            </td>
+            <td>{{ r.request_type }}</td>
+            <td class="num-cell">{{ r.proposed_area_ha or '—' }}</td>
+            <td>{{ r.description or '—' }}</td>
+            <td>{{ r.contact_number or '—' }}</td>
+            <td>{{ r.date_submitted.strftime('%Y-%m-%d') }}</td>
+            <td>
+              <span class="status-pill status-{{ r.status|lower|replace(' ', '-') }}">
+                {{ r.status }}
+              </span>
+              {% if r.reviewed_by and r.reviewer %}
+                <div class="text-secondary small">by {{ r.reviewer.username }}</div>
+              {% endif %}
+              {% if r.review_note %}
+                <div class="text-secondary small fst-italic">{{ r.review_note }}</div>
+              {% endif %}
+            </td>
+            <td>
+              <form method="POST"
+                    action="{{ url_for('admin.review_request', request_id=r.request_id) }}"
+                    class="review-form">
+                <select name="status" class="form-select form-select-sm" required>
+                  <option value="">Set status</option>
+                  <option value="Under Review">Under Review</option>
+                  <option value="Approved">Approved</option>
+                  <option value="Rejected">Rejected</option>
+                </select>
+                <input type="text" name="review_note"
+                       class="form-control form-control-sm"
+                       placeholder="Note (required to reject)">
+                <button type="submit" class="btn btn-success btn-sm">Save</button>
+              </form>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+{% else %}
+  <div class="empty-state">
+    <h5>
+      {% if status_filter %}
+        No requests with status "{{ status_filter }}"
+      {% else %}
+        No requests submitted yet
+      {% endif %}
+    </h5>
+    <p>Requests submitted by users will appear here for review.</p>
+  </div>
+{% endif %}
+
+{% endblock %}

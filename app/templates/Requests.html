@@ -1,0 +1,233 @@
+{% extends "Base.html" %}
+{% block title %}Request Reforestation Site - PuNoObservation{% endblock %}
+
+{% block extra_head %}
+<style>
+  .req-form-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+  }
+
+  .status-pill {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+  }
+
+  .status-submitted   { background: #e0f2fe; color: #075985; }
+  .status-under-review{ background: #fef3c7; color: #92400e; }
+  .status-approved    { background: #dcfce7; color: #15803d; }
+  .status-rejected    { background: #fee2e2; color: #991b1b; }
+
+  .review-note {
+    font-size: 0.78rem;
+    color: #475569;
+    font-style: italic;
+    margin-top: 0.25rem;
+  }
+
+  .empty-state {
+    text-align: center;
+    padding: 2.5rem 1rem;
+    color: #64748b;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="page-header mb-4">
+  <h2 class="fw-bold text-dark">Request Reforestation Site</h2>
+  <p class="text-secondary mb-0">
+    Propose a site in your barangay for a reforestation project. DENR
+    and CENRO staff review each request and you will be notified of the
+    outcome.
+  </p>
+</div>
+
+<!-- ============ FLASH MESSAGES ============ -->
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    {% for category, message in messages %}
+      <div class="alert alert-{{ 'danger' if category == 'danger' else 'success' }}">
+        {{ message }}
+      </div>
+    {% endfor %}
+  {% endif %}
+{% endwith %}
+
+<!-- ============ SUBMIT FORM ============ -->
+<div class="req-form-card">
+  <h5 class="fw-bold text-success mb-3">New Request</h5>
+
+  <form method="POST" class="row g-3">
+
+    <div class="col-md-6">
+      <label for="municipality" class="form-label fw-semibold">
+        Municipality <span class="text-danger">*</span>
+      </label>
+      <select name="municipality" id="municipality" class="form-select" required>
+        <option value="">Choose a municipality</option>
+        {% for m in municipalities %}
+          <option value="{{ m }}">{{ m }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="col-md-6">
+      <label for="barangay" class="form-label fw-semibold">
+        Barangay <span class="text-danger">*</span>
+      </label>
+      <select name="barangay" id="barangay" class="form-select" required disabled>
+        <option value="">Pick a municipality first</option>
+      </select>
+    </div>
+
+    <div class="col-md-6">
+      <label for="request_type" class="form-label fw-semibold">
+        Request Type <span class="text-danger">*</span>
+      </label>
+      <select name="request_type" id="request_type" class="form-select" required>
+        <option value="">Choose a type</option>
+        <option value="New Planting Site">New Planting Site</option>
+        <option value="Site Rehabilitation">Site Rehabilitation</option>
+        <option value="Seedling Supply">Seedling Supply</option>
+        <option value="Technical Assistance">Technical Assistance</option>
+      </select>
+    </div>
+
+    <div class="col-md-3">
+      <label for="proposed_area_ha" class="form-label fw-semibold">
+        Proposed Area (ha)
+      </label>
+      <input type="number" step="0.01" min="0.01"
+             name="proposed_area_ha" id="proposed_area_ha"
+             class="form-control" placeholder="e.g. 2.5">
+    </div>
+
+    <div class="col-md-3">
+      <label for="contact_number" class="form-label fw-semibold">
+        Contact Number
+      </label>
+      <input type="text" name="contact_number" id="contact_number"
+             class="form-control" placeholder="09XXXXXXXXX">
+    </div>
+
+    <div class="col-12">
+      <label for="description" class="form-label fw-semibold">
+        Description
+      </label>
+      <textarea name="description" id="description" class="form-control"
+                rows="3"
+                placeholder="Describe the site: current land use, access, ownership, why it needs reforesting."></textarea>
+    </div>
+
+    <div class="col-12">
+      <button type="submit" class="btn btn-success">Submit Request</button>
+    </div>
+
+  </form>
+</div>
+
+<!-- ============ MY REQUESTS ============ -->
+<h4 class="text-success fw-bold border-bottom pb-2">My Requests</h4>
+
+{% if my_requests %}
+  <div class="table-card mt-3">
+    <div class="table-scroll-container">
+      <table class="table custom-table align-middle">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Location</th>
+            <th>Type</th>
+            <th class="text-end">Area (ha)</th>
+            <th>Status</th>
+            <th>Submitted</th>
+            <th>Reviewed</th>
+            <th>Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in my_requests %}
+          <tr>
+            <td class="num-cell">{{ r.request_id }}</td>
+            <td>
+              {% if r.location %}
+                <div class="fw-semibold">{{ r.location.barangay }}</div>
+                <div class="text-secondary small">{{ r.location.municipality }}</div>
+              {% else %}
+                —
+              {% endif %}
+            </td>
+            <td>{{ r.request_type }}</td>
+            <td class="num-cell">{{ r.proposed_area_ha or '—' }}</td>
+            <td>
+              <span class="status-pill status-{{ r.status|lower|replace(' ', '-') }}">
+                {{ r.status }}
+              </span>
+              {% if r.review_note %}
+                <div class="review-note">{{ r.review_note }}</div>
+              {% endif %}
+            </td>
+            <td>{{ r.date_submitted.strftime('%Y-%m-%d') }}</td>
+            <td>
+              {% if r.date_reviewed %}
+                {{ r.date_reviewed.strftime('%Y-%m-%d') }}
+              {% else %}
+                <span class="text-muted">pending</span>
+              {% endif %}
+            </td>
+            <td>{{ r.description or '—' }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+{% else %}
+  <div class="empty-state">
+    <h5>No requests yet</h5>
+    <p>Submitted requests will appear here with their review status.</p>
+  </div>
+{% endif %}
+
+<script>
+  // Municipality picked -> load that municipality's barangays.
+  // Uses fetch instead of a page reload so the form keeps what the user
+  // has already typed.
+  document.getElementById('municipality').addEventListener('change', async function () {
+    const barangaySelect = document.getElementById('barangay');
+    const municipality = this.value;
+
+    if (!municipality) {
+      barangaySelect.innerHTML = '<option value="">Pick a municipality first</option>';
+      barangaySelect.disabled = true;
+      return;
+    }
+
+    barangaySelect.innerHTML = '<option value="">Loading...</option>';
+    barangaySelect.disabled = true;
+
+    try {
+      const res = await fetch('/api/barangays/' + encodeURIComponent(municipality));
+      const names = await res.json();
+
+      barangaySelect.innerHTML =
+        '<option value="">Choose a barangay</option>' +
+        names.map(n => `<option value="${n}">${n}</option>`).join('');
+      barangaySelect.disabled = false;
+    } catch (err) {
+      console.error(err);
+      barangaySelect.innerHTML = '<option value="">Could not load barangays</option>';
+    }
+  });
+</script>
+
+{% endblock %}

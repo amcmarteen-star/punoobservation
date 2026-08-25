@@ -176,14 +176,223 @@
     padding: 1rem 1.1rem;
   }
 
-  .muni-panel .site-card-title {
-  word-break: break-word;
-}
+  .muni-panel .brgy-hint {
+    background: #ecfdf5;
+    border: 1px dashed #16a34a;
+    color: #14532d;
+    border-radius: 6px;
+    padding: 0.55rem 0.7rem;
+    font-size: 0.78rem;
+    margin: 0.6rem 0 0.2rem;
+  }
 
-.muni-panel .stat-row span {
-  min-width: 0;
-  word-break: break-word;
-}
+  .muni-panel .back-link {
+    background: none;
+    border: none;
+    color: #14532d;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 0;
+    margin-bottom: 0.4rem;
+    text-decoration: underline;
+  }
+
+  .muni-panel .rec-card {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-left: 4px solid #16a34a;
+    border-radius: 8px;
+    padding: 0.6rem 0.75rem;
+    margin-bottom: 0.55rem;
+  }
+
+  .muni-panel .rec-card.outside {
+    border-left-color: #f59e0b;
+  }
+
+  .muni-panel .rec-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.5rem;
+  }
+
+  .muni-panel .rec-name {
+    font-weight: 700;
+    color: #14532d;
+    font-size: 0.9rem;
+  }
+
+  .muni-panel .rec-sci {
+    font-style: italic;
+    color: #64748b;
+    font-size: 0.72rem;
+  }
+
+  .muni-panel .rec-score {
+    font-weight: 700;
+    color: #16a34a;
+    font-size: 0.85rem;
+    white-space: nowrap;
+  }
+
+  .muni-panel .rec-meta {
+    font-size: 0.72rem;
+    color: #475569;
+    margin-top: 0.35rem;
+    line-height: 1.5;
+  }
+
+  .muni-panel .rec-flag {
+    display: inline-block;
+    font-size: 0.68rem;
+    font-weight: 600;
+    padding: 2px 6px;
+    border-radius: 4px;
+    margin-top: 0.3rem;
+  }
+
+  .muni-panel .rec-flag.yes {
+    background: #dcfce7;
+    color: #15803d;
+  }
+
+  .muni-panel .rec-flag.no {
+    background: #fef3c7;
+    color: #92400e;
+  }
+
+  /* --- reforestation site markers --- */
+  .site-marker {
+    background: #16a34a;
+    border: 2px solid #ffffff;
+    border-radius: 50%;
+    color: #ffffff;
+    font-weight: 700;
+    font-size: 0.72rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+  }
+
+  .site-marker:hover {
+    background: #15803d;
+  }
+
+  .map-topbar .site-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-weight: 500;
+    color: #475569;
+    padding-left: 1rem;
+    border-left: 1px solid #e2e8f0;
+  }
+
+  .map-topbar .site-count-note {
+    color: #16a34a;
+    font-weight: 600;
+  }
+  /* --- heatmap selector --- */
+  .map-topbar .heat-select {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding-left: 1rem;
+    border-left: 1px solid #e2e8f0;
+    font-weight: 500;
+    color: #475569;
+  }
+
+  .map-topbar .heat-select select {
+    font-size: 0.85rem;
+    padding: 0.2rem 0.4rem;
+    border: 1px solid #cbd5e1;
+    border-radius: 4px;
+    color: #1e293b;
+  }
+
+  /* --- legend --- */
+  .heat-legend {
+    background: rgba(255, 255, 255, 0.95);
+    padding: 0.7rem 0.85rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+    font-size: 0.75rem;
+    line-height: 1.6;
+    color: #1e293b;
+  }
+
+  .heat-legend h4 {
+    margin: 0 0 0.4rem 0;
+    font-size: 0.78rem;
+    color: #14532d;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .heat-legend .swatch {
+    display: inline-block;
+    width: 16px;
+    height: 12px;
+    margin-right: 6px;
+    border: 1px solid rgba(0, 0, 0, 0.2);
+    vertical-align: -1px;
+  }
+
+  .heat-legend .legend-note {
+    margin-top: 0.4rem;
+    color: #64748b;
+    font-size: 0.68rem;
+    max-width: 190px;
+  }
+
+  /* --- tree markers --- */
+  .tree-marker {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.4));
+    cursor: pointer;
+  }
+
+  .tree-marker .tree-glyph {
+    line-height: 1;
+  }
+
+  .tree-marker .tree-count {
+    background: #14532d;
+    color: #ffffff;
+    border-radius: 10px;
+    padding: 0 6px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    margin-top: -4px;
+    border: 1px solid #ffffff;
+  }
+
+  .tree-marker .tree-label {
+    background: rgba(255, 255, 255, 0.9);
+    color: #14532d;
+    font-size: 0.62rem;
+    font-weight: 600;
+    padding: 0 4px;
+    border-radius: 3px;
+    margin-top: 2px;
+    white-space: nowrap;
+  }
+  .muni-panel .site-card-title {
+    word-break: break-word;
+  }
+
+  .muni-panel .stat-row span {
+    min-width: 0;
+    word-break: break-word;
+  }
 </style>
 {% endblock %} {% block content_class %}map-page{% endblock %} {% block
 global_topbar %}{% endblock %} {% block topbar%}
@@ -219,6 +428,55 @@ global_topbar %}{% endblock %} {% block topbar%}
       />
       District 6</label
     >
+
+        <label
+      ><input
+        type="radio"
+        name="districtFilter"
+        value="none"
+        onchange="filterDistricts(this.value)"
+      />
+      None</label
+    >
+
+    <label class="site-toggle">
+      <input
+        type="checkbox"
+        id="siteToggle"
+        checked
+        onchange="toggleSiteMarkers(this.checked)"
+      />
+      Show sites
+      <span class="site-count-note" id="siteCountNote"></span>
+    </label>
+    <label class="heat-select">
+      Heat Map
+      <select id="heatMetric" onchange="setHeatmap(this.value)">
+        <option value="">Off</option>
+        <option value="sites">Reforestation sites</option>
+        <option value="seedlings">Seedlings planted</option>
+        <option value="target">Target seedlings</option>
+        <option value="area">Area (hectares)</option>
+      </select>
+    </label>
+    <label class="heat-select" style="border-left: none; padding-left: 0.6rem">
+      <input
+        type="checkbox"
+        id="brgyBorderToggle"
+        onchange="toggleBarangayBorders(this.checked)"
+      />
+      Barangay outlines
+    </label>
+
+    <label class="heat-select" style="border-left: none; padding-left: 0.6rem">
+      <input
+        type="checkbox"
+        id="districtBorderToggle"
+        checked
+        onchange="toggleDistrictBorders(this.checked)"
+      />
+      District outlines
+    </label>
   </div>
 </div>
 {% endblock %} {% block content %}
@@ -312,6 +570,7 @@ global_topbar %}{% endblock %} {% block topbar%}
       }
 
       let currentBarangayLayer = null;
+      const municipalityLayers = {};
 
       function showBarangaysFor(townName) {
         if (currentBarangayLayer) {
@@ -336,8 +595,29 @@ global_topbar %}{% endblock %} {% block topbar%}
               color: "#1e293b",
               weight: 1,
               dashArray: "3,3",
-              fillOpacity: 0,
-              interactive: false,
+              fillOpacity: 0.02,
+              fillColor: "#16a34a",
+              interactive: true,
+            },
+            onEachFeature: function (feature, layer) {
+              const brgyName = feature.properties.NAME_3;
+              const muniName = feature.properties.NAME_2;
+
+              layer.bindTooltip(brgyName, { sticky: true });
+
+              layer.on("mouseover", function () {
+                layer.setStyle({ fillOpacity: 0.25, weight: 2 });
+              });
+
+              layer.on("mouseout", function () {
+                layer.setStyle({ fillOpacity: 0.02, weight: 1 });
+              });
+
+              layer.on("click", function (e) {
+                // stop the click reaching the municipality layer underneath
+                L.DomEvent.stopPropagation(e);
+                showBarangayRecommendations(muniName, brgyName);
+              });
             },
           },
         ).addTo(map);
@@ -349,6 +629,166 @@ global_topbar %}{% endblock %} {% block topbar%}
           currentBarangayLayer = null;
         }
       }
+
+      // ==============================================================
+      // BARANGAY RECOMMENDATIONS
+      // Objective 3: the recommendation engine, inside the map.
+      // ==============================================================
+
+      // remembered so the Back link can return to the municipality view
+      let lastMunicipality = null;
+
+      window.showBarangayRecommendations = async function (muniName, brgyName) {
+        const panel = document.getElementById("muni-panel");
+        const inner = document.getElementById("muni-panel-inner");
+
+        panel.classList.add("active");
+        inner.innerHTML = `<p class="placeholder-text">Loading ${brgyName}...</p>`;
+
+        try {
+          const res = await fetch(
+            `/api/recommend?municipality=${encodeURIComponent(muniName)}` +
+              `&barangay=${encodeURIComponent(brgyName)}`,
+          );
+          const data = await res.json();
+
+          if (!data.found) {
+            inner.innerHTML = `
+              <div class="panel-header">
+                <button class="close-btn" onclick="closeMuniPanel()">&#10005;</button>
+                <p class="panel-eyebrow">Barangay</p>
+                <h3>${brgyName}</h3>
+                <p class="panel-subtext">${muniName}</p>
+              </div>
+              <div class="panel-body">
+                ${backLink()}
+                <p class="placeholder-text" style="padding:0;">
+                  ${data.reason || "No site data for this barangay."}
+                </p>
+              </div>
+            `;
+            return;
+          }
+
+          const p = data.site_profile;
+
+          inner.innerHTML = `
+            <div class="panel-header">
+              <button class="close-btn" onclick="closeMuniPanel()">&#10005;</button>
+              <p class="panel-eyebrow">Barangay</p>
+              <h3>${data.barangay}</h3>
+              <p class="panel-subtext">${data.municipality}, Pangasinan</p>
+            </div>
+            <div class="panel-body">
+              ${backLink()}
+
+              <p class="info-title">Site Profile</p>
+              <div class="stat-row">
+                <span class="stat-label">Elevation</span>
+                <span>${Math.round(p.elevation_m)} m</span>
+              </div>
+              <div class="stat-row">
+                <span class="stat-label">Avg temperature</span>
+                <span>${p.avg_temp_c} &deg;C</span>
+              </div>
+              <div class="stat-row">
+                <span class="stat-label">Annual rainfall</span>
+                <span>${Math.round(p.annual_rainfall_mm)} mm</span>
+              </div>
+              <div class="stat-row">
+                <span class="stat-label">Soil texture</span>
+                <span>${p.soil_texture || "—"}</span>
+              </div>
+              <div class="stat-row">
+                <span class="stat-label">Soil series</span>
+                <span>${p.soil_type || "—"}</span>
+              </div>
+              <div class="stat-row">
+                <span class="stat-label">Zone</span>
+                <span>${p.agro_ecological_zone || "—"}</span>
+              </div>
+              <div class="stat-row">
+                <span class="stat-label">Habitat</span>
+                <span>${p.habitat || "—"}</span>
+              </div>
+
+              <p class="info-title">
+                Recommended Species (top 5 of ${data.total_species})
+              </p>
+
+              ${data.recommendations
+                .map(
+                  (r, i) => `
+                <div class="rec-card ${r.within_all_ranges ? "" : "outside"}">
+                  <div class="rec-head">
+                    <div>
+                      <div class="rec-name">${i + 1}. ${r.specie_name}</div>
+                      ${
+                        r.scientific_name
+                          ? `<div class="rec-sci">${r.scientific_name}</div>`
+                          : ""
+                      }
+                    </div>
+                    <div class="rec-score">${r.similarity}</div>
+                  </div>
+                  <div class="rec-meta">
+                    Elevation ${r.elevation_range}<br>
+                    Temperature ${r.temperature_range}<br>
+                    Rainfall ${r.rainfall_range}<br>
+                    Soil ${r.preferred_soil || "—"}
+                  </div>
+                  <span class="rec-flag ${r.within_all_ranges ? "yes" : "no"}">
+                    ${
+                      r.within_all_ranges
+                        ? "Within published ranges"
+                        : "Outside published ranges"
+                    }
+                  </span>
+                </div>
+              `,
+                )
+                .join("")}
+
+              <p class="placeholder-text" style="padding:0.5rem 0 0; font-size:0.72rem;">
+                Ranked by ${data.method} against published ecological
+                profiles. Decision support only; does not replace field
+                assessment.
+              </p>
+            </div>
+          `;
+        } catch (err) {
+          console.error(err);
+          inner.innerHTML = `
+            <div class="panel-header">
+              <button class="close-btn" onclick="closeMuniPanel()">&#10005;</button>
+              <p class="panel-eyebrow">Barangay</p>
+              <h3>${brgyName}</h3>
+            </div>
+            <div class="panel-body">
+              ${backLink()}
+              <p class="placeholder-text" style="padding:0;">
+                Could not load recommendations. Check the server log.
+              </p>
+            </div>
+          `;
+        }
+      };
+
+      function backLink() {
+        if (!lastMunicipality) return "";
+        return `<button class="back-link" onclick="reopenMunicipality()">
+                  &#8592; Back to ${lastMunicipality}
+                </button>`;
+      }
+
+      window.reopenMunicipality = function () {
+        if (!lastMunicipality) return;
+        const layer = municipalityLayers[normalizeName(lastMunicipality)];
+        if (layer) {
+          // onMunicipalityClick expects a Leaflet event; fake the one field it reads
+          onMunicipalityClick({ target: layer });
+        }
+      };
 
       // shared click handler -- fetch real Location/Site data, show in right panel
       const muniPanel = document.getElementById("muni-panel");
@@ -386,6 +826,8 @@ global_topbar %}{% endblock %} {% block topbar%}
         const layer = e.target;
         const townName = layer.feature.properties.NAME_2;
 
+        lastMunicipality = townName;
+        municipalityLayers[normalizeName(townName)] = layer;
         showBarangaysFor(townName);
 
         const wasAlreadyOpen = muniPanel.classList.contains("active");
@@ -431,6 +873,10 @@ global_topbar %}{% endblock %} {% block topbar%}
                 <p class="info-title">Location Info</p>
                 <div class="stat-row"><span class="stat-label">Province</span><span>${data.province}</span></div>
                 <div class="stat-row"><span class="stat-label">Region</span><span>${data.region}</span></div>
+                <div class="brgy-hint">
+                  Click any barangay outline on the map to see its site
+                  profile and recommended tree species.
+                </div>
 
               <p class="info-title"> Sites in ${data.municipality}</p>
                 ${
@@ -513,10 +959,415 @@ global_topbar %}{% endblock %} {% block topbar%}
       focusGroup = L.featureGroup([district5Layer, district6Layer]);
       map.fitBounds(focusGroup.getBounds(), { padding: [20, 20] });
 
+      // ==============================================================
+      // REFORESTATION SITE MARKERS
+      // One marker per barangay. Sites share their barangay centroid,
+      // so plotting them individually would stack them on one pixel.
+      // ==============================================================
+
+      let siteLayer = null;
+
+      function buildTreeIcon(b, zoom) {
+        const detailed = zoom >= 12;
+
+        // glyph grows with site count, capped so it stays readable
+        const glyphSize = Math.min(34, 18 + b.site_count * 1.6);
+
+        const trees =
+          b.site_count >= 10 ? "🌳🌳🌳" : b.site_count >= 4 ? "🌳🌳" : "🌳";
+
+        const html = `
+          <div class="tree-marker">
+            <span class="tree-glyph" style="font-size:${glyphSize}px;">
+              ${trees}
+            </span>
+            <span class="tree-count">${b.site_count}</span>
+            ${detailed ? `<span class="tree-label">${b.barangay}</span>` : ""}
+          </div>
+        `;
+
+        const w = detailed ? 110 : 70;
+        const h = detailed ? 64 : 48;
+
+        return L.divIcon({
+          className: "",
+          html: html,
+          iconSize: [w, h],
+          iconAnchor: [w / 2, h / 2],
+        });
+      }
+
+      async function loadSiteMarkers() {
+        try {
+          const res = await fetch("/api/sites-geo");
+          const data = await res.json();
+
+          const note = document.getElementById("siteCountNote");
+          if (note) {
+            note.textContent = `(${data.total_sites})`;
+          }
+
+          if (!data.barangays.length) {
+            console.warn("No reforestation sites with coordinates.");
+            return;
+          }
+
+          const markers = data.barangays.map((b) => {
+            // circle grows a little with site count, stays readable
+            // Icon detail depends on zoom. Positions do NOT change:
+            // every site sits at its barangay centroid because the DENR
+            // contract profile records no site coordinates. Scattering
+            // individual trees across the polygon would invent spatial
+            // data we do not have.
+            const marker = L.marker([b.lat, b.lon], {
+              icon: buildTreeIcon(b, map.getZoom()),
+            });
+
+            marker._brgyData = b;
+
+            marker.bindTooltip(
+              `<strong>${b.barangay}</strong>, ${b.municipality}<br>
+               ${b.site_count} site${b.site_count > 1 ? "s" : ""},
+               ${b.total_area_ha} ha`,
+              { direction: "top" },
+            );
+
+            marker.on("click", function (e) {
+              L.DomEvent.stopPropagation(e);
+              showBarangaySites(b);
+            });
+
+            return marker;
+          });
+
+          // redraw icons when the zoom crosses the detail threshold
+          map.on("zoomend", function () {
+            const z = map.getZoom();
+            markers.forEach(function (m) {
+              m.setIcon(buildTreeIcon(m._brgyData, z));
+            });
+          });
+
+          siteLayer = L.layerGroup(markers);
+
+          const toggle = document.getElementById("siteToggle");
+          if (!toggle || toggle.checked) {
+            siteLayer.addTo(map);
+          }
+        } catch (err) {
+          console.error("Site marker load failed:", err);
+        }
+      }
+
+      // ==============================================================
+      // HEATMAP LAYER
+      // All 478 barangay polygons, shaded by a chosen metric.
+      // Barangays with no reforestation record stay unshaded rather
+      // than being coloured as a zero, because "no project recorded"
+      // is not the same claim as "zero seedlings planted".
+      // ==============================================================
+
+      let heatLayer = null;
+      let heatLegend = null;
+
+      // Traffic light. Red = least reforestation activity (a planting
+      // gap), green = most. Read as "where is work still needed".
+      const HEAT_COLORS = [
+        "#dc2626", // lowest  - red
+        "#f97316", // low     - orange
+        "#facc15", // medium  - yellow
+        "#84cc16", // high    - lime
+        "#15803d", // highest - green
+      ];
+
+      // Separate from the scale on purpose. A barangay with no DENR
+      // record is not the same as a barangay with zero seedlings. The
+      // first is missing data; the second is a measurement. Colouring
+      // them red would claim the second.
+      const NO_DATA_COLOR = "#cbd5e1";
+
+      // barangay outlines off by default - 478 outlines read as noise
+      let showBarangayBorders = false;
+
+      function heatColor(value, breaks) {
+        if (value === null || value === undefined) return NO_DATA_COLOR;
+        for (let i = 0; i < breaks.length; i++) {
+          if (value <= breaks[i]) return HEAT_COLORS[i];
+        }
+        return HEAT_COLORS[Math.min(breaks.length, HEAT_COLORS.length - 1)];
+      }
+
+      window.setHeatmap = async function (metric) {
+        // clear whatever is showing
+        if (heatLayer) {
+          map.removeLayer(heatLayer);
+          heatLayer = null;
+        }
+        if (heatLegend) {
+          map.removeControl(heatLegend);
+          heatLegend = null;
+        }
+
+        if (!metric) {
+          [district5Layer, district6Layer].forEach(function (lyr) {
+            if (lyr) lyr.setStyle({ fillOpacity: 0.4 });
+          });
+          return;
+        }
+
+        try {
+          const res = await fetch(
+            "/api/heatmap?metric=" + encodeURIComponent(metric),
+          );
+          const data = await res.json();
+
+          if (data.error) {
+            console.error(data.error);
+            return;
+          }
+
+          // index by normalised municipality + barangay so the geojson
+          // spelling does not have to match the database spelling
+          const lookup = {};
+          data.barangays.forEach((b) => {
+            const key =
+              normalizeName(b.municipality) + "|" + normalizeName(b.barangay);
+            lookup[key] = b;
+          });
+
+          heatLayer = L.geoJSON(barangayData, {
+            style: function (feature) {
+              const key =
+                normalizeName(feature.properties.NAME_2) +
+                "|" +
+                normalizeName(feature.properties.NAME_3);
+              const rec = lookup[key];
+
+              return {
+                color: "#334155",
+                weight: showBarangayBorders ? 0.6 : 0,
+                opacity: showBarangayBorders ? 0.5 : 0,
+                fillColor: rec
+                  ? heatColor(rec.value, data.breaks)
+                  : NO_DATA_COLOR,
+                fillOpacity: rec ? 0.85 : 0.25,
+                smoothFactor: 1.5,
+              };
+            },
+            onEachFeature: function (feature, layer) {
+              const muni = feature.properties.NAME_2;
+              const brgy = feature.properties.NAME_3;
+              const key = normalizeName(muni) + "|" + normalizeName(brgy);
+              const rec = lookup[key];
+
+              const body = rec
+                ? `${rec.sites} site${rec.sites > 1 ? "s" : ""}<br>
+                   ${rec.seedlings.toLocaleString()} planted of
+                   ${rec.target.toLocaleString()} target<br>
+                   ${rec.area} ha`
+                : `<em>No reforestation record</em>`;
+
+              layer.bindTooltip(
+                `<strong>${brgy}</strong>, ${muni}<br>${body}`,
+                { sticky: true },
+              );
+
+              layer.on("click", function (e) {
+                L.DomEvent.stopPropagation(e);
+                showBarangayRecommendations(muni, brgy);
+              });
+            },
+          });
+
+          heatLayer.addTo(map);
+          heatLayer.bringToBack();
+          // district fills would hide the shading, so thin them out
+          [district5Layer, district6Layer].forEach(function (lyr) {
+            if (lyr) lyr.setStyle({ fillOpacity: 0.08 });
+          });
+
+          buildLegend(data);
+        } catch (err) {
+          console.error("Heatmap load failed:", err);
+        }
+      };
+
+      window.toggleBarangayBorders = function (show) {
+        showBarangayBorders = show;
+        if (!heatLayer) return;
+
+        heatLayer.setStyle(function () {
+          return {
+            weight: show ? 0.6 : 0,
+            opacity: show ? 0.5 : 0,
+          };
+        });
+      };
+
+      window.toggleDistrictBorders = function (show) {
+        [district5Layer, district6Layer].forEach(function (lyr) {
+          if (!lyr) return;
+          lyr.setStyle({
+            weight: show ? 2 : 0,
+            opacity: show ? 1 : 0,
+          });
+        });
+      };
+
+      function buildLegend(data) {
+        heatLegend = L.control({ position: "bottomleft" });
+
+        heatLegend.onAdd = function () {
+          const div = L.DomUtil.create("div", "heat-legend");
+          const b = data.breaks;
+
+          let rows = "";
+
+          if (!b.length) {
+            rows = `<div><span class="swatch"
+                     style="background:${HEAT_COLORS[4]}"></span>
+                     has data</div>`;
+          } else {
+            let prev = 0;
+            for (let i = 0; i < b.length; i++) {
+              rows += `<div><span class="swatch"
+                       style="background:${HEAT_COLORS[i]}"></span>
+                       ${fmt(prev)} &ndash; ${fmt(b[i])}</div>`;
+              prev = b[i];
+            }
+            rows += `<div style="margin-top:0.35rem;
+                               padding-top:0.35rem;
+                               border-top:1px solid #e2e8f0;">
+                     <span class="swatch"
+                       style="background:${NO_DATA_COLOR};opacity:0.5"></span>
+                     no DENR record
+                   </div>`;
+          }
+
+          rows += `<div><span class="swatch"
+                   style="background:${NO_DATA_COLOR};opacity:0.35"></span>
+                   no record</div>`;
+
+          div.innerHTML = `
+            <h4>${data.label}</h4>
+            ${rows}
+            <div class="legend-note">
+              ${data.with_data} of ${barangayData.features.length}
+              barangays have reforestation records. Bands are quantiles.
+            </div>
+          `;
+
+          L.DomEvent.disableClickPropagation(div);
+          return div;
+        };
+
+        heatLegend.addTo(map);
+      }
+
+      function fmt(n) {
+        if (n >= 1000) return (n / 1000).toFixed(1) + "k";
+        return String(n);
+      }
+
+      window.toggleSiteMarkers = function (show) {
+        if (!siteLayer) return;
+        if (show) {
+          siteLayer.addTo(map);
+        } else {
+          map.removeLayer(siteLayer);
+        }
+      };
+
+      function showBarangaySites(b) {
+        muniPanel.classList.add("active");
+        lastMunicipality = b.municipality;
+
+        muniPanelInner.innerHTML = `
+          <div class="panel-header">
+            <button class="close-btn" onclick="closeMuniPanel()">&#10005;</button>
+            <p class="panel-eyebrow">Reforestation Sites</p>
+            <h3>${b.barangay}</h3>
+            <p class="panel-subtext">${b.municipality}, Pangasinan</p>
+          </div>
+          <div class="panel-body">
+            <div class="stat-grid">
+              <div class="stat-box">
+                <span class="stat-num">${b.site_count}</span>
+                <span class="stat-label">Sites</span>
+              </div>
+              <div class="stat-box">
+                <span class="stat-num">${b.total_area_ha}</span>
+                <span class="stat-label">Hectares</span>
+              </div>
+            </div>
+
+            <div class="stat-row">
+              <span class="stat-label">Target seedlings</span>
+              <span>${b.total_target.toLocaleString()}</span>
+            </div>
+            <div class="stat-row">
+              <span class="stat-label">Actually planted</span>
+              <span>${b.total_actual.toLocaleString()}</span>
+            </div>
+
+            <div class="brgy-hint">
+              <button class="back-link" style="margin:0;"
+                      onclick="showBarangayRecommendations('${b.municipality}', '${b.barangay}')">
+                See recommended species for ${b.barangay}
+              </button>
+            </div>
+
+            <p class="info-title">Sites</p>
+            ${b.sites
+              .map(
+                (s) => `
+              <div class="site-card">
+                <div class="site-card-title">${s.site_name}</div>
+                <div class="stat-row">
+                  <span class="stat-label">Site Code</span>
+                  <span>${s.site_code || "—"}</span>
+                </div>
+                <div class="stat-row">
+                  <span class="stat-label">Zone</span>
+                  <span>${s.zone_type || "—"}</span>
+                </div>
+                <div class="stat-row">
+                  <span class="stat-label">Year</span>
+                  <span>${s.year_contracted || "—"}</span>
+                </div>
+                <div class="stat-row">
+                  <span class="stat-label">Area</span>
+                  <span>${s.area_size_ha} ha</span>
+                </div>
+                <div class="stat-row">
+                  <span class="stat-label">Target</span>
+                  <span>${s.target_trees.toLocaleString()}</span>
+                </div>
+                <div class="stat-row">
+                  <span class="stat-label">Planted</span>
+                  <span>${s.actual_trees.toLocaleString()}</span>
+                </div>
+              </div>
+            `,
+              )
+              .join("")}
+          </div>
+        `;
+      }
+
+      loadSiteMarkers();
+
       // expose for the district filter radios
       window.filterDistricts = function (value) {
         let targetBounds;
 
+        if (value === "none") {
+          if (map.hasLayer(district5Layer)) map.removeLayer(district5Layer);
+          if (map.hasLayer(district6Layer)) map.removeLayer(district6Layer);
+          muniPanel.classList.remove("active");
+          clearBarangays();
+          return;                      // no bounds to fly to
+        }
         if (value === "all") {
           if (!map.hasLayer(district5Layer)) map.addLayer(district5Layer);
           if (!map.hasLayer(district6Layer)) map.addLayer(district6Layer);

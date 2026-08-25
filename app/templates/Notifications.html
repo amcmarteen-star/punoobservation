@@ -2,12 +2,59 @@
 
 {% block title %}Notifications - PuNoObservation{% endblock %}
 {% set active_page = 'notifications' %}
-
+{% block extra_head %}
+<style>
+      .notif-tabs {
+    display: flex;
+    gap: 0.4rem;
+    border-bottom: 2px solid #e2e8f0;
+    margin-bottom: 1.25rem;
+  }
+  .notif-tab {
+    padding: 0.55rem 1rem;
+    text-decoration: none;
+    color: #64748b;
+    font-weight: 600;
+    font-size: 0.9rem;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -2px;
+  }
+  .notif-tab:hover { color: #14532d; }
+  .notif-tab.active {
+    color: #14532d;
+    border-bottom-color: #16a34a;
+  }
+  .notif-tab-count {
+    background: #e2e8f0;
+    color: #475569;
+    border-radius: 10px;
+    padding: 0 7px;
+    font-size: 0.72rem;
+    margin-left: 0.3rem;
+  }
+  .notif-tab.active .notif-tab-count {
+    background: #dcfce7;
+    color: #15803d;
+  }
+</style>
+{% endblock %}
 {% block content %}
 
 <div class="page-header">
     <h2>Notifications</h2>
 </div>
+
+{% if role == "admin" %}
+<div class="notif-tabs">
+  {% for key, label in [('all','All'), ('reports','Reports'), ('requests','Requests')] %}
+    <a href="{{ url_for('dashboard.notifications_page', tab=key) }}"
+       class="notif-tab {% if tab == key %}active{% endif %}">
+      {{ label }}
+      <span class="notif-tab-count">{{ counts[key] }}</span>
+    </a>
+  {% endfor %}
+</div>
+{% endif %}
 
 <div class="card">
     {% if notifications %}

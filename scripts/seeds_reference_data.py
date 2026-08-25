@@ -7,7 +7,7 @@ RUN FROM PROJECT ROOT:
 FILES NEEDED (all in scripts/):
     barangay_climate.csv
     barangay_soil.csv
-    Urdaneta_All_Species_Biophysical_Limits.xlsx
+    Philippine_Tree_main_species_Database.xlsx
 
 SAFE TO RE-RUN. Updates existing rows instead of duplicating.
 """
@@ -28,10 +28,69 @@ from app.models import Location, TreeSpecie
 HERE = os.path.dirname(os.path.abspath(__file__))
 CLIMATE = os.path.join(HERE, "barangay_climate.csv")
 SOIL = os.path.join(HERE, "barangay_soil.csv")
-SPECIES = os.path.join(HERE, "Urdaneta_All_Species_Biophysical_Limits.xlsx")
+SPECIES = os.path.join(HERE, "Philippine_Tree_main_species_Database.xlsx")
 
 REGION = "Region I"
 PROVINCE = "Pangasinan"
+
+
+# ======================================================================
+# COASTAL EXPOSURE - derived, not entered by hand
+# ======================================================================
+#
+# Derived from the BSWM soil series already joined to each barangay,
+# plus elevation. No new data collection needed.
+#
+# BSWM contains three soil types that indicate coastal or tidal
+# conditions:
+#     Hydrosol       - tidal / mangrove soil
+#     Beach sand     - foreshore
+#     Dune land      - coastal dunes
+#
+# For the current study area every barangay returns 0. That is correct:
+# no Hydrosol, no Beach sand, lowest barangay 16 m, roughly 22 km inland
+# from Lingayen Gulf.
+#
+# If coverage is extended to Districts 1-4, this same rule returns 2 and
+# 3 for coastal barangays with NO CHANGE to the code.
+
+def derive_coastal_exposure(soil_desc, elevation_m):
+    s = (soil_desc or "").lower()
+
+    if "hydrosol" in s:
+        return 3                       # tidal / intertidal
+    if "beach sand" in s or "dune" in s:
+        return 2                       # coastal foreshore
+    if elevation_m is not None and elevation_m < 10:
+        return 1                       # low-lying, possible salt spray
+    return 0                           # inland
+
+
+# ======================================================================
+# SALINITY REQUIREMENT - read from the ICRAF descriptions
+# ======================================================================
+#
+# Each value was taken from that species' own Soil Type text in the
+# source file. The quoted phrase is the justification.
+#
+# Species not listed default to 0 (inland, no salt tolerance).
+
+SALINITY = {
+    # 3 = requires tidal saltwater
+    "Bakawan Babae":  3,   # "Intertidal mud flats, daily tidal inundation"
+    "Bakawan Lalake": 3,   # "Silty estuarine deposits, high salt accumulation"
+    "Api-api":        3,   # "Frontline tidal zones"
+    "Nypa":           3,   # "Estuarine muddy banks, brackish moving waters"
+
+    # 2 = coastal specialist
+    "Agoho":          2,   # "Coastal dune sands, highly saline matrices"
+    "Bitaog":         2,   # "Pure beach sand, littoral rocks, ocean spray"
+
+    # 1 = tolerates coastal conditions
+    "Ipil":           1,   # "Coastal soils, coralline sands, highly salt tolerant"
+    "Talisay":        1,   # "Sandy coastlines, high wind and soil salinity"
+    "Apitong":        1,   # "well-drained sedimentary clays or coastal edges"
+}
 
 
 # ======================================================================
@@ -40,79 +99,108 @@ PROVINCE = "Pangasinan"
 #
 # READ THIS BEFORE YOUR DEFENSE.
 #
-# The ICRAF soil column is written as prose, not as texture classes.
-# Example: "Grows in most soils but prefers well-drained deep alluvial
-# soil." That sentence contains no texture name at all.
+# The species Soil Type column is prose, not texture classes. Example:
+# "Deep, well-drained volcanic, clay loam or sandy loam matrices."
+# Some entries name no texture at all.
 #
-# Automatic keyword extraction fails on 8 of the 19 species. So the
-# mapping below was written by hand, interpreting each description into
-# the texture classes that actually occur in your study area.
+# The mapping below was written by hand from those descriptions.
 #
 # THIS IS AN INTERPRETATION, NOT A PUBLISHED FACT.
+# Have an adviser or CENRO forester review it.
 #
-# Have your adviser or a CENRO forester review this table. If a panel
-# member asks where these came from, the honest answer is that they were
-# derived from the ICRAF descriptions by the proponents, and reviewed by
-# an expert. Say that. Do not present them as published values.
-#
-# The five textures present in your 478 barangays:
+# The five textures present in the 478 barangays:
 #     sandy loam (157), silt loam (139), clay loam (82),
 #     sand (68), silty clay loam (32)
-#
-# GENERALIST means the description explicitly says the species tolerates
-# a wide range of soils. Those get all five textures.
 
-ALL_TEXTURES = "sandy loam,silt loam,clay loam,sand,silty clay loam"
+ALL_TEX = "sandy loam,silt loam,clay loam,sand,silty clay loam"
+LOAMS = "sandy loam,silt loam,clay loam"
+HEAVY = "clay loam,silty clay loam"
+LIGHT = "sandy loam,sand"
 
 SOIL_MAP = {
-    # explicit texture named in the source
-    "Narra":                 "sandy loam,clay loam",
-    "Eucalyptus":            "silt loam,clay loam",
-    "Guyabano (Soursop)":    "sandy loam,clay loam,silty clay loam",
-    "Batino":                "clay loam",
+    # --- dipterocarps: deep well-drained clay or loam ridges ---
+    "Yakal-yamban":       "clay loam,sandy loam",
+    "Yakal-gisok":        HEAVY,
+    "Yakal-saplungan":    "clay loam",
+    "Guijo":              HEAVY,
+    "Tangile":            LOAMS,
+    "Red Lauan":          "clay loam,sandy loam",
+    "White Lauan":        LOAMS,
+    "Almon":              "clay loam,sandy loam",
+    "Bagtikan":           LOAMS,
+    "Mayapis":            "clay loam,silt loam",
+    "Apitong":            HEAVY,
+    "Panau":              "clay loam,sandy loam",
+    "Hagakhak":           "silt loam,clay loam",
+    "Manggachapui":       "clay loam,sandy loam",
+    "Narig":              "sandy loam,clay loam",
+    "Palosapis":          HEAVY,
+    "Dalingdingan":       "clay loam,sandy loam",
 
-    # "loam" stated, no qualifier
-    "Duhat (Java Plum)":     "silt loam,clay loam,sandy loam",
-    "Coffee":                "silt loam,clay loam",
-    "Ilang-ilang":           "silt loam,clay loam",
+    # --- premium hardwoods ---
+    "Narra":              "sandy loam,clay loam",
+    "Ipil":               LIGHT,
+    "Molave":             "clay loam",
+    "Kamagong":           "clay loam,silt loam",
+    "Tindalo":            "clay loam,sandy loam",
+    "Acle":               "sandy loam,clay loam",
+    "Supa":               "clay loam",
+    "Mangkono":           "clay loam,sandy loam",
+    "Lanete":             "sandy loam,clay loam",
+    "Amugis":             "clay loam,sandy loam",
+    "Toog":               "clay loam,silt loam",
 
-    # "alluvial, well-drained" -> lighter textures
-    "Gmelina (Yemane)":      "sandy loam,silt loam",
-    "Calumpit":              "silt loam,sandy loam,clay loam",
-    "Alnus":                 "sand,sandy loam",
+    # --- conifers and montane ---
+    "Almaciga":           "sandy loam,clay loam",
+    "Benguet Pine":       LIGHT,
+    "Mindoro Pine":       LIGHT,
+    "Agoho del Monte":    LIGHT,
+    "Alnus":              "sand,sandy loam",
 
-    # "heavy" or "clay" stated -> heavier textures
-    "Mahogany":              "clay loam,silty clay loam",
-    "Bayog (Bamboo)":        "clay loam,silty clay loam,silt loam",
-    "Palosapis":             "clay loam,silty clay loam",
+    # --- coastal ---
+    "Agoho":              "sand",
+    "Bitaog":             "sand",
+    "Bakawan Babae":      "silt loam,silty clay loam",
+    "Bakawan Lalake":     "silt loam,silty clay loam",
+    "Api-api":            "silt loam,silty clay loam",
+    "Nypa":               "silt loam,silty clay loam",
+    "Talisay":            "sand,sandy loam",
 
-    # limestone-derived soils are typically clay loams
-    "Molave":                "clay loam",
+    # --- fruit and agroforestry ---
+    "Pili":               "clay loam,sandy loam",
+    "Mangga":             "sandy loam,silt loam,clay loam",
+    "Lanka":              LOAMS,
+    "Santol":             LOAMS,
+    "Duhat":              "silt loam,clay loam,sandy loam",
+    "Guyabano":           "sandy loam,clay loam,silty clay loam",
+    "Atis":               "sandy loam,sand,silt loam",
+    "Bignai":             ALL_TEX,
+    "Kasuy":              LIGHT,
+    "Banaba":             "silt loam,clay loam",
+    "Katmon":             "clay loam,silt loam",
 
-    # "well-drained rocky / drought resistant" -> lighter textures
-    "Benguet Pine (B.Pine)": "sandy loam,sand",
-    "Atis (Sugar Apple)":    "sandy loam,sand,silt loam",
-
-    # source explicitly says wide range of soils
-    "Tamarind (Sampalok)":   ALL_TEXTURES,
-    "Rain tree (Acacia)":    ALL_TEXTURES,
-    "Bignai":                ALL_TEXTURES,
+    # --- plantation and utility ---
+    "Ilang-ilang":        "silt loam,clay loam",
+    "Lumbang":            LOAMS,
+    "Mahogany":           HEAVY,
+    "Gmelina":            "sandy loam,silt loam",
+    "Bagras":             "sandy loam,silt loam",
+    "Rain Tree (Acacia)": ALL_TEX,
+    "Kakawate":           ALL_TEX,
 }
 
 
 # ======================================================================
-# Parsing the ICRAF text ranges
+# Parsing helpers
 # ======================================================================
 
 def parse_range(text):
     """
-    '0-1500 m'         -> (0.0, 1500.0)
-    '24-27 deg C.'     -> (24.0, 27.0)
-    '900 to 2200 mm'   -> (900.0, 2200.0)
-    'From sea level'   -> (0.0, None)     no published ceiling
+    '0 - 800 m'       -> (0.0, 800.0)
+    '22 - 32 deg C'   -> (22.0, 32.0)
+    'From sea level'  -> (0.0, None)
 
-    En-dashes and em-dashes are normalised to hyphens first, because the
-    source file uses them inconsistently.
+    En-dashes normalised first; the source mixes them with hyphens.
     """
     if text is None or (isinstance(text, float) and pd.isna(text)):
         return None, None
@@ -137,10 +225,6 @@ def parse_range(text):
     return None, None
 
 
-# ======================================================================
-# Barangay soil texture
-# ======================================================================
-
 TEXTURES = [
     "silty clay loam", "fine sandy loam", "sandy clay loam",
     "loamy sand", "sandy loam", "silt loam", "clay loam",
@@ -153,10 +237,9 @@ def extract_texture(soil_desc):
     'San Manuel fine sandy loam' -> 'sandy loam'
     'Pangasinan river sand'      -> 'sand'
 
-    The leading words are the soil SERIES, which is a place name.
-    Species tolerances describe TEXTURE. Only texture can be matched.
-    Longest patterns are tested first so 'silty clay loam' is not
-    truncated to 'clay loam'.
+    Leading words are the soil SERIES, a place name. Species tolerances
+    describe TEXTURE. Longest patterns tested first so 'silty clay loam'
+    is not truncated to 'clay loam'.
     """
     if not soil_desc:
         return None
@@ -168,9 +251,27 @@ def extract_texture(soil_desc):
 
 
 def norm(s):
+    """Lowercase, expand Sta./Sto., strip spaces, dots, dashes."""
     s = str(s).lower()
     s = s.replace("sta.", "santa").replace("sto.", "santo")
     return re.sub(r"[\s.\-]", "", s)
+
+
+def _f(v):
+    if v is None or v == "":
+        return None
+    if isinstance(v, float) and pd.isna(v):
+        return None
+    try:
+        return float(v)
+    except (TypeError, ValueError):
+        return None
+
+
+def _r(lo, hi):
+    a = "?" if lo is None else f"{lo:g}"
+    b = "?" if hi is None else f"{hi:g}"
+    return f"{a}-{b}"
 
 
 # ======================================================================
@@ -226,10 +327,15 @@ def seed_barangays():
         loc.avg_temp_c = _f(row.get("avg_temp_c"))
         loc.annual_rainfall_mm = _f(row.get("annual_rainfall_mm"))
 
+        soil_desc = s.get("soil_desc") if s else None
         if s:
-            loc.soil_type = s.get("soil_desc")
-            loc.soil_texture = extract_texture(s.get("soil_desc"))
+            loc.soil_type = soil_desc
+            loc.soil_texture = extract_texture(soil_desc)
             loc.agro_ecological_zone = s.get("aez")
+
+        loc.coastal_exposure = derive_coastal_exposure(
+            soil_desc, loc.elevation_m
+        )
 
     db.session.commit()
     print(f"  updated : {updated}")
@@ -247,6 +353,10 @@ def seed_species():
 
     df = pd.read_excel(SPECIES, header=0)
     df.columns = ["name", "sci", "alt", "temp", "rain", "soil", "src"]
+        # every species starts inactive; only ones in this file get reactivated
+    TreeSpecie.query.update({TreeSpecie.is_reference: False})
+    db.session.commit()
+    print("  deactivated all species, reloading from file")
 
     added = updated = unmapped = 0
 
@@ -286,9 +396,9 @@ def seed_species():
             print(f"  NO SOIL MAPPING for '{name}' - add it to SOIL_MAP")
         sp.preferred_soil = mapped
 
-        sp.source = (
-            None if pd.isna(r["src"]) else str(r["src"]).strip()
-        )
+        sp.salinity_requirement = SALINITY.get(name, 0)
+
+        sp.source = None if pd.isna(r["src"]) else str(r["src"]).strip()
         sp.is_reference = True
 
     db.session.commit()
@@ -298,11 +408,14 @@ def seed_species():
         print(f"  WARNING : {unmapped} species have no soil mapping")
 
 
+LABELS = {0: "inland", 1: "low-lying", 2: "coastal", 3: "tidal"}
+
+
 def report():
     print()
-    print("=" * 66)
+    print("=" * 72)
     print("CHECK THESE NUMBERS")
-    print("=" * 66)
+    print("=" * 72)
 
     total = Location.query.count()
     with_elev = Location.query.filter(Location.elevation_m.isnot(None)).count()
@@ -311,6 +424,17 @@ def report():
     print(f"Locations           : {total}")
     print(f"  with elevation    : {with_elev}")
     print(f"  with soil texture : {with_soil}")
+
+    print()
+    print("Coastal exposure across barangays:")
+    rows = (
+        db.session.query(Location.coastal_exposure, db.func.count())
+        .group_by(Location.coastal_exposure)
+        .all()
+    )
+    for val, n in sorted(rows, key=lambda x: (x[0] is None, x[0])):
+        print(f"  {val} ({LABELS.get(val, 'unset')}){'':<10} {n}")
+    print("  All 0 is expected. Districts 5 and 6 are inland.")
 
     print()
     print("Barangay soil textures:")
@@ -324,26 +448,39 @@ def report():
         print(f"  {tex:<20} {n}")
 
     print()
-    print("Species loaded:")
-    print(f"  {'NAME':<24}{'ELEV':<14}{'TEMP':<12}{'RAIN':<16}SOIL")
+    print("Species by salinity requirement:")
+    for level in (3, 2, 1, 0):
+        names = [
+            sp.specie_name for sp in
+            TreeSpecie.query.filter_by(
+                is_reference=True, salinity_requirement=level
+            ).order_by(TreeSpecie.specie_name).all()
+        ]
+        print(f"  {level} ({LABELS.get(level)}) : {len(names)} species")
+        if level > 0:
+            for n in names:
+                print(f"        {n}")
+
+    print()
+    print(f"{'SPECIES':<22}{'ELEV':<14}{'TEMP':<12}{'RAIN':<16}{'SAL':<5}SOIL")
     for sp in TreeSpecie.query.filter_by(is_reference=True).order_by(
         TreeSpecie.specie_name
     ).all():
         print(
-            f"  {sp.specie_name:<24}"
+            f"{sp.specie_name:<22}"
             f"{_r(sp.min_elevation_m, sp.max_elevation_m):<14}"
             f"{_r(sp.min_temp_c, sp.max_temp_c):<12}"
             f"{_r(sp.min_rainfall_mm, sp.max_rainfall_mm):<16}"
+            f"{sp.salinity_requirement if sp.salinity_requirement is not None else '-':<5}"
             f"{sp.preferred_soil}"
         )
 
-    # incomplete data warning
     print()
     gaps = []
     for sp in TreeSpecie.query.filter_by(is_reference=True).all():
         missing = []
-        if sp.max_elevation_m is None:
-            missing.append("max elevation")
+        if sp.min_elevation_m is None or sp.max_elevation_m is None:
+            missing.append("elevation")
         if sp.min_temp_c is None or sp.max_temp_c is None:
             missing.append("temperature")
         if sp.min_rainfall_mm is None or sp.max_rainfall_mm is None:
@@ -356,35 +493,14 @@ def report():
     if gaps:
         print("INCOMPLETE SPECIES DATA:")
         for name, missing in gaps:
-            print(f"  {name:<24} missing: {', '.join(missing)}")
-        print()
-        print("  These are scored on fewer features than the others.")
-        print("  Record this in your limitations section.")
+            print(f"  {name:<22} missing: {', '.join(missing)}")
     else:
         print("All species have complete tolerance data.")
 
     print()
-    print("REMINDER: the SOIL_MAP table in this script is an")
-    print("interpretation of the ICRAF prose descriptions, made by the")
-    print("proponents. Have an adviser or CENRO forester review it")
-    print("before defense.")
-
-
-def _f(v):
-    if v is None or v == "":
-        return None
-    if isinstance(v, float) and pd.isna(v):
-        return None
-    try:
-        return float(v)
-    except (TypeError, ValueError):
-        return None
-
-
-def _r(lo, hi):
-    a = "?" if lo is None else f"{lo:g}"
-    b = "?" if hi is None else f"{hi:g}"
-    return f"{a}-{b}"
+    print("REMINDER: SOIL_MAP and SALINITY in this script interpret the")
+    print("ICRAF prose descriptions. Have an adviser or CENRO forester")
+    print("review both tables before defense.")
 
 
 if __name__ == "__main__":

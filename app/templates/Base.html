@@ -71,6 +71,7 @@
           >
             Notifications
           </a>
+          
 
           {% if session.role == 'field_officer' %}
           <p class="nav-section-title">Reports & Data</p>
@@ -82,14 +83,20 @@
         </a> -->
           {% elif session.role == 'normal_user' %}
           <p class="nav-section-title">Requests</p>
-          <a
-            href="#"
-            class="nav-link {% if active_page == 'request' %}active{% endif %}"
+            <a
+            href="{{ url_for('dashboard.requests_page') }}"
+            class="nav-link {% if active_page == 'requests' %}active{% endif %}"
           >
             Request Reforestation Site
           </a>
           {% endif %} {% if session.role == 'admin' %}
           <p class="nav-section-title">Administration</p>
+          <a
+            href="{{ url_for('admin.review_requests') }}"
+            class="nav-link {% if active_page == 'review_requests' %}active{% endif %}"
+          >
+            Review Requests
+          </a>
           <a
             href="{{ url_for('admin.user_management') }}"
             class="nav-link {% if active_page == 'users' %}active{% endif %}"
@@ -204,6 +211,7 @@
 
       function renderNotifBadge(count) {
         const badge = document.getElementById("notif-badge");
+        if (!badge) return;
         if (count > 0) {
           badge.textContent = count > 9 ? "9+" : count;
           badge.style.display = "inline-block";

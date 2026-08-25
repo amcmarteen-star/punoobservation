@@ -3,6 +3,251 @@
 {% block title %}Reference Dataset - PuNoObservation{% endblock %}
 {% set active_page = 'reference' %}
 
+{% block extra_head %}
+<style>
+  .preview-panel {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    padding: 1.25rem;
+    margin-top: 1.5rem;
+  }
+
+  .preview-summary {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-bottom: 1.1rem;
+  }
+
+  .sum-chip {
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 0.6rem 1rem;
+    min-width: 110px;
+  }
+
+  .sum-chip .num {
+    display: block;
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: #14532d;
+  }
+
+  .sum-chip .lbl {
+    display: block;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #64748b;
+  }
+
+  .sum-chip.bad .num { color: #b91c1c; }
+
+  .warn-box {
+    border-left: 4px solid #94a3b8;
+    background: #f8fafc;
+    border-radius: 6px;
+    padding: 0.8rem 1rem;
+    margin-bottom: 0.8rem;
+  }
+
+  .warn-box.danger  { border-left-color: #dc2626; background: #fef2f2; }
+  .warn-box.warning { border-left-color: #f59e0b; background: #fffbeb; }
+  .warn-box.info    { border-left-color: #0ea5e9; background: #f0f9ff; }
+
+  .warn-box h6 {
+    margin: 0 0 0.3rem 0;
+    font-weight: 700;
+    font-size: 0.9rem;
+    color: #1e293b;
+  }
+
+  .warn-box p {
+    margin: 0 0 0.4rem 0;
+    font-size: 0.82rem;
+    color: #475569;
+  }
+
+  .warn-box ul {
+    margin: 0;
+    padding-left: 1.1rem;
+    font-size: 0.8rem;
+    color: #334155;
+  }
+
+  .sheet-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.35rem 0;
+    border-bottom: 1px solid #f1f5f9;
+    font-size: 0.85rem;
+  }
+
+  .sheet-row .skipped { color: #94a3b8; font-style: italic; }
+
+  .row-bad { background: #fef2f2; }
+
+  .preview-actions {
+    display: flex;
+    gap: 0.6rem;
+    margin-top: 1.2rem;
+    padding-top: 1rem;
+    border-top: 1px solid #e2e8f0;
+  }
+</style>
+{% endblock %}
+{% block extra_scripts %}
+<script>
+  async function previewDataset() {
+    const form = document.querySelector('form[action*="import"]');
+    const fileInput = form.querySelector('input[type="file"]');
+    const panel = document.getElementById('previewPanel');
+
+    if (!fileInput.files.length) {
+      alert('Choose a file first.');
+      return;
+    }
+
+    panel.style.display = 'block';
+    panel.innerHTML = '<div class="preview-panel">Reading file...</div>';
+
+    const fd = new FormData();
+    fd.append('excel_file', fileInput.files[0]);
+
+    let data;
+    try {
+      const res = await fetch('/admin/reference-dataset/preview', {
+        method: 'POST',
+        body: fd,
+      });
+      data = await res.json();
+    } catch (err) {
+      panel.innerHTML =
+        '<div class="preview-panel warn-box danger">' +
+        '<h6>Preview failed</h6><p>' + err + '</p></div>';
+      return;
+    }
+
+    if (!data.ok) {
+      panel.innerHTML =
+        '<div class="preview-panel"><div class="warn-box danger">' +
+        '<h6>Cannot read this file</h6><p>' + data.error + '</p></div></div>';
+      return;
+    }
+
+    const s = data.summary;
+
+    const sheets = data.sheets.map(sh =>
+      `<div class="sheet-row">
+         <span>${sh.name}</span>
+         <span class="${sh.used ? '' : 'skipped'}">
+           ${sh.used ? sh.rows + ' rows' : 'skipped &mdash; ' + sh.reason}
+         </span>
+       </div>`).join('');
+
+    const warnings = data.warnings.map(w =>
+      `<div class="warn-box ${w.level}">
+         <h6>${w.title}</h6>
+         <p>${w.detail}</p>
+         ${w.items.length
+            ? '<ul>' + w.items.map(i => '<li>' + i + '</li>').join('') + '</ul>'
+            : ''}
+       </div>`).join('');
+
+    const samples = data.samples.map(r =>
+      `<tr class="${r.known_location ? '' : 'row-bad'}">
+         <td>${r.sheet}</td>
+         <td class="num-cell">${r.row}</td>
+         <td>${r.municipality}</td>
+         <td>${r.barangay}
+             ${r.known_location ? '' :
+               '<span class="text-danger small"> &mdash; not in map data</span>'}
+         </td>
+         <td>${r.site_code}</td>
+         <td>${r.site_name}</td>
+         <td class="num-cell">${r.area}</td>
+       </tr>`).join('');
+
+    const blocked = s.total_rows === 0;
+
+    panel.innerHTML = `
+      <div class="preview-panel">
+        <h5 class="fw-bold text-success mb-1">Preview</h5>
+        <p class="text-secondary small">
+          ${data.filename} &mdash; nothing has been saved yet.
+        </p>
+
+        <div class="preview-summary">
+          <div class="sum-chip">
+            <span class="num">${s.total_rows}</span>
+            <span class="lbl">Rows</span>
+          </div>
+          <div class="sum-chip">
+            <span class="num">${s.would_create}</span>
+            <span class="lbl">New sites</span>
+          </div>
+          <div class="sum-chip">
+            <span class="num">${s.would_update}</span>
+            <span class="lbl">Overwritten</span>
+          </div>
+          <div class="sum-chip ${s.would_skip ? 'bad' : ''}">
+            <span class="num">${s.would_skip}</span>
+            <span class="lbl">Skipped</span>
+          </div>
+          <div class="sum-chip ${s.unmatched_rows ? 'bad' : ''}">
+            <span class="num">${s.unmatched_rows}</span>
+            <span class="lbl">Unknown barangay</span>
+          </div>
+        </div>
+
+        ${warnings}
+
+        <p class="info-title text-secondary small fw-semibold mt-3 mb-1">
+          SHEETS
+        </p>
+        ${sheets}
+
+        <p class="info-title text-secondary small fw-semibold mt-3 mb-1">
+          FIRST ${data.samples.length} ROWS
+        </p>
+        <div class="table-card">
+          <div class="table-scroll-container">
+            <table class="table custom-table align-middle">
+              <thead>
+                <tr>
+                  <th>Sheet</th><th>Row</th><th>Municipality</th>
+                  <th>Barangay</th><th>Site Code</th><th>Site Name</th>
+                  <th class="text-end">Area</th>
+                </tr>
+              </thead>
+              <tbody>${samples}</tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="preview-actions">
+          <button type="button" class="btn btn-success"
+                  onclick="confirmImport()" ${blocked ? 'disabled' : ''}>
+            Confirm Import
+          </button>
+          <button type="button" class="btn btn-outline-secondary"
+                  onclick="document.getElementById('previewPanel').style.display='none'">
+            Cancel
+          </button>
+        </div>
+      </div>
+    `;
+  }
+
+  function confirmImport() {
+    // submits the SAME file the browser still holds in the input
+    document.querySelector('form[action*="import"]').submit();
+  }
+</script>
+{% endblock %}
+
 {% block content %}
 
 <div class="page-header">
@@ -19,7 +264,20 @@
 
     <form action="{{ url_for('admin.import_denr_data') }}" method="POST" enctype="multipart/form-data" class="upload-form">
         <input type="file" name="excel_file" accept=".xlsx,.xls" required class="upload-file-input">
-        <button type="submit" class="btn-primary">Upload &amp; Import</button>
+            <div class="d-flex gap-2">
+      <button type="button" class="btn btn-outline-success"
+              onclick="previewDataset()">
+        Preview
+      </button>
+      <button type="submit" class="btn btn-success" id="directImportBtn">
+        Import without preview
+      </button>
+    </div>
+  </form>
+
+  <!-- preview lands here -->
+  <div id="previewPanel" style="display:none;"></div>
+        <!-- <button type="submit" class="btn-primary">Upload &amp; Import</button> -->
     </form>
 </div>
 

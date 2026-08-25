@@ -1,12 +1,15 @@
 # app/routes/admin.py
-from flask import Blueprint, render_template, request, flash, redirect, url_for, session
+from flask import Blueprint, render_template, request, flash, redirect, url_for, session, jsonify
 from app.extensions import db
-from app.models import User, Location, Organization, Site, TreeSpecie, ReforestationRecord
+from app.models import User, Location, Organization, Site, TreeSpecie, ReforestationRecord, Request, Notification
 from app.utils.decorators import admin_required
 import pandas as pd
 from datetime import datetime as dt
+from datetime import datetime
 from dateutil import parser as date_parser
 from sqlalchemy import or_
+from zoneinfo import ZoneInfo
+from app.models import Request as ReforestationRequest
 
 admin_bp = Blueprint('admin', __name__, url_prefix='/admin')
 
@@ -370,3 +373,335 @@ def import_denr_data():
         flash("Sample issues: " + " | ".join(error_samples), "warning")
 
     return redirect(url_for('admin.reference_dataset'))
+
+
+# ======================================================================
+# BLOCK 2
+# PASTE AT THE BOTTOM OF: app/routes/admin.py
+#
+# Imports needed at the top of admin.py:
+#     from app.models import Request, Notification, Location
+#     from datetime import datetime
+#     from zoneinfo import ZoneInfo
+#     from flask import jsonify
+# ======================================================================
+
+
+@admin_bp.route('/requests')
+@admin_required
+def review_requests():
+    """
+    All submitted requests, newest first, for review.
+    """
+    status_filter = request.args.get('status', '')
+
+    status_filter = request.args.get('status', '')
+
+    query = Request.query
+
+    if status_filter == 'Pending':
+        # unanswered: submitted but not yet decided
+        query = query.filter(Request.status.in_(['Submitted', 'Under Review']))
+    elif status_filter:
+        query = query.filter(Request.status == status_filter)
+
+    all_requests = query.order_by(Request.date_submitted.desc()).all()
+
+    counts = {
+        'Pending': Request.query.filter(
+            Request.status.in_(['Submitted', 'Under Review'])).count(),
+        'Approved': Request.query.filter_by(status='Approved').count(),
+        'Rejected': Request.query.filter_by(status='Rejected').count(),
+    }
+    return render_template(
+        'RequestsAdmin.html',
+        active_page='review_requests',
+        all_requests=all_requests,
+        counts=counts,
+        total_count=Request.query.count(),
+        status_filter=status_filter,
+    )
+
+
+@admin_bp.route('/requests/<int:request_id>/review', methods=['POST'])
+@admin_required
+def review_request(request_id):
+    """
+    Set a request's status and notify the person who submitted it.
+
+    The notification is what makes the Notifications page useful. Until
+    now nothing in the system created one.
+    """
+    req = Request.query.get_or_404(request_id)
+
+    new_status = (request.form.get('status') or '').strip()
+    note = (request.form.get('review_note') or '').strip()
+
+    allowed = {'Submitted', 'Under Review', 'Approved', 'Rejected'}
+    if new_status not in allowed:
+        flash("Invalid status.", "danger")
+        return redirect(url_for('admin.review_requests'))
+
+    if new_status == 'Rejected' and not note:
+        flash("Give a reason when rejecting a request.", "danger")
+        return redirect(url_for('admin.review_requests'))
+
+    req.status = new_status
+    req.review_note = note or None
+    req.reviewed_by = session.get('user_id')
+    req.date_reviewed = datetime.now(ZoneInfo("Asia/Manila"))
+
+    where = "your requested site"
+    if req.location:
+        where = f"{req.location.barangay}, {req.location.municipality}"
+
+    message = f"Your reforestation request for {where} is now {new_status}."
+    if note:
+        message += f" Note: {note}"
+
+    db.session.add(Notification(
+        user_id=req.user_id,
+        notification_type='Request Update',
+        message=message,
+        is_read=False,
+    ))
+
+    db.session.commit()
+
+    flash(f"Request #{req.request_id} marked {new_status}.", "success")
+    return redirect(url_for('admin.review_requests'))
+
+"""
+DATASET PREVIEW - dry run before import
+
+PASTE AT THE BOTTOM OF: app/routes/admin.py
+
+WHAT THIS DOES
+--------------
+Parses the uploaded Excel exactly as the importer would, but writes
+nothing. Returns what WOULD happen so the admin can check before
+committing.
+
+WHY IT MATTERS
+--------------
+The current importer accepts any text in the BARANGAY column. A section
+header in the source file became a real 25-hectare site attached to a
+location that does not exist, and it counted toward municipal totals
+until it was found by accident.
+
+The preview flags those rows before they reach the database.
+
+NO TEMPORARY STORAGE
+--------------------
+The file is parsed and discarded. The browser still holds it in the file
+input, so confirming submits the same file to the existing import route.
+Nothing is written to disk or session.
+"""
+
+import re
+
+# ======================================================================
+# PASTE FROM HERE
+# ======================================================================
+
+
+def _norm_name(s):
+    """Lowercase, expand Sta./Sto., strip spaces, dots, dashes."""
+    s = str(s or "").lower()
+    s = s.replace("sta.", "santa").replace("sto.", "santo")
+    return re.sub(r"[\s.\-]", "", s)
+
+
+@admin_bp.route('/reference-dataset/preview', methods=['POST'])
+@admin_required
+def preview_denr_data():
+    """
+    Dry run. Reports what an import would do. Writes nothing.
+    """
+    uploaded_file = request.files.get('excel_file')
+
+    if not uploaded_file or uploaded_file.filename == '':
+        return jsonify({"ok": False, "error": "No file selected."}), 400
+
+    if not uploaded_file.filename.lower().endswith(('.xlsx', '.xls')):
+        return jsonify({"ok": False, "error": "File must be .xlsx or .xls"}), 400
+
+    try:
+        xl = pd.ExcelFile(uploaded_file)
+    except Exception as e:
+        return jsonify({"ok": False, "error": f"Could not read file: {e}"}), 400
+
+    # every known barangay, indexed by normalised municipality + barangay
+    known = set()
+    for loc in Location.query.all():
+        known.add((_norm_name(loc.municipality), _norm_name(loc.barangay)))
+
+    # site codes already in the database - these will be UPDATED not created
+    existing_codes = {
+        s.site_code for s in Site.query.filter(Site.site_code.isnot(None)).all()
+    }
+
+    sheets = []
+    total_rows = 0
+    would_create = 0
+    would_update = 0
+    would_skip = 0
+
+    unmatched = {}        # (muni, brgy) -> row count
+    duplicate_codes = {}  # site_code -> row count within this file
+    samples = []
+
+    for sheet_name in xl.sheet_names:
+        try:
+            df = xl.parse(sheet_name, header=2)
+        except Exception as e:
+            sheets.append({
+                "name": sheet_name,
+                "used": False,
+                "reason": f"could not parse: {e}",
+                "rows": 0,
+            })
+            continue
+
+        df.columns = [str(c).strip() for c in df.columns]
+
+        if not _is_denr_contract_sheet(df.columns):
+            sheets.append({
+                "name": sheet_name,
+                "used": False,
+                "reason": "no contract-profile headers on row 3",
+                "rows": len(df),
+            })
+            continue
+
+        sheet_rows = 0
+
+        for idx, row in df.iterrows():
+            municipality = _clean(row.get('MUNICIPALITY'))
+            barangay = _clean(row.get('BARANGAY'))
+            site_code = _clean(row.get('SITE CODE'))
+
+            if not municipality or not barangay:
+                would_skip += 1
+                continue
+
+            sheet_rows += 1
+            total_rows += 1
+
+            key = (_norm_name(municipality), _norm_name(barangay))
+            is_known = key in known
+
+            if not is_known:
+                label = f"{barangay}, {municipality}"
+                unmatched[label] = unmatched.get(label, 0) + 1
+
+            if site_code:
+                if site_code in existing_codes:
+                    would_update += 1
+                else:
+                    would_create += 1
+                    existing_codes.add(site_code)
+                duplicate_codes[site_code] = duplicate_codes.get(site_code, 0) + 1
+            else:
+                would_create += 1
+
+            if len(samples) < 8:
+                samples.append({
+                    "sheet": sheet_name,
+                    "row": idx + 4,          # header on row 3, pandas is 0-based
+                    "municipality": municipality,
+                    "barangay": barangay,
+                    "site_code": site_code or "—",
+                    "site_name": _clean(row.get('SITE NAME')) or "—",
+                    "area": _clean(row.get('AREA (HAS.)')) or "—",
+                    "known_location": is_known,
+                })
+
+        sheets.append({
+            "name": sheet_name,
+            "used": True,
+            "reason": "",
+            "rows": sheet_rows,
+        })
+
+    repeats = {k: v for k, v in duplicate_codes.items() if v > 1}
+
+    warnings = []
+
+    if unmatched:
+        n = sum(unmatched.values())
+        warnings.append({
+            "level": "danger",
+            "title": f"{n} row(s) name a barangay that is not in the map data",
+            "detail": (
+                "These rows will create Location records with no coordinates "
+                "and no site characteristics. They will not appear on the map "
+                "and will not receive species recommendations. Check for "
+                "spelling differences, or for section headers that are not "
+                "barangay names."
+            ),
+            "items": [f"{k} ({v} row{'s' if v > 1 else ''})"
+                      for k, v in sorted(unmatched.items(),
+                                         key=lambda x: -x[1])][:15],
+        })
+
+    if repeats:
+        warnings.append({
+            "level": "warning",
+            "title": f"{len(repeats)} site code(s) appear more than once in this file",
+            "detail": (
+                "Site code is unique, so later rows overwrite earlier ones. "
+                "Only the last occurrence will survive."
+            ),
+            "items": [f"{k} ({v} rows)" for k, v in
+                      sorted(repeats.items(), key=lambda x: -x[1])][:15],
+        })
+
+    if would_update:
+        warnings.append({
+            "level": "info",
+            "title": f"{would_update} existing site(s) will be overwritten",
+            "detail": (
+                "These site codes already exist. Their current values will be "
+                "replaced by whatever is in this file."
+            ),
+            "items": [],
+        })
+
+    if not total_rows:
+        warnings.append({
+            "level": "danger",
+            "title": "No importable rows found",
+            "detail": (
+                "No sheet had the expected headers on row 3, or every row was "
+                "missing a municipality or barangay."
+            ),
+            "items": [],
+        })
+
+    return jsonify({
+        "ok": True,
+        "filename": uploaded_file.filename,
+        "sheets": sheets,
+        "summary": {
+            "total_rows": total_rows,
+            "would_create": would_create,
+            "would_update": would_update,
+            "would_skip": would_skip,
+            "unmatched_rows": sum(unmatched.values()),
+        },
+        "warnings": warnings,
+        "samples": samples,
+    })
+
+
+# ======================================================================
+# PASTE TO HERE
+#
+# Imports needed at the top of admin.py:
+#     from flask import jsonify
+#     from app.models import Location, Site
+#     import re            (or keep the import at the top of this block)
+#
+# _is_denr_contract_sheet and _clean already exist in admin.py.
+# ======================================================================

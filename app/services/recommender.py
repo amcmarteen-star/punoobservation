@@ -14,15 +14,15 @@ PIPELINE (matches the paper, Chapter 2, page 19):
 PUT THIS FILE AT:
     app/services/recommender.py
 
-You will need an empty file at:
+You also need an empty file at:
     app/services/__init__.py
 
 NOTE ON THE REFERENCE DATASET
 -----------------------------
-The paper specifies comparison against historical site profiles.
-Those records do not exist in usable form: the available DENR data
-covers 20 barangays, and species selection in it is determined by
-program component rather than site conditions.
+The paper specifies comparison against historical site profiles. Those
+records do not exist in usable form: the available DENR data covers 20
+barangays, and species selection in it is determined by program
+component rather than site conditions.
 
 This implementation therefore builds reference profiles from published
 species ecological tolerances instead. The mathematics is unchanged.
@@ -36,19 +36,19 @@ from app.models import Location, TreeSpecie
 
 
 # ----------------------------------------------------------------------
-# Step 2 — categorical encoding
+# Step 2 - categorical encoding
 # ----------------------------------------------------------------------
 #
-# Soil texture is a category. Cosine similarity needs numbers.
+# SOIL TEXTURE
 #
-# We use ORDINAL encoding along the coarse-to-fine particle size scale,
-# which is how soil texture is physically ordered:
+# Ordinal encoding along the coarse-to-fine particle size scale, which
+# is how soil texture is physically ordered:
 #
-#     sand  ->  loamy sand  ->  sandy loam  ->  loam  ->  silt loam
-#           ->  clay loam  ->  silty clay loam  ->  clay
+#   sand -> loamy sand -> sandy loam -> loam -> silt loam
+#        -> clay loam -> silty clay loam -> clay
 #
-# Textures that sit close on this scale behave similarly for drainage
-# and water retention, so a numeric scale is defensible here.
+# Textures close on this scale behave similarly for drainage and water
+# retention, so a numeric scale is defensible.
 #
 # STATE THIS IN YOUR PAPER. A panel will ask why these numbers.
 
@@ -67,29 +67,50 @@ SOIL_ENCODING = {
     "clay": 8,
 }
 
-SOIL_MIN = 1
-SOIL_MAX = 8
+SOIL_MIN, SOIL_MAX = 1, 8
 
-FEATURES = ["rainfall", "elevation", "temperature", "soil"]
+# COASTAL EXPOSURE / SALINITY
+#
+# Both sides use the same 0-3 ordinal scale. The site reports how saline
+# it is; the species reports how saline it needs to be.
+#
+#   0 inland      1 low-lying      2 coastal      3 tidal
+#
+# This is what keeps mangroves out of inland recommendations without any
+# hard-coded exclusion. An inland barangay scores 0; a mangrove scores 3;
+# the distance between them lowers the similarity on its own.
+#
+# It also means the engine needs NO CHANGE if coverage is extended to
+# coastal municipalities. Those barangays will score 2 or 3 and the same
+# species will rank correctly there.
+
+SALINITY_MIN, SALINITY_MAX = 0, 3
+
+FEATURES = ["rainfall", "elevation", "temperature", "soil", "salinity"]
 
 
 def encode_soil(texture):
-    """Soil texture string -> number. Returns None if unknown."""
+    """Soil texture string -> number. None if unknown."""
     if not texture:
         return None
     return SOIL_ENCODING.get(str(texture).strip().lower())
 
 
 # ----------------------------------------------------------------------
-# Step 3 — normalization
+# Step 3 - normalization
 # ----------------------------------------------------------------------
 
 def get_scale_bounds():
     """
     Min and max of each feature across the whole study area.
 
-    Computed from the data itself, not hardcoded, so the scale stays
-    correct if barangays are added later.
+    Computed from the data, not hardcoded, so the scale stays correct if
+    barangays are added later.
+
+    Salinity uses its fixed 0-3 definition rather than the observed
+    range. In an inland-only study area every barangay is 0, so an
+    observed range would collapse to zero width and the feature would be
+    silently dropped.
     """
     row = db.session.query(
         db.func.min(Location.annual_rainfall_mm),
@@ -105,6 +126,7 @@ def get_scale_bounds():
         "elevation": (row[2], row[3]),
         "temperature": (row[4], row[5]),
         "soil": (SOIL_MIN, SOIL_MAX),
+        "salinity": (SALINITY_MIN, SALINITY_MAX),
     }
 
 
@@ -113,8 +135,8 @@ def normalize(value, lo, hi):
     Min-max normalization to the 0-1 range.
 
     Clamped, because a species tolerance midpoint can fall outside the
-    range observed in the study area. Without clamping, cosine similarity
-    receives negative components and returns uninterpretable results.
+    range observed in the study area. Without clamping, cosine receives
+    negative components and returns uninterpretable results.
     """
     if value is None or lo is None or hi is None or hi == lo:
         return None
@@ -127,12 +149,13 @@ def normalize(value, lo, hi):
 # ----------------------------------------------------------------------
 
 def site_vector(location, bounds):
-    """A barangay becomes a 4-element vector. None marks a missing feature."""
+    """A barangay becomes a 5-element vector. None marks a missing feature."""
     return {
         "rainfall": normalize(location.annual_rainfall_mm, *bounds["rainfall"]),
         "elevation": normalize(location.elevation_m, *bounds["elevation"]),
         "temperature": normalize(location.avg_temp_c, *bounds["temperature"]),
         "soil": normalize(encode_soil(location.soil_texture), *bounds["soil"]),
+        "salinity": normalize(location.coastal_exposure, *bounds["salinity"]),
     }
 
 
@@ -140,12 +163,12 @@ def _midpoint(lo, hi, fallback_lo, fallback_hi):
     """
     Cosine similarity compares points, not ranges.
 
-    A species tolerance of 900-2200 mm must therefore collapse to a single
-    representative value: its midpoint, 1550 mm.
+    A tolerance of 900-2200 mm must therefore collapse to its midpoint,
+    1550 mm.
 
-    LIMITATION: this discards the width of the range. A species tolerant
-    of 750-4500 mm is treated the same as one tolerant of 2500-2600 mm,
-    provided their midpoints coincide. Record this in your limitations.
+    LIMITATION: this discards range width. A species tolerant of
+    750-4500 mm is treated the same as one tolerant of 2500-2600 mm if
+    their midpoints coincide. Record this in your limitations section.
     """
     if lo is None and hi is None:
         return None
@@ -157,7 +180,7 @@ def _midpoint(lo, hi, fallback_lo, fallback_hi):
 
 
 def species_vector(species, bounds):
-    """A species becomes a 4-element vector from its tolerance midpoints."""
+    """A species becomes a 5-element vector from its published profile."""
     r = _midpoint(species.min_rainfall_mm, species.max_rainfall_mm,
                   *bounds["rainfall"])
     e = _midpoint(species.min_elevation_m, species.max_elevation_m,
@@ -168,9 +191,7 @@ def species_vector(species, bounds):
     # soil: average the encoded values of every texture the species accepts
     s = None
     if species.preferred_soil:
-        codes = [
-            encode_soil(x) for x in species.preferred_soil.split(",")
-        ]
+        codes = [encode_soil(x) for x in species.preferred_soil.split(",")]
         codes = [c for c in codes if c is not None]
         if codes:
             s = sum(codes) / len(codes)
@@ -180,11 +201,12 @@ def species_vector(species, bounds):
         "elevation": normalize(e, *bounds["elevation"]),
         "temperature": normalize(t, *bounds["temperature"]),
         "soil": normalize(s, *bounds["soil"]),
+        "salinity": normalize(species.salinity_requirement, *bounds["salinity"]),
     }
 
 
 # ----------------------------------------------------------------------
-# Step 4 — cosine similarity
+# Step 4 - cosine similarity
 # ----------------------------------------------------------------------
 
 def cosine_similarity(vec_a, vec_b):
@@ -193,9 +215,8 @@ def cosine_similarity(vec_a, vec_b):
 
         cos(A,B) = (A . B) / (|A| * |B|)
 
-    Only features present in BOTH vectors are used. If a species has no
-    published elevation range, elevation is skipped for that comparison
-    rather than being guessed.
+    Only features present in BOTH vectors are used. A species with no
+    published elevation range has elevation skipped rather than guessed.
 
     Returns (similarity, number_of_features_used).
     """
@@ -218,15 +239,14 @@ def cosine_similarity(vec_a, vec_b):
 
 
 # ----------------------------------------------------------------------
-# Step 5 — rank
+# Step 5 - rank
 # ----------------------------------------------------------------------
 
 def recommend_for_location(location, top_k=5):
     """
     Ranked species recommendations for one barangay.
 
-    Returns a dict. 'found' is False when the barangay has no
-    characteristic data loaded.
+    'found' is False when the barangay has no characteristic data.
     """
     bounds = get_scale_bounds()
     sv = site_vector(location, bounds)
@@ -257,6 +277,8 @@ def recommend_for_location(location, top_k=5):
             "elevation_range": _fmt(sp.min_elevation_m, sp.max_elevation_m, "m"),
             "temperature_range": _fmt(sp.min_temp_c, sp.max_temp_c, "C"),
             "preferred_soil": sp.preferred_soil,
+            "salinity_requirement": sp.salinity_requirement,
+            "habitat": SALINITY_LABELS.get(sp.salinity_requirement, "unknown"),
             "source": sp.source,
         })
 
@@ -273,6 +295,8 @@ def recommend_for_location(location, top_k=5):
             "soil_type": location.soil_type,
             "soil_texture": location.soil_texture,
             "agro_ecological_zone": location.agro_ecological_zone,
+            "coastal_exposure": location.coastal_exposure,
+            "habitat": SALINITY_LABELS.get(location.coastal_exposure, "unknown"),
         },
         "site_vector": {k: (round(v, 4) if v is not None else None)
                         for k, v in sv.items()},
@@ -283,8 +307,16 @@ def recommend_for_location(location, top_k=5):
     }
 
 
+SALINITY_LABELS = {
+    0: "inland",
+    1: "low-lying",
+    2: "coastal",
+    3: "tidal",
+}
+
+
 # ----------------------------------------------------------------------
-# Ground truth helper — needed for Precision@K and NDCG@K
+# Ground truth helper - used by Precision@K and NDCG@K
 # ----------------------------------------------------------------------
 
 def is_within_ranges(location, species):
@@ -292,12 +324,14 @@ def is_within_ranges(location, species):
     True when the barangay falls inside every published tolerance range
     the species has.
 
-    This is the RELEVANCE LABEL used by the evaluation metrics. A species
-    is treated as relevant for a barangay when the barangay's measured
-    conditions sit inside that species' published ecological limits.
+    This is the RELEVANCE LABEL used by the evaluation metrics.
 
     Ranges that are not published are skipped rather than failed, so a
     species is not penalised for incomplete source data.
+
+    Salinity is treated as a hard mismatch: a species requiring tidal
+    saltwater is never 'within range' for an inland barangay, regardless
+    of how well its climate ranges fit.
     """
     checks = [
         (location.annual_rainfall_mm, species.min_rainfall_mm, species.max_rainfall_mm),
@@ -324,7 +358,13 @@ def is_within_ranges(location, species):
         if location.soil_texture.strip().lower() not in accepted:
             return False
 
-    # a species with no published limits at all is not "relevant"
+    if (species.salinity_requirement is not None
+            and location.coastal_exposure is not None):
+        tested += 1
+        # a species needing salt cannot grow where there is none
+        if species.salinity_requirement > location.coastal_exposure:
+            return False
+
     return tested > 0
 
 

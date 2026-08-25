@@ -24,6 +24,7 @@ class Location(db.Model):
     soil_type = db.Column(db.String(100), nullable=True)
     soil_texture = db.Column(db.String(50), nullable=True)
     agro_ecological_zone = db.Column(db.String(50), nullable=True)
+    coastal_exposure = db.Column(db.Integer, nullable=True)
 
     # Relationship to Site
     sites = db.relationship('Site', backref='location', lazy=True)
@@ -53,7 +54,6 @@ class User(db.Model):
 
     # Relationships
     reports = db.relationship('MonitoringReport', backref='officer', lazy=True)
-    requests = db.relationship('Request', backref='user', lazy=True)
     notifications = db.relationship('Notification', backref='user', lazy=True)
 
     def set_password(self, password):
@@ -118,6 +118,7 @@ class TreeSpecie(db.Model):
     preferred_soil = db.Column(db.String(200), nullable=True)
     source = db.Column(db.String(300), nullable=True)
     is_reference = db.Column(db.Boolean, default=False, server_default=db.false(), nullable=False)
+    salinity_requirement = db.Column(db.Integer, nullable=True)
     
     # Relationship
     reforestation_records = db.relationship('ReforestationRecord', backref='species', lazy=True)
@@ -169,13 +170,47 @@ class MonitoringPhoto(db.Model):
 
 class Request(db.Model):
     __tablename__ = 'request'
-    
+
     request_id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.user_id'), nullable=False)
+    user_id = db.Column(
+        db.Integer, db.ForeignKey('users.user_id'), nullable=False
+    )
+    location_id = db.Column(
+        db.Integer, db.ForeignKey('location.location_id'), nullable=True
+    )
+
     request_type = db.Column(db.String(100), nullable=False)
     description = db.Column(db.Text, nullable=True)
+    proposed_area_ha = db.Column(db.Float, nullable=True)
+    contact_number = db.Column(db.String(30), nullable=True)
+
+    # Submitted | Under Review | Approved | Rejected
     status = db.Column(db.String(30), nullable=False, default='Submitted')
 
+    date_submitted = db.Column(
+        db.DateTime,
+        nullable=False,
+        default=lambda: datetime.now(ZoneInfo("Asia/Manila"))
+    )
+    date_reviewed = db.Column(db.DateTime, nullable=True)
+    reviewed_by = db.Column(
+        db.Integer, db.ForeignKey('users.user_id'), nullable=True
+    )
+    review_note = db.Column(db.Text, nullable=True)
+
+    location = db.relationship('Location', backref='requests')
+
+    requester = db.relationship(
+        'User',
+        foreign_keys=[user_id],
+        backref=db.backref('submitted_requests', foreign_keys=[user_id])
+    )
+
+    reviewer = db.relationship(
+        'User',
+        foreign_keys=[reviewed_by],
+        backref=db.backref('reviewed_requests', foreign_keys=[reviewed_by])
+    )
 
 class Notification(db.Model):
     __tablename__ = 'notification'
