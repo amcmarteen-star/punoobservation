@@ -5,7 +5,55 @@ from app.models import Site, ReforestationRecord, MonitoringReport, Location, No
 from app.extensions import db
 from sqlalchemy import func
 from collections import defaultdict
+from datetime import datetime
+from zoneinfo import ZoneInfo
 from app.services.recommender import recommend_for_location
+
+MANILA = ZoneInfo("Asia/Manila")
+
+
+def _time_ago(dt):
+    """'3 hours ago' style label.
+
+    The DB column has no timezone, so SQLAlchemy hands back a naive
+    datetime holding Manila wall-clock time (that's what the model's
+    default writes). Compare against Manila "now" with its own tzinfo
+    stripped so both sides are naive.
+    """
+    if not dt:
+        return ""
+    now = datetime.now(MANILA).replace(tzinfo=None)
+    if dt.tzinfo is not None:
+        dt = dt.astimezone(MANILA).replace(tzinfo=None)
+    delta = now - dt
+    seconds = delta.total_seconds()
+    if seconds < 60:
+        return "just now"
+    minutes = int(seconds // 60)
+    if minutes < 60:
+        return f"{minutes} minute{'s' if minutes != 1 else ''} ago"
+    hours = int(seconds // 3600)
+    if hours < 24:
+        return f"{hours} hour{'s' if hours != 1 else ''} ago"
+    days = int(seconds // 86400)
+    if days < 7:
+        return f"{days} day{'s' if days != 1 else ''} ago"
+    return dt.strftime('%b %d, %Y')
+
+
+def _day_label(dt):
+    """Section header for a notification's date: Today / Yesterday / date."""
+    if not dt:
+        return "Earlier"
+    today = datetime.now(MANILA).date()
+    if dt.tzinfo is not None:
+        dt = dt.astimezone(MANILA)
+    d = dt.date()
+    if d == today:
+        return "Today"
+    if (today - d).days == 1:
+        return "Yesterday"
+    return dt.strftime('%B %d, %Y')
 
 
 dashboard_bp = Blueprint('dashboard', __name__)
@@ -108,6 +156,7 @@ def Reforestation_sites():
 def notifications_page():
     user_id = session.get('user_id')
     tab = request.args.get('tab', 'all')
+    status = request.args.get('status', 'all')  # all | read | unread
 
     # Two notification types belong to requests:
     #   'New Request'    -> sent to admins when a user submits
@@ -121,7 +170,24 @@ def notifications_page():
     elif tab == 'reports':
         query = query.filter(Notification.notification_type == 'Report')
 
+    if status == 'unread':
+        query = query.filter_by(is_read=False)
+    elif status == 'read':
+        query = query.filter_by(is_read=True)
+
     notifications = query.order_by(Notification.created_at.desc()).all()
+
+    # group into "Today" / "Yesterday" / date sections, in the order they
+    # already come back (newest first)
+    grouped = []
+    seen_labels = {}
+    for n in notifications:
+        label = _day_label(n.created_at)
+        n.time_ago = _time_ago(n.created_at)
+        if label not in seen_labels:
+            seen_labels[label] = {"label": label, "notifications": []}
+            grouped.append(seen_labels[label])
+        seen_labels[label]["notifications"].append(n)
 
     base = Notification.query.filter_by(user_id=user_id)
     counts = {
@@ -137,10 +203,11 @@ def notifications_page():
     return render_template(
         'Notifications.html',
         active_page='notifications',
-        notifications=notifications,
+        grouped=grouped,
         counts=counts,
         unread=unread,
         tab=tab,
+        status=status,
     )
 
 @dashboard_bp.route('/api/notifications')
@@ -193,6 +260,55 @@ def mark_notification_read(notification_id):
         return jsonify({"error": "not found"}), 404
 
     notif.is_read = True
+    db.session.commit()
+    return jsonify({"success": True})
+
+
+@dashboard_bp.route('/api/notifications/<int:notification_id>/unread',
+                    methods=['POST'])
+@login_required
+def mark_notification_unread(notification_id):
+    """Mark one notification unread. Mirrors mark_notification_read."""
+    user_id = session.get('user_id')
+    notif = Notification.query.filter_by(
+        notification_id=notification_id, user_id=user_id
+    ).first()
+
+    if not notif:
+        return jsonify({"error": "not found"}), 404
+
+    notif.is_read = False
+    db.session.commit()
+    return jsonify({"success": True})
+
+
+@dashboard_bp.route('/api/notifications/<int:notification_id>/delete',
+                    methods=['POST'])
+@login_required
+def delete_notification(notification_id):
+    """Delete one notification. Only its owner may delete it."""
+    user_id = session.get('user_id')
+    notif = Notification.query.filter_by(
+        notification_id=notification_id, user_id=user_id
+    ).first()
+
+    if not notif:
+        return jsonify({"error": "not found"}), 404
+
+    db.session.delete(notif)
+    db.session.commit()
+    return jsonify({"success": True})
+
+
+@dashboard_bp.route('/api/notifications/mark-all-read', methods=['POST'])
+@login_required
+def mark_all_notifications_read():
+    """Mark every unread notification for this user as read. Called from
+    the 'Mark all as read' action in the dropdown and the full page."""
+    user_id = session.get('user_id')
+    Notification.query.filter_by(user_id=user_id, is_read=False).update(
+        {"is_read": True}
+    )
     db.session.commit()
     return jsonify({"success": True})
 
