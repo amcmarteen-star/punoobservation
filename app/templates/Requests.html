@@ -1,17 +1,10 @@
 {% extends "Base.html" %}
 {% block title %}Request Reforestation Site - PuNoObservation{% endblock %}
+{% block content_class %}page-content-wide{% endblock %}
+{% set active_page = 'requests' %}
 
 {% block extra_head %}
 <style>
-  .req-form-card {
-    background: #ffffff;
-    border: 1px solid #e2e8f0;
-    border-radius: 10px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-    padding: 1.5rem;
-    margin-bottom: 2rem;
-  }
-
   .status-pill {
     display: inline-block;
     padding: 3px 10px;
@@ -31,24 +24,23 @@
     font-style: italic;
     margin-top: 0.25rem;
   }
-
-  .empty-state {
-    text-align: center;
-    padding: 2.5rem 1rem;
-    color: #64748b;
-  }
 </style>
 {% endblock %}
 
 {% block content %}
 
-<div class="page-header mb-4">
-  <h2 class="fw-bold text-dark">Request Reforestation Site</h2>
-  <p class="text-secondary mb-0">
-    Propose a site in your barangay for a reforestation project. DENR
-    and CENRO staff review each request and you will be notified of the
-    outcome.
-  </p>
+<div class="um-header">
+  <div>
+    <div class="um-title-row">
+      <h2>My Requests</h2>
+      <span class="um-count-pill">{{ my_requests|length }}</span>
+    </div>
+    <p class="um-subtitle">Propose a site in your barangay for a reforestation project. DENR and CENRO staff review each request and you will be notified of the outcome.</p>
+  </div>
+  <button type="button" class="um-btn-add" onclick="reqOpen('req-add-modal')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+    Add Request
+  </button>
 </div>
 
 <!-- ============ FLASH MESSAGES ============ -->
@@ -62,143 +54,157 @@
   {% endif %}
 {% endwith %}
 
-<!-- ============ SUBMIT FORM ============ -->
-<div class="req-form-card">
-  <h5 class="fw-bold text-success mb-3">New Request</h5>
-
-  <form method="POST" class="row g-3">
-
-    <div class="col-md-6">
-      <label for="municipality" class="form-label fw-semibold">
-        Municipality <span class="text-danger">*</span>
-      </label>
-      <select name="municipality" id="municipality" class="form-select" required>
-        <option value="">Choose a municipality</option>
-        {% for m in municipalities %}
-          <option value="{{ m }}">{{ m }}</option>
+<!-- ============ MY REQUESTS TABLE ============ -->
+<div class="um-table-card">
+  {% if my_requests %}
+  <div class="sites-scroll-wrap">
+    <table class="um-table sites-table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Location</th>
+          <th>Type</th>
+          <th class="text-end">Area (ha)</th>
+          <th>Status</th>
+          <th>Submitted</th>
+          <th>Reviewed</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in my_requests %}
+        <tr>
+          <td class="num-cell">{{ r.request_id }}</td>
+          <td>
+            {% if r.location %}
+              <div class="fw-semibold">{{ r.location.barangay }}</div>
+              <div class="text-secondary small">{{ r.location.municipality }}</div>
+            {% else %}
+              &mdash;
+            {% endif %}
+          </td>
+          <td>{{ r.request_type }}</td>
+          <td class="num-cell">{{ r.proposed_area_ha or '—' }}</td>
+          <td>
+            <span class="status-pill status-{{ r.status|lower|replace(' ', '-') }}">
+              {{ r.status }}
+            </span>
+            {% if r.review_note %}
+              <div class="review-note">{{ r.review_note }}</div>
+            {% endif %}
+          </td>
+          <td>{{ r.date_submitted.strftime('%Y-%m-%d') }}</td>
+          <td>
+            {% if r.date_reviewed %}
+              {{ r.date_reviewed.strftime('%Y-%m-%d') }}
+            {% else %}
+              <span class="text-secondary">pending</span>
+            {% endif %}
+          </td>
+          <td>{{ r.description or '—' }}</td>
+        </tr>
         {% endfor %}
-      </select>
-    </div>
-
-    <div class="col-md-6">
-      <label for="barangay" class="form-label fw-semibold">
-        Barangay <span class="text-danger">*</span>
-      </label>
-      <select name="barangay" id="barangay" class="form-select" required disabled>
-        <option value="">Pick a municipality first</option>
-      </select>
-    </div>
-
-    <div class="col-md-6">
-      <label for="request_type" class="form-label fw-semibold">
-        Request Type <span class="text-danger">*</span>
-      </label>
-      <select name="request_type" id="request_type" class="form-select" required>
-        <option value="">Choose a type</option>
-        <option value="New Planting Site">New Planting Site</option>
-        <option value="Site Rehabilitation">Site Rehabilitation</option>
-        <option value="Seedling Supply">Seedling Supply</option>
-        <option value="Technical Assistance">Technical Assistance</option>
-      </select>
-    </div>
-
-    <div class="col-md-3">
-      <label for="proposed_area_ha" class="form-label fw-semibold">
-        Proposed Area (ha)
-      </label>
-      <input type="number" step="0.01" min="0.01"
-             name="proposed_area_ha" id="proposed_area_ha"
-             class="form-control" placeholder="e.g. 2.5">
-    </div>
-
-    <div class="col-md-3">
-      <label for="contact_number" class="form-label fw-semibold">
-        Contact Number
-      </label>
-      <input type="text" name="contact_number" id="contact_number"
-             class="form-control" placeholder="09XXXXXXXXX">
-    </div>
-
-    <div class="col-12">
-      <label for="description" class="form-label fw-semibold">
-        Description
-      </label>
-      <textarea name="description" id="description" class="form-control"
-                rows="3"
-                placeholder="Describe the site: current land use, access, ownership, why it needs reforesting."></textarea>
-    </div>
-
-    <div class="col-12">
-      <button type="submit" class="btn btn-success">Submit Request</button>
-    </div>
-
-  </form>
-</div>
-
-<!-- ============ MY REQUESTS ============ -->
-<h4 class="text-success fw-bold border-bottom pb-2">My Requests</h4>
-
-{% if my_requests %}
-  <div class="table-card mt-3">
-    <div class="table-scroll-container">
-      <table class="table custom-table align-middle">
-        <thead>
-          <tr>
-            <th>#</th>
-            <th>Location</th>
-            <th>Type</th>
-            <th class="text-end">Area (ha)</th>
-            <th>Status</th>
-            <th>Submitted</th>
-            <th>Reviewed</th>
-            <th>Description</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for r in my_requests %}
-          <tr>
-            <td class="num-cell">{{ r.request_id }}</td>
-            <td>
-              {% if r.location %}
-                <div class="fw-semibold">{{ r.location.barangay }}</div>
-                <div class="text-secondary small">{{ r.location.municipality }}</div>
-              {% else %}
-                —
-              {% endif %}
-            </td>
-            <td>{{ r.request_type }}</td>
-            <td class="num-cell">{{ r.proposed_area_ha or '—' }}</td>
-            <td>
-              <span class="status-pill status-{{ r.status|lower|replace(' ', '-') }}">
-                {{ r.status }}
-              </span>
-              {% if r.review_note %}
-                <div class="review-note">{{ r.review_note }}</div>
-              {% endif %}
-            </td>
-            <td>{{ r.date_submitted.strftime('%Y-%m-%d') }}</td>
-            <td>
-              {% if r.date_reviewed %}
-                {{ r.date_reviewed.strftime('%Y-%m-%d') }}
-              {% else %}
-                <span class="text-muted">pending</span>
-              {% endif %}
-            </td>
-            <td>{{ r.description or '—' }}</td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
+      </tbody>
+    </table>
   </div>
-{% else %}
-  <div class="empty-state">
-    <h5>No requests yet</h5>
+  {% else %}
+  <div class="um-empty">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg>
+    <strong>No requests yet</strong>
     <p>Submitted requests will appear here with their review status.</p>
   </div>
-{% endif %}
+  {% endif %}
+</div>
+
+<!-- ============ ADD REQUEST MODAL ============ -->
+<div class="um-modal-overlay" id="req-add-modal">
+  <div class="um-modal">
+    <div class="um-modal-head">
+      <h3>New Request</h3>
+      <button type="button" class="um-modal-close" onclick="reqClose('req-add-modal')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+      </button>
+    </div>
+    <form method="POST">
+      <div class="um-modal-body">
+        <div class="um-field">
+          <label for="municipality">Municipality *</label>
+          <select name="municipality" id="municipality" required>
+            <option value="">Choose a municipality</option>
+            {% for m in municipalities %}
+              <option value="{{ m }}">{{ m }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="um-field">
+          <label for="barangay">Barangay *</label>
+          <select name="barangay" id="barangay" required disabled>
+            <option value="">Pick a municipality first</option>
+          </select>
+        </div>
+
+        <div class="um-field">
+          <label for="request_type">Request Type *</label>
+          <select name="request_type" id="request_type" required>
+            <option value="">Choose a type</option>
+            <option value="New Planting Site">New Planting Site</option>
+            <option value="Site Rehabilitation">Site Rehabilitation</option>
+            <option value="Seedling Supply">Seedling Supply</option>
+            <option value="Technical Assistance">Technical Assistance</option>
+          </select>
+        </div>
+
+        <div class="um-field">
+          <label for="proposed_area_ha">Proposed Area (ha)</label>
+          <input type="number" step="0.01" min="0.01"
+                 name="proposed_area_ha" id="proposed_area_ha"
+                 placeholder="e.g. 2.5">
+        </div>
+
+        <div class="um-field">
+          <label for="contact_number">Contact Number</label>
+          <input type="text" name="contact_number" id="contact_number"
+                 placeholder="09XXXXXXXXX">
+        </div>
+
+        <div class="um-field">
+          <label for="description">Description</label>
+          <textarea name="description" id="description" rows="3"
+                    placeholder="Describe the site: current land use, access, ownership, why it needs reforesting."></textarea>
+        </div>
+      </div>
+      <div class="um-modal-foot">
+        <button type="button" class="um-btn-cancel" onclick="reqClose('req-add-modal')">Cancel</button>
+        <button type="submit" class="um-btn-confirm">Submit Request</button>
+      </div>
+    </form>
+  </div>
+</div>
 
 <script>
+  function reqOpen(id) {
+    document.getElementById(id).classList.add('open');
+  }
+
+  function reqClose(id) {
+    document.getElementById(id).classList.remove('open');
+  }
+
+  document.querySelectorAll('.um-modal-overlay').forEach(function (overlay) {
+    overlay.addEventListener('click', function (e) {
+      if (e.target === overlay) overlay.classList.remove('open');
+    });
+  });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') {
+      document.querySelectorAll('.um-modal-overlay.open').forEach(function (o) {
+        o.classList.remove('open');
+      });
+    }
+  });
+
   // Municipality picked -> load that municipality's barangays.
   // Uses fetch instead of a page reload so the form keeps what the user
   // has already typed.

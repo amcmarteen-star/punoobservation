@@ -39,7 +39,8 @@
             href="{{ url_for('dashboard.index') }}"
             class="nav-link {% if active_page == 'dashboard' %}active{% endif %}"
           >
-            Dashboard
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>
+            <span class="nav-link-text">Dashboard</span>
           </a>
 
           <p class="nav-section-title">Field Modules</p>
@@ -47,19 +48,22 @@
             href="{{ url_for('dashboard.gis_map') }}"
             class="nav-link {% if active_page == 'gis_map' %}active{% endif %}"
           >
-            Interactive GIS Map
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.106 5.553a2 2 0 0 0 1.788 0l3.659-1.83A1 1 0 0 1 21 4.619v12.764a1 1 0 0 1-.553.894l-4.553 2.277a2 2 0 0 1-1.788 0l-4.212-2.106a2 2 0 0 0-1.788 0l-3.659 1.83A1 1 0 0 1 3 19.381V6.618a1 1 0 0 1 .553-.894l4.553-2.277a2 2 0 0 1 1.788 0z"/><path d="M15 5.764v15"/><path d="M9 3.236v15"/></svg>
+            <span class="nav-link-text">Interactive GIS Map</span>
           </a>
           <a
             href="{{url_for('dashboard.Reforestation_sites') }}"
             class="nav-link {% if active_page == 'sites' %}active{% endif %}"
           >
-            Reforestation Sites
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 10v.2A3 3 0 0 1 8.9 16H5a3 3 0 0 1-1-5.8V10a3 3 0 0 1 6 0Z"/><path d="M7 16v6"/><path d="M13 19v3"/><path d="M12 19h8.3a1 1 0 0 0 .7-1.7L18 14h.3a1 1 0 0 0 .7-1.7L16 9h.2a1 1 0 0 0 .8-1.7L13 3l-1.4 1.5"/></svg>
+            <span class="nav-link-text">Reforestation Sites</span>
           </a>
           <a
             href="{{ url_for('dashboard.recommendations') }}"
             class="nav-link {% if active_page == 'recommendations' %}active{% endif %}"
           >
-            Species Recommendation
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/></svg>
+            <span class="nav-link-text">Species Recommendation</span>
           </a>
 
           <!-- Notifications kept separate from the role-split section below,
@@ -69,9 +73,10 @@
             href="{{ url_for('dashboard.notifications_page') }}"
             class="nav-link {% if active_page == 'notifications' %}active{% endif %}"
           >
-            Notifications
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.268 21a2 2 0 0 0 3.464 0"/><path d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326"/></svg>
+            <span class="nav-link-text">Notifications</span>
           </a>
-          
+
 
           {% if session.role == 'field_officer' %}
           <p class="nav-section-title">Reports & Data</p>
@@ -87,7 +92,8 @@
             href="{{ url_for('dashboard.requests_page') }}"
             class="nav-link {% if active_page == 'requests' %}active{% endif %}"
           >
-            Request Reforestation Site
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="m9 14 2 2 4-4"/></svg>
+            <span class="nav-link-text">Request Reforestation Site</span>
           </a>
           {% endif %} {% if session.role == 'admin' %}
           <p class="nav-section-title">Administration</p>
@@ -95,43 +101,47 @@
             href="{{ url_for('admin.review_requests') }}"
             class="nav-link {% if active_page == 'review_requests' %}active{% endif %}"
           >
-            Review Requests
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="m9 14 2 2 4-4"/></svg>
+            <span class="nav-link-text">Review Requests</span>
           </a>
           <a
             href="{{ url_for('admin.user_management') }}"
             class="nav-link {% if active_page == 'users' %}active{% endif %}"
           >
-            User Management
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><path d="M16 3.128a4 4 0 0 1 0 7.744"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><circle cx="9" cy="7" r="4"/></svg>
+            <span class="nav-link-text">User Management</span>
           </a>
           <a
             href="{{ url_for('admin.reference_dataset') }}"
             class="nav-link {% if active_page == 'reference' %}active{% endif %}"
           >
-            Reference Dataset
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5V19A9 3 0 0 0 21 19V5"/><path d="M3 12A9 3 0 0 0 21 12"/></svg>
+            <span class="nav-link-text">Reference Dataset</span>
           </a>
           <a
             href="#"
             class="nav-link {% if active_page == 'settings' %}active{% endif %}"
           >
-            System Settings
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915"/><circle cx="12" cy="12" r="3"/></svg>
+            <span class="nav-link-text">System Settings</span>
           </a>
           {% endif %}
         </nav>
 
         {% if session.username %}
-        <a href="{{ url_for('auth.logout') }}" class="sign-out"> ⏻ Sign Out </a>
+        <a href="{{ url_for('auth.logout') }}" class="sign-out">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/></svg>
+          <span class="sign-out-text">Sign Out</span>
+        </a>
         {% else %}
-        <a href="{{ url_for('auth.login') }}" class="sign-out"> → Log In </a>
+        <a href="{{ url_for('auth.login') }}" class="sign-out">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m10 17 5-5-5-5"/><path d="M15 12H3"/><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/></svg>
+          <span class="sign-out-text">Log In</span>
+        </a>
         {% endif %}
-      </aside>
 
-      <button
-        class="sidebar-edge-toggle"
-        onclick="toggleSidebar()"
-        aria-label="Toggle sidebar"
-      >
-        ‹
-      </button>
+        <div class="sidebar-resize-handle" id="sidebarResizeHandle" aria-hidden="true"></div>
+      </aside>
 
       <!-- MAIN CONTENT -->
       <div class="main-area">
@@ -143,7 +153,7 @@
               onclick="toggleNotifDropdown()"
               aria-label="Notifications"
             >
-              🔔
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.268 21a2 2 0 0 0 3.464 0"/><path d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326"/></svg>
               <span id="notif-badge" class="notif-badge" style="display: none"
                 >0</span
               >
@@ -192,19 +202,48 @@
       // so it still runs even on pages (like GIS_map) that override extra_scripts
       // with their own script.
 
-      function toggleSidebar() {
-        const shell = document.querySelector(".app-shell");
-        shell.classList.toggle("sidebar-hidden");
-        localStorage.setItem(
-          "sidebarHidden",
-          shell.classList.contains("sidebar-hidden"),
-        );
-      }
+      // Drag-to-resize sidebar. Below COLLAPSE_THRESHOLD the nav labels hide
+      // and only icons show (links keep working, they're still real <a> tags) --
+      // replaces the old click-to-hide toggle button.
+      (function () {
+        const sidebar = document.querySelector(".sidebar");
+        const handle = document.getElementById("sidebarResizeHandle");
+        const MIN_WIDTH = 64;
+        const MAX_WIDTH = 320;
+        const DEFAULT_WIDTH = 240;
+        const COLLAPSE_THRESHOLD = 150;
 
-      // restore sidebar state on page load, so it stays hidden after navigating
-      if (localStorage.getItem("sidebarHidden") === "true") {
-        document.querySelector(".app-shell").classList.add("sidebar-hidden");
-      }
+        function applyWidth(px) {
+          const clamped = Math.max(MIN_WIDTH, Math.min(px, MAX_WIDTH));
+          sidebar.style.width = clamped + "px";
+          sidebar.classList.toggle("collapsed", clamped < COLLAPSE_THRESHOLD);
+        }
+
+        const saved = parseInt(localStorage.getItem("sidebarWidth"), 10);
+        applyWidth(saved || DEFAULT_WIDTH);
+
+        let dragging = false;
+
+        handle.addEventListener("mousedown", function (e) {
+          dragging = true;
+          sidebar.classList.add("resizing");
+          document.body.style.userSelect = "none";
+          e.preventDefault();
+        });
+
+        document.addEventListener("mousemove", function (e) {
+          if (!dragging) return;
+          applyWidth(e.clientX);
+        });
+
+        document.addEventListener("mouseup", function () {
+          if (!dragging) return;
+          dragging = false;
+          sidebar.classList.remove("resizing");
+          document.body.style.userSelect = "";
+          localStorage.setItem("sidebarWidth", parseInt(sidebar.style.width, 10));
+        });
+      })();
 
       function toggleNotifDropdown() {
         document.getElementById("notif-dropdown").classList.toggle("active");
@@ -228,7 +267,7 @@
         },
         Report: {
           cls: "type-report",
-          svg: '<path d="M9 11h6M9 15h6M9 7h6"/><rect x="5" y="3" width="14" height="18" rx="2"/>',
+          svg: '<path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z"/><path d="M14 2v5a1 1 0 0 0 1 1h5"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/>',
         },
       };
 
@@ -244,7 +283,7 @@
         }
         const icon = NOTIF_ICONS[type] || {
           cls: "",
-          svg: '<path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>',
+          svg: '<path d="M10.268 21a2 2 0 0 0 3.464 0"/><path d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326"/>',
         };
         return `<span class="notif-icon ${icon.cls}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${icon.svg}</svg></span>`;
       }
