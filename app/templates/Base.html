@@ -222,6 +222,7 @@
 
       function renderNotifList(notifications) {
         const list = document.getElementById("notif-dropdown-list");
+        if (!list) return;
         if (!notifications.length) {
           list.innerHTML =
             '<p class="placeholder-text">No notifications yet.</p>';
