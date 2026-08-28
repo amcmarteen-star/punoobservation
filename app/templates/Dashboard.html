@@ -1,102 +1,737 @@
-{% extends "Base.html" %}
+{% extends "Base.html" %} {% block title %}Dashboard - PuNoObservation{%
+endblock %}{% set active_page = 'dashboard' %} {% block extra_head %}
+<style>
+  .section-head {
+    margin: 2rem 0 1rem;
+    padding-bottom: 0.6rem;
+    border-bottom: 2px solid #e2e8f0;
+  }
 
-{% block title %}Dashboard - PuNoObservation{% endblock %}
-{% block content_class %}page-content-wide{% endblock %}
-{% set active_page = 'dashboard' %}
+  .section-head:first-of-type {
+    margin-top: 1rem;
+  }
 
-{% block content %}
+  .section-head .eyebrow {
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #16a34a;
+    font-weight: 700;
+    display: block;
+  }
 
-    <div class="page-header page-header-row">
-        <div>
-            <h2>Welcome, {{ session.username }}!</h2>
-            <p><strong>Role:</strong> {{ session.role }}</p>
-        </div>
-        <div id="dashboard-clock" class="dashboard-clock">
-            <span id="clock-time" class="clock-time">--:--:--</span>
-            <span id="clock-date" class="clock-date">Loading date...</span>
-        </div>
+  .section-head h4 {
+    margin: 0.15rem 0 0.2rem;
+    font-weight: 700;
+    color: #14532d;
+    font-size: 1.15rem;
+  }
+
+  .section-head p {
+    margin: 0;
+    font-size: 0.85rem;
+    color: #64748b;
+  }
+
+  .kpi-strip {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 0.85rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .kpi {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    padding: 1rem 1.1rem;
+  }
+
+  .kpi .num {
+    display: block;
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: #14532d;
+    line-height: 1.2;
+  }
+
+  .kpi .lbl {
+    display: block;
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #64748b;
+    margin-top: 0.15rem;
+  }
+
+  .kpi .sub {
+    display: block;
+    font-size: 0.72rem;
+    color: #94a3b8;
+    margin-top: 0.3rem;
+  }
+
+  .kpi.alert .num {
+    color: #b91c1c;
+  }
+
+  .chart-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    padding: 1.15rem 1.25rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .chart-card h5 {
+    margin: 0 0 0.15rem;
+    font-weight: 700;
+    color: #1e293b;
+    font-size: 0.98rem;
+  }
+
+  .chart-card .takeaway {
+    font-size: 0.8rem;
+    color: #64748b;
+    margin: 0 0 0.9rem;
+    line-height: 1.55;
+  }
+
+  .chart-box {
+    position: relative;
+    height: 300px;
+  }
+  .chart-box.tall {
+    height: 420px;
+  }
+
+  .chart-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.25rem;
+  }
+
+  @media (max-width: 992px) {
+    .chart-row {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .finding {
+    background: #f0f9ff;
+    border-left: 4px solid #0ea5e9;
+    border-radius: 6px;
+    padding: 0.85rem 1rem;
+    font-size: 0.85rem;
+    color: #0c4a6e;
+    line-height: 1.6;
+    margin-top: 0.9rem;
+  }
+
+  .finding strong {
+    color: #075985;
+  }
+
+  .finding.warn {
+    background: #fffbeb;
+    border-left-color: #f59e0b;
+    color: #78350f;
+  }
+
+  .finding.warn strong {
+    color: #92400e;
+  }
+
+  .loading {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: #94a3b8;
+  }
+</style>
+{% endblock %} {% block content %}
+
+<div class="page-header page-header-row">
+  <div>
+    <h2>Welcome, {{ session.username }}!</h2>
+    <p class="text-secondary mb-0">
+      Reforestation activity across Districts 5 and 6, Eastern Pangasinan.
+    </p>
+  </div>
+  <div id="dashboard-clock" class="dashboard-clock">
+    <span id="clock-time" class="clock-time">--:--:--</span>
+    <span id="clock-date" class="clock-date">Loading date...</span>
+  </div>
+</div>
+
+<div id="loading" class="loading">Loading analytics...</div>
+
+<div id="dash" style="display: none">
+  <!-- ================= SECTION 1 ================= -->
+  <div class="section-head">
+    <span class="eyebrow">Section 1 &mdash; Descriptive</span>
+    <h4>What has been done</h4>
+    <p>The scale and distribution of recorded reforestation activity.</p>
+  </div>
+
+  <div class="kpi-strip" id="kpiStrip"></div>
+
+  <div class="chart-row">
+    <div class="chart-card">
+      <h5>Activity by year</h5>
+      <p class="takeaway" id="yearTakeaway"></p>
+      <div class="chart-box"><canvas id="chartYear"></canvas></div>
     </div>
 
-    <!-- Overview Statistics -->
-    <div class="stats-grid">
-        <div class="stat-card">
-            <div class="stat-icon">Icon</div>
-            <div class="stat-details">
-                <h3>{{ total_sites }}</h3>
-                <p>Active Reforestation Sites</p>
-            </div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-icon">Icon</div>
-            <div class="stat-details">
-                <h3>{{ total_trees }}</h3>
-                <p>Target Trees Planted</p>
-            </div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-icon">Icon</div>
-            <div class="stat-details">
-                <h3>{{ total_reports }}</h3>
-                <p>Verified Field Reports</p>
-            </div>
-        </div>
+    <div class="chart-card">
+      <h5>Area under contract by municipality</h5>
+      <p class="takeaway" id="areaTakeaway"></p>
+      <div class="chart-box"><canvas id="chartArea"></canvas></div>
+    </div>
+  </div>
+
+  <!-- ================= SECTION 2 ================= -->
+  <div class="section-head">
+    <span class="eyebrow">Section 2 &mdash; Diagnostic</span>
+    <h4>How well was it done</h4>
+    <p>
+      Delivery against contract, and survival against the DENR 85% reference
+      threshold.
+    </p>
+  </div>
+
+  <div class="chart-card">
+    <h5>Delivery rate by municipality</h5>
+    <p class="takeaway">
+      Seedlings actually planted as a percentage of the contracted target.
+      Normalising by contract size means a small municipality delivering in full
+      ranks above a large one falling short.
+    </p>
+    <div class="chart-box"><canvas id="chartAchievement"></canvas></div>
+    <div class="finding" id="achievementFinding"></div>
+  </div>
+
+  <div class="chart-row">
+    <div class="chart-card">
+      <h5>Survival rate by municipality</h5>
+      <p class="takeaway">
+        Mean recorded survival. The dashed line marks the DENR 85% threshold,
+        below which contractors are not recommended for payment.
+      </p>
+      <div class="chart-box"><canvas id="chartSurvival"></canvas></div>
     </div>
 
-    <!-- Main Navigation Action -->
-    <div class="card">
-        <h3>Reforestation Mapping</h3>
-        <p>Click below to open the full-screen interactive spatial boundary map.</p>
-        <a href="{{ url_for('dashboard.gis_map') }}">
-            <button type="button" class="btn-primary">Open GIS Map</button>
-        </a>
+    <div class="chart-card">
+      <h5>Cost per hectare</h5>
+      <p class="takeaway">
+        Three-year project cost divided by contracted area. Wide variation may
+        reflect terrain, species, or accessibility.
+      </p>
+      <div class="chart-box"><canvas id="chartCost"></canvas></div>
+    </div>
+  </div>
+
+  <!-- ================= SECTION 3 ================= -->
+  <div class="section-head">
+    <span class="eyebrow">Section 3 &mdash; Prescriptive</span>
+    <h4>What should be done next</h4>
+    <p>
+      Site suitability from the recommendation engine, compared against where
+      planting has actually taken place.
+    </p>
+  </div>
+
+  <div class="chart-card">
+    <h5>Suitability against planting activity</h5>
+    <p class="takeaway">
+      Each point is a barangay. Horizontal axis is its mean suitability score
+      across the top five recommended species. Vertical axis is how many
+      seedlings have been planted there.
+    </p>
+    <div class="chart-box tall"><canvas id="chartScatter"></canvas></div>
+    <div class="finding" id="scatterFinding"></div>
+  </div>
+
+  <div class="chart-row">
+    <div class="chart-card">
+      <h5>Most recommended species</h5>
+      <p class="takeaway">
+        How often each species appears in a barangay's top five across all 478
+        barangays.
+      </p>
+      <div class="chart-box"><canvas id="chartSpecies"></canvas></div>
     </div>
 
-    <!-- Role Panel -->
-    {% if session.role == 'admin' %}
-        <div class="card">
-            <h3>Admin Panel</h3>
-            <p>You have full system access to manage users and system settings.</p>
+    <div class="chart-card">
+      <h5>Highest-suitability barangays with no recorded planting</h5>
+      <p class="takeaway">
+        Sorted by suitability. These are candidate sites where no DENR
+        reforestation record exists.
+      </p>
+      <div class="table-card">
+        <div class="table-scroll-container" style="max-height: 340px">
+          <table class="table custom-table align-middle">
+            <thead>
+              <tr>
+                <th>Barangay</th>
+                <th>Municipality</th>
+                <th class="text-end">Score</th>
+                <th>Top species</th>
+              </tr>
+            </thead>
+            <tbody id="unplantedBody"></tbody>
+          </table>
         </div>
-    {% elif session.role == 'field_officer' %}
-        <div class="card">
-            <h3>Field Officer Panel</h3>
-            <p>You can upload photo monitoring reports and update site data.</p>
-        </div>
-    {% else %}
-        <div class="card">
-            <h3>User Activity</h3>
-            <p>Select the GIS Map button above to inspect reforestation polygons and field report details.</p>
-        </div>
-    {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
 
-{% endblock %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script>
+  const GREEN = "#16a34a";
+  const DARK = "#14532d";
+  const AMBER = "#f59e0b";
+  const RED = "#dc2626";
+  const GREY = "#cbd5e1";
 
+  const fmt = (n) => (n || 0).toLocaleString();
+
+  Chart.defaults.font.family =
+    "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif";
+  Chart.defaults.font.size = 11;
+  Chart.defaults.color = "#64748b";
+
+  async function loadDashboard() {
+    const res = await fetch("/api/dashboard-analytics");
+    const d = await res.json();
+
+    document.getElementById("loading").style.display = "none";
+    document.getElementById("dash").style.display = "block";
+
+    buildKpis(d.headline);
+    buildYear(d.by_year);
+    buildArea(d.by_municipality);
+    buildAchievement(d.by_municipality);
+    buildSurvival(d.by_municipality);
+    buildCost(d.by_municipality);
+    buildScatter(d);
+    buildSpecies(d.species_rank);
+    buildUnplanted(d.unplanted_top);
+  }
+
+  // ---------------- KPIs ----------------
+  function buildKpis(h) {
+    const cards = [
+      { num: fmt(h.sites), lbl: "Reforestation sites" },
+      { num: fmt(h.area_ha) + " ha", lbl: "Area under contract" },
+      {
+        num: fmt(h.actual),
+        lbl: "Seedlings planted",
+        sub: "of " + fmt(h.target) + " targeted",
+      },
+      {
+        num: (h.achievement || 0) + "%",
+        lbl: "Delivery rate",
+        alert: h.achievement !== null && h.achievement < 90,
+      },
+      {
+        num: h.barangays_covered + " / " + h.barangays_total,
+        lbl: "Barangays covered",
+        sub: h.coverage_pct + "% of the study area",
+        alert: h.coverage_pct < 20,
+      },
+      {
+        num: h.avg_cost_per_ha ? "\u20B1" + fmt(h.avg_cost_per_ha) : "\u2014",
+        lbl: "Average cost per ha",
+        sub: h.cost_sites + " sites with cost data",
+      },
+    ];
+
+    document.getElementById("kpiStrip").innerHTML = cards
+      .map(
+        (c) => `
+      <div class="kpi ${c.alert ? "alert" : ""}">
+        <span class="num">${c.num}</span>
+        <span class="lbl">${c.lbl}</span>
+        ${c.sub ? `<span class="sub">${c.sub}</span>` : ""}
+      </div>`,
+      )
+      .join("");
+  }
+
+  // ---------------- year ----------------
+  function buildYear(rows) {
+    const years = rows.map((r) => r.year);
+    const gaps = [];
+    for (let y = Math.min(...years); y <= Math.max(...years); y++) {
+      if (!years.includes(y)) gaps.push(y);
+    }
+
+    document.getElementById("yearTakeaway").textContent = gaps.length
+      ? `Sites contracted per year. No sites recorded in ${gaps.join(", ")}.`
+      : "Sites contracted per year, with the area covered.";
+
+    new Chart(document.getElementById("chartYear"), {
+      data: {
+        labels: years,
+        datasets: [
+          {
+            type: "bar",
+            label: "Sites",
+            data: rows.map((r) => r.sites),
+            backgroundColor: GREEN,
+            yAxisID: "y",
+            order: 2,
+          },
+          {
+            type: "line",
+            label: "Hectares",
+            data: rows.map((r) => Math.round(r.area)),
+            borderColor: DARK,
+            backgroundColor: DARK,
+            tension: 0.3,
+            yAxisID: "y1",
+            order: 1,
+          },
+        ],
+      },
+      options: {
+        maintainAspectRatio: false,
+        interaction: { mode: "index", intersect: false },
+        scales: {
+          y: { beginAtZero: true, title: { display: true, text: "Sites" } },
+          y1: {
+            beginAtZero: true,
+            position: "right",
+            grid: { drawOnChartArea: false },
+            title: { display: true, text: "Hectares" },
+          },
+        },
+      },
+    });
+  }
+
+  // ---------------- area ----------------
+  function buildArea(rows) {
+    const top = rows.slice(0, 12);
+    const share = rows.length
+      ? Math.round(
+          (top.slice(0, 3).reduce((a, r) => a + r.area, 0) /
+            rows.reduce((a, r) => a + r.area, 0)) *
+            100,
+        )
+      : 0;
+
+    document.getElementById("areaTakeaway").textContent =
+      `The three largest municipalities account for ${share}% of all contracted area.`;
+
+    new Chart(document.getElementById("chartArea"), {
+      type: "bar",
+      data: {
+        labels: top.map((r) => r.municipality),
+        datasets: [
+          {
+            label: "Hectares",
+            data: top.map((r) => r.area),
+            backgroundColor: GREEN,
+          },
+        ],
+      },
+      options: {
+        indexAxis: "y",
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: { x: { beginAtZero: true } },
+      },
+    });
+  }
+
+  // ---------------- achievement ----------------
+  function buildAchievement(rows) {
+    const d = rows
+      .filter((r) => r.achievement !== null)
+      .sort((a, b) => b.achievement - a.achievement);
+
+    const under = d.filter((r) => r.achievement < 100).length;
+
+    document.getElementById("achievementFinding").innerHTML =
+      `<strong>Finding.</strong> ${under} of ${d.length} municipalities
+       delivered fewer seedlings than contracted. Contract size does not
+       predict delivery &mdash; compare the ranking here against the area
+       chart above.`;
+
+    new Chart(document.getElementById("chartAchievement"), {
+      type: "bar",
+      data: {
+        labels: d.map((r) => r.municipality),
+        datasets: [
+          {
+            label: "Delivery %",
+            data: d.map((r) => r.achievement),
+            backgroundColor: d.map((r) =>
+              r.achievement >= 100 ? GREEN : r.achievement >= 90 ? AMBER : RED,
+            ),
+          },
+        ],
+      },
+      options: {
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          y: {
+            beginAtZero: true,
+            title: { display: true, text: "% of target planted" },
+          },
+          x: { ticks: { maxRotation: 60, minRotation: 45 } },
+        },
+      },
+    });
+  }
+
+  // ---------------- survival ----------------
+  function buildSurvival(rows) {
+    const d = rows
+      .filter((r) => r.survival !== null)
+      .sort((a, b) => b.survival - a.survival);
+
+    // 85% reference line, drawn as a plugin so it sits above the bars
+    const line85 = {
+      id: "line85",
+      afterDraw(chart) {
+        const { ctx, chartArea, scales } = chart;
+        const y = scales.y.getPixelForValue(85);
+        ctx.save();
+        ctx.strokeStyle = "#b91c1c";
+        ctx.setLineDash([5, 4]);
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(chartArea.left, y);
+        ctx.lineTo(chartArea.right, y);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.fillStyle = "#b91c1c";
+        ctx.font = "600 10px sans-serif";
+        ctx.fillText("DENR 85% threshold", chartArea.left + 6, y - 5);
+        ctx.restore();
+      },
+    };
+
+    new Chart(document.getElementById("chartSurvival"), {
+      type: "bar",
+      data: {
+        labels: d.map((r) => r.municipality),
+        datasets: [
+          {
+            label: "Survival %",
+            data: d.map((r) => r.survival),
+            backgroundColor: d.map((r) => (r.survival >= 85 ? GREEN : RED)),
+          },
+        ],
+      },
+      options: {
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          y: { beginAtZero: true, suggestedMax: 100 },
+          x: { ticks: { maxRotation: 60, minRotation: 45 } },
+        },
+      },
+      plugins: [line85],
+    });
+  }
+
+  // ---------------- cost ----------------
+  function buildCost(rows) {
+    const d = rows
+      .filter((r) => r.cost_per_ha)
+      .sort((a, b) => b.cost_per_ha - a.cost_per_ha);
+
+    new Chart(document.getElementById("chartCost"), {
+      type: "bar",
+      data: {
+        labels: d.map((r) => r.municipality),
+        datasets: [
+          {
+            label: "Cost per ha",
+            data: d.map((r) => r.cost_per_ha),
+            backgroundColor: DARK,
+          },
+        ],
+      },
+      options: {
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: (c) => "\u20B1" + fmt(Math.round(c.parsed.y)) + " per ha",
+            },
+          },
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            ticks: { callback: (v) => "\u20B1" + v / 1000 + "k" },
+          },
+          x: { ticks: { maxRotation: 60, minRotation: 45 } },
+        },
+      },
+    });
+  }
+
+  // ---------------- scatter ----------------
+  function buildScatter(d) {
+    const planted = d.scatter.filter((s) => s.has_site && s.planted > 0);
+    const empty = d.scatter.filter((s) => !s.has_site);
+
+    const r = d.correlation;
+    let verdict;
+    if (r === null) {
+      verdict = "Too few planted barangays to assess a relationship.";
+    } else if (Math.abs(r) < 0.2) {
+      verdict = `Correlation is ${r}, effectively none. Site suitability
+                 does not explain where planting has taken place.`;
+    } else if (Math.abs(r) < 0.5) {
+      verdict = `Correlation is ${r}, weak.`;
+    } else {
+      verdict = `Correlation is ${r}, moderate to strong.`;
+    }
+
+    document.getElementById("scatterFinding").innerHTML =
+      `<strong>Finding.</strong> ${verdict}
+       ${empty.length} barangays have no recorded planting at all.
+       Those in the upper suitability range with no planting are the
+       clearest opportunities, and are listed below.
+       <br><br>
+       <em>n = ${d.scatter_n} planted barangays.</em>`;
+
+    new Chart(document.getElementById("chartScatter"), {
+      type: "scatter",
+      data: {
+        datasets: [
+          {
+            label: "Has planting record",
+            data: planted.map((s) => ({
+              x: s.suitability,
+              y: s.planted,
+              b: s.barangay,
+              m: s.municipality,
+            })),
+            backgroundColor: GREEN,
+            pointRadius: 5,
+          },
+          {
+            label: "No planting record",
+            data: empty.map((s) => ({
+              x: s.suitability,
+              y: 0,
+              b: s.barangay,
+              m: s.municipality,
+            })),
+            backgroundColor: GREY,
+            pointRadius: 3,
+          },
+        ],
+      },
+      options: {
+        maintainAspectRatio: false,
+        plugins: {
+          tooltip: {
+            callbacks: {
+              label: (c) =>
+                `${c.raw.b}, ${c.raw.m}  \u2014  ` +
+                `suitability ${c.raw.x}, ${fmt(c.raw.y)} planted`,
+            },
+          },
+        },
+        scales: {
+          x: {
+            title: { display: true, text: "Mean suitability (top 5 species)" },
+          },
+          y: {
+            beginAtZero: true,
+            title: { display: true, text: "Seedlings planted" },
+          },
+        },
+      },
+    });
+  }
+
+  // ---------------- species ----------------
+  function buildSpecies(rows) {
+    new Chart(document.getElementById("chartSpecies"), {
+      type: "bar",
+      data: {
+        labels: rows.map((r) => r.species),
+        datasets: [
+          {
+            label: "Barangays in top 5",
+            data: rows.map((r) => r.count),
+            backgroundColor: GREEN,
+          },
+        ],
+      },
+      options: {
+        indexAxis: "y",
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: { x: { beginAtZero: true } },
+      },
+    });
+  }
+
+  // ---------------- unplanted table ----------------
+  function buildUnplanted(rows) {
+    document.getElementById("unplantedBody").innerHTML = rows
+      .map(
+        (r) => `
+      <tr>
+        <td class="fw-semibold">${r.barangay}</td>
+        <td class="text-secondary small">${r.municipality}</td>
+        <td class="num-cell fw-semibold">${r.suitability}</td>
+        <td>
+          <div>${r.top_species}</div>
+          ${
+            r.second_species
+              ? `<div class="text-secondary small">${r.second_species}</div>`
+              : ""
+          }
+        </td>
+      </tr>`,
+      )
+      .join("");
+  }
+
+  loadDashboard();
+</script>
 {% block extra_scripts %}
 <script>
-    function updateDashboardClock() {
-        const now = new Date();
- 
-        const timeStr = now.toLocaleTimeString('en-PH', {
-            timeZone: 'Asia/Manila',
-            hour: '2-digit',
-            minute: '2-digit',
-            second: '2-digit',
-            hour12: true
-        });
- 
-        const dateStr = now.toLocaleDateString('en-PH', {
-            timeZone: 'Asia/Manila',
-            weekday: 'long',
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric'
-        });
- 
-        document.getElementById('clock-time').textContent = timeStr;
-        document.getElementById('clock-date').textContent = dateStr;
-    }
- 
-    updateDashboardClock();
-    setInterval(updateDashboardClock, 1000);
+  function updateDashboardClock() {
+    const now = new Date();
+
+    const timeStr = now.toLocaleTimeString("en-PH", {
+      timeZone: "Asia/Manila",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hour12: true,
+    });
+
+    const dateStr = now.toLocaleDateString("en-PH", {
+      timeZone: "Asia/Manila",
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+
+    document.getElementById("clock-time").textContent = timeStr;
+    document.getElementById("clock-date").textContent = dateStr;
+  }
+
+  updateDashboardClock();
+  setInterval(updateDashboardClock, 1000);
 </script>
-{% endblock %}
+{% endblock %} {% endblock %}

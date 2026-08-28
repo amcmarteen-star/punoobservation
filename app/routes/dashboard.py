@@ -1301,4 +1301,275 @@ def _load_barangay_geometry(municipality, barangay):
             return feat.get('geometry')
  
     return None
+
+ 
+@dashboard_bp.route('/api/dashboard-analytics')
+@login_required
+def api_dashboard_analytics():
+    """
+    Every figure the dashboard charts need.
+ 
+    Roughly one second on 478 barangays, most of it the suitability
+    scoring in section 3. If that becomes a problem, cache the section 3
+    block - the underlying data changes only when species or barangay
+    characteristics are reseeded.
+    """
+    # ------------------------------------------------------------------
+    # base pull: every site with its location and planting figures
+    # ------------------------------------------------------------------
+    rows = (
+        db.session.query(Site, Location)
+        .join(Location, Site.location_id == Location.location_id)
+        .all()
+    )
+ 
+    targets = dict(
+        db.session.query(
+            ReforestationRecord.site_id,
+            func.sum(ReforestationRecord.target_quantity),
+        ).group_by(ReforestationRecord.site_id).all()
+    )
+ 
+    actuals = dict(
+        db.session.query(
+            ReforestationRecord.site_id,
+            func.sum(ReforestationRecord.actual_quantity_planted),
+        ).group_by(ReforestationRecord.site_id).all()
+    )
+ 
+    survivals = dict(
+        db.session.query(
+            ReforestationRecord.site_id,
+            func.avg(ReforestationRecord.survival_rate),
+        ).filter(ReforestationRecord.survival_rate.isnot(None))
+        .group_by(ReforestationRecord.site_id).all()
+    )
+ 
+    # ------------------------------------------------------------------
+    # SECTION 1 - WHAT HAS BEEN DONE
+    # ------------------------------------------------------------------
+    total_sites = len(rows)
+    total_area = 0.0
+    total_target = 0
+    total_actual = 0
+    total_cost = 0.0
+    cost_sites = 0
+ 
+    by_year = {}
+    by_muni = {}
+    by_zone = {}
+    barangays_with_sites = set()
+ 
+    for site, loc in rows:
+        area = float(site.area_size_ha or 0)
+        tgt = int(targets.get(site.site_id) or 0)
+        act = int(actuals.get(site.site_id) or 0)
+ 
+        total_area += area
+        total_target += tgt
+        total_actual += act
+        barangays_with_sites.add((loc.municipality, loc.barangay))
+ 
+        if site.project_cost_3yr:
+            total_cost += float(site.project_cost_3yr)
+            cost_sites += 1
+ 
+        # --- by year ---
+        yr = site.year_contracted
+        if yr:
+            y = by_year.setdefault(int(yr), {"sites": 0, "area": 0.0,
+                                             "target": 0, "actual": 0})
+            y["sites"] += 1
+            y["area"] += area
+            y["target"] += tgt
+            y["actual"] += act
+ 
+        # --- by municipality ---
+        m = by_muni.setdefault(loc.municipality, {
+            "sites": 0, "area": 0.0, "target": 0, "actual": 0,
+            "survival_sum": 0.0, "survival_n": 0, "cost": 0.0,
+            "cost_area": 0.0,
+        })
+        m["sites"] += 1
+        m["area"] += area
+        m["target"] += tgt
+        m["actual"] += act
+ 
+        sv = survivals.get(site.site_id)
+        if sv is not None:
+            m["survival_sum"] += float(sv)
+            m["survival_n"] += 1
+ 
+        if site.project_cost_3yr and area > 0:
+            m["cost"] += float(site.project_cost_3yr)
+            m["cost_area"] += area
+ 
+        # --- by zone ---
+        z = site.zone_type or "Unspecified"
+        by_zone[z] = by_zone.get(z, 0) + 1
+ 
+    total_barangays = Location.query.count()
+ 
+    # ------------------------------------------------------------------
+    # SECTION 2 - HOW WELL WAS IT DONE
+    # ------------------------------------------------------------------
+    #
+    # Achievement rate normalises away contract size. A small barangay
+    # delivering 100% outranks a large one delivering 62%, which a raw
+    # volume chart would hide.
+ 
+    muni_rows = []
+    for name, m in by_muni.items():
+        achievement = (m["actual"] / m["target"] * 100) if m["target"] else None
+        survival = (m["survival_sum"] / m["survival_n"]) if m["survival_n"] else None
+        cost_per_ha = (m["cost"] / m["cost_area"]) if m["cost_area"] else None
+ 
+        muni_rows.append({
+            "municipality": name,
+            "sites": m["sites"],
+            "area": round(m["area"], 2),
+            "target": m["target"],
+            "actual": m["actual"],
+            "achievement": round(achievement, 1) if achievement is not None else None,
+            "survival": round(survival, 1) if survival is not None else None,
+            "cost_per_ha": round(cost_per_ha, 0) if cost_per_ha else None,
+        })
+ 
+    # ------------------------------------------------------------------
+    # SECTION 3 - WHAT SHOULD BE DONE NEXT
+    # ------------------------------------------------------------------
+    #
+    # Suitability is summarised as the mean of a barangay's top 5
+    # similarity scores. A single top score would be dominated by
+    # whichever species happens to be a generalist; the top 5 describes
+    # how well the site suits the reference set as a whole.
+ 
+    all_locations = Location.query.filter(
+        Location.elevation_m.isnot(None)
+    ).all()
+ 
+    planted_by_brgy = {}
+    for site, loc in rows:
+        key = (loc.municipality, loc.barangay)
+        planted_by_brgy[key] = planted_by_brgy.get(key, 0) + int(
+            actuals.get(site.site_id) or 0
+        )
+ 
+    scatter = []
+    unplanted = []
+ 
+    for loc in all_locations:
+        result = recommend_for_location(loc, top_k=5)
+        if not result["found"] or not result["recommendations"]:
+            continue
+ 
+        top5 = result["recommendations"]
+        mean_sim = sum(r["similarity"] for r in top5) / len(top5)
+ 
+        key = (loc.municipality, loc.barangay)
+        planted = planted_by_brgy.get(key, 0)
+ 
+        scatter.append({
+            "municipality": loc.municipality,
+            "barangay": loc.barangay,
+            "suitability": round(mean_sim, 4),
+            "planted": planted,
+            "has_site": key in planted_by_brgy,
+        })
+ 
+        if key not in planted_by_brgy:
+            unplanted.append({
+                "municipality": loc.municipality,
+                "barangay": loc.barangay,
+                "suitability": round(mean_sim, 4),
+                "top_species": top5[0]["specie_name"],
+                "top_score": top5[0]["similarity"],
+                "second_species": top5[1]["specie_name"] if len(top5) > 1 else None,
+                "elevation_m": loc.elevation_m,
+                "soil_texture": loc.soil_texture,
+            })
+ 
+    unplanted.sort(key=lambda x: -x["suitability"])
+ 
+    # --- how often each species reaches a top 5 ---
+    species_hits = {}
+    for loc in all_locations:
+        result = recommend_for_location(loc, top_k=5)
+        if not result["found"]:
+            continue
+        for r in result["recommendations"]:
+            species_hits[r["specie_name"]] = species_hits.get(
+                r["specie_name"], 0
+            ) + 1
+ 
+    species_rank = sorted(
+        [{"species": k, "count": v} for k, v in species_hits.items()],
+        key=lambda x: -x["count"],
+    )[:12]
+ 
+    # --- does suitability predict planting? ---
+    with_sites = [s for s in scatter if s["has_site"] and s["planted"] > 0]
+    correlation = _pearson(
+        [s["suitability"] for s in with_sites],
+        [s["planted"] for s in with_sites],
+    ) if len(with_sites) > 2 else None
+ 
+    return jsonify({
+        "headline": {
+            "sites": total_sites,
+            "area_ha": round(total_area, 1),
+            "target": total_target,
+            "actual": total_actual,
+            "achievement": round(total_actual / total_target * 100, 1)
+                           if total_target else None,
+            "barangays_covered": len(barangays_with_sites),
+            "barangays_total": total_barangays,
+            "coverage_pct": round(
+                len(barangays_with_sites) / total_barangays * 100, 1
+            ) if total_barangays else 0,
+            "total_cost": round(total_cost, 2),
+            "cost_sites": cost_sites,
+            "avg_cost_per_ha": round(total_cost / total_area, 0)
+                               if total_area else None,
+        },
+        "by_year": [
+            {"year": y, **v} for y, v in sorted(by_year.items())
+        ],
+        "by_municipality": sorted(muni_rows, key=lambda x: -x["area"]),
+        "by_zone": [
+            {"zone": k, "sites": v}
+            for k, v in sorted(by_zone.items(), key=lambda x: -x[1])
+        ],
+        "scatter": scatter,
+        "unplanted_top": unplanted[:15],
+        "species_rank": species_rank,
+        "correlation": round(correlation, 3) if correlation is not None else None,
+        "scatter_n": len(with_sites),
+    })
+ 
+ 
+def _pearson(xs, ys):
+    """
+    Correlation between two lists, -1 to 1.
+ 
+    Used to answer one question: are the most suitable barangays the ones
+    being planted? A value near zero means site suitability is not
+    driving where reforestation happens - which is the argument for a
+    recommendation system.
+    """
+    n = len(xs)
+    if n < 3:
+        return None
+ 
+    mx = sum(xs) / n
+    my = sum(ys) / n
+ 
+    num = sum((x - mx) * (y - my) for x, y in zip(xs, ys))
+    dx = sum((x - mx) ** 2 for x in xs) ** 0.5
+    dy = sum((y - my) ** 2 for y in ys) ** 0.5
+ 
+    if dx == 0 or dy == 0:
+        return None
+ 
+    return num / (dx * dy)
  
