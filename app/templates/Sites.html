@@ -1,104 +1,248 @@
 {% extends "Base.html" %}
 {% block title %}Reforestation Sites{% endblock %}
+{% block content_class %}page-content-wide{% endblock %}
+{% set active_page = 'sites' %}
 {% block content %}
 
-<div class="page-header mb-4">
-    <h2 class="fw-bold text-dark">Reforestation Sites</h2>
+{% set ns = namespace(sites=[]) %}
+{% for municipality, barangays in grouped.items() %}
+    {% for barangay, site_list in barangays.items() %}
+        {% for s in site_list %}
+            {% set ns.sites = ns.sites + [s] %}
+        {% endfor %}
+    {% endfor %}
+{% endfor %}
+
+<div class="um-header">
+    <div>
+        <div class="um-title-row">
+            <h2>Reforestation Sites</h2>
+            <span class="um-count-pill" id="sites-count">{{ ns.sites|length }}</span>
+        </div>
+        <p class="um-subtitle">All registered reforestation sites across Eastern Pangasinan.</p>
+    </div>
 </div>
 
-{% for municipality, barangays in grouped.items() %}
-    <div class="mb-4">
-        <h4 class="text-success fw-bold border-bottom pb-2">{{ municipality }}</h4>
-        
-        {% for barangay, sites in barangays.items() %}
-            <h5 class="mt-3 text-secondary fw-semibold">📍 {{ barangay }}</h5>
-            
-            <div class="table-card mt-2">
-                <div class="table-scroll-container">
-                    <table class="table custom-table align-middle">
-                        <thead>
-                            <tr>
-                                <th>Site Name</th>
-                                {% if session.get('role') == 'admin' %}
-                                <th>Site Code</th>
-                                <th>Zone</th>
-                                <th>LOA/Contract Code</th>
-                                {% endif %}
-                                <th>PENRO</th>
-                                <th>CENRO</th>
-                                <th>District</th>
-                                <th>Land Class</th>
-                                <th>Land Use</th>
-                                <th>Contact Person</th>
-                                <th>Component</th>
-                                <th>Commodity</th>
-                                <th>Year</th>
-                                <th class="text-end">Area Size (ha)</th>
-                                <th class="text-end">Area Contracted (ha)</th>
-                                <th>Executed Date</th>
-                                <th>Expiry Date</th>
-                                {% if session.get('role') == 'admin' %}
-                                <th class="text-end">Project Cost (3yr)</th>
-                                <th class="text-end">Retention Fee</th>
-                                <th>Retention Paid Date</th>
-                                <th class="text-end">Land Improvement</th>
-                                <th class="text-end">CIP Amount</th>
-                                {% endif %}
-                                <th class="text-end">Target Seedlings</th>
-                                <th class="text-end">Actual Planted</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for s in sites %}
-                            <tr>
-                                <td>{{ s.site_name }}</td>
-                                {% if session.get('role') == 'admin' %}
-                                    <td><code>{{ s.site_code or '—' }}</code></td>
-                                    <td>
-                                        {% if s.zone_type == 'Production' %}
-                                            <span class="badge-zone-production">Production</span>
-                                        {% elif s.zone_type == 'Protection' %}
-                                            <span class="badge-zone-protection">Protection</span>
-                                        {% else %}
-                                            <span class="text-muted">—</span>
-                                        {% endif %}
-                                    </td>
-                                    <td><code>{{ s.loa_contract_code or '—' }}</code></td>
-                                {% endif %}
-                                <td>{{ s.penro or '—' }}</td>
-                                <td>{{ s.cenro or '—' }}</td>
-                                <td>{{ s.congressional_district or '—' }}</td>
-                                <td>{{ s.land_classification or '—' }}</td>
-                                <td>{{ s.major_land_use or '—' }}</td>
-                                <td>{{ s.contact_person or '—' }}</td>
-                                <td>{{ s.component or '—' }}</td>
-                                <td>{{ s.commodity or '—' }}</td>
-                                <td>{{ s.year_contracted or '—' }}</td>
-                                <td class="num-cell">{{ s.area_size_ha }}</td>
-                                <td class="num-cell">{{ s.area_contracted_ha or '—' }}</td>
-                                <td>{{ s.date_contract_executed or '—' }}</td>
-                                <td>{{ s.date_contract_expiry or '—' }}</td>
-                                {% if session.get('role') == 'admin' %}
-                                    <td class="num-cell">{% if s.project_cost_3yr %}₱{{ "{:,.2f}".format(s.project_cost_3yr) }}{% else %}—{% endif %}</td>
-                                    <td class="num-cell">{% if s.retention_fee_amount_paid %}₱{{ "{:,.2f}".format(s.retention_fee_amount_paid) }}{% else %}—{% endif %}</td>
-                                    <td>{{ s.retention_fee_date_paid or '—' }}</td>
-                                    <td class="num-cell">{% if s.amount_under_land_improvement %}₱{{ "{:,.2f}".format(s.amount_under_land_improvement) }}{% else %}—{% endif %}</td>
-                                    <td class="num-cell">{% if s.amount_still_in_cip %}₱{{ "{:,.2f}".format(s.amount_still_in_cip) }}{% else %}—{% endif %}</td>
-                                {% endif %}
-                                <td class="num-cell fw-semibold">
-                                    {{ "{:,}".format(site_totals.get(s.site_id).target_total) if site_totals.get(s.site_id) and site_totals.get(s.site_id).target_total else '—' }}
-                                </td>
-                                <td class="num-cell fw-semibold text-success">
-                                    {{ "{:,}".format(site_totals.get(s.site_id).actual_total) if site_totals.get(s.site_id) and site_totals.get(s.site_id).actual_total else '—' }}
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        {% endfor %}
+<div class="um-toolbar">
+    <div class="um-filter-wrap">
+        <button type="button" class="um-filter-btn" onclick="siteToggleFilterMenu()">
+            <span class="um-filter-btn-label">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/></svg>
+                <span id="site-filter-label">Municipality</span>
+            </span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+        </button>
+        <div id="site-filter-menu" class="um-filter-menu">
+            <button type="button" class="active" onclick="siteFilterMunicipality('all', 'Municipality')">All municipalities</button>
+            {% for municipality in grouped.keys()|sort %}
+                <button type="button" onclick="siteFilterMunicipality('{{ municipality|e }}', '{{ municipality|e }}')">{{ municipality }}</button>
+            {% endfor %}
+        </div>
     </div>
-{% endfor %}
+
+    <div class="um-search-group">
+        <div class="um-search-wrap">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg>
+            <input type="text" id="site-search-input" class="um-search-input"
+                   placeholder="Search site, barangay, municipality, or code..."
+                   oninput="siteApplyFilters()">
+        </div>
+        <a href="#" id="site-clear-btn" class="um-btn-ghost" style="display: none;" onclick="siteClearFilters(); return false;">Clear</a>
+    </div>
+</div>
+
+<div class="um-table-card">
+    {% if ns.sites %}
+    <div class="sites-scroll-wrap" id="sites-scroll">
+        <table class="um-table sites-table" id="sites-table">
+            <thead>
+                <tr>
+                    <th>Site Name</th>
+                    <th>Barangay</th>
+                    <th>Municipality</th>
+                    <th>Zone</th>
+                    {% if session.role == 'admin' %}
+                        <th>Site Code</th>
+                        <th>LOA/Contract Code</th>
+                    {% endif %}
+                    <th>PENRO</th>
+                    <th>CENRO</th>
+                    <th>District</th>
+                    <th>Land Class</th>
+                    <th>Land Use</th>
+                    <th>Contact Person</th>
+                    <th>Component</th>
+                    <th>Commodity</th>
+                    <th>Year</th>
+                    <th class="text-end">Area (ha)</th>
+                    <th class="text-end">Contracted (ha)</th>
+                    <th>Executed Date</th>
+                    <th>Expiry Date</th>
+                    {% if session.role == 'admin' %}
+                        <th class="text-end">Project Cost (3yr)</th>
+                        <th class="text-end">Retention Fee</th>
+                        <th>Retention Paid Date</th>
+                        <th class="text-end">Land Improvement</th>
+                        <th class="text-end">CIP Amount</th>
+                    {% endif %}
+                    <th class="text-end">Target Seedlings</th>
+                    <th class="text-end">Actual Planted</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for s in ns.sites %}
+                <tr data-municipality="{{ s.location.municipality|e }}"
+                    data-search="{{ (s.site_name ~ ' ' ~ s.location.barangay ~ ' ' ~ s.location.municipality ~ ' ' ~ (s.site_code or ''))|lower|e }}">
+                    <td class="sites-name-cell">{{ s.site_name }}</td>
+                    <td>{{ s.location.barangay }}</td>
+                    <td>{{ s.location.municipality }}</td>
+                    <td>
+                        {% if s.zone_type == 'Production' %}
+                            <span class="badge-zone-production">Production</span>
+                        {% elif s.zone_type == 'Protection' %}
+                            <span class="badge-zone-protection">Protection</span>
+                        {% else %}
+                            <span class="um-muted">&mdash;</span>
+                        {% endif %}
+                    </td>
+                    {% if session.role == 'admin' %}
+                        <td><code>{{ s.site_code or '—' }}</code></td>
+                        <td><code>{{ s.loa_contract_code or '—' }}</code></td>
+                    {% endif %}
+                    <td>{{ s.penro or '—' }}</td>
+                    <td>{{ s.cenro or '—' }}</td>
+                    <td>{{ s.congressional_district or '—' }}</td>
+                    <td>{{ s.land_classification or '—' }}</td>
+                    <td>{{ s.major_land_use or '—' }}</td>
+                    <td>{{ s.contact_person or '—' }}</td>
+                    <td>{{ s.component or '—' }}</td>
+                    <td>{{ s.commodity or '—' }}</td>
+                    <td>{{ s.year_contracted or '—' }}</td>
+                    <td class="num-cell">{{ s.area_size_ha }}</td>
+                    <td class="num-cell">{{ s.area_contracted_ha or '—' }}</td>
+                    <td>{{ s.date_contract_executed or '—' }}</td>
+                    <td>{{ s.date_contract_expiry or '—' }}</td>
+                    {% if session.role == 'admin' %}
+                        <td class="num-cell">{% if s.project_cost_3yr %}₱{{ "{:,.2f}".format(s.project_cost_3yr) }}{% else %}—{% endif %}</td>
+                        <td class="num-cell">{% if s.retention_fee_amount_paid %}₱{{ "{:,.2f}".format(s.retention_fee_amount_paid) }}{% else %}—{% endif %}</td>
+                        <td>{{ s.retention_fee_date_paid or '—' }}</td>
+                        <td class="num-cell">{% if s.amount_under_land_improvement %}₱{{ "{:,.2f}".format(s.amount_under_land_improvement) }}{% else %}—{% endif %}</td>
+                        <td class="num-cell">{% if s.amount_still_in_cip %}₱{{ "{:,.2f}".format(s.amount_still_in_cip) }}{% else %}—{% endif %}</td>
+                    {% endif %}
+                    <td class="num-cell sites-fw-semibold">
+                        {{ "{:,}".format(site_totals.get(s.site_id).target_total) if site_totals.get(s.site_id) and site_totals.get(s.site_id).target_total else '—' }}
+                    </td>
+                    <td class="num-cell sites-fw-semibold sites-actual">
+                        {{ "{:,}".format(site_totals.get(s.site_id).actual_total) if site_totals.get(s.site_id) and site_totals.get(s.site_id).actual_total else '—' }}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="sites-scroll-controls">
+        <button type="button" class="sites-scroll-btn" id="sites-scroll-left" onclick="sitesScroll(-1)" aria-label="Scroll table left">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+        </button>
+        <span class="sites-scroll-hint">Scroll to see more columns</span>
+        <button type="button" class="sites-scroll-btn" id="sites-scroll-right" onclick="sitesScroll(1)" aria-label="Scroll table right">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+        </button>
+    </div>
+
+    <div class="um-empty" id="sites-empty" style="display: none;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/></svg>
+        <strong>No sites match your search</strong>
+        <p>Try a different site name, barangay, municipality, or code.</p>
+    </div>
+    {% else %}
+    <div class="um-empty">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/></svg>
+        <strong>No reforestation sites yet</strong>
+        <p>Sites appear here once a DENR NGP dataset is imported.</p>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+    var siteCurrentMunicipality = 'all';
+
+    function siteToggleFilterMenu() {
+        document.getElementById('site-filter-menu').classList.toggle('open');
+    }
+
+    document.addEventListener('click', function (e) {
+        var wrap = document.querySelector('.um-filter-wrap');
+        var menu = document.getElementById('site-filter-menu');
+        if (wrap && menu && !wrap.contains(e.target)) {
+            menu.classList.remove('open');
+        }
+    });
+
+    function siteFilterMunicipality(municipality, label) {
+        siteCurrentMunicipality = municipality;
+        document.getElementById('site-filter-label').textContent = label;
+        document.querySelectorAll('#site-filter-menu button').forEach(function (btn) {
+            btn.classList.toggle('active', btn.textContent === (municipality === 'all' ? 'All municipalities' : label));
+        });
+        document.getElementById('site-filter-menu').classList.remove('open');
+        siteApplyFilters();
+    }
+
+    function siteApplyFilters() {
+        var q = (document.getElementById('site-search-input').value || '').trim().toLowerCase();
+        var rows = document.querySelectorAll('#sites-table tbody tr');
+        var visible = 0;
+
+        rows.forEach(function (row) {
+            var matchesMuni = siteCurrentMunicipality === 'all' || row.dataset.municipality === siteCurrentMunicipality;
+            var matchesSearch = !q || row.dataset.search.indexOf(q) !== -1;
+            var show = matchesMuni && matchesSearch;
+            row.style.display = show ? '' : 'none';
+            if (show) visible++;
+        });
+
+        document.getElementById('sites-count').textContent = visible;
+
+        var hasFilters = q || siteCurrentMunicipality !== 'all';
+        document.getElementById('site-clear-btn').style.display = hasFilters ? 'inline-block' : 'none';
+
+        var empty = document.getElementById('sites-empty');
+        var scrollWrap = document.getElementById('sites-scroll');
+        var controls = document.querySelector('.sites-scroll-controls');
+        if (empty) {
+            var noResults = visible === 0 && rows.length > 0;
+            empty.style.display = noResults ? 'block' : 'none';
+            if (scrollWrap) scrollWrap.style.display = noResults ? 'none' : '';
+            if (controls) controls.style.display = noResults ? 'none' : '';
+        }
+    }
+
+    function siteClearFilters() {
+        document.getElementById('site-search-input').value = '';
+        siteFilterMunicipality('all', 'Municipality');
+    }
+
+    function sitesScroll(direction) {
+        var el = document.getElementById('sites-scroll');
+        if (el) el.scrollBy({ left: direction * 320, behavior: 'smooth' });
+    }
+
+    (function () {
+        var el = document.getElementById('sites-scroll');
+        var left = document.getElementById('sites-scroll-left');
+        var right = document.getElementById('sites-scroll-right');
+        if (!el || !left || !right) return;
+
+        function updateButtons() {
+            left.disabled = el.scrollLeft <= 4;
+            right.disabled = el.scrollLeft >= el.scrollWidth - el.clientWidth - 4;
+        }
+        el.addEventListener('scroll', updateButtons);
+        window.addEventListener('resize', updateButtons);
+        updateButtons();
+    })();
+</script>
 
 {% endblock %}

@@ -1,0 +1,195 @@
+{% extends "Base.html" %}
+{% block title %}Review Reports - PuNoObservation{% endblock %}
+
+{% block extra_head %}
+<style>
+  .count-strip {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .count-chip {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 0.7rem 1.1rem;
+    min-width: 120px;
+    text-decoration: none;
+    color: inherit;
+  }
+
+  .count-chip:hover,
+  .count-chip.active { border-color: #16a34a; color: inherit; }
+
+  .count-chip .num {
+    display: block;
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: #14532d;
+  }
+
+  .count-chip .lbl {
+    display: block;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #64748b;
+  }
+
+  .status-pill {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+  }
+
+  .status-pending  { background: #fef3c7; color: #92400e; }
+  .status-approved { background: #dcfce7; color: #15803d; }
+  .status-rejected { background: #fee2e2; color: #991b1b; }
+
+  .rate-good { color: #15803d; font-weight: 700; }
+  .rate-bad  { color: #b91c1c; font-weight: 700; }
+
+  .flag-dot {
+    display: inline-block;
+    background: #fef3c7;
+    color: #92400e;
+    border-radius: 10px;
+    padding: 1px 7px;
+    font-size: 0.7rem;
+    font-weight: 600;
+  }
+
+  .empty-state {
+    text-align: center;
+    padding: 2.5rem 1rem;
+    color: #64748b;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="page-header mb-4">
+  <h2 class="fw-bold text-dark">Review Reports</h2>
+  <p class="text-secondary mb-0">
+    Field monitoring reports. Approving one writes its survival rate back
+    to the planting record.
+  </p>
+</div>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    {% for category, message in messages %}
+      <div class="alert alert-{{ category }}">{{ message }}</div>
+    {% endfor %}
+  {% endif %}
+{% endwith %}
+
+<div class="count-strip">
+  <a href="{{ url_for('admin.review_reports') }}"
+     class="count-chip {% if not status_filter %}active{% endif %}">
+    <span class="num">{{ total_count }}</span>
+    <span class="lbl">All</span>
+  </a>
+  {% for label, n in counts.items() %}
+    <a href="{{ url_for('admin.review_reports', status=label) }}"
+       class="count-chip {% if status_filter == label %}active{% endif %}">
+      <span class="num">{{ n }}</span>
+      <span class="lbl">{{ label }}</span>
+    </a>
+  {% endfor %}
+</div>
+
+{% if reports %}
+  <div class="table-card">
+    <div class="table-scroll-container">
+      <table class="table custom-table align-middle">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Officer</th>
+            <th>Site</th>
+            <th>Monitored</th>
+            <th class="text-end">Plots</th>
+            <th class="text-end">Survival</th>
+            <th class="text-end">Intensity</th>
+            <th class="text-end">Photos</th>
+            <th>Flags</th>
+            <th>Status</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in reports %}
+          {% set flagged = r.photos | selectattr('flags') | list | length %}
+          <tr>
+            <td class="num-cell">{{ r.report_id }}</td>
+            <td>
+              {% if r.officer %}
+                <div class="fw-semibold">{{ r.officer.username }}</div>
+                <div class="text-secondary small">{{ r.officer.role }}</div>
+              {% else %}—{% endif %}
+            </td>
+            <td>
+              {% if r.site %}
+                <div class="fw-semibold">{{ r.site.site_name }}</div>
+                {% if r.site.location %}
+                  <div class="text-secondary small">
+                    {{ r.site.location.barangay }},
+                    {{ r.site.location.municipality }}
+                  </div>
+                {% endif %}
+              {% else %}—{% endif %}
+            </td>
+            <td>{{ r.monitoring_date.strftime('%Y-%m-%d') }}</td>
+            <td class="num-cell">{{ r.plots_recorded or '—' }}</td>
+            <td class="num-cell">
+              <span class="{% if r.survival_rate >= 85 %}rate-good{% else %}rate-bad{% endif %}">
+                {{ r.survival_rate }}%
+              </span>
+            </td>
+            <td class="num-cell">{{ r.sampling_intensity or '—' }}%</td>
+            <td class="num-cell">{{ r.photos | length }}</td>
+            <td>
+              {% if flagged %}
+                <span class="flag-dot">{{ flagged }} flagged</span>
+              {% else %}
+                <span class="text-secondary small">none</span>
+              {% endif %}
+            </td>
+            <td>
+              <span class="status-pill status-{{ r.approval_status|lower }}">
+                {{ r.approval_status }}
+              </span>
+              {% if r.reviewer %}
+                <div class="text-secondary small">by {{ r.reviewer.username }}</div>
+              {% endif %}
+            </td>
+            <td>
+              <a href="{{ url_for('admin.review_report_detail', report_id=r.report_id) }}"
+                 class="btn btn-success btn-sm">Review</a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+{% else %}
+  <div class="empty-state">
+    <h5>
+      {% if status_filter %}
+        No {{ status_filter|lower }} reports
+      {% else %}
+        No monitoring reports yet
+      {% endif %}
+    </h5>
+    <p>Reports submitted by field officers appear here for review.</p>
+  </div>
+{% endif %}
+
+{% endblock %}

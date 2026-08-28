@@ -1,0 +1,2 @@
+app/static/uploads/monitoring/*
+!app/static/uploads/monitoring/.gitkeep

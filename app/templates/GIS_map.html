@@ -429,7 +429,7 @@ global_topbar %}{% endblock %} {% block topbar%}
       District 6</label
     >
 
-        <label
+    <label
       ><input
         type="radio"
         name="districtFilter"
@@ -1073,11 +1073,11 @@ global_topbar %}{% endblock %} {% block topbar%}
       // Traffic light. Red = least reforestation activity (a planting
       // gap), green = most. Read as "where is work still needed".
       const HEAT_COLORS = [
-        "#dc2626", // lowest  - red
-        "#f97316", // low     - orange
-        "#facc15", // medium  - yellow
-        "#84cc16", // high    - lime
-        "#15803d", // highest - green
+        "#60A677", // lowest
+        "#25A032", // low
+        "#248823", // medium
+        "#006727", // high
+        "#014422", // highest
       ];
 
       // Separate from the scale on purpose. A barangay with no DENR
@@ -1221,27 +1221,37 @@ global_topbar %}{% endblock %} {% block topbar%}
           const div = L.DomUtil.create("div", "heat-legend");
           const b = data.breaks;
 
+          const WORDS = ["Very low", "Low", "Moderate", "High", "Very high"];
+
           let rows = "";
 
           if (!b.length) {
             rows = `<div><span class="swatch"
                      style="background:${HEAT_COLORS[4]}"></span>
-                     has data</div>`;
+                     Has records</div>`;
           } else {
-            let prev = 0;
+            const n = b.length + 1;
+            // pick evenly spaced words so 3 bands read low / moderate / high
+            const pick = [];
+            for (let i = 0; i < n; i++) {
+              pick.push(WORDS[Math.round(i * (WORDS.length - 1) / (n - 1))]);
+            }
+
+            let prev = null;
             for (let i = 0; i < b.length; i++) {
+              const range = prev === null
+                ? `up to ${fmt(b[i])}`
+                : `${fmt(prev + 1)}–${fmt(b[i])}`;
               rows += `<div><span class="swatch"
                        style="background:${HEAT_COLORS[i]}"></span>
-                       ${fmt(prev)} &ndash; ${fmt(b[i])}</div>`;
+                       ${pick[i]}
+                       <span style="color:#94a3b8;">(${range})</span></div>`;
               prev = b[i];
             }
-            rows += `<div style="margin-top:0.35rem;
-                               padding-top:0.35rem;
-                               border-top:1px solid #e2e8f0;">
-                     <span class="swatch"
-                       style="background:${NO_DATA_COLOR};opacity:0.5"></span>
-                     no DENR record
-                   </div>`;
+            rows += `<div><span class="swatch"
+                     style="background:${HEAT_COLORS[b.length]}"></span>
+                     ${pick[b.length]}
+                     <span style="color:#94a3b8;">(${fmt(prev + 1)}+)</span></div>`;
           }
 
           rows += `<div><span class="swatch"
@@ -1366,7 +1376,7 @@ global_topbar %}{% endblock %} {% block topbar%}
           if (map.hasLayer(district6Layer)) map.removeLayer(district6Layer);
           muniPanel.classList.remove("active");
           clearBarangays();
-          return;                      // no bounds to fly to
+          return; // no bounds to fly to
         }
         if (value === "all") {
           if (!map.hasLayer(district5Layer)) map.addLayer(district5Layer);

@@ -1,6 +1,7 @@
 {% extends "Base.html" %}
 
 {% block title %}Notifications - PuNoObservation{% endblock %}
+{% block content_class %}page-content-wide{% endblock %}
 {% set active_page = 'notifications' %}
 {% block extra_head %}
 <style>
@@ -40,14 +41,24 @@
 {% endblock %}
 {% block content %}
 
-<div class="page-header">
-    <h2>Notifications</h2>
+<div class="um-header">
+    <div>
+        <div class="um-title-row">
+            <h2>Notifications</h2>
+        </div>
+        <p class="um-subtitle">Updates on reforestation requests, reports, and account activity.</p>
+    </div>
+    {% if unread > 0 %}
+        <button type="button" class="notif-mark-all" onclick="markAllNotificationsRead()">
+            Mark all as read
+        </button>
+    {% endif %}
 </div>
 
-{% if role == "admin" %}
+{% if session.role == "admin" %}
 <div class="notif-tabs">
   {% for key, label in [('all','All'), ('reports','Reports'), ('requests','Requests')] %}
-    <a href="{{ url_for('dashboard.notifications_page', tab=key) }}"
+    <a href="{{ url_for('dashboard.notifications_page', tab=key, status=status) }}"
        class="notif-tab {% if tab == key %}active{% endif %}">
       {{ label }}
       <span class="notif-tab-count">{{ counts[key] }}</span>
@@ -56,27 +67,138 @@
 </div>
 {% endif %}
 
+<div class="notif-toolbar">
+    <div class="notif-select-wrap">
+        <button type="button" class="notif-select-btn" onclick="toggleNotifSelectMenu()">
+            Select
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+        </button>
+        <div id="notif-select-menu" class="notif-select-menu">
+            <button type="button" onclick="notifBulkAction('read')">Mark as Read</button>
+            <button type="button" onclick="notifBulkAction('unread')">Mark as Unread</button>
+            <button type="button" class="danger" onclick="notifBulkAction('delete')">Delete</button>
+        </div>
+    </div>
+
+    <select class="notif-filter-select" onchange="notifFilterChange(this.value)">
+        <option value="all" {% if status == 'all' %}selected{% endif %}>All</option>
+        <option value="unread" {% if status == 'unread' %}selected{% endif %}>Unread</option>
+        <option value="read" {% if status == 'read' %}selected{% endif %}>Read</option>
+    </select>
+</div>
+
 <div class="card">
-    {% if notifications %}
-        <ul class="notif-page-list">
-            {% for n in notifications %}
-                <li class="notif-page-item {% if not n.is_read %}unread{% endif %}"
-                    data-id="{{ n.notification_id }}">
-                    <div class="notif-page-item-main">
-                        <span class="notif-type-tag">{{ n.notification_type }}</span>
-                        <p class="notif-message">{{ n.message }}</p>
+    {% if grouped %}
+        {% for group in grouped %}
+        <div class="notif-day-group">
+            <p class="notif-day-heading">{{ group.label }}</p>
+            {% for n in group.notifications %}
+                {% set details_url = none %}
+                {% if session.role == 'admin' and n.notification_type == 'New Request' %}
+                    {% set details_url = url_for('admin.review_requests') %}
+                {% elif session.role != 'admin' and n.notification_type == 'Request Update' %}
+                    {% set details_url = url_for('dashboard.requests_page') %}
+                {% endif %}
+
+                <div class="notif-row {% if not n.is_read %}unread{% endif %}"
+                     data-id="{{ n.notification_id }}">
+                    <input type="checkbox" class="notif-row-checkbox"
+                           data-id="{{ n.notification_id }}">
+
+                    {% if n.notification_type == 'New Request' %}
+                        <span class="notif-icon avatar">{{ n.message.split(' ')[0][0]|upper if n.message else '?' }}</span>
+                    {% elif n.notification_type == 'Request Update' %}
+                        <span class="notif-icon type-update">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+                        </span>
+                    {% elif n.notification_type == 'Report' %}
+                        <span class="notif-icon type-report">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z"/><path d="M14 2v5a1 1 0 0 0 1 1h5"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></svg>
+                        </span>
+                    {% else %}
+                        <span class="notif-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.268 21a2 2 0 0 0 3.464 0"/><path d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326"/></svg>
+                        </span>
+                    {% endif %}
+
+                    <div class="notif-row-body">
+                        <p>{{ n.message }}</p>
+                        <span class="notif-row-time">{{ n.time_ago }}</span>
                     </div>
-                    {% if not n.is_read %}
-                        <button class="notif-mark-read-btn" onclick="markNotificationRead({{ n.notification_id }}, this.closest('li'))">
-                            Mark as read
+
+                    <span class="notif-row-status">{{ 'Unread' if not n.is_read else 'Read' }}</span>
+
+                    {% if details_url %}
+                        <a class="notif-row-details" href="{{ details_url }}"
+                           onclick="notifBeaconRead({{ n.notification_id }})">
+                            Details
+                        </a>
+                    {% else %}
+                        <button type="button" class="notif-row-details"
+                                onclick="markNotificationRead({{ n.notification_id }}, this.closest('.notif-row'))">
+                            Details
                         </button>
                     {% endif %}
-                </li>
+                </div>
             {% endfor %}
-        </ul>
+        </div>
+        {% endfor %}
     {% else %}
         <p class="placeholder-text">No notifications yet.</p>
     {% endif %}
 </div>
 
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    function toggleNotifSelectMenu() {
+        document.getElementById('notif-select-menu').classList.toggle('open');
+    }
+
+    document.addEventListener('click', function (e) {
+        const wrap = document.querySelector('.notif-select-wrap');
+        const menu = document.getElementById('notif-select-menu');
+        if (wrap && menu && !wrap.contains(e.target)) {
+            menu.classList.remove('open');
+        }
+    });
+
+    function notifFilterChange(value) {
+        const url = new URL(window.location.href);
+        url.searchParams.set('status', value);
+        window.location.href = url.toString();
+    }
+
+    function notifBeaconRead(id) {
+        // fire-and-forget so it doesn't block the Details link navigating away
+        navigator.sendBeacon(`/api/notifications/${id}/read`);
+    }
+
+    function notifSelectedIds() {
+        return Array.from(document.querySelectorAll('.notif-row-checkbox:checked'))
+            .map((cb) => cb.dataset.id);
+    }
+
+    async function notifBulkAction(action) {
+        const ids = notifSelectedIds();
+        if (!ids.length) {
+            document.getElementById('notif-select-menu').classList.remove('open');
+            return;
+        }
+
+        if (action === 'delete' &&
+            !confirm(`Delete ${ids.length} notification${ids.length > 1 ? 's' : ''}?`)) {
+            return;
+        }
+
+        const endpoint = { read: 'read', unread: 'unread', delete: 'delete' }[action];
+        await Promise.all(
+            ids.map((id) =>
+                fetch(`/api/notifications/${id}/${endpoint}`, { method: 'POST' })
+            )
+        );
+        window.location.reload();
+    }
+</script>
 {% endblock %}

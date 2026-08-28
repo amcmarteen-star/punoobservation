@@ -4,9 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Register - PunoObservation</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body class="login-page register-page">
@@ -14,7 +11,7 @@
         <aside class="brand-panel">
             <div class="brand-top">
                 <div class="brand-header">
-                    <img src="{{ url_for('static', filename='images/puno_logo.png') }}" alt="PuNoObservation Logo" class="logo-box" />
+                    <img src="{{ url_for('static', filename='images/finallogo.png') }}" alt="PuNoObservation Logo" class="logo-box" />
                     <div class="brand-copy">
                         <div class="brand-name">PuNoObservation</div>
                         <div class="brand-title">DECISION SUPPORT SYSTEM</div>
@@ -32,7 +29,6 @@
                 <div class="chip-row">
                     <span>GIS Mapping</span>
                     <span>Species Recommendation</span>
-                    <span>Tree Inventory</span>
                     <span>Analytics</span>
                     <span>Reports</span>
                 </div>
@@ -44,12 +40,9 @@
                 © 2026 PuNoObservation. Capstone Project.
             </div>
 
-            {% include 'partials/_sapling.html' %}
         </aside>
 
         <main class="auth-panel">
-            <span class="auth-sparkle" style="top: 3rem; right: 4rem; animation-delay: 0s;">&#10022;</span>
-            <span class="auth-sparkle" style="bottom: 4rem; left: 3rem; font-size: 1rem; animation-delay: 1s;">&#10022;</span>
             <div class="auth-wrapper register-wrapper">
                 <h2>Create account</h2>
 

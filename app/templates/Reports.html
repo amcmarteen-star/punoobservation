@@ -1,0 +1,735 @@
+{% extends "Base.html" %}
+{% block title %}Monitoring Reports - PuNoObservation{% endblock %}
+
+{% block extra_head %}
+<style>
+  .step-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    padding: 1.35rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .step-head {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    margin-bottom: 0.9rem;
+  }
+
+  .step-num {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: #14532d;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 0.82rem;
+    flex-shrink: 0;
+  }
+
+  .step-head h5 {
+    margin: 0;
+    font-weight: 700;
+    color: #14532d;
+    font-size: 1rem;
+  }
+
+  .instruction {
+    background: #f0f9ff;
+    border-left: 3px solid #0ea5e9;
+    border-radius: 6px;
+    padding: 0.7rem 0.9rem;
+    font-size: 0.82rem;
+    color: #334155;
+    margin-bottom: 1rem;
+    line-height: 1.6;
+  }
+
+  .instruction strong { color: #075985; }
+
+  .disclaimer {
+    background: #fffbeb;
+    border-left: 3px solid #f59e0b;
+    border-radius: 6px;
+    padding: 0.7rem 0.9rem;
+    font-size: 0.8rem;
+    color: #78350f;
+    margin-top: 0.9rem;
+    line-height: 1.6;
+  }
+
+  /* site profile panel */
+  .site-facts {
+    display: none;
+    background: #14532d;
+    border-radius: 8px;
+    padding: 1rem;
+    margin-top: 1rem;
+  }
+
+  .site-facts.show { display: block; }
+
+  .site-facts .fact-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.25rem;
+  }
+
+  .site-facts .fact .lbl {
+    display: block;
+    font-size: 0.66rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #86efac;
+  }
+
+  .site-facts .fact .val {
+    display: block;
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: #ffffff;
+  }
+
+  .site-facts .site-title {
+    color: #ffffff;
+    font-weight: 700;
+    margin-bottom: 0.75rem;
+  }
+
+  /* plot rows */
+  .plot-row {
+    display: grid;
+    grid-template-columns: 42px 110px 1fr 110px 34px;
+    gap: 0.5rem;
+    align-items: center;
+    margin-bottom: 0.5rem;
+  }
+
+  .plot-row .pnum {
+    font-weight: 700;
+    color: #64748b;
+    text-align: center;
+  }
+
+  .btn-remove-plot {
+    border: none;
+    background: #fee2e2;
+    color: #991b1b;
+    border-radius: 4px;
+    width: 30px;
+    height: 30px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  .plot-head {
+    display: grid;
+    grid-template-columns: 42px 110px 1fr 110px 34px;
+    gap: 0.5rem;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #94a3b8;
+    margin-bottom: 0.35rem;
+  }
+
+  /* live calculation */
+  .calc-panel {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 1rem;
+    margin-top: 1rem;
+    font-size: 0.85rem;
+  }
+
+  .calc-line {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.3rem 0;
+    border-bottom: 1px solid #eef2f7;
+  }
+
+  .calc-line:last-child { border-bottom: none; }
+
+  .calc-line .lbl { color: #64748b; }
+  .calc-line .val { font-weight: 600; color: #1e293b; }
+
+  .calc-result {
+    background: #14532d;
+    color: #fff;
+    border-radius: 8px;
+    padding: 0.9rem 1rem;
+    margin-top: 0.8rem;
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+  }
+
+  .calc-result.fail { background: #991b1b; }
+
+  .calc-result .big {
+    font-size: 1.7rem;
+    font-weight: 700;
+  }
+
+  .calc-warn {
+    background: #fffbeb;
+    border-left: 3px solid #f59e0b;
+    padding: 0.55rem 0.8rem;
+    border-radius: 4px;
+    font-size: 0.78rem;
+    color: #78350f;
+    margin-top: 0.5rem;
+  }
+
+  .status-pill {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+  }
+
+  .status-pending  { background: #fef3c7; color: #92400e; }
+  .status-approved { background: #dcfce7; color: #15803d; }
+  .status-rejected { background: #fee2e2; color: #991b1b; }
+
+  .empty-state {
+    text-align: center;
+    padding: 2.5rem 1rem;
+    color: #64748b;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="page-header mb-4">
+  <h2 class="fw-bold text-dark">Monitoring Report</h2>
+  <p class="text-secondary mb-0">
+    Record a field survival assessment for a reforestation site.
+  </p>
+</div>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    {% for category, message in messages %}
+      <div class="alert alert-{{ category }}">{{ message }}</div>
+    {% endfor %}
+  {% endif %}
+{% endwith %}
+
+<form method="POST"
+      action="{{ url_for('dashboard.submit_report') }}"
+      enctype="multipart/form-data"
+      id="reportForm">
+
+  <!-- ============ STEP 1 : LOCATION ============ -->
+  <div class="step-card">
+    <div class="step-head">
+      <span class="step-num">1</span>
+      <h5>Choose the site</h5>
+    </div>
+
+    <div class="row g-3">
+      <div class="col-md-3">
+        <label class="form-label fw-semibold">Province</label>
+        <input type="text" class="form-control" value="Pangasinan" disabled>
+      </div>
+
+      <div class="col-md-3">
+        <label for="municipality" class="form-label fw-semibold">
+          Municipality <span class="text-danger">*</span>
+        </label>
+        <select id="municipality" class="form-select" required>
+          <option value="">Choose</option>
+          {% for m in municipalities %}
+            <option value="{{ m }}">{{ m }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="col-md-3">
+        <label for="barangay" class="form-label fw-semibold">
+          Barangay <span class="text-danger">*</span>
+        </label>
+        <select id="barangay" class="form-select" required disabled>
+          <option value="">Choose a municipality first</option>
+        </select>
+      </div>
+
+      <div class="col-md-3">
+        <label for="site_id" class="form-label fw-semibold">
+          Site <span class="text-danger">*</span>
+        </label>
+        <select name="site_id" id="site_id" class="form-select" required disabled>
+          <option value="">Choose a barangay first</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="site-facts" id="siteFacts">
+      <div class="site-title" id="siteTitle"></div>
+      <div class="fact-grid">
+        <div class="fact">
+          <span class="lbl">Area</span>
+          <span class="val" id="factArea">—</span>
+        </div>
+        <div class="fact">
+          <span class="lbl">Target seedlings</span>
+          <span class="val" id="factTarget">—</span>
+        </div>
+        <div class="fact">
+          <span class="lbl">Actually planted</span>
+          <span class="val" id="factPlanted">—</span>
+        </div>
+        <div class="fact">
+          <span class="lbl">Year contracted</span>
+          <span class="val" id="factYear">—</span>
+        </div>
+        <div class="fact">
+          <span class="lbl">Zone</span>
+          <span class="val" id="factZone">—</span>
+        </div>
+        <div class="fact">
+          <span class="lbl">Boundary on file</span>
+          <span class="val" id="factBoundary">—</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ STEP 2 : SAMPLING PLOTS ============ -->
+  <div class="step-card">
+    <div class="step-head">
+      <span class="step-num">2</span>
+      <h5>Sampling plots</h5>
+    </div>
+
+    <div class="instruction">
+      <strong>How to do this.</strong>
+      Lay out square plots of equal size spread across the site. In each
+      plot, count only the seedlings that are <strong>alive</strong>.
+      Enter one row per plot below.
+      <br><br>
+      DENR uses a <strong>5% sampling intensity</strong>, meaning the
+      plots together cover 5% of the site area. With 400 m&sup2; plots on
+      a 25 ha site that is about 31 plots. The calculation below tells
+      you the intensity you have reached as you type.
+      <br><br>
+      You do not type the survival rate. It is calculated from your
+      counts.
+    </div>
+
+    <div class="row g-3 mb-3">
+      <div class="col-md-3">
+        <label for="monitoring_date" class="form-label fw-semibold">
+          Monitoring date <span class="text-danger">*</span>
+        </label>
+        <input type="date" name="monitoring_date" id="monitoring_date"
+               class="form-control" required>
+      </div>
+
+      <div class="col-md-3">
+        <label for="plot_size_sqm" class="form-label fw-semibold">
+          Plot size (m&sup2;) <span class="text-danger">*</span>
+        </label>
+        <input type="number" step="1" min="1"
+               name="plot_size_sqm" id="plot_size_sqm"
+               class="form-control" value="400" required>
+        <div class="form-text">400 m&sup2; is a 20 m &times; 20 m plot.</div>
+      </div>
+    </div>
+
+    <div class="plot-head">
+      <span>#</span>
+      <span>Alive</span>
+      <span>Notes (optional)</span>
+      <span>Photo</span>
+      <span></span>
+    </div>
+
+    <div id="plotRows"></div>
+
+    <button type="button" class="btn btn-outline-success btn-sm mt-2"
+            onclick="addPlotRow()">
+      + Add plot
+    </button>
+
+    <!-- live calculation -->
+    <div class="calc-panel" id="calcPanel">
+      <div class="text-secondary">
+        Enter plot counts to see the survival calculation.
+      </div>
+    </div>
+
+    <div class="disclaimer">
+      <strong>Please read.</strong>
+      This estimate assumes seedlings are distributed evenly across the
+      site. Plots placed only in healthy areas, or only in poor ones,
+      will not represent the site. Spread them out.
+      <br><br>
+      The result is an <strong>estimate from a sample</strong>, not a
+      full count. A low sampling intensity or wide variation between
+      plots makes it less reliable, and the calculation will say so.
+    </div>
+  </div>
+
+  <!-- ============ STEP 3 : PHOTOS ============ -->
+  <div class="step-card">
+    <div class="step-head">
+      <span class="step-num">3</span>
+      <h5>Photographs</h5>
+    </div>
+
+    <div class="instruction">
+      <strong>Use a GPS camera app.</strong>
+      The system reads the location and time out of each photo
+      automatically. You do not type coordinates.
+      <br><br>
+      If a photo has no GPS data, or was taken far from the site, it is
+      still accepted &mdash; it is marked for the reviewing officer to
+      check. Nothing is rejected automatically.
+    </div>
+
+    <div class="mb-3">
+      <label for="plot_photos" class="form-label fw-semibold">
+        Plot photographs
+      </label>
+      <input type="file" name="plot_photos" id="plot_photos"
+             class="form-control" multiple accept="image/*">
+      <div class="form-text">
+        Evidence of what you counted. One per plot is ideal.
+      </div>
+    </div>
+
+    <div class="mb-2">
+      <label for="boundary_photos" class="form-label fw-semibold">
+        Corner photographs &mdash; site boundary
+      </label>
+      <input type="file" name="boundary_photos" id="boundary_photos"
+             class="form-control" multiple accept="image/*">
+      <div class="form-text">
+        Stand at each corner of the site and take one photo.
+        <strong>At least 4 corners</strong> are needed to draw the
+        boundary. The system joins the coordinates into a polygon and
+        compares its area against the contracted area.
+      </div>
+    </div>
+
+    <div class="disclaimer">
+      The boundary is drawn as the smallest shape enclosing all your
+      corner points. If the site is not a simple convex shape &mdash; an
+      L-shape, or one bending around a stream &mdash; the drawn area will
+      be larger than the real parcel. The comparison against contracted
+      area will show this.
+    </div>
+  </div>
+
+  <!-- ============ STEP 4 : REMARKS ============ -->
+  <div class="step-card">
+    <div class="step-head">
+      <span class="step-num">4</span>
+      <h5>Remarks and submit</h5>
+    </div>
+
+    <div class="mb-3">
+      <label for="remarks" class="form-label fw-semibold">
+        Field remarks
+      </label>
+      <textarea name="remarks" id="remarks" class="form-control" rows="3"
+                placeholder="Condition of the site, causes of mortality, grazing, fire damage, access problems."></textarea>
+    </div>
+
+    <button type="submit" class="btn btn-success">Submit for review</button>
+    <span class="text-secondary small ms-2">
+      An administrator reviews the report before it updates the records.
+    </span>
+  </div>
+
+</form>
+
+<!-- ============ PAST REPORTS ============ -->
+<h4 class="text-success fw-bold border-bottom pb-2 mt-4">My Reports</h4>
+
+{% if my_reports %}
+  <div class="table-card mt-3">
+    <div class="table-scroll-container">
+      <table class="table custom-table align-middle">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Site</th>
+            <th>Monitored</th>
+            <th class="text-end">Plots</th>
+            <th class="text-end">Counted</th>
+            <th class="text-end">Survival</th>
+            <th class="text-end">Intensity</th>
+            <th>Status</th>
+            <th>Submitted</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in my_reports %}
+          <tr>
+            <td class="num-cell">{{ r.report_id }}</td>
+            <td>
+              {% if r.site %}
+                <div class="fw-semibold">{{ r.site.site_name }}</div>
+                {% if r.site.location %}
+                  <div class="text-secondary small">
+                    {{ r.site.location.barangay }},
+                    {{ r.site.location.municipality }}
+                  </div>
+                {% endif %}
+              {% else %}—{% endif %}
+            </td>
+            <td>{{ r.monitoring_date.strftime('%Y-%m-%d') }}</td>
+            <td class="num-cell">{{ r.plots_recorded or '—' }}</td>
+            <td class="num-cell">{{ r.total_counted or '—' }}</td>
+            <td class="num-cell fw-semibold">
+              {{ r.survival_rate }}%
+            </td>
+            <td class="num-cell">
+              {{ r.sampling_intensity }}%
+            </td>
+            <td>
+              <span class="status-pill status-{{ r.approval_status|lower }}">
+                {{ r.approval_status }}
+              </span>
+              {% if r.review_note %}
+                <div class="text-secondary small fst-italic">
+                  {{ r.review_note }}
+                </div>
+              {% endif %}
+            </td>
+            <td>{{ r.submitted_at.strftime('%Y-%m-%d') }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+{% else %}
+  <div class="empty-state">
+    <h5>No reports yet</h5>
+    <p>Submitted monitoring reports appear here with their review status.</p>
+  </div>
+{% endif %}
+
+<script>
+  // ---------- cascading location pickers ----------
+  let currentSite = null;
+
+  document.getElementById('municipality').addEventListener('change', async function () {
+    const brgy = document.getElementById('barangay');
+    const siteSel = document.getElementById('site_id');
+
+    siteSel.innerHTML = '<option value="">Choose a barangay first</option>';
+    siteSel.disabled = true;
+    hideFacts();
+
+    if (!this.value) {
+      brgy.innerHTML = '<option value="">Choose a municipality first</option>';
+      brgy.disabled = true;
+      return;
+    }
+
+    brgy.innerHTML = '<option value="">Loading...</option>';
+    brgy.disabled = true;
+
+    const res = await fetch('/api/barangays/' + encodeURIComponent(this.value));
+    const names = await res.json();
+
+    brgy.innerHTML = '<option value="">Choose a barangay</option>' +
+      names.map(n => `<option value="${n}">${n}</option>`).join('');
+    brgy.disabled = false;
+  });
+
+  document.getElementById('barangay').addEventListener('change', async function () {
+    const siteSel = document.getElementById('site_id');
+    const muni = document.getElementById('municipality').value;
+    hideFacts();
+
+    if (!this.value) {
+      siteSel.innerHTML = '<option value="">Choose a barangay first</option>';
+      siteSel.disabled = true;
+      return;
+    }
+
+    siteSel.innerHTML = '<option value="">Loading...</option>';
+    siteSel.disabled = true;
+
+    const res = await fetch(
+      '/api/sites-in-barangay?municipality=' + encodeURIComponent(muni) +
+      '&barangay=' + encodeURIComponent(this.value)
+    );
+    const sites = await res.json();
+
+    if (!sites.length) {
+      siteSel.innerHTML = '<option value="">No sites recorded here</option>';
+      return;
+    }
+
+    window._sites = {};
+    sites.forEach(s => { window._sites[s.site_id] = s; });
+
+    siteSel.innerHTML = '<option value="">Choose a site</option>' +
+      sites.map(s =>
+        `<option value="${s.site_id}">${s.site_name} (${s.area_size_ha} ha)</option>`
+      ).join('');
+    siteSel.disabled = false;
+  });
+
+  document.getElementById('site_id').addEventListener('change', function () {
+    if (!this.value) { hideFacts(); return; }
+    currentSite = window._sites[this.value];
+    showFacts(currentSite);
+    recalc();
+  });
+
+  function hideFacts() {
+    currentSite = null;
+    document.getElementById('siteFacts').classList.remove('show');
+  }
+
+  function showFacts(s) {
+    document.getElementById('siteTitle').textContent =
+      s.site_name + (s.site_code ? '  ·  ' + s.site_code : '');
+    document.getElementById('factArea').textContent = s.area_size_ha + ' ha';
+    document.getElementById('factTarget').textContent =
+      s.target_trees.toLocaleString();
+    document.getElementById('factPlanted').textContent =
+      s.actual_planted.toLocaleString();
+    document.getElementById('factYear').textContent = s.year_contracted || '—';
+    document.getElementById('factZone').textContent = s.zone_type || '—';
+    document.getElementById('factBoundary').textContent =
+      s.has_boundary ? s.boundary_area_ha + ' ha' : 'not captured';
+    document.getElementById('siteFacts').classList.add('show');
+  }
+
+  // ---------- plot rows ----------
+  function addPlotRow() {
+    const wrap = document.getElementById('plotRows');
+    const n = wrap.children.length + 1;
+
+    const row = document.createElement('div');
+    row.className = 'plot-row';
+    row.innerHTML = `
+      <span class="pnum">${n}</span>
+      <input type="number" name="plot_count" class="form-control form-control-sm"
+             min="0" placeholder="0" oninput="recalc()">
+      <input type="text" name="plot_note" class="form-control form-control-sm"
+             placeholder="e.g. near the creek">
+      <span class="text-secondary small">attach below</span>
+      <button type="button" class="btn-remove-plot"
+              onclick="removePlotRow(this)">&times;</button>
+    `;
+    wrap.appendChild(row);
+  }
+
+  function removePlotRow(btn) {
+    btn.closest('.plot-row').remove();
+    renumber();
+    recalc();
+  }
+
+  function renumber() {
+    document.querySelectorAll('#plotRows .plot-row').forEach((r, i) => {
+      r.querySelector('.pnum').textContent = i + 1;
+    });
+  }
+
+  // start with three rows
+  addPlotRow(); addPlotRow(); addPlotRow();
+
+  // ---------- live calculation ----------
+  let calcTimer = null;
+
+  document.getElementById('plot_size_sqm').addEventListener('input', recalc);
+
+  function recalc() {
+    clearTimeout(calcTimer);
+    calcTimer = setTimeout(doCalc, 350);   // wait for typing to settle
+  }
+
+  async function doCalc() {
+    const panel = document.getElementById('calcPanel');
+
+    if (!currentSite) {
+      panel.innerHTML =
+        '<div class="text-secondary">Choose a site first.</div>';
+      return;
+    }
+
+    const counts = [...document.querySelectorAll('input[name="plot_count"]')]
+      .map(i => i.value.trim())
+      .filter(v => v !== '');
+
+    if (!counts.length) {
+      panel.innerHTML =
+        '<div class="text-secondary">Enter plot counts to see the survival calculation.</div>';
+      return;
+    }
+
+    const res = await fetch('/api/preview-survival', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        counts: counts,
+        plot_size_sqm: document.getElementById('plot_size_sqm').value,
+        site_area_ha: currentSite.area_size_ha,
+        seedlings_planted: currentSite.actual_planted,
+      }),
+    });
+
+    const c = await res.json();
+
+    if (!c.ok) {
+      panel.innerHTML =
+        `<div class="text-danger">${c.reason || 'Cannot calculate.'}</div>`;
+      return;
+    }
+
+    const line = (l, v) =>
+      `<div class="calc-line"><span class="lbl">${l}</span><span class="val">${v}</span></div>`;
+
+    let html =
+      line('Plots recorded', c.plots_recorded) +
+      line('Total counted alive', c.total_counted.toLocaleString()) +
+      line('Mean per plot', c.mean_per_plot + ' (sd ' + c.stdev_per_plot + ')') +
+      line('Area sampled', c.area_sampled_ha + ' ha of ' + currentSite.area_size_ha + ' ha') +
+      line('Sampling intensity', c.sampling_intensity + '%') +
+      line('Density', c.density_per_ha.toLocaleString() + ' per ha') +
+      line('Estimated survivors', c.estimated_survivors.toLocaleString()) +
+      line('Originally planted', currentSite.actual_planted.toLocaleString());
+
+    if (c.survival_rate !== null) {
+      const fail = !c.meets_threshold;
+      html += `
+        <div class="calc-result ${fail ? 'fail' : ''}">
+          <span>Survival rate</span>
+          <span class="big">${c.survival_rate}%</span>
+        </div>
+        <div class="text-secondary small mt-1">
+          DENR reference threshold is 85%.
+          ${c.meets_threshold ? 'This site meets it.' : 'This site is below it.'}
+        </div>`;
+    }
+
+    c.warnings.forEach(w => {
+      html += `<div class="calc-warn">${w}</div>`;
+    });
+
+    panel.innerHTML = html;
+  }
+</script>
+
+{% endblock %}

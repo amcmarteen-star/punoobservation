@@ -1,6 +1,7 @@
 {% extends "Base.html" %}
 
 {% block title %}Reference Dataset - PuNoObservation{% endblock %}
+{% block content_class %}page-content-wide{% endblock %}
 {% set active_page = 'reference' %}
 
 {% block extra_head %}
@@ -212,9 +213,9 @@
         <p class="info-title text-secondary small fw-semibold mt-3 mb-1">
           FIRST ${data.samples.length} ROWS
         </p>
-        <div class="table-card">
-          <div class="table-scroll-container">
-            <table class="table custom-table align-middle">
+        <div class="um-table-card">
+          <div class="sites-scroll-wrap">
+            <table class="um-table sites-table">
               <thead>
                 <tr>
                   <th>Sheet</th><th>Row</th><th>Municipality</th>
@@ -228,11 +229,11 @@
         </div>
 
         <div class="preview-actions">
-          <button type="button" class="btn btn-success"
+          <button type="button" class="um-btn-confirm"
                   onclick="confirmImport()" ${blocked ? 'disabled' : ''}>
             Confirm Import
           </button>
-          <button type="button" class="btn btn-outline-secondary"
+          <button type="button" class="um-btn-cancel"
                   onclick="document.getElementById('previewPanel').style.display='none'">
             Cancel
           </button>
@@ -250,12 +251,16 @@
 
 {% block content %}
 
-<div class="page-header">
-    <h2>Reference Dataset</h2>
-    <p>Import official DENR NGP contract-profile Excel files. Matches sites by Site Code -- re-uploading the same file safely updates existing records instead of duplicating them.</p>
+<div class="um-header">
+  <div>
+    <div class="um-title-row">
+      <h2>Reference Dataset</h2>
+    </div>
+    <p class="um-subtitle">Import official DENR NGP contract-profile Excel files. Matches sites by Site Code -- re-uploading the same file safely updates existing records instead of duplicating them.</p>
+  </div>
 </div>
 
-<div class="card">
+<div class="um-table-card ref-card">
     <h3>Upload DENR NGP Excel File</h3>
     <p class="placeholder-text">
         Accepted sheets: <strong>2021</strong>, <strong>2022</strong>, <strong>2023</strong>, <strong>Retention Fee</strong>.
@@ -264,24 +269,21 @@
 
     <form action="{{ url_for('admin.import_denr_data') }}" method="POST" enctype="multipart/form-data" class="upload-form">
         <input type="file" name="excel_file" accept=".xlsx,.xls" required class="upload-file-input">
-            <div class="d-flex gap-2">
-      <button type="button" class="btn btn-outline-success"
-              onclick="previewDataset()">
-        Preview
-      </button>
-      <button type="submit" class="btn btn-success" id="directImportBtn">
-        Import without preview
-      </button>
-    </div>
-  </form>
-
-  <!-- preview lands here -->
-  <div id="previewPanel" style="display:none;"></div>
-        <!-- <button type="submit" class="btn-primary">Upload &amp; Import</button> -->
+        <div class="d-flex gap-2">
+            <button type="button" class="um-btn-cancel" onclick="previewDataset()">
+                Preview
+            </button>
+            <button type="submit" class="um-btn-confirm" id="directImportBtn">
+                Import without preview
+            </button>
+        </div>
     </form>
+
+    <!-- preview lands here -->
+    <div id="previewPanel" style="display:none;"></div>
 </div>
 
-<div class="card">
+<div class="um-table-card ref-card">
     <h3>What Gets Imported</h3>
     <ul class="import-info-list">
         <li>Site Code, Zone Type, LOA/Contract Code, Year Contracted</li>
@@ -297,5 +299,4 @@
         tagged "Unspecified (Pending Match)" for now and can be updated once that feature is ready.
     </p>
 </div>
-
 {% endblock %}

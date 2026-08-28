@@ -53,7 +53,7 @@ class User(db.Model):
     role = db.Column(db.String(20), nullable=False, default='normal_user')  # 'normal_user', 'field_officer', 'admin'
 
     # Relationships
-    reports = db.relationship('MonitoringReport', backref='officer', lazy=True)
+    # reports = db.relationship('MonitoringReport', backref='officer', lazy=True)
     notifications = db.relationship('Notification', backref='user', lazy=True)
 
     def set_password(self, password):
@@ -71,6 +71,9 @@ class Site(db.Model):
     organization_id = db.Column(db.Integer, db.ForeignKey('organization.organization_id'), nullable=False)
     site_name = db.Column(db.String(150), nullable=False)
     area_size_ha = db.Column(db.Float, nullable=False)
+    boundary_geojson = db.Column(db.Text, nullable=True)
+    boundary_area_ha = db.Column(db.Float, nullable=True)
+    boundary_captured_at = db.Column(db.DateTime, nullable=True)
     # land_map_boundary = db.Column(Geometry('POLYGON', srid=4326), nullable=True)
     date_established = db.Column(db.Date, nullable=False, default=datetime.utcnow)
     site_status = db.Column(db.String(50), nullable=False, default='Active')
@@ -142,31 +145,147 @@ class ReforestationRecord(db.Model):
 
 class MonitoringReport(db.Model):
     __tablename__ = 'monitoring_report'
-    
+
     report_id = db.Column(db.Integer, primary_key=True)
-    record_id = db.Column(db.Integer, db.ForeignKey('reforestation_record.record_id'), nullable=False)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.user_id'), nullable=False)
-    monitoring_date = db.Column(db.Date, nullable=False, default=datetime.utcnow)
-    survival_rate = db.Column(db.Float, nullable=False)
+    record_id = db.Column(
+        db.Integer,
+        db.ForeignKey('reforestation_record.record_id'),
+        nullable=False
+    )
+    site_id = db.Column(
+        db.Integer, db.ForeignKey('site.site_id'), nullable=True
+    )
+    user_id = db.Column(
+        db.Integer, db.ForeignKey('users.user_id'), nullable=False
+    )
+
+    monitoring_date = db.Column(db.Date, nullable=False,
+                                default=datetime.utcnow)
+
+    # --- computed from the sampling plots, never typed by the officer ---
+    survival_rate = db.Column(db.Float, nullable=False, default=0.0)
+    plots_recorded = db.Column(db.Integer, nullable=True)
+    plot_size_sqm = db.Column(db.Float, nullable=True)
+    total_counted = db.Column(db.Integer, nullable=True)
+    mean_per_plot = db.Column(db.Float, nullable=True)
+    stdev_per_plot = db.Column(db.Float, nullable=True)
+    density_per_ha = db.Column(db.Float, nullable=True)
+    estimated_survivors = db.Column(db.Integer, nullable=True)
+    sampling_intensity = db.Column(db.Float, nullable=True)
+
+    # --- boundary reconstructed from GPS corner photos ---
+    captured_area_ha = db.Column(db.Float, nullable=True)
+    area_difference_pct = db.Column(db.Float, nullable=True)
+    boundary_geojson = db.Column(db.Text, nullable=True)
+
+    remarks = db.Column(db.Text, nullable=True)
+
     record_version = db.Column(db.Integer, nullable=False, default=1)
-    approval_status = db.Column(db.String(30), nullable=False, default='Pending')  # 'Pending', 'Approved', 'Rejected'
+    approval_status = db.Column(db.String(30), nullable=False,
+                                default='Pending')
+    review_note = db.Column(db.Text, nullable=True)
+    reviewed_by = db.Column(
+        db.Integer, db.ForeignKey('users.user_id'), nullable=True
+    )
+    date_reviewed = db.Column(db.DateTime, nullable=True)
 
-    # Relationships
-    photos = db.relationship('MonitoringPhoto', backref='report', lazy=True, cascade="all, delete-orphan")
-    notifications = db.relationship('Notification', backref='report', lazy=True)
+    submitted_at = db.Column(
+        db.DateTime,
+        nullable=False,
+        default=lambda: datetime.now(ZoneInfo("Asia/Manila"))
+    )
 
+    # relationships
+    photos = db.relationship('MonitoringPhoto', backref='report',
+                             lazy=True, cascade="all, delete-orphan")
+    plots = db.relationship('MonitoringPlot', backref='report',
+                            lazy=True, cascade="all, delete-orphan")
+    notifications = db.relationship('Notification', backref='report',
+                                    lazy=True)
+
+    site = db.relationship('Site', backref='monitoring_reports')
+    officer = db.relationship(
+        'User',
+        foreign_keys=[user_id],
+        backref=db.backref('submitted_reports', foreign_keys=[user_id])
+    )
+    reviewer = db.relationship(
+        'User',
+        foreign_keys=[reviewed_by],
+        backref=db.backref('reviewed_reports', foreign_keys=[reviewed_by])
+    )
 
 class MonitoringPhoto(db.Model):
     __tablename__ = 'monitoring_photo'
-    
-    photo_id = db.Column(db.Integer, primary_key=True)
-    report_id = db.Column(db.Integer, db.ForeignKey('monitoring_report.report_id'), nullable=False)
-    photo_url = db.Column(db.String(255), nullable=False)
-    # gps_point = db.Column(Geometry('POINT', srid=4326), nullable=True)
-    date_time_taken = db.Column(db.DateTime, nullable=True)
-    upload_time = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
-    inside_boundary = db.Column(db.Boolean, nullable=False, default=False)
 
+    photo_id = db.Column(db.Integer, primary_key=True)
+    report_id = db.Column(
+        db.Integer,
+        db.ForeignKey('monitoring_report.report_id'),
+        nullable=False
+    )
+    plot_id = db.Column(
+        db.Integer,
+        db.ForeignKey('monitoring_plot.plot_id'),
+        nullable=True
+    )
+
+    photo_url = db.Column(db.String(255), nullable=False)
+    file_hash = db.Column(db.String(64), nullable=True)
+
+    # 'plot'     - evidence for one sampling plot
+    # 'boundary' - a site corner, used to build the polygon
+    photo_type = db.Column(db.String(20), nullable=False, default='plot')
+
+    # read from EXIF. Plain floats: no PostGIS needed for a single point.
+    latitude = db.Column(db.Float, nullable=True)
+    longitude = db.Column(db.Float, nullable=True)
+
+    date_time_taken = db.Column(db.DateTime, nullable=True)
+    upload_time = db.Column(
+        db.DateTime,
+        nullable=False,
+        default=lambda: datetime.now(ZoneInfo("Asia/Manila"))
+    )
+
+    # validation results. Recorded, never used to block an upload.
+    inside_boundary = db.Column(db.Boolean, nullable=False, default=False)
+    distance_from_centroid_m = db.Column(db.Float, nullable=True)
+    flags = db.Column(db.String(300), nullable=True)
+
+class MonitoringPlot(db.Model):
+    """
+    One sampling plot within a monitoring report.
+
+    DENR assesses survival by laying out fixed-size plots across a site,
+    counting surviving seedlings in each, then extrapolating to the full
+    area. Storing each plot separately means the survival rate can be
+    recomputed from the raw counts, and that variation between plots is
+    visible rather than averaged away.
+    """
+    __tablename__ = 'monitoring_plot'
+
+    plot_id = db.Column(db.Integer, primary_key=True)
+    report_id = db.Column(
+        db.Integer,
+        db.ForeignKey('monitoring_report.report_id'),
+        nullable=False
+    )
+
+    plot_number = db.Column(db.Integer, nullable=False)
+    seedlings_alive = db.Column(db.Integer, nullable=False)
+    plot_notes = db.Column(db.String(300), nullable=True)
+
+    # optional GPS for the plot itself, taken from its photo
+    latitude = db.Column(db.Float, nullable=True)
+    longitude = db.Column(db.Float, nullable=True)
+
+    photos = db.relationship(
+        'MonitoringPhoto',
+        backref='plot',
+        lazy=True,
+        foreign_keys='MonitoringPhoto.plot_id'
+    )
 
 class Request(db.Model):
     __tablename__ = 'request'

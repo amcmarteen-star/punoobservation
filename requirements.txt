@@ -10,3 +10,6 @@ python-dateutil
 Flask-Migrate>=4.0.0
 python-dotenv
 python-dateutil
+
+#for reading photo informations
+Pillow>=10.0.0

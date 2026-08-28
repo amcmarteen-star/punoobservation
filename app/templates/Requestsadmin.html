@@ -1,42 +1,43 @@
 {% extends "Base.html" %}
 {% block title %}Review Requests - PuNoObservation{% endblock %}
+{% block content_class %}page-content-wide{% endblock %}
+{% set active_page = 'review_requests' %}
 
 {% block extra_head %}
 <style>
-  .count-strip {
+  .req-filter-strip {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.75rem;
-    margin-bottom: 1.5rem;
+    gap: 0.6rem;
   }
 
-  .count-chip {
+  .req-filter-chip {
     background: #ffffff;
     border: 1px solid #e2e8f0;
     border-radius: 8px;
-    padding: 0.7rem 1.1rem;
-    min-width: 130px;
+    padding: 0.55rem 0.95rem;
+    min-width: 110px;
     text-decoration: none;
     color: inherit;
-    transition: border-color 0.15s;
+    transition: border-color 0.15s ease;
   }
 
-  .count-chip:hover,
-  .count-chip.active {
+  .req-filter-chip:hover,
+  .req-filter-chip.active {
     border-color: #16a34a;
     color: inherit;
   }
 
-  .count-chip .num {
+  .req-filter-chip .num {
     display: block;
-    font-size: 1.4rem;
+    font-size: 1.25rem;
     font-weight: 700;
     color: #14532d;
   }
 
-  .count-chip .lbl {
+  .req-filter-chip .lbl {
     display: block;
-    font-size: 0.72rem;
+    font-size: 0.7rem;
     text-transform: uppercase;
     letter-spacing: 0.5px;
     color: #64748b;
@@ -59,31 +60,45 @@
     display: flex;
     flex-direction: column;
     gap: 0.35rem;
-    min-width: 220px;
+    min-width: 200px;
   }
 
   .review-form select,
   .review-form input {
     font-size: 0.8rem;
-    padding: 0.25rem 0.4rem;
+    padding: 0.35rem 0.5rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
   }
 
-  .empty-state {
-    text-align: center;
-    padding: 2.5rem 1rem;
+  .review-form select:focus,
+  .review-form input:focus {
+    outline: none;
+    border-color: #16a34a;
+    box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.12);
+  }
+
+  .review-form button {
+    border-radius: 6px;
+  }
+
+  .req-cell-secondary {
     color: #64748b;
+    font-size: 0.78rem;
   }
 </style>
 {% endblock %}
 
 {% block content %}
 
-<div class="page-header mb-4">
-  <h2 class="fw-bold text-dark">Review Requests</h2>
-  <p class="text-secondary mb-0">
-    Reforestation site requests submitted by users. Setting a status
-    notifies the person who submitted it.
-  </p>
+<div class="um-header">
+  <div>
+    <div class="um-title-row">
+      <h2>Review Requests</h2>
+      <span class="um-count-pill" id="req-count">{{ all_requests|length }}</span>
+    </div>
+    <p class="um-subtitle">Reforestation site requests submitted by users. Setting a status notifies the person who submitted it.</p>
+  </div>
 </div>
 
 {% with messages = get_flashed_messages(with_categories=true) %}
@@ -96,110 +111,192 @@
   {% endif %}
 {% endwith %}
 
-<!-- ============ COUNTS / FILTER ============ -->
-<div class="count-strip">
-  <a href="{{ url_for('admin.review_requests') }}"
-     class="count-chip {% if not status_filter %}active{% endif %}">
-    <span class="num">{{ total_count }}</span>
-    <span class="lbl">All</span>
-  </a>
-  {% for label, n in counts.items() %}
-    <a href="{{ url_for('admin.review_requests', status=label) }}"
-       class="count-chip {% if status_filter == label %}active{% endif %}">
-      <span class="num">{{ n }}</span>
-      <span class="lbl">{{ label }}</span>
+<!-- ============ FILTER + SEARCH ============ -->
+<div class="um-toolbar">
+  <div class="req-filter-strip">
+    <a href="{{ url_for('admin.review_requests') }}"
+       class="req-filter-chip {% if not status_filter %}active{% endif %}">
+      <span class="num">{{ total_count }}</span>
+      <span class="lbl">All</span>
     </a>
-  {% endfor %}
+    {% for label, n in counts.items() %}
+      <a href="{{ url_for('admin.review_requests', status=label) }}"
+         class="req-filter-chip {% if status_filter == label %}active{% endif %}">
+        <span class="num">{{ n }}</span>
+        <span class="lbl">{{ label }}</span>
+      </a>
+    {% endfor %}
+  </div>
+
+  <div class="um-search-group">
+    <div class="um-search-wrap">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg>
+      <input type="text" id="req-search-input" class="um-search-input"
+             placeholder="Search requester, location, or description..."
+             oninput="reqApplyFilters()">
+    </div>
+    <a href="#" id="req-clear-btn" class="um-btn-ghost" style="display: none;" onclick="reqClearFilters(); return false;">Clear</a>
+  </div>
 </div>
 
 <!-- ============ TABLE ============ -->
-{% if all_requests %}
-  <div class="table-card">
-    <div class="table-scroll-container">
-      <table class="table custom-table align-middle">
-        <thead>
-          <tr>
-            <th>#</th>
-            <th>Requested By</th>
-            <th>Location</th>
-            <th>Type</th>
-            <th class="text-end">Area (ha)</th>
-            <th>Description</th>
-            <th>Contact</th>
-            <th>Submitted</th>
-            <th>Status</th>
-            <th>Action</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for r in all_requests %}
-          <tr>
-            <td class="num-cell">{{ r.request_id }}</td>
-            <td>
-              {% if r.requester %}
-                <div class="fw-semibold">{{ r.requester.username }}</div>
-                <div class="text-secondary small">{{ r.requester.role }}</div>
-              {% else %}
-                —
-              {% endif %}
-            </td>
-            <td>
-              {% if r.location %}
-                <div class="fw-semibold">{{ r.location.barangay }}</div>
-                <div class="text-secondary small">{{ r.location.municipality }}</div>
-              {% else %}
-                —
-              {% endif %}
-            </td>
-            <td>{{ r.request_type }}</td>
-            <td class="num-cell">{{ r.proposed_area_ha or '—' }}</td>
-            <td>{{ r.description or '—' }}</td>
-            <td>{{ r.contact_number or '—' }}</td>
-            <td>{{ r.date_submitted.strftime('%Y-%m-%d') }}</td>
-            <td>
-              <span class="status-pill status-{{ r.status|lower|replace(' ', '-') }}">
-                {{ r.status }}
-              </span>
-              {% if r.reviewed_by and r.reviewer %}
-                <div class="text-secondary small">by {{ r.reviewer.username }}</div>
-              {% endif %}
-              {% if r.review_note %}
-                <div class="text-secondary small fst-italic">{{ r.review_note }}</div>
-              {% endif %}
-            </td>
-            <td>
-              <form method="POST"
-                    action="{{ url_for('admin.review_request', request_id=r.request_id) }}"
-                    class="review-form">
-                <select name="status" class="form-select form-select-sm" required>
-                  <option value="">Set status</option>
-                  <option value="Under Review">Under Review</option>
-                  <option value="Approved">Approved</option>
-                  <option value="Rejected">Rejected</option>
-                </select>
-                <input type="text" name="review_note"
-                       class="form-control form-control-sm"
-                       placeholder="Note (required to reject)">
-                <button type="submit" class="btn btn-success btn-sm">Save</button>
-              </form>
-            </td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
+<div class="um-table-card">
+  {% if all_requests %}
+  <div class="sites-scroll-wrap" id="req-scroll">
+    <table class="um-table sites-table" id="req-table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Requested By</th>
+          <th>Location</th>
+          <th>Type</th>
+          <th class="text-end">Area (ha)</th>
+          <th>Description</th>
+          <th>Contact</th>
+          <th>Submitted</th>
+          <th>Status</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in all_requests %}
+        <tr data-search="{{ ((r.requester.username if r.requester else '') ~ ' ' ~ (r.location.barangay if r.location else '') ~ ' ' ~ (r.location.municipality if r.location else '') ~ ' ' ~ (r.description or '') ~ ' ' ~ (r.request_type or ''))|lower|e }}">
+          <td class="num-cell">{{ r.request_id }}</td>
+          <td>
+            {% if r.requester %}
+              <div class="fw-semibold">{{ r.requester.username }}</div>
+              <div class="req-cell-secondary">{{ r.requester.role }}</div>
+            {% else %}
+              &mdash;
+            {% endif %}
+          </td>
+          <td>
+            {% if r.location %}
+              <div class="fw-semibold">{{ r.location.barangay }}</div>
+              <div class="req-cell-secondary">{{ r.location.municipality }}</div>
+            {% else %}
+              &mdash;
+            {% endif %}
+          </td>
+          <td>{{ r.request_type }}</td>
+          <td class="num-cell">{{ r.proposed_area_ha or '—' }}</td>
+          <td>{{ r.description or '—' }}</td>
+          <td>{{ r.contact_number or '—' }}</td>
+          <td>{{ r.date_submitted.strftime('%Y-%m-%d') }}</td>
+          <td>
+            <span class="status-pill status-{{ r.status|lower|replace(' ', '-') }}">
+              {{ r.status }}
+            </span>
+            {% if r.reviewed_by and r.reviewer %}
+              <div class="req-cell-secondary">by {{ r.reviewer.username }}</div>
+            {% endif %}
+            {% if r.review_note %}
+              <div class="req-cell-secondary fst-italic">{{ r.review_note }}</div>
+            {% endif %}
+          </td>
+          <td>
+            <form method="POST"
+                  action="{{ url_for('admin.review_request', request_id=r.request_id) }}"
+                  class="review-form">
+              <select name="status" required>
+                <option value="">Set status</option>
+                <option value="Under Review">Under Review</option>
+                <option value="Approved">Approved</option>
+                <option value="Rejected">Rejected</option>
+              </select>
+              <input type="text" name="review_note"
+                     placeholder="Note (required to reject)">
+              <button type="submit" class="um-btn-confirm">Save</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
   </div>
-{% else %}
-  <div class="empty-state">
-    <h5>
+
+  <div class="sites-scroll-controls">
+      <button type="button" class="sites-scroll-btn" id="req-scroll-left" onclick="reqScroll(-1)" aria-label="Scroll table left">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+      </button>
+      <span class="sites-scroll-hint">Scroll to see more columns</span>
+      <button type="button" class="sites-scroll-btn" id="req-scroll-right" onclick="reqScroll(1)" aria-label="Scroll table right">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+      </button>
+  </div>
+
+  <div class="um-empty" id="req-empty" style="display: none;">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/></svg>
+    <strong>No requests match your search</strong>
+    <p>Try a different requester, location, or description.</p>
+  </div>
+  {% else %}
+  <div class="um-empty">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/></svg>
+    <strong>
       {% if status_filter %}
         No requests with status "{{ status_filter }}"
       {% else %}
         No requests submitted yet
       {% endif %}
-    </h5>
+    </strong>
     <p>Requests submitted by users will appear here for review.</p>
   </div>
-{% endif %}
+  {% endif %}
+</div>
+
+<script>
+  function reqApplyFilters() {
+    var q = (document.getElementById('req-search-input').value || '').trim().toLowerCase();
+    var rows = document.querySelectorAll('#req-table tbody tr');
+    var visible = 0;
+
+    rows.forEach(function (row) {
+      var show = !q || row.dataset.search.indexOf(q) !== -1;
+      row.style.display = show ? '' : 'none';
+      if (show) visible++;
+    });
+
+    var countEl = document.getElementById('req-count');
+    if (countEl) countEl.textContent = visible;
+
+    document.getElementById('req-clear-btn').style.display = q ? 'inline-block' : 'none';
+
+    var empty = document.getElementById('req-empty');
+    var scrollWrap = document.getElementById('req-scroll');
+    var controls = document.querySelector('.sites-scroll-controls');
+    if (empty) {
+      var noResults = visible === 0 && rows.length > 0;
+      empty.style.display = noResults ? 'block' : 'none';
+      if (scrollWrap) scrollWrap.style.display = noResults ? 'none' : '';
+      if (controls) controls.style.display = noResults ? 'none' : '';
+    }
+  }
+
+  function reqClearFilters() {
+    document.getElementById('req-search-input').value = '';
+    reqApplyFilters();
+  }
+
+  function reqScroll(direction) {
+    var el = document.getElementById('req-scroll');
+    if (el) el.scrollBy({ left: direction * 320, behavior: 'smooth' });
+  }
+
+  (function () {
+    var el = document.getElementById('req-scroll');
+    var left = document.getElementById('req-scroll-left');
+    var right = document.getElementById('req-scroll-right');
+    if (!el || !left || !right) return;
+
+    function updateButtons() {
+      left.disabled = el.scrollLeft <= 4;
+      right.disabled = el.scrollLeft >= el.scrollWidth - el.clientWidth - 4;
+    }
+    el.addEventListener('scroll', updateButtons);
+    window.addEventListener('resize', updateButtons);
+    updateButtons();
+  })();
+</script>
 
 {% endblock %}

@@ -1,7 +1,7 @@
 # app/routes/admin.py
 from flask import Blueprint, render_template, request, flash, redirect, url_for, session, jsonify
 from app.extensions import db
-from app.models import User, Location, Organization, Site, TreeSpecie, ReforestationRecord, Request, Notification
+from app.models import User, Location, Organization, Site, TreeSpecie, ReforestationRecord, Request, Notification, MonitoringReport, MonitoringPlot, MonitoringPhoto,ReforestationRecord,Site
 from app.utils.decorators import admin_required
 import pandas as pd
 from datetime import datetime as dt
@@ -696,12 +696,161 @@ def preview_denr_data():
 
 
 # ======================================================================
-# PASTE TO HERE
-#
-# Imports needed at the top of admin.py:
-#     from flask import jsonify
-#     from app.models import Location, Site
-#     import re            (or keep the import at the top of this block)
-#
-# _is_denr_contract_sheet and _clean already exist in admin.py.
+# admin side reforestation monitoring/ reports
+# 
 # ======================================================================
+
+
+@admin_bp.route('/reports')
+@admin_required
+def review_reports():
+    """Monitoring reports awaiting review, newest first."""
+    status_filter = request.args.get('status', '')
+ 
+    query = MonitoringReport.query
+    if status_filter:
+        query = query.filter(MonitoringReport.approval_status == status_filter)
+ 
+    reports = query.order_by(MonitoringReport.submitted_at.desc()).all()
+ 
+    counts = {
+        'Pending': MonitoringReport.query.filter_by(
+            approval_status='Pending').count(),
+        'Approved': MonitoringReport.query.filter_by(
+            approval_status='Approved').count(),
+        'Rejected': MonitoringReport.query.filter_by(
+            approval_status='Rejected').count(),
+    }
+ 
+    return render_template(
+        'ReportsAdmin.html',
+        active_page='review_reports',
+        reports=reports,
+        counts=counts,
+        total_count=MonitoringReport.query.count(),
+        status_filter=status_filter,
+    )
+ 
+ 
+@admin_bp.route('/reports/<int:report_id>')
+@admin_required
+def review_report_detail(report_id):
+    """Full preview of one report before deciding on it."""
+    report = MonitoringReport.query.get_or_404(report_id)
+ 
+    plot_photos = [p for p in report.photos if p.photo_type == 'plot']
+    boundary_photos = [p for p in report.photos if p.photo_type == 'boundary']
+ 
+    return render_template(
+        'ReportDetail.html',
+        active_page='review_reports',
+        report=report,
+        plots=sorted(report.plots, key=lambda p: p.plot_number),
+        plot_photos=plot_photos,
+        boundary_photos=boundary_photos,
+    )
+ 
+ 
+@admin_bp.route('/reports/<int:report_id>/review', methods=['POST'])
+@admin_required
+def review_report(report_id):
+    """
+    Approve or reject a report.
+ 
+    APPROVING WRITES BACK to the reforestation record. This is the point
+    of the whole feature: survival_rate and date_validated have existed
+    as columns since the schema was written and nothing has ever filled
+    them. After approval they carry field-verified numbers.
+    """
+    report = MonitoringReport.query.get_or_404(report_id)
+ 
+    new_status = (request.form.get('status') or '').strip()
+    note = (request.form.get('review_note') or '').strip()
+    update_boundary = request.form.get('update_boundary') == 'yes'
+ 
+    if new_status not in {'Pending', 'Approved', 'Rejected'}:
+        flash("Invalid status.", "danger")
+        return redirect(url_for('admin.review_report_detail',
+                                report_id=report_id))
+ 
+    if new_status == 'Rejected' and not note:
+        flash("Give a reason when rejecting a report.", "danger")
+        return redirect(url_for('admin.review_report_detail',
+                                report_id=report_id))
+ 
+    report.approval_status = new_status
+    report.review_note = note or None
+    report.reviewed_by = session.get('user_id')
+    report.date_reviewed = datetime.now(ZoneInfo("Asia/Manila"))
+ 
+    if new_status == 'Approved':
+        record = ReforestationRecord.query.get(report.record_id)
+        if record:
+            record.survival_rate = report.survival_rate
+            record.date_validated = report.monitoring_date
+ 
+        if update_boundary and report.boundary_geojson and report.site:
+            report.site.boundary_geojson = report.boundary_geojson
+            report.site.boundary_area_ha = report.captured_area_ha
+            report.site.boundary_captured_at = datetime.now(
+                ZoneInfo("Asia/Manila")
+            )
+ 
+    where = (
+        f"{report.site.location.barangay}, {report.site.location.municipality}"
+        if report.site and report.site.location else "the site"
+    )
+ 
+    message = (
+        f"Your monitoring report for {where} was {new_status.lower()}."
+    )
+    if note:
+        message += f" Note: {note}"
+ 
+    db.session.add(Notification(
+        user_id=report.user_id,
+        notification_type='Report',
+        message=message,
+        report_id=report.report_id,
+        is_read=False,
+    ))
+ 
+    db.session.commit()
+ 
+    flash(f"Report #{report.report_id} marked {new_status}.", "success")
+    return redirect(url_for('admin.review_reports'))
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
