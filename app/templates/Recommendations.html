@@ -22,7 +22,7 @@
 
   .profile-chip .label {
     display: block;
-    font-size: 0.7rem;
+    font-size: 0.75rem;
     text-transform: uppercase;
     letter-spacing: 0.5px;
     opacity: 0.75;
@@ -30,7 +30,7 @@
 
   .profile-chip .value {
     display: block;
-    font-size: 1.05rem;
+    font-size: 1.125rem;
     font-weight: 700;
     margin-top: 2px;
   }
@@ -46,8 +46,8 @@
 
   .results-bar-label {
     font-weight: 600;
-    color: #0f172a;
-    font-size: 0.9rem;
+    color: #12211a;
+    font-size: 0.875rem;
   }
 
   .rank-badge {
@@ -60,17 +60,17 @@
     background: #16a34a;
     color: #fff;
     font-weight: 700;
-    font-size: 0.8rem;
+    font-size: 0.875rem;
   }
 
   /* ranks 6 and below are muted so the top 5 still read as the answer */
   .rank-badge.muted {
-    background: #cbd5e1;
-    color: #475569;
+    background: #c9d6ce;
+    color: #41544a;
   }
 
   .score-bar-track {
-    background: #e2e8f0;
+    background: #e2eae5;
     border-radius: 4px;
     height: 8px;
     width: 110px;
@@ -83,7 +83,7 @@
   }
 
   .score-bar-fill.muted {
-    background: #94a3b8;
+    background: #8d9c94;
   }
 
   .in-range-yes {
@@ -106,18 +106,18 @@
 
   .sci-name {
     font-style: italic;
-    color: #64748b;
-    font-size: 0.8rem;
+    color: #5f6f66;
+    font-size: 0.875rem;
   }
 
   .method-note {
-    background: #f8fafc;
-    border: 1px solid #e2e8f0;
+    background: #f7faf8;
+    border: 1px solid #e2eae5;
     border-radius: 10px;
     padding: 0.9rem 1.1rem;
     margin-top: 1.5rem;
-    font-size: 0.85rem;
-    color: #475569;
+    font-size: 0.875rem;
+    color: #41544a;
     line-height: 1.6;
   }
 
@@ -185,7 +185,7 @@
 {% if result and result.found %}
 
   <!-- ============ SITE PROFILE ============ -->
-  <h4 class="text-success fw-bold border-bottom pb-2">
+  <h4 class="text-success fw-bold">
     {{ result.barangay }}, {{ result.municipality }}
   </h4>
 

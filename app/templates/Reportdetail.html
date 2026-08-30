@@ -1,341 +1,173 @@
-{% extends "Base.html" %} {% block title %}Report #{{ report.report_id }} -
-PuNoObservation{% endblock %} {% block extra_head %}
-<link
-  rel="stylesheet"
-  href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-/>
-<style>
-  .panel {
-    background: #ffffff;
-    border: 1px solid #e2e8f0;
-    border-radius: 10px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-    padding: 1.25rem;
-    margin-bottom: 1.25rem;
-  }
+{% extends "Base.html" %}
+{% block title %}Report #{{ report.report_id }} - PuNoObservation{% endblock %}
+{% block content_class %}page-content-wide{% endblock %}
+{% set active_page = 'review_reports' %}
 
-  .panel h5 {
-    font-weight: 700;
-    color: #14532d;
-    font-size: 1rem;
-    margin: 0 0 0.9rem 0;
-    padding-bottom: 0.5rem;
-    border-bottom: 1px solid #e2e8f0;
-  }
+{% block extra_head %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+{% endblock %}
 
-  .fact-grid {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 1.4rem;
-  }
+{% block content %}
 
-  .fact .lbl {
-    display: block;
-    font-size: 0.66rem;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    color: #94a3b8;
-  }
+<a href="{{ url_for('admin.review_reports') }}" class="um-back-link">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
+  Back to all reports
+</a>
 
-  .fact .val {
-    display: block;
-    font-size: 1.05rem;
-    font-weight: 700;
-    color: #1e293b;
-  }
-
-  .headline {
-    background: #14532d;
-    color: #ffffff;
-    border-radius: 8px;
-    padding: 1.1rem 1.3rem;
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    margin-bottom: 1rem;
-  }
-
-  .headline.fail {
-    background: #991b1b;
-  }
-  .headline .big {
-    font-size: 2rem;
-    font-weight: 700;
-  }
-
-  .calc-line {
-    display: flex;
-    justify-content: space-between;
-    padding: 0.35rem 0;
-    border-bottom: 1px solid #f1f5f9;
-    font-size: 0.87rem;
-  }
-
-  .calc-line:last-child {
-    border-bottom: none;
-  }
-  .calc-line .lbl {
-    color: #64748b;
-  }
-  .calc-line .val {
-    font-weight: 600;
-  }
-
-  .photo-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-    gap: 0.9rem;
-  }
-
-  .photo-card {
-    border: 1px solid #e2e8f0;
-    border-radius: 8px;
-    overflow: hidden;
-    background: #f8fafc;
-  }
-
-  .photo-card img {
-    width: 100%;
-    height: 140px;
-    object-fit: cover;
-    display: block;
-  }
-
-  .photo-meta {
-    padding: 0.5rem 0.6rem;
-    font-size: 0.72rem;
-    color: #475569;
-    line-height: 1.5;
-  }
-
-  .badge-ok {
-    background: #dcfce7;
-    color: #15803d;
-    padding: 1px 7px;
-    border-radius: 4px;
-    font-weight: 600;
-    font-size: 0.68rem;
-  }
-
-  .badge-flag {
-    background: #fef3c7;
-    color: #92400e;
-    padding: 1px 7px;
-    border-radius: 4px;
-    font-weight: 600;
-    font-size: 0.68rem;
-    display: inline-block;
-    margin: 1px 2px 1px 0;
-  }
-
-  #boundaryMap {
-    height: 320px;
-    border-radius: 8px;
-    border: 1px solid #e2e8f0;
-  }
-
-  .plot-bar-track {
-    background: #e2e8f0;
-    border-radius: 3px;
-    height: 7px;
-    width: 100%;
-    overflow: hidden;
-  }
-
-  .plot-bar-fill {
-    background: #16a34a;
-    height: 100%;
-  }
-  .plot-bar-fill.low {
-    background: #f59e0b;
-  }
-
-  .status-pill {
-    display: inline-block;
-    padding: 3px 10px;
-    border-radius: 12px;
-    font-size: 0.75rem;
-    font-weight: 600;
-  }
-
-  .status-pending {
-    background: #fef3c7;
-    color: #92400e;
-  }
-  .status-approved {
-    background: #dcfce7;
-    color: #15803d;
-  }
-  .status-rejected {
-    background: #fee2e2;
-    color: #991b1b;
-  }
-</style>
-{% endblock %} {% block content %}
-
-<a href="{{ url_for('admin.review_reports') }}" class="text-secondary small"
-  >&larr; Back to all reports</a
->
-
-<div class="page-header mt-2 mb-4">
-  <h2 class="fw-bold text-dark">
-    Report #{{ report.report_id }}
-    <span class="status-pill status-{{ report.approval_status|lower }}">
-      {{ report.approval_status }}
-    </span>
-  </h2>
-  <p class="text-secondary mb-0">
-    Submitted by {{ report.officer.username if report.officer else 'unknown' }}
-    on {{ report.submitted_at.strftime('%d %b %Y, %I:%M %p') }}
-  </p>
+<div class="um-header">
+  <div>
+    <div class="um-title-row">
+      <h2>Report #{{ report.report_id }}</h2>
+      <span class="um-status st-{{ report.approval_status|lower }}">{{ report.approval_status }}</span>
+    </div>
+    <p class="um-subtitle">
+      Submitted by {{ report.officer.username if report.officer else 'unknown' }}
+      on {{ report.submitted_at.strftime('%d %b %Y, %I:%M %p') }}
+    </p>
+  </div>
 </div>
 
-{% with messages = get_flashed_messages(with_categories=true) %} {% if messages
-%} {% for category, message in messages %}
-<div class="alert alert-{{ category }}">{{ message }}</div>
-{% endfor %} {% endif %} {% endwith %}
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    {% for category, message in messages %}
+      <div class="um-alert um-alert-{{ category }}">{{ message }}</div>
+    {% endfor %}
+  {% endif %}
+{% endwith %}
 
 <!-- ============ HEADLINE ============ -->
-<div class="headline {% if report.survival_rate < 85 %}fail{% endif %}">
+<div class="rep-headline {% if report.survival_rate < 85 %}fail{% endif %}">
   <div>
-    <div
-      style="
-        font-size: 0.75rem;
-        opacity: 0.8;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-      "
-    >
-      Survival rate
-    </div>
-    <div style="font-size: 0.85rem; opacity: 0.9">
-      {% if report.survival_rate >= 85 %} Meets the 85% DENR reference threshold
-      {% else %} Below the 85% DENR reference threshold {% endif %}
-    </div>
+    <span class="lbl">Survival rate</span>
+    <span class="sub">
+      {% if report.survival_rate >= 85 %}
+        Meets the 85% DENR reference threshold
+      {% else %}
+        Below the 85% DENR reference threshold
+      {% endif %}
+    </span>
   </div>
   <span class="big">{{ report.survival_rate }}%</span>
 </div>
 
 <!-- ============ SITE ============ -->
-<div class="panel">
-  <h5>Site</h5>
+<div class="um-panel">
+  <div class="um-panel-head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/></svg>
+    <h3>Site</h3>
+  </div>
+
   {% if report.site %}
-  <div class="fw-bold mb-2">{{ report.site.site_name }}</div>
-  <div class="fact-grid">
-    <div class="fact">
+  <div class="sites-name-cell mb-2">{{ report.site.site_name }}</div>
+  <div class="um-fact-grid">
+    <div class="um-fact">
       <span class="lbl">Location</span>
-      <span class="val" style="font-size: 0.9rem">
-        {% if report.site.location %} {{ report.site.location.barangay }}, {{
-        report.site.location.municipality }} {% else %}—{% endif %}
+      <span class="val val-sm">
+        {% if report.site.location %}
+          {{ report.site.location.barangay }}, {{ report.site.location.municipality }}
+        {% else %}&mdash;{% endif %}
       </span>
     </div>
-    <div class="fact">
+    <div class="um-fact">
       <span class="lbl">Site code</span>
-      <span class="val" style="font-size: 0.9rem">
-        {{ report.site.site_code or '—' }}
-      </span>
+      <span class="val val-sm">{{ report.site.site_code or '—' }}</span>
     </div>
-    <div class="fact">
+    <div class="um-fact">
       <span class="lbl">Contracted area</span>
       <span class="val">{{ report.site.area_size_ha }} ha</span>
     </div>
-    <div class="fact">
+    <div class="um-fact">
       <span class="lbl">Zone</span>
-      <span class="val" style="font-size: 0.9rem">
-        {{ report.site.zone_type or '—' }}
-      </span>
+      <span class="val val-sm">{{ report.site.zone_type or '—' }}</span>
     </div>
-    <div class="fact">
+    <div class="um-fact">
       <span class="lbl">Monitoring date</span>
-      <span class="val" style="font-size: 0.9rem">
-        {{ report.monitoring_date.strftime('%d %b %Y') }}
-      </span>
+      <span class="val val-sm">{{ report.monitoring_date.strftime('%d %b %Y') }}</span>
     </div>
   </div>
   {% else %}
-  <p class="text-secondary">Site record not found.</p>
+  <p class="text-secondary mb-0">Site record not found.</p>
   {% endif %}
 </div>
 
 <!-- ============ CALCULATION ============ -->
-<div class="panel">
-  <h5>Survival calculation</h5>
+<div class="um-panel">
+  <div class="um-panel-head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="16" height="20" x="4" y="2" rx="2"/><line x1="8" x2="16" y1="6" y2="6"/><line x1="16" x2="16" y1="14" y2="18"/><path d="M16 10h.01"/><path d="M12 10h.01"/><path d="M8 10h.01"/><path d="M12 14h.01"/><path d="M8 14h.01"/><path d="M12 18h.01"/><path d="M8 18h.01"/></svg>
+    <h3>Survival calculation</h3>
+  </div>
 
-  <div class="calc-line">
+  <div class="rep-calc-line">
     <span class="lbl">Plots recorded</span>
     <span class="val">{{ report.plots_recorded }}</span>
   </div>
-  <div class="calc-line">
+  <div class="rep-calc-line">
     <span class="lbl">Plot size</span>
     <span class="val">{{ report.plot_size_sqm }} m&sup2;</span>
   </div>
-  <div class="calc-line">
+  <div class="rep-calc-line">
     <span class="lbl">Total counted alive</span>
     <span class="val">{{ "{:,}".format(report.total_counted or 0) }}</span>
   </div>
-  <div class="calc-line">
+  <div class="rep-calc-line">
     <span class="lbl">Mean per plot</span>
-    <span class="val">
-      {{ report.mean_per_plot }} (sd {{ report.stdev_per_plot }})
-    </span>
+    <span class="val">{{ report.mean_per_plot }} (sd {{ report.stdev_per_plot }})</span>
   </div>
-  <div class="calc-line">
+  <div class="rep-calc-line">
     <span class="lbl">Sampling intensity</span>
     <span class="val">
-      {{ report.sampling_intensity }}% {% if report.sampling_intensity and
-      report.sampling_intensity < 5 %}
-      <span class="badge-flag">below 5% reference</span>
+      {{ report.sampling_intensity }}%
+      {% if report.sampling_intensity and report.sampling_intensity < 5 %}
+        <span class="rep-badge-flag">below 5% reference</span>
       {% endif %}
     </span>
   </div>
-  <div class="calc-line">
+  <div class="rep-calc-line">
     <span class="lbl">Density</span>
-    <span class="val">
-      {{ "{:,.0f}".format(report.density_per_ha or 0) }} per ha
-    </span>
+    <span class="val">{{ "{:,.0f}".format(report.density_per_ha or 0) }} per ha</span>
   </div>
-  <div class="calc-line">
+  <div class="rep-calc-line">
     <span class="lbl">Estimated survivors</span>
-    <span class="val">
-      {{ "{:,}".format(report.estimated_survivors or 0) }}
-    </span>
+    <span class="val">{{ "{:,}".format(report.estimated_survivors or 0) }}</span>
   </div>
 
   {% if report.remarks %}
   <div class="mt-3">
-    <span class="lbl text-secondary small text-uppercase"> Field remarks </span>
+    <span class="um-fact"><span class="lbl">Field remarks</span></span>
     <p class="mb-0">{{ report.remarks }}</p>
   </div>
   {% endif %}
 </div>
 
 <!-- ============ PLOTS ============ -->
-<div class="panel">
-  <h5>Plot counts</h5>
+<div class="um-panel">
+  <div class="um-panel-head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h.01"/><path d="M3 18h.01"/><path d="M3 6h.01"/><path d="M8 12h13"/><path d="M8 18h13"/><path d="M8 6h13"/></svg>
+    <h3>Plot counts</h3>
+  </div>
 
-  <div class="table-card">
-    <div class="table-scroll-container" style="max-height: 320px">
-      <table class="table custom-table align-middle">
+  <div class="um-table-card">
+    {% if plots %}
+    {% set mx = plots | map(attribute='seedlings_alive') | max %}
+    <div class="um-scroll-wrap" style="max-height: 320px;">
+      <table class="um-table">
         <thead>
           <tr>
             <th>Plot</th>
             <th class="text-end">Alive</th>
-            <th style="width: 180px">Relative to mean</th>
+            <th style="width: 180px;">Relative to mean</th>
             <th>Notes</th>
           </tr>
         </thead>
         <tbody>
-          {% set mx = plots | map(attribute='seedlings_alive') | max %} {% for p
-          in plots %}
+          {% for p in plots %}
           <tr>
             <td class="num-cell">{{ p.plot_number }}</td>
-            <td class="num-cell fw-semibold">{{ p.seedlings_alive }}</td>
+            <td class="num-cell sites-fw-semibold">{{ p.seedlings_alive }}</td>
             <td>
-              <div class="plot-bar-track">
-                <div
-                  class="plot-bar-fill {% if report.mean_per_plot and p.seedlings_alive < report.mean_per_plot * 0.5 %}low{% endif %}"
-                  style="width: {{ (p.seedlings_alive / mx * 100) if mx else 0 }}%;"
-                ></div>
+              <div class="rep-bar-track">
+                <div class="rep-bar-fill {% if report.mean_per_plot and p.seedlings_alive < report.mean_per_plot * 0.5 %}low{% endif %}"
+                     style="width: {{ (p.seedlings_alive / mx * 100) if mx else 0 }}%;"></div>
               </div>
             </td>
             <td class="text-secondary small">{{ p.plot_notes or '—' }}</td>
@@ -344,6 +176,13 @@ PuNoObservation{% endblock %} {% block extra_head %}
         </tbody>
       </table>
     </div>
+    {% else %}
+    <div class="um-empty">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h.01"/><path d="M3 18h.01"/><path d="M3 6h.01"/><path d="M8 12h13"/><path d="M8 18h13"/><path d="M8 6h13"/></svg>
+      <strong>No plot counts recorded</strong>
+      <p>This report was submitted without individual plot rows.</p>
+    </div>
+    {% endif %}
   </div>
 
   <p class="text-secondary small mt-2 mb-0">
@@ -354,31 +193,30 @@ PuNoObservation{% endblock %} {% block extra_head %}
 
 <!-- ============ BOUNDARY ============ -->
 {% if report.boundary_geojson %}
-<div class="panel">
-  <h5>Captured boundary</h5>
+<div class="um-panel">
+  <div class="um-panel-head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.106 5.553a2 2 0 0 0 1.788 0l3.659-1.83A1 1 0 0 1 21 4.619v12.764a1 1 0 0 1-.553.894l-4.553 2.277a2 2 0 0 1-1.788 0l-4.212-2.106a2 2 0 0 0-1.788 0l-3.659 1.83A1 1 0 0 1 3 19.381V6.618a1 1 0 0 1 .553-.894l4.553-2.277a2 2 0 0 1 1.788 0z"/><path d="M15 5.764v15"/><path d="M9 3.236v15"/></svg>
+    <h3>Captured boundary</h3>
+  </div>
 
-  <div class="fact-grid mb-3">
-    <div class="fact">
+  <div class="um-fact-grid mb-3">
+    <div class="um-fact">
       <span class="lbl">Contracted</span>
       <span class="val">{{ report.site.area_size_ha }} ha</span>
     </div>
-    <div class="fact">
+    <div class="um-fact">
       <span class="lbl">Captured from corners</span>
       <span class="val">{{ report.captured_area_ha }} ha</span>
     </div>
-    <div class="fact">
+    <div class="um-fact">
       <span class="lbl">Difference</span>
-      <span
-        class="val"
-        style="color: {% if report.area_difference_pct and
-                                report.area_difference_pct|abs > 10 %}#b91c1c{% else %}#15803d{% endif %};"
-      >
+      <span class="val {% if report.area_difference_pct and report.area_difference_pct|abs > 10 %}text-danger{% else %}text-success{% endif %}">
         {{ report.area_difference_pct }}%
       </span>
     </div>
   </div>
 
-  <div id="boundaryMap"></div>
+  <div id="boundaryMap" class="rep-map"></div>
 
   <p class="text-secondary small mt-2 mb-0">
     Drawn as the smallest shape enclosing every corner photograph. A concave
@@ -388,112 +226,104 @@ PuNoObservation{% endblock %} {% block extra_head %}
 {% endif %}
 
 <!-- ============ PHOTOS ============ -->
-{% for title, group in [('Plot photographs', plot_photos), ('Corner
-photographs', boundary_photos)] %} {% if group %}
-<div class="panel">
-  <h5>{{ title }} ({{ group | length }})</h5>
-  <div class="photo-grid">
-    {% for p in group %}
-    <div class="photo-card">
-      <a href="{{ url_for('static', filename=p.photo_url) }}" target="_blank">
-        <img
-          src="{{ url_for('static', filename=p.photo_url) }}"
-          alt="monitoring photo"
-        />
-      </a>
-      <div class="photo-meta">
-        {% if p.latitude %}
-        <div>
-          {{ "%.5f"|format(p.latitude) }}, {{ "%.5f"|format(p.longitude) }}
-        </div>
-        {% else %}
-        <div class="text-secondary">no GPS data</div>
-        {% endif %} {% if p.date_time_taken %}
-        <div>{{ p.date_time_taken.strftime('%d %b %Y, %I:%M %p') }}</div>
-        {% endif %} {% if p.distance_from_centroid_m %}
-        <div>
-          {{ "%.0f"|format(p.distance_from_centroid_m) }} m from barangay centre
-        </div>
-        {% endif %}
+{% for title, group in [('Plot photographs', plot_photos), ('Corner photographs', boundary_photos)] %}
+  {% if group %}
+  <div class="um-panel">
+    <div class="um-panel-head">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
+      <h3>{{ title }}</h3>
+      <span class="um-count-pill">{{ group | length }}</span>
+    </div>
 
-        <div class="mt-1">
-          {% if p.flags %} {% for f in p.flags.split(',') %}
-          <span class="badge-flag">{{ f | replace('_', ' ') }}</span>
-          {% endfor %} {% elif p.latitude %}
-          <span class="badge-ok">inside barangay</span>
+    <div class="rep-photo-grid">
+      {% for p in group %}
+      <div class="rep-photo-card">
+        <a href="{{ url_for('static', filename=p.photo_url) }}" target="_blank">
+          <img src="{{ url_for('static', filename=p.photo_url) }}" alt="monitoring photo" />
+        </a>
+        <div class="rep-photo-meta">
+          {% if p.latitude %}
+            <div>{{ "%.5f"|format(p.latitude) }}, {{ "%.5f"|format(p.longitude) }}</div>
+          {% else %}
+            <div class="text-secondary">no GPS data</div>
           {% endif %}
+
+          {% if p.date_time_taken %}
+            <div>{{ p.date_time_taken.strftime('%d %b %Y, %I:%M %p') }}</div>
+          {% endif %}
+
+          {% if p.distance_from_centroid_m %}
+            <div>{{ "%.0f"|format(p.distance_from_centroid_m) }} m from barangay centre</div>
+          {% endif %}
+
+          <div class="mt-1">
+            {% if p.flags %}
+              {% for f in p.flags.split(',') %}
+                <span class="rep-badge-flag">{{ f | replace('_', ' ') }}</span>
+              {% endfor %}
+            {% elif p.latitude %}
+              <span class="rep-badge-ok">inside barangay</span>
+            {% endif %}
+          </div>
         </div>
       </div>
+      {% endfor %}
     </div>
-    {% endfor %}
   </div>
-</div>
-{% endif %} {% endfor %}
+  {% endif %}
+{% endfor %}
 
 <!-- ============ DECISION ============ -->
-<div class="panel">
-  <h5>Decision</h5>
+<div class="um-panel">
+  <div class="um-panel-head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>
+    <h3>Decision</h3>
+  </div>
 
   {% if report.approval_status != 'Pending' %}
-  <div class="alert alert-info">
-    Already {{ report.approval_status|lower }} {% if report.reviewer %}by {{
-    report.reviewer.username }}{% endif %} on {{
-    report.date_reviewed.strftime('%d %b %Y') if report.date_reviewed }}. {% if
-    report.review_note %}<br />Note: {{ report.review_note }}{% endif %}
+  <div class="um-alert um-alert-info">
+    Already {{ report.approval_status|lower }}
+    {% if report.reviewer %}by {{ report.reviewer.username }}{% endif %}
+    on {{ report.date_reviewed.strftime('%d %b %Y') if report.date_reviewed }}.
+    {% if report.review_note %}<br />Note: {{ report.review_note }}{% endif %}
     <br /><br />
     Setting a new status will overwrite this.
   </div>
   {% endif %}
 
-  <form
-    method="POST"
-    action="{{ url_for('admin.review_report', report_id=report.report_id) }}"
-  >
-    <div class="row g-3 align-items-end">
-      <div class="col-md-3">
-        <label class="form-label fw-semibold">Status</label>
-        <select name="status" class="form-select" required>
+  <form method="POST" action="{{ url_for('admin.review_report', report_id=report.report_id) }}">
+    <div class="rep-decision-row">
+      <div class="um-field">
+        <label for="status">Status</label>
+        <select name="status" id="status" required>
           <option value="">Choose</option>
           <option value="Approved">Approve</option>
           <option value="Rejected">Reject</option>
         </select>
       </div>
 
-      <div class="col-md-6">
-        <label class="form-label fw-semibold">
+      <div class="um-field">
+        <label for="review_note">
           Note <span class="text-secondary small">(required to reject)</span>
         </label>
-        <input
-          type="text"
-          name="review_note"
-          class="form-control"
-          placeholder="Reason, or a note for the officer"
-        />
+        <input type="text" name="review_note" id="review_note"
+               placeholder="Reason, or a note for the officer" />
       </div>
 
-      <div class="col-md-3">
-        <button type="submit" class="btn btn-success w-100">
-          Save decision
-        </button>
-      </div>
+      <button type="submit" class="um-btn-add">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+        Save decision
+      </button>
     </div>
 
     {% if report.boundary_geojson %}
-    <div class="form-check mt-3">
-      <input
-        class="form-check-input"
-        type="checkbox"
-        name="update_boundary"
-        value="yes"
-        id="updateBoundary"
-      />
-      <label class="form-check-label" for="updateBoundary">
-        Replace the stored site boundary with the one captured in this report
-      </label>
-    </div>
+    <label class="rep-checkbox" for="updateBoundary">
+      <input type="checkbox" name="update_boundary" value="yes" id="updateBoundary" />
+      Replace the stored site boundary with the one captured in this report
+    </label>
     {% endif %}
 
-    <div class="alert alert-warning mt-3 mb-0 small">
+    <div class="um-alert um-alert-warning mt-3 mb-0">
       <strong>Approving writes to the planting record.</strong>
       The survival rate of {{ report.survival_rate }}% and the monitoring date
       will be saved against the reforestation record for this site, and will
@@ -547,4 +377,6 @@ photographs', boundary_photos)] %} {% if group %}
     map.fitBounds(layer.getBounds(), { padding: [30, 30] });
   })();
 </script>
-{% endif %} {% endblock %}
+{% endif %}
+
+{% endblock %}

@@ -3,15 +3,26 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Log-In - PunoObservation</title>
+    <meta name="theme-color" content="#0d3632">
+    <title>Log In - PuNoObservation</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body class="login-page">
     <div class="login-shell">
         <aside class="brand-panel">
+            <div class="brand-mesh" aria-hidden="true">
+                <span class="blob blob-1"></span>
+                <span class="blob blob-2"></span>
+                <span class="blob blob-3"></span>
+                <span class="blob blob-4"></span>
+            </div>
+
             <div class="brand-top">
                 <div class="brand-header">
-                    <img src="{{ url_for('static', filename='images/finallogo.png') }}" alt="PuNoObservation Logo" class="logo-box" />
+                    <img src="{{ url_for('static', filename='images/finallogo.png') }}" alt="" class="logo-box" width="251" height="310" />
                     <div class="brand-copy">
                         <div class="brand-name">PuNoObservation</div>
                         <div class="brand-title">DECISION SUPPORT SYSTEM</div>
@@ -20,77 +31,78 @@
             </div>
 
             <div class="brand-content">
-                <!-- <img src="{{ url_for('static', filename='images/finallogo.png') }}" alt="PuNoObservation Logo" class="brand-icon-box" /> -->
                 <h1>Reforestation<br>Management<br>Platform</h1>
                 <p>
                     A web-based decision support system for tree species recommendation and reforestation
                     management with geospatial visualization across Eastern Pangasinan.
                 </p>
 
-                <div class="chip-row">
-                    <span>GIS Mapping</span>
-                    <span>Species Recommendation</span>
-                    <span>Analytics</span>
-                    <span>Reports</span>
-                </div>
+                <ul class="chip-row">
+                    <li>GIS Mapping</li>
+                    <li>Species Recommendation</li>
+                    <li>Analytics</li>
+                    <li>Reports</li>
+                </ul>
             </div>
 
             <div class="brand-footer">
-                Pangasinan DENR • Eastern Pangasinan Region I
+                Pangasinan DENR &bull; Eastern Pangasinan Region I
                 <br>
-                © 2026 PuNoObservation. Capstone Project.
+                &copy; 2026 PuNoObservation. Capstone Project.
             </div>
-
         </aside>
 
         <main class="auth-panel">
             <div class="auth-wrapper">
                 <h2>Welcome back</h2>
-                <!-- <p class="subtitle">Sign in to access the platform</p>
-
-                <div class="role-tabs" aria-label="User roles">
-                    <button type="button" class="role-tab active">
-                        <span class="tab-icon">◉</span>
-                        <span>Admin</span>
-                    </button>
-                    <button type="button" class="role-tab">
-                        <span class="tab-icon">◌</span>
-                        <span>Officer</span>
-                    </button>
-                    <button type="button" class="role-tab">
-                        <span class="tab-icon">◌</span>
-                        <span>NGO / Rep</span>
-                    </button>
-                </div>
-
-                <div class="divider">or enter credentials</div> -->
+                <p class="auth-subtitle">Sign in to continue to your dashboard.</p>
 
                 {% if error %}
-                    <p class="form-alert">{{ error }}</p>
+                    <p class="form-alert" role="alert">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>
+                        <span>{{ error }}</span>
+                    </p>
                 {% endif %}
 
                 {% with messages = get_flashed_messages(with_categories=true) %}
                     {% if messages %}
                         {% for category, message in messages %}
-                            <p class="flash-message {{ category }}">{{ message }}</p>
+                            <p class="flash-message {{ category }}" role="status">
+                                {% if category == 'success' %}
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21.801 10A10 10 0 1 1 17 3.335"/><path d="m9 11 3 3L22 4"/></svg>
+                                {% else %}
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>
+                                {% endif %}
+                                <span>{{ message }}</span>
+                            </p>
                         {% endfor %}
                     {% endif %}
                 {% endwith %}
 
                 <form action="{{ url_for('auth.login') }}" method="POST" id="log_in_form" class="login-form">
                     <div class="field-group">
-                        <label for="username">Email address</label>
+                        <label for="username">Username</label>
                         <div class="input-wrap">
-                            <input type="text" id="username" name="username" placeholder="yourname@denr.gov.ph" required>
-                            <span class="field-icon"></span>
+                            <input type="text" id="username" name="username"
+                                   placeholder="Enter your username"
+                                   autocomplete="username"
+                                   autocapitalize="none" spellcheck="false"
+                                   required>
                         </div>
                     </div>
 
                     <div class="field-group">
                         <label for="password">Password</label>
                         <div class="input-wrap">
-                            <input type="password" id="password" name="password" placeholder="Enter your password" required>
-                            <span class="field-icon field-icon-eye"></span>
+                            <input type="password" id="password" name="password"
+                                   placeholder="Enter your password"
+                                   autocomplete="current-password"
+                                   required>
+                            <button type="button" class="field-toggle" data-toggle-password="password"
+                                    aria-label="Show password" aria-pressed="false">
+                                <svg class="icon-eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"/><circle cx="12" cy="12" r="3"/></svg>
+                                <svg class="icon-eye-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.733 5.076a10.744 10.744 0 0 1 11.205 6.575 1 1 0 0 1 0 .696 10.747 10.747 0 0 1-1.444 2.49"/><path d="M14.084 14.158a3 3 0 0 1-4.242-4.242"/><path d="M17.479 17.499a10.75 10.75 0 0 1-15.417-5.151 1 1 0 0 1 0-.696 10.75 10.75 0 0 1 4.446-5.143"/><path d="m2 2 20 20"/></svg>
+                            </button>
                         </div>
                     </div>
 
@@ -98,33 +110,10 @@
                 </form>
 
                 <p class="register-link">Don't have an account? <a href="{{ url_for('auth.register') }}">Sign up</a></p>
-
-                <!-- <div class="access-box">
-                    <h3>ACCESS LEVELS</h3>
-                    <div class="access-item">
-                        <span class="access-icon purple">◌</span>
-                        <div>
-                            <strong>Administrator</strong>
-                            <p>Full access — inbox, reports, user management, database</p>
-                        </div>
-                    </div>
-                    <div class="access-item">
-                        <span class="access-icon green">◌</span>
-                        <div>
-                            <strong>Field Officer</strong>
-                            <p>Field data — GIS map, inventory, sites, submit reports</p>
-                        </div>
-                    </div>
-                    <div class="access-item">
-                        <span class="access-icon blue">◌</span>
-                        <div>
-                            <strong>NGO / Representative</strong>
-                            <p>Public view — map, location overview, reforestation requests</p>
-                        </div>
-                    </div>
-                </div> -->
             </div>
         </main>
     </div>
+
+    <script src="{{ url_for('static', filename='javascript/script.js') }}"></script>
 </body>
 </html>

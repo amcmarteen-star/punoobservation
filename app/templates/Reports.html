@@ -1,227 +1,24 @@
 {% extends "Base.html" %}
 {% block title %}Monitoring Reports - PuNoObservation{% endblock %}
-
-{% block extra_head %}
-<style>
-  .step-card {
-    background: #ffffff;
-    border: 1px solid #e2e8f0;
-    border-radius: 10px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-    padding: 1.35rem;
-    margin-bottom: 1.25rem;
-  }
-
-  .step-head {
-    display: flex;
-    align-items: center;
-    gap: 0.6rem;
-    margin-bottom: 0.9rem;
-  }
-
-  .step-num {
-    width: 26px;
-    height: 26px;
-    border-radius: 50%;
-    background: #14532d;
-    color: #fff;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: 700;
-    font-size: 0.82rem;
-    flex-shrink: 0;
-  }
-
-  .step-head h5 {
-    margin: 0;
-    font-weight: 700;
-    color: #14532d;
-    font-size: 1rem;
-  }
-
-  .instruction {
-    background: #f0f9ff;
-    border-left: 3px solid #0ea5e9;
-    border-radius: 6px;
-    padding: 0.7rem 0.9rem;
-    font-size: 0.82rem;
-    color: #334155;
-    margin-bottom: 1rem;
-    line-height: 1.6;
-  }
-
-  .instruction strong { color: #075985; }
-
-  .disclaimer {
-    background: #fffbeb;
-    border-left: 3px solid #f59e0b;
-    border-radius: 6px;
-    padding: 0.7rem 0.9rem;
-    font-size: 0.8rem;
-    color: #78350f;
-    margin-top: 0.9rem;
-    line-height: 1.6;
-  }
-
-  /* site profile panel */
-  .site-facts {
-    display: none;
-    background: #14532d;
-    border-radius: 8px;
-    padding: 1rem;
-    margin-top: 1rem;
-  }
-
-  .site-facts.show { display: block; }
-
-  .site-facts .fact-grid {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 1.25rem;
-  }
-
-  .site-facts .fact .lbl {
-    display: block;
-    font-size: 0.66rem;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    color: #86efac;
-  }
-
-  .site-facts .fact .val {
-    display: block;
-    font-size: 1.05rem;
-    font-weight: 700;
-    color: #ffffff;
-  }
-
-  .site-facts .site-title {
-    color: #ffffff;
-    font-weight: 700;
-    margin-bottom: 0.75rem;
-  }
-
-  /* plot rows */
-  .plot-row {
-    display: grid;
-    grid-template-columns: 42px 110px 1fr 110px 34px;
-    gap: 0.5rem;
-    align-items: center;
-    margin-bottom: 0.5rem;
-  }
-
-  .plot-row .pnum {
-    font-weight: 700;
-    color: #64748b;
-    text-align: center;
-  }
-
-  .btn-remove-plot {
-    border: none;
-    background: #fee2e2;
-    color: #991b1b;
-    border-radius: 4px;
-    width: 30px;
-    height: 30px;
-    font-weight: 700;
-    cursor: pointer;
-  }
-
-  .plot-head {
-    display: grid;
-    grid-template-columns: 42px 110px 1fr 110px 34px;
-    gap: 0.5rem;
-    font-size: 0.7rem;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    color: #94a3b8;
-    margin-bottom: 0.35rem;
-  }
-
-  /* live calculation */
-  .calc-panel {
-    background: #f8fafc;
-    border: 1px solid #e2e8f0;
-    border-radius: 8px;
-    padding: 1rem;
-    margin-top: 1rem;
-    font-size: 0.85rem;
-  }
-
-  .calc-line {
-    display: flex;
-    justify-content: space-between;
-    padding: 0.3rem 0;
-    border-bottom: 1px solid #eef2f7;
-  }
-
-  .calc-line:last-child { border-bottom: none; }
-
-  .calc-line .lbl { color: #64748b; }
-  .calc-line .val { font-weight: 600; color: #1e293b; }
-
-  .calc-result {
-    background: #14532d;
-    color: #fff;
-    border-radius: 8px;
-    padding: 0.9rem 1rem;
-    margin-top: 0.8rem;
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-  }
-
-  .calc-result.fail { background: #991b1b; }
-
-  .calc-result .big {
-    font-size: 1.7rem;
-    font-weight: 700;
-  }
-
-  .calc-warn {
-    background: #fffbeb;
-    border-left: 3px solid #f59e0b;
-    padding: 0.55rem 0.8rem;
-    border-radius: 4px;
-    font-size: 0.78rem;
-    color: #78350f;
-    margin-top: 0.5rem;
-  }
-
-  .status-pill {
-    display: inline-block;
-    padding: 3px 10px;
-    border-radius: 12px;
-    font-size: 0.75rem;
-    font-weight: 600;
-  }
-
-  .status-pending  { background: #fef3c7; color: #92400e; }
-  .status-approved { background: #dcfce7; color: #15803d; }
-  .status-rejected { background: #fee2e2; color: #991b1b; }
-
-  .empty-state {
-    text-align: center;
-    padding: 2.5rem 1rem;
-    color: #64748b;
-  }
-</style>
-{% endblock %}
-
+{% block content_class %}page-content-wide{% endblock %}
+{% set active_page = 'reports' %}
 {% block content %}
 
-<div class="page-header mb-4">
-  <h2 class="fw-bold text-dark">Monitoring Report</h2>
-  <p class="text-secondary mb-0">
-    Record a field survival assessment for a reforestation site.
-  </p>
+<div class="um-header">
+  <div>
+    <div class="um-title-row">
+      <h2>Monitoring Report</h2>
+    </div>
+    <p class="um-subtitle">
+      Record a field survival assessment for a reforestation site.
+    </p>
+  </div>
 </div>
 
 {% with messages = get_flashed_messages(with_categories=true) %}
   {% if messages %}
     {% for category, message in messages %}
-      <div class="alert alert-{{ category }}">{{ message }}</div>
+      <div class="um-alert um-alert-{{ category }}">{{ message }}</div>
     {% endfor %}
   {% endif %}
 {% endwith %}
@@ -232,23 +29,21 @@
       id="reportForm">
 
   <!-- ============ STEP 1 : LOCATION ============ -->
-  <div class="step-card">
-    <div class="step-head">
-      <span class="step-num">1</span>
-      <h5>Choose the site</h5>
+  <div class="um-panel">
+    <div class="um-panel-head">
+      <span class="um-step-num">1</span>
+      <h3>Choose the site</h3>
     </div>
 
-    <div class="row g-3">
-      <div class="col-md-3">
-        <label class="form-label fw-semibold">Province</label>
-        <input type="text" class="form-control" value="Pangasinan" disabled>
+    <div class="um-field-row">
+      <div class="um-field">
+        <label for="province">Province</label>
+        <input type="text" id="province" value="Pangasinan" disabled>
       </div>
 
-      <div class="col-md-3">
-        <label for="municipality" class="form-label fw-semibold">
-          Municipality <span class="text-danger">*</span>
-        </label>
-        <select id="municipality" class="form-select" required>
+      <div class="um-field">
+        <label for="municipality">Municipality <span class="um-req">*</span></label>
+        <select id="municipality" required>
           <option value="">Choose</option>
           {% for m in municipalities %}
             <option value="{{ m }}">{{ m }}</option>
@@ -256,49 +51,45 @@
         </select>
       </div>
 
-      <div class="col-md-3">
-        <label for="barangay" class="form-label fw-semibold">
-          Barangay <span class="text-danger">*</span>
-        </label>
-        <select id="barangay" class="form-select" required disabled>
+      <div class="um-field">
+        <label for="barangay">Barangay <span class="um-req">*</span></label>
+        <select id="barangay" required disabled>
           <option value="">Choose a municipality first</option>
         </select>
       </div>
 
-      <div class="col-md-3">
-        <label for="site_id" class="form-label fw-semibold">
-          Site <span class="text-danger">*</span>
-        </label>
-        <select name="site_id" id="site_id" class="form-select" required disabled>
+      <div class="um-field">
+        <label for="site_id">Site <span class="um-req">*</span></label>
+        <select name="site_id" id="site_id" required disabled>
           <option value="">Choose a barangay first</option>
         </select>
       </div>
     </div>
 
-    <div class="site-facts" id="siteFacts">
+    <div class="rep-site-facts" id="siteFacts">
       <div class="site-title" id="siteTitle"></div>
-      <div class="fact-grid">
-        <div class="fact">
+      <div class="um-fact-grid">
+        <div class="um-fact">
           <span class="lbl">Area</span>
           <span class="val" id="factArea">—</span>
         </div>
-        <div class="fact">
+        <div class="um-fact">
           <span class="lbl">Target seedlings</span>
           <span class="val" id="factTarget">—</span>
         </div>
-        <div class="fact">
+        <div class="um-fact">
           <span class="lbl">Actually planted</span>
           <span class="val" id="factPlanted">—</span>
         </div>
-        <div class="fact">
+        <div class="um-fact">
           <span class="lbl">Year contracted</span>
           <span class="val" id="factYear">—</span>
         </div>
-        <div class="fact">
+        <div class="um-fact">
           <span class="lbl">Zone</span>
           <span class="val" id="factZone">—</span>
         </div>
-        <div class="fact">
+        <div class="um-fact">
           <span class="lbl">Boundary on file</span>
           <span class="val" id="factBoundary">—</span>
         </div>
@@ -307,13 +98,13 @@
   </div>
 
   <!-- ============ STEP 2 : SAMPLING PLOTS ============ -->
-  <div class="step-card">
-    <div class="step-head">
-      <span class="step-num">2</span>
-      <h5>Sampling plots</h5>
+  <div class="um-panel">
+    <div class="um-panel-head">
+      <span class="um-step-num">2</span>
+      <h3>Sampling plots</h3>
     </div>
 
-    <div class="instruction">
+    <div class="um-note">
       <strong>How to do this.</strong>
       Lay out square plots of equal size spread across the site. In each
       plot, count only the seedlings that are <strong>alive</strong>.
@@ -328,49 +119,42 @@
       counts.
     </div>
 
-    <div class="row g-3 mb-3">
-      <div class="col-md-3">
-        <label for="monitoring_date" class="form-label fw-semibold">
-          Monitoring date <span class="text-danger">*</span>
-        </label>
-        <input type="date" name="monitoring_date" id="monitoring_date"
-               class="form-control" required>
+    <div class="um-field-row mb-3">
+      <div class="um-field">
+        <label for="monitoring_date">Monitoring date <span class="um-req">*</span></label>
+        <input type="date" name="monitoring_date" id="monitoring_date" required>
       </div>
 
-      <div class="col-md-3">
-        <label for="plot_size_sqm" class="form-label fw-semibold">
-          Plot size (m&sup2;) <span class="text-danger">*</span>
-        </label>
-        <input type="number" step="1" min="1"
-               name="plot_size_sqm" id="plot_size_sqm"
-               class="form-control" value="400" required>
-        <div class="form-text">400 m&sup2; is a 20 m &times; 20 m plot.</div>
+      <div class="um-field">
+        <label for="plot_size_sqm">Plot size (m&sup2;) <span class="um-req">*</span></label>
+        <input type="number" step="1" min="1" name="plot_size_sqm" id="plot_size_sqm" value="400" required>
+        <p class="um-field-hint">400 m&sup2; is a 20 m &times; 20 m plot.</p>
       </div>
     </div>
 
-    <div class="plot-head">
+    <div class="rep-plot-head">
       <span>#</span>
       <span>Alive</span>
       <span>Notes (optional)</span>
-      <span>Photo</span>
       <span></span>
     </div>
 
     <div id="plotRows"></div>
 
-    <button type="button" class="btn btn-outline-success btn-sm mt-2"
-            onclick="addPlotRow()">
-      + Add plot
+    <button type="button" class="um-btn-outline mt-2" onclick="addPlotRow()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+      Add plot
     </button>
+    <p class="um-field-hint">Photographs for these plots are attached in step 3.</p>
 
     <!-- live calculation -->
-    <div class="calc-panel" id="calcPanel">
+    <div class="rep-calc" id="calcPanel">
       <div class="text-secondary">
         Enter plot counts to see the survival calculation.
       </div>
     </div>
 
-    <div class="disclaimer">
+    <div class="um-note-warn">
       <strong>Please read.</strong>
       This estimate assumes seedlings are distributed evenly across the
       site. Plots placed only in healthy areas, or only in poor ones,
@@ -383,13 +167,13 @@
   </div>
 
   <!-- ============ STEP 3 : PHOTOS ============ -->
-  <div class="step-card">
-    <div class="step-head">
-      <span class="step-num">3</span>
-      <h5>Photographs</h5>
+  <div class="um-panel">
+    <div class="um-panel-head">
+      <span class="um-step-num">3</span>
+      <h3>Photographs</h3>
     </div>
 
-    <div class="instruction">
+    <div class="um-note">
       <strong>Use a GPS camera app.</strong>
       The system reads the location and time out of each photo
       automatically. You do not type coordinates.
@@ -399,32 +183,24 @@
       check. Nothing is rejected automatically.
     </div>
 
-    <div class="mb-3">
-      <label for="plot_photos" class="form-label fw-semibold">
-        Plot photographs
-      </label>
-      <input type="file" name="plot_photos" id="plot_photos"
-             class="form-control" multiple accept="image/*">
-      <div class="form-text">
-        Evidence of what you counted. One per plot is ideal.
-      </div>
+    <div class="um-field">
+      <label for="plot_photos">Plot photographs</label>
+      <input type="file" name="plot_photos" id="plot_photos" multiple accept="image/*">
+      <p class="um-field-hint">Evidence of what you counted. One per plot is ideal.</p>
     </div>
 
-    <div class="mb-2">
-      <label for="boundary_photos" class="form-label fw-semibold">
-        Corner photographs &mdash; site boundary
-      </label>
-      <input type="file" name="boundary_photos" id="boundary_photos"
-             class="form-control" multiple accept="image/*">
-      <div class="form-text">
+    <div class="um-field">
+      <label for="boundary_photos">Corner photographs &mdash; site boundary</label>
+      <input type="file" name="boundary_photos" id="boundary_photos" multiple accept="image/*">
+      <p class="um-field-hint">
         Stand at each corner of the site and take one photo.
         <strong>At least 4 corners</strong> are needed to draw the
         boundary. The system joins the coordinates into a polygon and
         compares its area against the contracted area.
-      </div>
+      </p>
     </div>
 
-    <div class="disclaimer">
+    <div class="um-note-warn">
       The boundary is drawn as the smallest shape enclosing all your
       corner points. If the site is not a simple convex shape &mdash; an
       L-shape, or one bending around a stream &mdash; the drawn area will
@@ -434,95 +210,112 @@
   </div>
 
   <!-- ============ STEP 4 : REMARKS ============ -->
-  <div class="step-card">
-    <div class="step-head">
-      <span class="step-num">4</span>
-      <h5>Remarks and submit</h5>
+  <div class="um-panel">
+    <div class="um-panel-head">
+      <span class="um-step-num">4</span>
+      <h3>Remarks and submit</h3>
     </div>
 
-    <div class="mb-3">
-      <label for="remarks" class="form-label fw-semibold">
-        Field remarks
-      </label>
-      <textarea name="remarks" id="remarks" class="form-control" rows="3"
+    <div class="um-field">
+      <label for="remarks">Field remarks</label>
+      <textarea name="remarks" id="remarks" rows="3"
                 placeholder="Condition of the site, causes of mortality, grazing, fire damage, access problems."></textarea>
     </div>
 
-    <button type="submit" class="btn btn-success">Submit for review</button>
-    <span class="text-secondary small ms-2">
-      An administrator reviews the report before it updates the records.
-    </span>
+    <div class="d-flex align-items-center gap-2 mt-3">
+      <button type="submit" class="um-btn-add">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+        Submit for review
+      </button>
+      <span class="text-secondary small">
+        An administrator reviews the report before it updates the records.
+      </span>
+    </div>
   </div>
 
 </form>
 
 <!-- ============ PAST REPORTS ============ -->
-<h4 class="text-success fw-bold border-bottom pb-2 mt-4">My Reports</h4>
+<div class="um-header mt-4">
+  <div>
+    <div class="um-title-row">
+      <h2>My Reports</h2>
+      <span class="um-count-pill">{{ my_reports|length }}</span>
+    </div>
+    <p class="um-subtitle">Every report you have submitted, with its review status.</p>
+  </div>
+</div>
 
-{% if my_reports %}
-  <div class="table-card mt-3">
-    <div class="table-scroll-container">
-      <table class="table custom-table align-middle">
-        <thead>
-          <tr>
-            <th>#</th>
-            <th>Site</th>
-            <th>Monitored</th>
-            <th class="text-end">Plots</th>
-            <th class="text-end">Counted</th>
-            <th class="text-end">Survival</th>
-            <th class="text-end">Intensity</th>
-            <th>Status</th>
-            <th>Submitted</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for r in my_reports %}
-          <tr>
-            <td class="num-cell">{{ r.report_id }}</td>
-            <td>
-              {% if r.site %}
-                <div class="fw-semibold">{{ r.site.site_name }}</div>
-                {% if r.site.location %}
-                  <div class="text-secondary small">
-                    {{ r.site.location.barangay }},
-                    {{ r.site.location.municipality }}
-                  </div>
-                {% endif %}
-              {% else %}—{% endif %}
-            </td>
-            <td>{{ r.monitoring_date.strftime('%Y-%m-%d') }}</td>
-            <td class="num-cell">{{ r.plots_recorded or '—' }}</td>
-            <td class="num-cell">{{ r.total_counted or '—' }}</td>
-            <td class="num-cell fw-semibold">
-              {{ r.survival_rate }}%
-            </td>
-            <td class="num-cell">
-              {{ r.sampling_intensity }}%
-            </td>
-            <td>
-              <span class="status-pill status-{{ r.approval_status|lower }}">
-                {{ r.approval_status }}
-              </span>
-              {% if r.review_note %}
-                <div class="text-secondary small fst-italic">
-                  {{ r.review_note }}
+<div class="um-table-card">
+  {% if my_reports %}
+  <div class="um-scroll-wrap" id="myreports-scroll">
+    <table class="um-table um-scroll-table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Site</th>
+          <th>Monitored</th>
+          <th class="text-end">Plots</th>
+          <th class="text-end">Counted</th>
+          <th class="text-end">Survival</th>
+          <th class="text-end">Intensity</th>
+          <th>Status</th>
+          <th>Submitted</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in my_reports %}
+        <tr>
+          <td class="num-cell">{{ r.report_id }}</td>
+          <td>
+            {% if r.site %}
+              <div class="sites-name-cell">{{ r.site.site_name }}</div>
+              {% if r.site.location %}
+                <div class="text-secondary small">
+                  {{ r.site.location.barangay }}, {{ r.site.location.municipality }}
                 </div>
               {% endif %}
-            </td>
-            <td>{{ r.submitted_at.strftime('%Y-%m-%d') }}</td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
+            {% else %}
+              <span class="text-secondary">&mdash;</span>
+            {% endif %}
+          </td>
+          <td>{{ r.monitoring_date.strftime('%Y-%m-%d') }}</td>
+          <td class="num-cell">{{ r.plots_recorded or '—' }}</td>
+          <td class="num-cell">{{ r.total_counted or '—' }}</td>
+          <td class="num-cell sites-fw-semibold {% if r.survival_rate >= 85 %}text-success{% else %}text-danger{% endif %}">
+            {{ r.survival_rate }}%
+          </td>
+          <td class="num-cell">{{ r.sampling_intensity }}%</td>
+          <td>
+            <span class="um-status st-{{ r.approval_status|lower }}">{{ r.approval_status }}</span>
+            {% if r.review_note %}
+              <div class="text-secondary small fst-italic">{{ r.review_note }}</div>
+            {% endif %}
+          </td>
+          <td>{{ r.submitted_at.strftime('%Y-%m-%d') }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
   </div>
-{% else %}
-  <div class="empty-state">
-    <h5>No reports yet</h5>
+
+  <div class="um-scroll-controls">
+    <button type="button" class="um-scroll-btn" id="myreports-scroll-left" onclick="myReportsScroll(-1)" aria-label="Scroll table left">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+    </button>
+    <span class="um-scroll-hint">Scroll to see more columns</span>
+    <button type="button" class="um-scroll-btn" id="myreports-scroll-right" onclick="myReportsScroll(1)" aria-label="Scroll table right">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+    </button>
+  </div>
+  {% else %}
+  <div class="um-empty">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="m9 14 2 2 4-4"/></svg>
+    <strong>No reports yet</strong>
     <p>Submitted monitoring reports appear here with their review status.</p>
   </div>
-{% endif %}
+  {% endif %}
+</div>
 
 <script>
   // ---------- cascading location pickers ----------
@@ -621,29 +414,26 @@
     const n = wrap.children.length + 1;
 
     const row = document.createElement('div');
-    row.className = 'plot-row';
+    row.className = 'rep-plot-row';
     row.innerHTML = `
-      <span class="pnum">${n}</span>
-      <input type="number" name="plot_count" class="form-control form-control-sm"
-             min="0" placeholder="0" oninput="recalc()">
-      <input type="text" name="plot_note" class="form-control form-control-sm"
-             placeholder="e.g. near the creek">
-      <span class="text-secondary small">attach below</span>
-      <button type="button" class="btn-remove-plot"
-              onclick="removePlotRow(this)">&times;</button>
+      <span class="rep-plot-num">${n}</span>
+      <input type="number" name="plot_count" min="0" placeholder="0" aria-label="Seedlings counted in this plot" oninput="recalc()">
+      <input type="text" name="plot_note" placeholder="e.g. near the creek" aria-label="Note for this plot">
+      <button type="button" class="rep-plot-remove"
+              onclick="removePlotRow(this)" aria-label="Remove plot">&times;</button>
     `;
     wrap.appendChild(row);
   }
 
   function removePlotRow(btn) {
-    btn.closest('.plot-row').remove();
+    btn.closest('.rep-plot-row').remove();
     renumber();
     recalc();
   }
 
   function renumber() {
-    document.querySelectorAll('#plotRows .plot-row').forEach((r, i) => {
-      r.querySelector('.pnum').textContent = i + 1;
+    document.querySelectorAll('#plotRows .rep-plot-row').forEach((r, i) => {
+      r.querySelector('.rep-plot-num').textContent = i + 1;
     });
   }
 
@@ -699,7 +489,7 @@
     }
 
     const line = (l, v) =>
-      `<div class="calc-line"><span class="lbl">${l}</span><span class="val">${v}</span></div>`;
+      `<div class="rep-calc-line"><span class="lbl">${l}</span><span class="val">${v}</span></div>`;
 
     let html =
       line('Plots recorded', c.plots_recorded) +
@@ -714,7 +504,7 @@
     if (c.survival_rate !== null) {
       const fail = !c.meets_threshold;
       html += `
-        <div class="calc-result ${fail ? 'fail' : ''}">
+        <div class="rep-calc-result ${fail ? 'fail' : ''}">
           <span>Survival rate</span>
           <span class="big">${c.survival_rate}%</span>
         </div>
@@ -725,11 +515,32 @@
     }
 
     c.warnings.forEach(w => {
-      html += `<div class="calc-warn">${w}</div>`;
+      html += `<div class="rep-calc-warn">${w}</div>`;
     });
 
     panel.innerHTML = html;
   }
+
+  // ---------- my reports table scroll ----------
+  function myReportsScroll(direction) {
+    const el = document.getElementById('myreports-scroll');
+    if (el) el.scrollBy({ left: direction * 320, behavior: 'smooth' });
+  }
+
+  (function () {
+    const el = document.getElementById('myreports-scroll');
+    const left = document.getElementById('myreports-scroll-left');
+    const right = document.getElementById('myreports-scroll-right');
+    if (!el || !left || !right) return;
+
+    function updateButtons() {
+      left.disabled = el.scrollLeft <= 4;
+      right.disabled = el.scrollLeft >= el.scrollWidth - el.clientWidth - 4;
+    }
+    el.addEventListener('scroll', updateButtons);
+    window.addEventListener('resize', updateButtons);
+    updateButtons();
+  })();
 </script>
 
 {% endblock %}

@@ -3,15 +3,26 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Register - PunoObservation</title>
+    <meta name="theme-color" content="#0d3632">
+    <title>Create Account - PuNoObservation</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body class="login-page register-page">
     <div class="login-shell">
         <aside class="brand-panel">
+            <div class="brand-mesh" aria-hidden="true">
+                <span class="blob blob-1"></span>
+                <span class="blob blob-2"></span>
+                <span class="blob blob-3"></span>
+                <span class="blob blob-4"></span>
+            </div>
+
             <div class="brand-top">
                 <div class="brand-header">
-                    <img src="{{ url_for('static', filename='images/finallogo.png') }}" alt="PuNoObservation Logo" class="logo-box" />
+                    <img src="{{ url_for('static', filename='images/finallogo.png') }}" alt="" class="logo-box" width="251" height="310" />
                     <div class="brand-copy">
                         <div class="brand-name">PuNoObservation</div>
                         <div class="brand-title">DECISION SUPPORT SYSTEM</div>
@@ -26,44 +37,68 @@
                     management with geospatial visualization across Eastern Pangasinan.
                 </p>
 
-                <div class="chip-row">
-                    <span>GIS Mapping</span>
-                    <span>Species Recommendation</span>
-                    <span>Analytics</span>
-                    <span>Reports</span>
-                </div>
+                <ul class="chip-row">
+                    <li>GIS Mapping</li>
+                    <li>Species Recommendation</li>
+                    <li>Analytics</li>
+                    <li>Reports</li>
+                </ul>
             </div>
 
             <div class="brand-footer">
-                Pangasinan DENR • Eastern Pangasinan Region I
+                Pangasinan DENR &bull; Eastern Pangasinan Region I
                 <br>
-                © 2026 PuNoObservation. Capstone Project.
+                &copy; 2026 PuNoObservation. Capstone Project.
             </div>
-
         </aside>
 
         <main class="auth-panel">
-            <div class="auth-wrapper register-wrapper">
+            <div class="auth-wrapper">
                 <h2>Create account</h2>
+                <p class="auth-subtitle">Request access to the reforestation platform.</p>
 
                 {% if error %}
-                    <p class="form-alert">{{ error }}</p>
+                    <p class="form-alert" role="alert">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>
+                        <span>{{ error }}</span>
+                    </p>
                 {% endif %}
 
-                <form action="{{ url_for('auth.register') }}" method="POST" id="register_form" class="login-form register-form">
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <p class="flash-message {{ category }}" role="status">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>
+                                <span>{{ message }}</span>
+                            </p>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+
+                <form action="{{ url_for('auth.register') }}" method="POST" id="register_form" class="login-form">
                     <div class="field-group">
                         <label for="username">Username</label>
-                        <input type="text" id="username" name="username" placeholder="Enter your username" required>
+                        <input type="text" id="username" name="username"
+                               placeholder="Enter your username"
+                               autocomplete="username"
+                               autocapitalize="none" spellcheck="false"
+                               required>
                     </div>
 
                     <div class="field-group">
                         <label for="email_address">Email address</label>
-                        <input type="email" name="email_address" id="email_address" placeholder="yourname@denr.gov.ph" required>
+                        <input type="email" name="email_address" id="email_address"
+                               placeholder="yourname@denr.gov.ph"
+                               autocomplete="email"
+                               autocapitalize="none" spellcheck="false"
+                               required>
                     </div>
 
                     <div class="field-group">
                         <label for="organization_id">Organization / Affiliation</label>
-                        <select name="organization_id" id="organization_id">
+                        <select name="organization_id" id="organization_id"
+                                autocomplete="organization"
+                                aria-describedby="organization_hint">
                             <option value="" selected>None / Individual User</option>
                             {% if organizations %}
                                 {% for org in organizations %}
@@ -73,21 +108,45 @@
                                 {% endfor %}
                             {% endif %}
                         </select>
+                        <p class="field-hint" id="organization_hint">Optional. Leave as-is if you are signing up on your own.</p>
                     </div>
 
                     <div class="field-group">
                         <label for="password">Password</label>
-                        <input type="password" name="password" id="password" placeholder="Enter your password" required>
+                        <div class="input-wrap">
+                            <input type="password" name="password" id="password"
+                                   placeholder="Enter your password"
+                                   autocomplete="new-password"
+                                   minlength="8"
+                                   aria-describedby="password_hint"
+                                   required>
+                            <button type="button" class="field-toggle" data-toggle-password="password"
+                                    aria-label="Show password" aria-pressed="false">
+                                <svg class="icon-eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"/><circle cx="12" cy="12" r="3"/></svg>
+                                <svg class="icon-eye-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.733 5.076a10.744 10.744 0 0 1 11.205 6.575 1 1 0 0 1 0 .696 10.747 10.747 0 0 1-1.444 2.49"/><path d="M14.084 14.158a3 3 0 0 1-4.242-4.242"/><path d="M17.479 17.499a10.75 10.75 0 0 1-15.417-5.151 1 1 0 0 1 0-.696 10.75 10.75 0 0 1 4.446-5.143"/><path d="m2 2 20 20"/></svg>
+                            </button>
+                        </div>
+                        <p class="field-hint" id="password_hint">At least 8 characters.</p>
                     </div>
 
                     <div class="field-group">
                         <label for="confirmPassword">Confirm password</label>
-                        <input type="password" name="confirmPassword" id="confirmPassword" placeholder="Confirm your password" required>
+                        <div class="input-wrap">
+                            <input type="password" name="confirmPassword" id="confirmPassword"
+                                   placeholder="Re-type your password"
+                                   autocomplete="new-password"
+                                   aria-describedby="error-message"
+                                   required>
+                            <button type="button" class="field-toggle" data-toggle-password="confirmPassword"
+                                    aria-label="Show password" aria-pressed="false">
+                                <svg class="icon-eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"/><circle cx="12" cy="12" r="3"/></svg>
+                                <svg class="icon-eye-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.733 5.076a10.744 10.744 0 0 1 11.205 6.575 1 1 0 0 1 0 .696 10.747 10.747 0 0 1-1.444 2.49"/><path d="M14.084 14.158a3 3 0 0 1-4.242-4.242"/><path d="M17.479 17.499a10.75 10.75 0 0 1-15.417-5.151 1 1 0 0 1 0-.696 10.75 10.75 0 0 1 4.446-5.143"/><path d="m2 2 20 20"/></svg>
+                            </button>
+                        </div>
+                        <p id="error-message" class="password-error" role="alert" hidden>
+                            Passwords do not match.
+                        </p>
                     </div>
-
-                    <p id="error-message" class="password-error" style="display: none;">
-                        Passwords do not match!
-                    </p>
 
                     <button type="submit" class="primary-btn">Sign Up</button>
                 </form>

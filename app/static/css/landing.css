@@ -1,22 +1,82 @@
 /* ============================================
-   LANDING PAGE  (Clause-style layout, PuNoObservation branding/content)
+   LANDING PAGE  (PuNoObservation)
+
+   Type and spacing run on fixed scales rather than one-off values, so the
+   page reads as one system. Sizes are the 12/14/16/18/20/24/32 scale and
+   spacing is an 8px rhythm -- pick the nearest token, don't invent a value.
    ============================================ */
 
 .landing-page {
-    margin: 0;
-    font-family: 'Nunito', system-ui, sans-serif;
-    color: #3a5446;
-    background: #ffffff;
-    overflow-x: hidden;
+    /* ---- type scale (16px base) ---- */
+    --fs-xs: 0.75rem;      /* 12 */
+    --fs-sm: 0.875rem;     /* 14 */
+    --fs-base: 1rem;       /* 16 */
+    --fs-lg: 1.125rem;     /* 18 */
+    --fs-xl: 1.25rem;      /* 20 */
+    --fs-2xl: 1.5rem;      /* 24 */
+
+    /* ---- spacing rhythm (8px) ---- */
+    --sp-1: 0.5rem;        /* 8  */
+    --sp-2: 1rem;          /* 16 */
+    --sp-3: 1.5rem;        /* 24 */
+    --sp-4: 2rem;          /* 32 */
+    --sp-6: 3rem;          /* 48 */
+    --sp-8: 4rem;          /* 64 */
+    --sp-10: 5rem;         /* 80 */
+
+    /* ---- colour ----
+       Every value below carries at least 4.5:1 against the surface it sits
+       on. The bright #16a34a is reserved for large text and icons only. */
+    --c-ink: #111c17;
+    --c-body: #4a5a51;
+    --c-muted: #5f6f66;
+    --c-green: #15803d;
+    --c-green-dark: #14532d;
+    --c-green-bright: #16a34a;
+    --c-green-deep: #0d3b22;
+    --c-green-deeper: #0f2b1c;
+    --c-green-darkest: #08170f;
+    --c-lime: #bef264;
+    --c-gold: #ffc94d;
+    --c-line: #e2e8e4;
+    --c-surface: #ffffff;
+    --c-surface-alt: #f2f4f1;
+
+    /* ---- radius ---- */
+    --r-sm: 0.75rem;
+    --r-md: 1.25rem;
+    --r-lg: 1.5rem;
+
+    /* ---- elevation: layered rather than one soft blur ---- */
+    --sh-sm: 0 1px 2px rgba(16, 36, 26, 0.04), 0 2px 8px rgba(16, 36, 26, 0.04);
+    --sh-md: 0 2px 4px rgba(16, 36, 26, 0.04), 0 8px 24px rgba(16, 36, 26, 0.07);
+    --sh-lg: 0 4px 8px rgba(16, 36, 26, 0.05), 0 16px 40px rgba(16, 36, 26, 0.10);
+
+    --ease: cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+.landing-page {
+    margin: 0;
+    font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+    font-size: var(--fs-base);
+    color: var(--c-body);
+    background: var(--c-surface);
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* Inter is optically large; negative tracking is what keeps headings from
+   looking loose at display sizes. */
 .landing-page h1,
 .landing-page h2,
 .landing-page h3,
-.landing-page h4,
-.landing-page .font-display {
-    font-family: 'Fredoka', 'Nunito', sans-serif;
-    letter-spacing: -0.01em;
+.landing-page h4 {
+    font-family: inherit;
+    color: var(--c-ink);
+    line-height: 1.15;
+    letter-spacing: -0.02em;
+    text-wrap: balance;
 }
 
 .landing-page a {
@@ -24,48 +84,63 @@
     color: inherit;
 }
 
+.landing-page :focus-visible {
+    outline: 2px solid var(--c-green-bright);
+    outline-offset: 3px;
+    border-radius: 4px;
+}
+
 .landing-container {
     max-width: 72rem;
     margin: 0 auto;
-    padding: 0 1.5rem;
+    padding: 0 var(--sp-3);
+}
+
+/* The sticky nav would otherwise sit on top of an anchored heading. */
+.landing-section,
+.landing-hero {
+    scroll-margin-top: var(--sp-8);
 }
 
 /* ---------- Nav ---------- */
 .landing-nav-wrap {
     position: sticky;
-    top: 1rem;
+    top: var(--sp-2);
     z-index: 50;
-    padding: 0 1rem;
+    padding: 0 var(--sp-2);
 }
 
 .landing-nav {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 1rem;
+    gap: var(--sp-2);
     max-width: 72rem;
     margin: 0 auto;
-    padding: 0.85rem 1.5rem;
-    border-radius: 1.2rem;
-    background: rgba(255, 255, 255, 0.92);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    border: 1px solid #eef2ee;
-    box-shadow: 0 8px 24px rgba(20, 83, 45, 0.06);
+    /* Vertical padding is most of the bar's height, so trimming it here is
+       what actually makes the bar shorter. */
+    padding: 0.5rem var(--sp-3);
+    border-radius: var(--r-md);
+    background: rgba(255, 255, 255, 0.88);
+    backdrop-filter: blur(12px) saturate(1.4);
+    -webkit-backdrop-filter: blur(12px) saturate(1.4);
+    border: 1px solid var(--c-line);
+    box-shadow: var(--sh-sm);
 }
 
 .landing-brand {
     display: flex;
     align-items: center;
-    gap: 0.55rem;
-    font-weight: 700;
-    font-size: 1.05rem;
-    color: #14532d;
+    gap: 0.375rem;
+    font-weight: 600;
+    font-size: var(--fs-sm);
+    letter-spacing: -0.02em;
+    color: var(--c-green-dark);
 }
 
 .landing-logo-box {
-    width: 2.2rem;
-    height: 2.2rem;
+    width: 1.75rem;
+    height: 1.75rem;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -79,75 +154,84 @@
 }
 
 .landing-brand .accent {
-    color: #16a34a;
+    color: var(--c-green-bright);
 }
 
 .landing-nav-links {
     display: flex;
     align-items: center;
-    gap: 2rem;
-    font-size: 0.9rem;
-    font-weight: 600;
-    color: #374151;
+    gap: var(--sp-4);
+    font-size: var(--fs-sm);
+    font-weight: 500;
+    color: var(--c-body);
+}
+
+.landing-nav-links a {
+    transition: color 200ms var(--ease);
 }
 
 .landing-nav-links a:hover {
-    color: #16a34a;
+    color: var(--c-green);
 }
 
 .landing-nav-actions {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
-}
-
-.landing-nav-actions a.signin {
-    font-size: 0.9rem;
-    font-weight: 600;
-    color: #374151;
-    padding: 0.5rem 0.9rem;
+    gap: var(--sp-1);
 }
 
 /* ---------- Buttons ---------- */
 .landing-btn {
     display: inline-flex;
     align-items: center;
-    gap: 0.4rem;
-    padding: 0.7rem 1.4rem;
+    justify-content: center;
+    gap: var(--sp-1);
+    padding: 0.6875rem var(--sp-3);
+    /* 44px floor: anything smaller is hard to hit accurately on a phone. */
+    min-height: 44px;
     border-radius: 999px;
-    font-weight: 700;
-    font-size: 0.9rem;
+    font-family: inherit;
+    font-weight: 600;
+    font-size: var(--fs-sm);
+    letter-spacing: -0.01em;
     border: 1px solid transparent;
     cursor: pointer;
+    transition: background-color 200ms var(--ease),
+                border-color 200ms var(--ease),
+                box-shadow 200ms var(--ease);
 }
 
 .landing-btn.landing-btn-primary {
-    background: #14532d;
+    background: var(--c-green-dark);
     color: #ffffff;
+    box-shadow: var(--sh-sm);
 }
 
 .landing-btn.landing-btn-primary:hover {
     background: #0f3f22;
+    box-shadow: var(--sh-md);
 }
 
 .landing-btn.landing-btn-outline {
-    background: #ffffff;
-    color: #14532d;
+    background: var(--c-surface);
+    color: var(--c-green-dark);
     border-color: #d1dbd4;
 }
 
 .landing-btn.landing-btn-outline:hover {
-    border-color: #14532d;
+    border-color: var(--c-green-dark);
+    box-shadow: var(--sh-sm);
 }
 
 .landing-btn-sm {
-    padding: 0.55rem 1.1rem;
-    font-size: 0.85rem;
+    padding: 0.4375rem 0.875rem;
+    min-height: 34px;
+    font-size: var(--fs-sm);
 }
 
 .landing-btn.landing-btn-lime {
-    background: #bef264;
-    color: #14532d;
+    background: var(--c-lime);
+    color: var(--c-green-dark);
 }
 
 .landing-btn.landing-btn-lime:hover {
@@ -171,7 +255,7 @@
 /* ---------- Hero ---------- */
 .landing-hero {
     position: relative;
-    padding: 4.5rem 0 4rem;
+    padding: var(--sp-10) 0 var(--sp-8);
     text-align: center;
     overflow: hidden;
     background-color: #f6f7f5;
@@ -190,112 +274,106 @@
 .landing-hero-inner {
     position: relative;
     z-index: 1;
-    max-width: 42rem;
+    max-width: 44rem;
     margin: 0 auto;
 }
 
-.landing-pill {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    background: #ffffff;
-    border: 1px solid #e2e8e4;
-    padding: 0.4rem 1rem;
-    border-radius: 999px;
-    font-size: 0.72rem;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: #14532d;
-    margin-bottom: 1.6rem;
-}
-
-.landing-pill svg {
-    width: 0.85rem;
-    height: 0.85rem;
-    flex-shrink: 0;
-}
-
 .landing-hero h1 {
-    font-size: clamp(2rem, 4.6vw, 3.1rem);
-    line-height: 1.12;
+    /* 32px -> 56px. The floor drops below the old 36px because this headline
+       wraps to four lines on a phone, where 36px reads as a wall of text. */
+    font-size: clamp(2rem, 5vw, 3.5rem);
+    /* 1.08 is fine for a single line but cramped once it wraps. */
+    line-height: 1.1;
+    letter-spacing: -0.035em;
     font-weight: 700;
-    color: #14201a;
-    margin: 0 0 1.1rem;
+    margin: 0 0 var(--sp-3);
 }
 
 .landing-hero h1 .highlight {
-    color: #16a34a;
+    color: var(--c-green-bright);
     position: relative;
+    /* Keeps the word and its underline on the same line. */
+    white-space: nowrap;
 }
 
+/* Sized in em, not rem, so the underline stays in proportion to the headline
+   at every clamp step instead of looking heavy on mobile and thin on desktop.
+   The slight overhang on each side is what makes it read as hand-drawn. */
 .landing-hero h1 .highlight .underline-svg {
     position: absolute;
-    left: 0;
-    bottom: -0.35rem;
-    width: 100%;
-    height: 0.7rem;
+    left: -0.04em;
+    bottom: -0.1em;
+    width: calc(100% + 0.08em);
+    height: 0.2em;
+    overflow: visible;
+}
+
+.landing-hero h1 .highlight .underline-svg path {
+    stroke: var(--c-gold);
+    stroke-width: 5;
 }
 
 .landing-hero p.lead {
-    font-size: 1.05rem;
-    color: #5c6b62;
-    max-width: 34rem;
-    margin: 0 auto 1.8rem;
-    line-height: 1.65;
+    font-size: var(--fs-lg);
+    color: var(--c-muted);
+    max-width: 36rem;
+    margin: 0 auto var(--sp-4);
+    line-height: 1.6;
 }
 
 .landing-formal-title {
-    max-width: 38rem;
-    margin: -0.8rem auto 1.8rem;
-    padding-top: 1.1rem;
-    border-top: 1px solid #e5e9e4;
-    font-family: 'Nunito', sans-serif;
-    font-size: 0.82rem;
+    max-width: 40rem;
+    margin: 0 auto var(--sp-4);
+    padding-top: var(--sp-3);
+    border-top: 1px solid var(--c-line);
+    font-size: var(--fs-sm);
     font-style: italic;
-    color: #8a9690;
+    color: var(--c-muted);
     line-height: 1.6;
 }
 
 .landing-hero-buttons {
     display: flex;
     justify-content: center;
-    gap: 0.9rem;
+    gap: var(--sp-1);
     flex-wrap: wrap;
-    margin-bottom: 1rem;
+    margin-bottom: var(--sp-2);
 }
 
 .landing-hero-login-note {
-    font-size: 0.85rem;
-    color: #6b7c72;
-    margin: 0 0 2.5rem;
+    font-size: var(--fs-sm);
+    color: var(--c-muted);
+    margin: 0 0 var(--sp-6);
 }
 
 .landing-hero-login-note a {
-    color: #16a34a;
-    font-weight: 700;
+    color: var(--c-green);
+    font-weight: 600;
     text-decoration: underline;
+    text-underline-offset: 3px;
 }
 
 .landing-coverage {
     display: flex;
     justify-content: center;
     align-items: center;
-    gap: 0.75rem;
+    gap: var(--sp-1);
     flex-wrap: wrap;
-    font-size: 0.8rem;
-    color: #6b7c72;
+    font-size: var(--fs-sm);
+    color: var(--c-muted);
 }
 
 .landing-coverage span {
     display: inline-flex;
     align-items: center;
-    gap: 0.4rem;
+    gap: 0.375rem;
 }
 
 .landing-coverage strong {
-    color: #14532d;
-    font-weight: 800;
+    color: var(--c-green-dark);
+    font-weight: 700;
+    /* Stops the row twitching if the numbers ever become dynamic. */
+    font-variant-numeric: tabular-nums;
 }
 
 .landing-coverage .sep {
@@ -304,42 +382,46 @@
 
 /* ---------- Section shared ---------- */
 .landing-section {
-    padding: 4.5rem 0;
+    padding: var(--sp-10) 0;
 }
 
 .landing-section-head {
     text-align: center;
-    max-width: 34rem;
-    margin: 0 auto 2.8rem;
+    max-width: 36rem;
+    margin: 0 auto var(--sp-6);
 }
 
 .landing-eyebrow {
     display: inline-flex;
     align-items: center;
-    gap: 0.4rem;
-    font-size: 0.72rem;
-    font-weight: 800;
-    letter-spacing: 0.1em;
+    gap: 0.375rem;
+    font-size: var(--fs-xs);
+    font-weight: 700;
+    letter-spacing: 0.08em;
     text-transform: uppercase;
-    color: #16a34a;
-    margin-bottom: 0.8rem;
+    /* Darker than the bright brand green: this is small bold text and needs
+       4.5:1, which #16a34a does not clear on white. */
+    color: var(--c-green);
+    margin-bottom: var(--sp-1);
 }
 
 .landing-eyebrow svg {
-    width: 0.85rem;
-    height: 0.85rem;
+    width: 0.875rem;
+    height: 0.875rem;
 }
 
 .landing-section-head h2 {
-    font-size: clamp(1.7rem, 3.2vw, 2.2rem);
+    /* 28px -> 40px */
+    font-size: clamp(1.75rem, 3vw, 2.5rem);
     font-weight: 700;
-    color: #14201a;
-    margin: 0 0 0.7rem;
+    letter-spacing: -0.03em;
+    margin: 0 0 var(--sp-2);
 }
 
 .landing-section-head p {
-    color: #6b7c72;
-    font-size: 0.98rem;
+    color: var(--c-muted);
+    font-size: var(--fs-base);
+    line-height: 1.6;
     margin: 0;
 }
 
@@ -347,78 +429,92 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 0.4rem;
-    margin: 0.9rem 0 0;
-    font-size: 0.82rem;
-    color: #8a9690;
+    gap: 0.375rem;
+    margin: var(--sp-2) 0 0;
+    font-size: var(--fs-sm);
+    color: var(--c-muted);
 }
 
 .landing-role-note svg {
-    width: 0.95rem;
-    height: 0.95rem;
+    width: 1rem;
+    height: 1rem;
     flex-shrink: 0;
-    color: #16a34a;
+    color: var(--c-green-bright);
 }
 
 /* ---------- Feature cards ---------- */
 .landing-feature-big {
-    background: #f2f4f1;
-    border-radius: 1.75rem;
-    padding: 2.4rem;
+    background: var(--c-surface-alt);
+    border-radius: var(--r-lg);
+    padding: var(--sp-4);
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 2rem;
+    gap: var(--sp-4);
     align-items: center;
-    margin-bottom: 1.2rem;
+    margin-bottom: var(--sp-2);
 }
 
 .landing-feature-big h3 {
-    font-size: 1.5rem;
-    font-weight: 700;
-    color: #14201a;
-    margin: 0 0 0.7rem;
+    font-size: var(--fs-2xl);
+    font-weight: 600;
+    margin: 0 0 var(--sp-1);
 }
 
 .landing-feature-big p {
-    color: #5c6b62;
-    font-size: 0.95rem;
+    color: var(--c-body);
+    font-size: var(--fs-base);
     line-height: 1.6;
-    margin: 0 0 1.4rem;
+    margin: 0 0 var(--sp-3);
 }
 
 .landing-feature-row {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 1.2rem;
+    gap: var(--sp-2);
+}
+
+/* "Who It's For" has three roles, so it needs its own column count. */
+.landing-role-row {
+    grid-template-columns: repeat(3, 1fr);
+}
+
+@media (max-width: 1100px) and (min-width: 901px) {
+    .landing-role-row {
+        grid-template-columns: repeat(2, 1fr);
+    }
 }
 
 .landing-feature-card {
-    background: #f2f4f1;
-    border-radius: 1.75rem;
-    padding: 1.8rem;
+    background: var(--c-surface-alt);
+    border-radius: var(--r-lg);
+    padding: var(--sp-3);
+    transition: transform 260ms var(--ease), box-shadow 260ms var(--ease);
+}
+
+.landing-feature-card:hover {
+    transform: translateY(-5px);
+    box-shadow: var(--sh-md);
 }
 
 .landing-feature-card h3 {
-    font-size: 1.15rem;
-    font-weight: 700;
-    color: #14201a;
-    margin: 0 0 0.5rem;
+    font-size: var(--fs-xl);
+    font-weight: 600;
+    margin: 0 0 var(--sp-1);
 }
 
 .landing-feature-card p {
-    color: #5c6b62;
-    font-size: 0.87rem;
-    line-height: 1.55;
-    margin: 0 0 1.2rem;
+    color: var(--c-body);
+    font-size: var(--fs-sm);
+    line-height: 1.6;
+    margin: 0 0 var(--sp-3);
 }
 
-/* --- mockup: heatmap --- */
-/* --- real product screenshots (replaced the illustrated mockups above) --- */
+/* --- real product screenshots --- */
 .landing-feature-screenshot {
-    background: #ffffff;
-    border-radius: 1.1rem;
+    background: var(--c-surface);
+    border-radius: var(--r-sm);
     border: 1px solid #e5e9e4;
-    box-shadow: 0 10px 26px rgba(20, 83, 45, 0.08);
+    box-shadow: var(--sh-md);
     overflow: hidden;
 }
 
@@ -430,68 +526,78 @@
 
 /* ---------- More-features chips ---------- */
 .landing-more {
-    margin-top: 1.8rem;
+    margin-top: var(--sp-4);
     text-align: center;
 }
 
 .landing-more-label {
-    font-size: 0.75rem;
-    font-weight: 800;
+    font-size: var(--fs-xs);
+    font-weight: 700;
     letter-spacing: 0.08em;
     text-transform: uppercase;
-    color: #8a9690;
-    margin-bottom: 0.9rem;
+    color: var(--c-muted);
+    margin-bottom: var(--sp-2);
 }
 
 .landing-chip-row {
     display: flex;
     flex-wrap: wrap;
     justify-content: center;
-    gap: 0.6rem;
+    gap: var(--sp-1);
 }
 
 .landing-chip-row span {
     display: inline-flex;
     align-items: center;
-    padding: 0.5rem 1rem;
+    padding: 0.5rem var(--sp-2);
     border-radius: 999px;
-    border: 1px solid #e2e8e4;
-    background: #ffffff;
-    color: #374151;
-    font-size: 0.82rem;
-    font-weight: 600;
+    border: 1px solid var(--c-line);
+    background: var(--c-surface);
+    color: var(--c-body);
+    font-size: var(--fs-sm);
+    font-weight: 500;
+    white-space: nowrap;
+    transition: border-color 200ms var(--ease), color 200ms var(--ease);
+}
+
+.landing-chip-row span:hover {
+    border-color: #a7d8b8;
+    color: var(--c-green-dark);
 }
 
 /* ---------- Data-source band (dark) ---------- */
 .landing-data-band {
-    background: #0d3b22;
-    border-radius: 2rem;
-    padding: 3rem 2rem;
+    background: var(--c-green-deep);
+    border-radius: var(--r-lg);
+    padding: var(--sp-8) var(--sp-4);
     text-align: center;
     color: #ffffff;
 }
 
 .landing-data-band .landing-eyebrow {
-    color: #bef264;
+    color: var(--c-lime);
 }
 
 .landing-data-band h2 {
     color: #ffffff;
-    margin-bottom: 0.6rem;
+    font-size: clamp(1.75rem, 3vw, 2.5rem);
+    letter-spacing: -0.03em;
+    margin: 0 0 var(--sp-2);
 }
 
 .landing-data-band p {
-    color: rgba(255, 255, 255, 0.72);
-    max-width: 34rem;
-    margin: 0 auto 2.2rem;
-    font-size: 0.95rem;
+    color: rgba(255, 255, 255, 0.8);
+    max-width: 36rem;
+    margin: 0 auto var(--sp-6);
+    font-size: var(--fs-base);
+    line-height: 1.6;
 }
 
 .landing-data-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 1rem;
-    max-width: 42rem;
+    gap: var(--sp-2);
+    max-width: 44rem;
     margin: 0 auto;
 }
 
@@ -504,15 +610,24 @@
 .landing-data-item {
     background: rgba(255, 255, 255, 0.07);
     border: 1px solid rgba(255, 255, 255, 0.12);
-    border-radius: 1rem;
-    padding: 1rem 0.5rem;
+    border-radius: var(--r-sm);
+    padding: var(--sp-2) var(--sp-1);
+    transition: transform 260ms var(--ease),
+                background-color 260ms var(--ease),
+                border-color 260ms var(--ease);
+}
+
+.landing-data-item:hover {
+    transform: translateY(-5px);
+    background-color: rgba(255, 255, 255, 0.13);
+    border-color: rgba(190, 242, 100, 0.42);
 }
 
 .landing-data-item .icon {
-    width: 2.2rem;
-    height: 2.2rem;
-    margin: 0 auto 0.6rem;
-    border-radius: 0.6rem;
+    width: 2.25rem;
+    height: 2.25rem;
+    margin: 0 auto var(--sp-1);
+    border-radius: 0.625rem;
     background: rgba(255, 255, 255, 0.12);
     display: flex;
     align-items: center;
@@ -520,41 +635,41 @@
 }
 
 .landing-data-item .icon svg {
-    width: 1.1rem;
-    height: 1.1rem;
-    color: #bef264;
+    width: 1.125rem;
+    height: 1.125rem;
+    color: var(--c-lime);
 }
 
 .landing-data-item span {
     display: block;
-    font-size: 0.72rem;
-    font-weight: 700;
+    font-size: var(--fs-xs);
+    font-weight: 600;
+    line-height: 1.4;
     color: #e8fbe0;
 }
 
-/* ---------- Testimonial ---------- */
-/* ---------- Stat band (light) ---------- */
 /* ---------- Final CTA ---------- */
 .landing-final-cta {
-    background: #0f2b1c;
-    border-radius: 2rem;
-    padding: 3.2rem 2rem;
+    background: var(--c-green-deeper);
+    border-radius: var(--r-lg);
+    padding: var(--sp-8) var(--sp-4);
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 1.5rem;
+    gap: var(--sp-3);
     flex-wrap: wrap;
 }
 
 .landing-final-cta h2 {
     color: #ffffff;
-    font-size: clamp(1.5rem, 3vw, 2rem);
+    font-size: clamp(1.5rem, 2.5vw, 2rem);
+    letter-spacing: -0.03em;
     margin: 0;
-    max-width: 26rem;
+    max-width: 28rem;
 }
 
 .landing-final-cta h2 .accent {
-    color: #bef264;
+    color: var(--c-lime);
     text-decoration: underline;
     text-decoration-thickness: 2px;
     text-underline-offset: 4px;
@@ -562,55 +677,56 @@
 
 .landing-final-cta-buttons {
     display: flex;
-    gap: 0.8rem;
+    gap: var(--sp-1);
     flex-wrap: wrap;
 }
 
 /* ---------- Footer ---------- */
 .landing-footer {
-    background: #08170f;
+    background: var(--c-green-darkest);
     color: rgba(255, 255, 255, 0.7);
-    padding-top: 3.5rem;
+    padding-top: var(--sp-6);
 }
 
 .landing-footer-grid {
     display: grid;
     grid-template-columns: 1.4fr 1fr 1fr 1fr;
-    gap: 2rem;
-    padding-bottom: 2.5rem;
+    gap: var(--sp-4);
+    padding-bottom: var(--sp-6);
 }
 
 .landing-footer-brand {
     display: flex;
     align-items: center;
-    gap: 0.55rem;
-    margin-bottom: 0.7rem;
+    gap: var(--sp-1);
+    margin-bottom: var(--sp-1);
 }
 
 .landing-footer-brand img {
-    width: 1.8rem;
-    height: 1.8rem;
+    width: 1.75rem;
+    height: 1.75rem;
     object-fit: contain;
 }
 
 .landing-footer-brand span {
-    font-weight: 700;
+    font-weight: 600;
+    letter-spacing: -0.02em;
     color: #ffffff;
-    font-size: 1rem;
+    font-size: var(--fs-base);
 }
 
 .landing-footer p.tagline {
-    font-size: 0.85rem;
+    font-size: var(--fs-sm);
     line-height: 1.6;
-    max-width: 18rem;
-    color: rgba(255, 255, 255, 0.55);
+    max-width: 20rem;
+    color: rgba(255, 255, 255, 0.62);
 }
 
 .landing-footer h5 {
-    font-size: 0.85rem;
-    font-weight: 700;
+    font-size: var(--fs-sm);
+    font-weight: 600;
     color: #ffffff;
-    margin: 0 0 0.9rem;
+    margin: 0 0 var(--sp-2);
 }
 
 .landing-footer ul {
@@ -619,28 +735,29 @@
     padding: 0;
     display: flex;
     flex-direction: column;
-    gap: 0.6rem;
+    gap: 0.625rem;
 }
 
 .landing-footer ul a {
-    font-size: 0.85rem;
-    color: rgba(255, 255, 255, 0.6);
+    font-size: var(--fs-sm);
+    color: rgba(255, 255, 255, 0.68);
+    transition: color 200ms var(--ease);
 }
 
 .landing-footer ul a:hover {
-    color: #bef264;
+    color: var(--c-lime);
 }
 
 .landing-footer-academic {
     text-align: center;
     border-top: 1px solid rgba(255, 255, 255, 0.08);
-    padding: 1.6rem 1.5rem 0;
+    padding: var(--sp-3) var(--sp-3) 0;
 }
 
 .landing-footer-academic p {
-    margin: 0 0 0.3rem;
-    font-size: 0.8rem;
-    color: rgba(255, 255, 255, 0.55);
+    margin: 0 0 0.25rem;
+    font-size: var(--fs-sm);
+    color: rgba(255, 255, 255, 0.62);
 }
 
 .landing-footer-academic p:last-child {
@@ -648,21 +765,31 @@
 }
 
 .landing-footer-academic strong {
-    color: rgba(255, 255, 255, 0.85);
+    color: rgba(255, 255, 255, 0.9);
 }
 
 .landing-footer-bottom {
     text-align: center;
-    font-size: 0.8rem;
-    color: rgba(255, 255, 255, 0.45);
-    padding: 1.4rem 0;
+    font-size: var(--fs-sm);
+    /* Was 0.45 alpha, which fell below 4.5:1 on this near-black ground. */
+    color: rgba(255, 255, 255, 0.6);
+    padding: var(--sp-3) 0;
 }
 
 /* ---------- Responsive ---------- */
 @media (max-width: 900px) {
+    .landing-section {
+        padding: var(--sp-8) 0;
+    }
+    .landing-hero {
+        padding: var(--sp-8) 0 var(--sp-6);
+    }
     .landing-feature-big,
     .landing-feature-row {
         grid-template-columns: 1fr;
+    }
+    .landing-feature-big {
+        padding: var(--sp-3);
     }
     .landing-data-grid {
         grid-template-columns: repeat(3, 1fr);
@@ -673,8 +800,48 @@
     .landing-nav-links {
         display: none;
     }
+    /* Back to a full-size tap target -- the compact desktop bar is a pointer
+       affordance, but on a phone these are the only two buttons up here. */
+    .landing-nav-actions .landing-btn {
+        min-height: 44px;
+    }
     .landing-final-cta {
         justify-content: center;
         text-align: center;
+        padding: var(--sp-6) var(--sp-3);
+    }
+    .landing-final-cta h2 {
+        max-width: none;
+    }
+    .landing-final-cta-buttons {
+        justify-content: center;
+    }
+}
+
+@media (max-width: 560px) {
+    .landing-hero-buttons .landing-btn {
+        width: 100%;
+    }
+    .landing-data-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    .landing-footer-grid {
+        grid-template-columns: 1fr;
+        gap: var(--sp-3);
+    }
+}
+
+/* ---------- Reduced motion ---------- */
+/* Some people get motion sick from movement on screen, and the OS lets them
+   ask for less of it. Keep the colour change, drop the lift. */
+@media (prefers-reduced-motion: reduce) {
+    .landing-feature-card,
+    .landing-data-item {
+        transition: none;
+    }
+
+    .landing-feature-card:hover,
+    .landing-data-item:hover {
+        transform: none;
     }
 }

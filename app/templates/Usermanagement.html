@@ -20,6 +20,20 @@
 </div>
 
 <div class="um-toolbar">
+
+    <div class="um-search-group">
+        <form method="GET" class="um-search-wrap">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg>
+            <input type="text" name="q" class="um-search-input"
+                   aria-label="Search users"
+                   placeholder="Search username, email, or role..."
+                   value="{{ search }}">
+        </form>
+        {% if search %}
+            <a href="{{ url_for('admin.user_management') }}" class="um-btn-ghost">Clear</a>
+        {% endif %}
+    </div>
+
     <div class="um-filter-wrap">
         <button type="button" class="um-filter-btn" onclick="umToggleFilterMenu()">
             <span class="um-filter-btn-label">
@@ -28,24 +42,12 @@
             </span>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
         </button>
-        <div id="um-filter-menu" class="um-filter-menu">
+        <div id="um-filter-menu" class="um-filter-menu um-filter-menu-end">
             <button type="button" class="active" onclick="umFilterRole('all', 'Role')">All roles</button>
             <button type="button" onclick="umFilterRole('admin', 'Administrator')">Administrator</button>
             <button type="button" onclick="umFilterRole('field_officer', 'Field Officer')">Field Officer</button>
             <button type="button" onclick="umFilterRole('normal_user', 'Normal User')">Normal User</button>
         </div>
-    </div>
-
-    <div class="um-search-group">
-        <form method="GET" class="um-search-wrap">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg>
-            <input type="text" name="q" class="um-search-input"
-                   placeholder="Search username, email, or role..."
-                   value="{{ search }}">
-        </form>
-        {% if search %}
-            <a href="{{ url_for('admin.user_management') }}" class="um-btn-ghost">Clear</a>
-        {% endif %}
     </div>
 </div>
 
@@ -113,11 +115,12 @@
                 <td class="um-actions-cell">
                     {% if u.user_id == session.user_id %}
                         <button type="button" class="um-btn-icon-danger" disabled
+                                aria-label="You cannot delete your own account"
                                 title="You cannot delete your own account">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 11v6"/><path d="M14 11v6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
                         </button>
                     {% else %}
-                        <button type="button" class="um-btn-icon-danger" title="Delete user"
+                        <button type="button" class="um-btn-icon-danger" aria-label="Delete user" title="Delete user"
                                 onclick="umConfirmDelete('{{ u.username|e }}', '{{ u.role|replace('_', ' ')|title }}', '{{ url_for('admin.delete_user', user_id=u.user_id) }}')">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 11v6"/><path d="M14 11v6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
                         </button>
@@ -146,7 +149,7 @@
     <div class="um-modal">
         <div class="um-modal-head">
             <h3>Delete User Account</h3>
-            <button type="button" class="um-modal-close" onclick="umClose('um-delete-modal')">
+            <button type="button" class="um-modal-close" aria-label="Close dialog" onclick="umClose('um-delete-modal')">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
             </button>
         </div>
@@ -172,7 +175,7 @@
     <div class="um-modal">
         <div class="um-modal-head">
             <h3>Add New User</h3>
-            <button type="button" class="um-modal-close" onclick="umClose('um-add-modal')">
+            <button type="button" class="um-modal-close" aria-label="Close dialog" onclick="umClose('um-add-modal')">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
             </button>
         </div>

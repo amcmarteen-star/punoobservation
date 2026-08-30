@@ -5,43 +5,6 @@
 
 {% block extra_head %}
 <style>
-  .req-filter-strip {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.6rem;
-  }
-
-  .req-filter-chip {
-    background: #ffffff;
-    border: 1px solid #e2e8f0;
-    border-radius: 8px;
-    padding: 0.55rem 0.95rem;
-    min-width: 110px;
-    text-decoration: none;
-    color: inherit;
-    transition: border-color 0.15s ease;
-  }
-
-  .req-filter-chip:hover,
-  .req-filter-chip.active {
-    border-color: #16a34a;
-    color: inherit;
-  }
-
-  .req-filter-chip .num {
-    display: block;
-    font-size: 1.25rem;
-    font-weight: 700;
-    color: #14532d;
-  }
-
-  .req-filter-chip .lbl {
-    display: block;
-    font-size: 0.7rem;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    color: #64748b;
-  }
 
   .status-pill {
     display: inline-block;
@@ -65,9 +28,9 @@
 
   .review-form select,
   .review-form input {
-    font-size: 0.8rem;
+    font-size: 0.875rem;
     padding: 0.35rem 0.5rem;
-    border: 1px solid #e2e8f0;
+    border: 1px solid #e2eae5;
     border-radius: 6px;
   }
 
@@ -83,8 +46,8 @@
   }
 
   .req-cell-secondary {
-    color: #64748b;
-    font-size: 0.78rem;
+    color: #5f6f66;
+    font-size: 0.75rem;
   }
 </style>
 {% endblock %}
@@ -113,29 +76,39 @@
 
 <!-- ============ FILTER + SEARCH ============ -->
 <div class="um-toolbar">
-  <div class="req-filter-strip">
-    <a href="{{ url_for('admin.review_requests') }}"
-       class="req-filter-chip {% if not status_filter %}active{% endif %}">
-      <span class="num">{{ total_count }}</span>
-      <span class="lbl">All</span>
-    </a>
-    {% for label, n in counts.items() %}
-      <a href="{{ url_for('admin.review_requests', status=label) }}"
-         class="req-filter-chip {% if status_filter == label %}active{% endif %}">
-        <span class="num">{{ n }}</span>
-        <span class="lbl">{{ label }}</span>
-      </a>
-    {% endfor %}
-  </div>
-
   <div class="um-search-group">
     <div class="um-search-wrap">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg>
-      <input type="text" id="req-search-input" class="um-search-input"
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg>
+      <input type="text" id="req-search-input" class="um-search-input" aria-label="Search requests"
              placeholder="Search requester, location, or description..."
              oninput="reqApplyFilters()">
     </div>
-    <a href="#" id="req-clear-btn" class="um-btn-ghost" style="display: none;" onclick="reqClearFilters(); return false;">Clear</a>
+    <a href="#" id="req-clear-btn" class="um-btn-ghost" hidden onclick="reqClearFilters(); return false;">Clear</a>
+  </div>
+
+  <div class="um-filter-wrap">
+    <button type="button" class="um-filter-btn" id="req-filter-btn"
+            aria-expanded="false" aria-haspopup="true"
+            onclick="reqToggleFilterMenu()">
+      <span class="um-filter-btn-label">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M7 12h10"/><path d="M10 18h4"/></svg>
+        <span>{{ status_filter if status_filter else 'All requests' }}</span>
+        <span class="um-filter-count">{{ counts[status_filter] if status_filter else total_count }}</span>
+      </span>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+    </button>
+    <div id="req-filter-menu" class="um-filter-menu um-filter-menu-end">
+      <a href="{{ url_for('admin.review_requests') }}"
+         class="{% if not status_filter %}active{% endif %}">
+        All requests <span class="um-filter-count">{{ total_count }}</span>
+      </a>
+      {% for label, n in counts.items() %}
+        <a href="{{ url_for('admin.review_requests', status=label) }}"
+           class="{% if status_filter == label %}active{% endif %}">
+          {{ label }} <span class="um-filter-count">{{ n }}</span>
+        </a>
+      {% endfor %}
+    </div>
   </div>
 </div>
 
@@ -198,14 +171,15 @@
             <form method="POST"
                   action="{{ url_for('admin.review_request', request_id=r.request_id) }}"
                   class="review-form">
-              <select name="status" required>
+              <select name="status" required aria-label="Set request status">
                 <option value="">Set status</option>
                 <option value="Under Review">Under Review</option>
                 <option value="Approved">Approved</option>
                 <option value="Rejected">Rejected</option>
               </select>
               <input type="text" name="review_note"
-                     placeholder="Note (required to reject)">
+                     placeholder="Note (required to reject)"
+                     aria-label="Review note">
               <button type="submit" class="um-btn-confirm">Save</button>
             </form>
           </td>
@@ -246,6 +220,30 @@
 </div>
 
 <script>
+  function reqToggleFilterMenu() {
+    const btn = document.getElementById('req-filter-btn');
+    const menu = document.getElementById('req-filter-menu');
+    const open = menu.classList.toggle('open');
+    btn.setAttribute('aria-expanded', String(open));
+  }
+
+  function reqCloseFilterMenu() {
+    const btn = document.getElementById('req-filter-btn');
+    const menu = document.getElementById('req-filter-menu');
+    if (!btn || !menu) return;
+    menu.classList.remove('open');
+    btn.setAttribute('aria-expanded', 'false');
+  }
+
+  document.addEventListener('click', function (e) {
+    const wrap = document.querySelector('.um-filter-wrap');
+    if (wrap && !wrap.contains(e.target)) reqCloseFilterMenu();
+  });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') reqCloseFilterMenu();
+  });
+
   function reqApplyFilters() {
     var q = (document.getElementById('req-search-input').value || '').trim().toLowerCase();
     var rows = document.querySelectorAll('#req-table tbody tr');

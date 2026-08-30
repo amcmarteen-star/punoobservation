@@ -6,7 +6,7 @@
     <title>PuNoObservation - Map, match, and grow your forest</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/landing.css') }}">
 </head>
 <body class="landing-page">
@@ -15,7 +15,7 @@
         <nav class="landing-nav">
             <a href="{{ url_for('dashboard.home') }}" class="landing-brand">
                 <span class="landing-logo-box">
-                    <img src="{{ url_for('static', filename='images/finallogo.png') }}" alt="PuNoObservation Logo">
+                    <img src="{{ url_for('static', filename='images/finallogo.png') }}" alt="" width="251" height="310">
                 </span>
                 <span>PuNo<span class="accent">Observation</span></span>
             </a>
@@ -35,17 +35,12 @@
     <header class="landing-hero">
         <div class="landing-container">
             <div class="landing-hero-inner">
-                <span class="landing-pill">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/></svg>
-                    Eastern Pangasinan Reforestation Platform
-                </span>
-
                 <h1>
                     One platform to map, match, and
                     <span class="highlight">
                         grow
-                        <svg class="underline-svg" viewBox="0 0 200 14" preserveAspectRatio="none">
-                            <path d="M2 9 C 50 2, 150 2, 198 8" stroke="#FFC94D" stroke-width="5" stroke-linecap="round" fill="none"/>
+                        <svg class="underline-svg" viewBox="0 0 200 14" preserveAspectRatio="none" aria-hidden="true">
+                            <path d="M2 9 C 50 2, 150 2, 198 8" stroke-linecap="round" fill="none" vector-effect="non-scaling-stroke"/>
                         </svg>
                     </span>
                     your forest
@@ -86,7 +81,7 @@
         <div class="landing-container">
             <div class="landing-section-head">
                 <span class="landing-eyebrow">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
                     About the Platform
                 </span>
                 <h2>One shared source of truth for reforestation data</h2>
@@ -105,13 +100,13 @@
         <div class="landing-container">
             <div class="landing-section-head">
                 <span class="landing-eyebrow">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z"/><path d="M20 2v4"/><path d="M22 4h-4"/><circle cx="4" cy="20" r="2"/></svg>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z"/><path d="M20 2v4"/><path d="M22 4h-4"/><circle cx="4" cy="20" r="2"/></svg>
                     Features
                 </span>
                 <h2>Everything a reforestation team needs</h2>
                 <p>Built around the three tools field teams and DENR reviewers reach for most.</p>
                 <p class="landing-role-note">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
                     Available features depend on your account role -- field officers, requesters, and admins each see a tailored set of tools.
                 </p>
             </div>
@@ -127,7 +122,7 @@
                     <a href="{{ url_for('dashboard.gis_map') }}" class="landing-btn landing-btn-primary landing-btn-sm">Explore the map</a>
                 </div>
                 <div class="landing-feature-screenshot">
-                    <img src="{{ url_for('static', filename='images/gismap.png') }}" alt="Interactive GIS map of Eastern Pangasinan with reforestation site heatmap">
+                    <img src="{{ url_for('static', filename='images/gismap.png') }}" width="1831" height="901" loading="lazy" decoding="async" alt="Interactive GIS map of Eastern Pangasinan with reforestation site heatmap">
                 </div>
             </div>
 
@@ -136,7 +131,7 @@
                     <h3>Species Recommendation</h3>
                     <p>Ranks native species by suitability for a site's soil, elevation, and climate.</p>
                     <div class="landing-feature-screenshot">
-                        <img src="{{ url_for('static', filename='images/speciesrecommendation.png') }}" alt="Species recommendation results ranked by similarity">
+                        <img src="{{ url_for('static', filename='images/speciesrecommendation.png') }}" width="1831" height="857" loading="lazy" decoding="async" alt="Species recommendation results ranked by similarity">
                     </div>
                 </div>
 
@@ -144,7 +139,7 @@
                     <h3>Reforestation Site Requests</h3>
                     <p>Anyone can propose a planting site; admins review and track every decision.</p>
                     <div class="landing-feature-screenshot">
-                        <img src="{{ url_for('static', filename='images/requestsite.png') }}" alt="Reforestation site request form">
+                        <img src="{{ url_for('static', filename='images/requestsite.png') }}" width="1911" height="917" loading="lazy" decoding="async" alt="Reforestation site request form">
                     </div>
                 </div>
             </div>
@@ -166,14 +161,14 @@
         <div class="landing-container">
             <div class="landing-section-head">
                 <span class="landing-eyebrow">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 21a8 8 0 0 0-16 0"/><circle cx="10" cy="8" r="5"/><path d="M22 20c0-3.37-2-6.5-4-8a5 5 0 0 0-.45-8.3"/></svg>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 21a8 8 0 0 0-16 0"/><circle cx="10" cy="8" r="5"/><path d="M22 20c0-3.37-2-6.5-4-8a5 5 0 0 0-.45-8.3"/></svg>
                     Who It's For
                 </span>
                 <h2>Built for your role</h2>
                 <p>Every account is scoped to what that role actually needs to do.</p>
             </div>
 
-            <div class="landing-feature-row">
+            <div class="landing-feature-row landing-role-row">
                 <div class="landing-feature-card">
                     <h3>Administrator</h3>
                     <p>
@@ -190,6 +185,14 @@
                         for the barangays they're assigned to.
                     </p>
                 </div>
+                <div class="landing-feature-card">
+                    <h3>Normal User</h3>
+                    <p>
+                        For community members and partner organizations -- browses the GIS
+                        map and registered sites, then submits reforestation site requests
+                        for an administrator to review.
+                    </p>
+                </div>
             </div>
         </div>
     </section>
@@ -198,34 +201,34 @@
         <div class="landing-container">
             <div class="landing-data-band">
                 <span class="landing-eyebrow">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/></svg>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/></svg>
                     Powered by real field data
                 </span>
                 <h2>Recommendations grounded in real conditions</h2>
                 <p>The species matching model weighs the same characteristics a forester would check on the ground, for every barangay in Eastern Pangasinan.</p>
                 <div class="landing-data-grid">
                     <div class="landing-data-item">
-                        <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242"/><path d="M16 14v6"/><path d="M8 14v6"/><path d="M12 16v6"/></svg></span>
+                        <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242"/><path d="M16 14v6"/><path d="M8 14v6"/><path d="M12 16v6"/></svg></span>
                         <span>Climate Data</span>
                     </div>
                     <div class="landing-data-item">
-                        <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m8 3 4 8 5-5 5 15H2L8 3z"/></svg></span>
+                        <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m8 3 4 8 5-5 5 15H2L8 3z"/></svg></span>
                         <span>Elevation</span>
                     </div>
                     <div class="landing-data-item">
-                        <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83z"/><path d="M2 12a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 12"/><path d="M2 17a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 17"/></svg></span>
+                        <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83z"/><path d="M2 12a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 12"/><path d="M2 17a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 17"/></svg></span>
                         <span>Soil Type</span>
                     </div>
                     <div class="landing-data-item">
-                        <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/></svg></span>
+                        <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/></svg></span>
                         <span>GPS Coordinates</span>
                     </div>
                     <div class="landing-data-item">
-                        <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.106 5.553a2 2 0 0 0 1.788 0l3.659-1.83A1 1 0 0 1 21 4.619v12.764a1 1 0 0 1-.553.894l-4.553 2.277a2 2 0 0 1-1.788 0l-4.212-2.106a2 2 0 0 0-1.788 0l-3.659 1.83A1 1 0 0 1 3 19.381V6.618a1 1 0 0 1 .553-.894l4.553-2.277a2 2 0 0 1 1.788 0z"/><path d="M15 5.764v15"/><path d="M9 3.236v15"/></svg></span>
+                        <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.106 5.553a2 2 0 0 0 1.788 0l3.659-1.83A1 1 0 0 1 21 4.619v12.764a1 1 0 0 1-.553.894l-4.553 2.277a2 2 0 0 1-1.788 0l-4.212-2.106a2 2 0 0 0-1.788 0l-3.659 1.83A1 1 0 0 1 3 19.381V6.618a1 1 0 0 1 .553-.894l4.553-2.277a2 2 0 0 1 1.788 0z"/><path d="M15 5.764v15"/><path d="M9 3.236v15"/></svg></span>
                         <span>DENR NGP Records</span>
                     </div>
                     <div class="landing-data-item">
-                        <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/></svg></span>
+                        <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/></svg></span>
                         <span>Species Database</span>
                     </div>
                 </div>
@@ -249,7 +252,7 @@
         <div class="landing-container landing-footer-grid">
             <div>
                 <div class="landing-footer-brand">
-                    <img src="{{ url_for('static', filename='images/finallogo.png') }}" alt="PuNoObservation Logo">
+                    <img src="{{ url_for('static', filename='images/finallogo.png') }}" alt="" width="251" height="310">
                     <span>PuNoObservation</span>
                 </div>
                 <p class="tagline">Decision support for tree species recommendation and reforestation management across Eastern Pangasinan.</p>

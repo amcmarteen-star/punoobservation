@@ -8,7 +8,7 @@
 <style>
   .preview-panel {
     background: #ffffff;
-    border: 1px solid #e2e8f0;
+    border: 1px solid #e2eae5;
     border-radius: 10px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
     padding: 1.25rem;
@@ -23,7 +23,7 @@
   }
 
   .sum-chip {
-    border: 1px solid #e2e8f0;
+    border: 1px solid #e2eae5;
     border-radius: 8px;
     padding: 0.6rem 1rem;
     min-width: 110px;
@@ -31,24 +31,24 @@
 
   .sum-chip .num {
     display: block;
-    font-size: 1.35rem;
+    font-size: 1.25rem;
     font-weight: 700;
     color: #14532d;
   }
 
   .sum-chip .lbl {
     display: block;
-    font-size: 0.7rem;
+    font-size: 0.75rem;
     text-transform: uppercase;
     letter-spacing: 0.5px;
-    color: #64748b;
+    color: #5f6f66;
   }
 
   .sum-chip.bad .num { color: #b91c1c; }
 
   .warn-box {
-    border-left: 4px solid #94a3b8;
-    background: #f8fafc;
+    border-left: 4px solid #8d9c94;
+    background: #f7faf8;
     border-radius: 6px;
     padding: 0.8rem 1rem;
     margin-bottom: 0.8rem;
@@ -61,32 +61,32 @@
   .warn-box h6 {
     margin: 0 0 0.3rem 0;
     font-weight: 700;
-    font-size: 0.9rem;
-    color: #1e293b;
+    font-size: 0.875rem;
+    color: #1c2f26;
   }
 
   .warn-box p {
     margin: 0 0 0.4rem 0;
-    font-size: 0.82rem;
-    color: #475569;
+    font-size: 0.875rem;
+    color: #41544a;
   }
 
   .warn-box ul {
     margin: 0;
     padding-left: 1.1rem;
-    font-size: 0.8rem;
-    color: #334155;
+    font-size: 0.875rem;
+    color: #2f4239;
   }
 
   .sheet-row {
     display: flex;
     justify-content: space-between;
     padding: 0.35rem 0;
-    border-bottom: 1px solid #f1f5f9;
-    font-size: 0.85rem;
+    border-bottom: 1px solid #eef4f0;
+    font-size: 0.875rem;
   }
 
-  .sheet-row .skipped { color: #94a3b8; font-style: italic; }
+  .sheet-row .skipped { color: #8d9c94; font-style: italic; }
 
   .row-bad { background: #fef2f2; }
 
@@ -95,7 +95,7 @@
     gap: 0.6rem;
     margin-top: 1.2rem;
     padding-top: 1rem;
-    border-top: 1px solid #e2e8f0;
+    border-top: 1px solid #e2eae5;
   }
 </style>
 {% endblock %}
@@ -268,7 +268,7 @@
     </p>
 
     <form action="{{ url_for('admin.import_denr_data') }}" method="POST" enctype="multipart/form-data" class="upload-form">
-        <input type="file" name="excel_file" accept=".xlsx,.xls" required class="upload-file-input">
+        <input type="file" name="excel_file" accept=".xlsx,.xls" required aria-label="Choose an Excel file to import" class="upload-file-input">
         <div class="d-flex gap-2">
             <button type="button" class="um-btn-cancel" onclick="previewDataset()">
                 Preview

@@ -8,15 +8,15 @@
       .notif-tabs {
     display: flex;
     gap: 0.4rem;
-    border-bottom: 2px solid #e2e8f0;
+    border-bottom: 2px solid #e2eae5;
     margin-bottom: 1.25rem;
   }
   .notif-tab {
     padding: 0.55rem 1rem;
     text-decoration: none;
-    color: #64748b;
+    color: #5f6f66;
     font-weight: 600;
-    font-size: 0.9rem;
+    font-size: 0.875rem;
     border-bottom: 2px solid transparent;
     margin-bottom: -2px;
   }
@@ -26,11 +26,11 @@
     border-bottom-color: #16a34a;
   }
   .notif-tab-count {
-    background: #e2e8f0;
-    color: #475569;
+    background: #e2eae5;
+    color: #41544a;
     border-radius: 10px;
     padding: 0 7px;
-    font-size: 0.72rem;
+    font-size: 0.75rem;
     margin-left: 0.3rem;
   }
   .notif-tab.active .notif-tab-count {
@@ -68,19 +68,15 @@
 {% endif %}
 
 <div class="notif-toolbar">
-    <div class="notif-select-wrap">
-        <button type="button" class="notif-select-btn" onclick="toggleNotifSelectMenu()">
-            Select
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
-        </button>
-        <div id="notif-select-menu" class="notif-select-menu">
-            <button type="button" onclick="notifBulkAction('read')">Mark as Read</button>
-            <button type="button" onclick="notifBulkAction('unread')">Mark as Unread</button>
-            <button type="button" class="danger" onclick="notifBulkAction('delete')">Delete</button>
-        </div>
-    </div>
+    <button type="button" id="notif-delete-btn" class="notif-delete-btn"
+            onclick="notifDeleteSelected()" disabled
+            aria-label="Delete selected notifications">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 11v6"/><path d="M14 11v6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+        Delete
+        <span class="notif-delete-count" id="notif-delete-count" hidden>0</span>
+    </button>
 
-    <select class="notif-filter-select" onchange="notifFilterChange(this.value)">
+    <select class="notif-filter-select" aria-label="Filter notifications by read status" onchange="notifFilterChange(this.value)">
         <option value="all" {% if status == 'all' %}selected{% endif %}>All</option>
         <option value="unread" {% if status == 'unread' %}selected{% endif %}>Unread</option>
         <option value="read" {% if status == 'read' %}selected{% endif %}>Read</option>
@@ -152,18 +148,6 @@
 
 {% block extra_scripts %}
 <script>
-    function toggleNotifSelectMenu() {
-        document.getElementById('notif-select-menu').classList.toggle('open');
-    }
-
-    document.addEventListener('click', function (e) {
-        const wrap = document.querySelector('.notif-select-wrap');
-        const menu = document.getElementById('notif-select-menu');
-        if (wrap && menu && !wrap.contains(e.target)) {
-            menu.classList.remove('open');
-        }
-    });
-
     function notifFilterChange(value) {
         const url = new URL(window.location.href);
         url.searchParams.set('status', value);
@@ -180,22 +164,42 @@
             .map((cb) => cb.dataset.id);
     }
 
-    async function notifBulkAction(action) {
+    // The Delete button stays disabled until at least one row is checked, so the
+    // checkbox is the only thing the user has to reach for before deleting.
+    function notifSyncDeleteButton() {
+        const btn = document.getElementById('notif-delete-btn');
+        const count = document.getElementById('notif-delete-count');
+        if (!btn || !count) return;
+
+        const selected = notifSelectedIds().length;
+        btn.disabled = selected === 0;
+        count.hidden = selected === 0;
+        count.textContent = selected;
+    }
+
+    document.addEventListener('change', function (e) {
+        if (e.target.classList.contains('notif-row-checkbox')) {
+            e.target.closest('.notif-row').classList.toggle('selected', e.target.checked);
+            notifSyncDeleteButton();
+        }
+    });
+
+    document.addEventListener('DOMContentLoaded', notifSyncDeleteButton);
+
+    async function notifDeleteSelected() {
         const ids = notifSelectedIds();
-        if (!ids.length) {
-            document.getElementById('notif-select-menu').classList.remove('open');
+        if (!ids.length) return;
+
+        if (!confirm(`Delete ${ids.length} notification${ids.length > 1 ? 's' : ''}?`)) {
             return;
         }
 
-        if (action === 'delete' &&
-            !confirm(`Delete ${ids.length} notification${ids.length > 1 ? 's' : ''}?`)) {
-            return;
-        }
+        const btn = document.getElementById('notif-delete-btn');
+        if (btn) btn.disabled = true;
 
-        const endpoint = { read: 'read', unread: 'unread', delete: 'delete' }[action];
         await Promise.all(
             ids.map((id) =>
-                fetch(`/api/notifications/${id}/${endpoint}`, { method: 'POST' })
+                fetch(`/api/notifications/${id}/delete`, { method: 'POST' })
             )
         );
         window.location.reload();

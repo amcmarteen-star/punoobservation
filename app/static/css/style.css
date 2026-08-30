@@ -1,78 +1,64 @@
-/* Dashboard Base Layout */
-.dashboard-body {
-    margin: 0;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background-color: #f4f6f9;
-    color: #333;
-}
+/* ============================================
+   PuNoObservation -- application styles
 
-.topbar {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    background-color: #1e3a8a;
-    color: white;
-    padding: 0.8rem 2rem;
-}
+   The neutral ramp below is green-cast rather than the stock blue-grey
+   slate, so the greys sit with the forest brand instead of against it.
+   Type runs on the 12/14/16/18/20/24/32 scale and spacing on an 8px
+   rhythm -- reach for a token rather than inventing a value.
+   ============================================ */
 
-.topbar .btn-logout {
-    color: #f87171;
-    margin-left: 1rem;
-    text-decoration: none;
-    font-weight: bold;
-}
+.app-body {
+    /* neutrals (green-cast) */
+    --n-0: #ffffff;
+    --n-50: #f7faf8;
+    --n-100: #eef4f0;
+    --n-200: #e2eae5;
+    --n-300: #c9d6ce;
+    --n-400: #5f6f66;
+    --n-500: #5f6f66;
+    --n-600: #41544a;
+    --n-700: #2f4239;
+    --n-800: #1c2f26;
+    --n-900: #12211a;
 
-.dashboard-container {
-    padding: 2rem;
-    max-width: 1200px;
-    margin: 0 auto;
-}
+    /* brand */
+    --brand-900: #10241a;
+    --brand-700: #14532d;
+    --brand-600: #15803d;
+    --brand-500: #16a34a;
 
-/* Stat Cards Grid */
-.stats-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 1.5rem;
-    margin-bottom: 2rem;
-}
+    /* status */
+    --ok: #15803d;
+    --warn: #b45309;
+    --danger: #dc2626;
+    --info: #0369a1;
 
-.stat-card {
-    background: white;
-    padding: 1.5rem;
-    border-radius: 10px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-    display: flex;
-    align-items: center;
-    gap: 1.2rem;
-}
+    /* type scale */
+    --fs-xs: 0.75rem;
+    --fs-sm: 0.875rem;
+    --fs-base: 1rem;
+    --fs-lg: 1.125rem;
+    --fs-xl: 1.25rem;
+    --fs-2xl: 1.5rem;
 
-.stat-icon {
-    font-size: 2.2rem;
-}
+    /* spacing rhythm */
+    --sp-1: 0.5rem;
+    --sp-2: 1rem;
+    --sp-3: 1.5rem;
+    --sp-4: 2rem;
+    --sp-6: 3rem;
 
-.stat-details h3 {
-    margin: 0;
-    font-size: 1.8rem;
-    color: #1e293b;
-}
+    /* radius */
+    --r-sm: 0.5rem;
+    --r-md: 0.75rem;
+    --r-lg: 1rem;
 
-.stat-details p {
-    margin: 0.2rem 0 0 0;
-    color: #64748b;
-    font-size: 0.9rem;
-}
+    /* elevation: two layers read as depth, one flat blur reads as a smudge */
+    --sh-sm: 0 1px 2px rgba(18, 33, 26, 0.04), 0 1px 3px rgba(18, 33, 26, 0.05);
+    --sh-md: 0 1px 2px rgba(18, 33, 26, 0.04), 0 6px 16px rgba(18, 33, 26, 0.06);
+    --sh-lg: 0 2px 4px rgba(18, 33, 26, 0.04), 0 12px 32px rgba(18, 33, 26, 0.09);
 
-/* Content Grid */
-.content-grid {
-    display: grid;
-    grid-template-columns: 2fr 1fr;
-    gap: 1.5rem;
-}
-
-@media (max-width: 768px) {
-    .content-grid {
-        grid-template-columns: 1fr;
-    }
+    --ease: cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .card {
@@ -92,25 +78,11 @@
     font-weight: 600;
 }
 
-/* Report Feed Styling */
-.report-list {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-}
 
-.report-item {
-    padding: 0.8rem 0;
-    border-bottom: 1px solid #e2e8f0;
-}
 
-.badge-success {
-    background-color: #d1fae5;
-    color: #065f46;
-    padding: 0.2rem 0.6rem;
-    border-radius: 12px;
-    font-size: 0.8rem;
-}
+
+
+
 /* ============================================
    APP SHELL + SIDEBAR (Dashboard layout)
    ============================================ */
@@ -128,7 +100,7 @@ html {
 
 .app-body {
     margin: 0;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
 }
 
 .app-shell {
@@ -175,7 +147,6 @@ html {
 /* Icon rail: labels hide, icons stay centered, links still work as normal <a> tags */
 .sidebar.collapsed .logo-text,
 .sidebar.collapsed .role-pill-text,
-.sidebar.collapsed .nav-section-title,
 .sidebar.collapsed .nav-link-text,
 .sidebar.collapsed .sign-out-text {
     display: none;
@@ -194,7 +165,7 @@ html {
     gap: 0.6rem;
     padding: 0.5rem 0.4rem 1rem 0.4rem;
     font-weight: 700;
-    font-size: 1.05rem;
+    font-size: 1.125rem;
     color: #ffffff;
     text-decoration: none;
     cursor: pointer;
@@ -213,7 +184,7 @@ html {
     background-color: rgba(255,255,255,0.06);
     padding: 0.5rem 0.8rem;
     border-radius: 8px;
-    font-size: 0.85rem;
+    font-size: 0.875rem;
     color: #7fd8a8;
     margin-bottom: 1.4rem;
 }
@@ -237,7 +208,7 @@ html {
     align-items: center;
     justify-content: center;
     font-weight: 700;
-    font-size: 0.85rem;
+    font-size: 0.875rem;
     flex-shrink: 0;
 }
 
@@ -254,7 +225,7 @@ html {
 .role-pill-username {
     color: #ffffff;
     font-weight: 600;
-    font-size: 0.85rem;
+    font-size: 0.875rem;
 }
 
 .role-pill-role {
@@ -262,17 +233,13 @@ html {
     font-size: 0.75rem;
 }
 
+/* overflow-x is pinned to hidden because setting only overflow-y makes the
+   other axis compute to auto -- any nav label wider than the rail (or the
+   rail mid-drag) then raises a horizontal scrollbar across the sidebar. */
 .sidebar-nav {
     flex: 1;
     overflow-y: auto;
-}
-
-.nav-section-title {
-    text-transform: uppercase;
-    font-size: 0.7rem;
-    letter-spacing: 0.05em;
-    color: #6b8577;
-    margin: 1.2rem 0.4rem 0.5rem 0.4rem;
+    overflow-x: hidden;
 }
 
 .nav-link {
@@ -284,14 +251,15 @@ html {
     border-radius: 8px;
     color: #d7e4dc;
     text-decoration: none;
-    font-size: 0.9rem;
-    transition: background-color 0.15s ease;
+    font-size: 0.875rem;
+    transition: background-color 0.15s ease, color 0.15s ease;
 }
 
 .nav-icon {
     width: 1.1rem;
     height: 1.1rem;
     flex-shrink: 0;
+    transition: stroke-width 0.15s ease;
 }
 
 .nav-link-text {
@@ -303,10 +271,18 @@ html {
     background-color: rgba(255,255,255,0.06);
 }
 
-.nav-link.active {
-    background-color: #16a34a;
-    color: #ffffff;
+/* Active state is green text + a bolder icon on the same subtle background the
+   hover state uses, so the current page reads without a solid filled pill. */
+.nav-link.active,
+.nav-link.active:hover {
+    background-color: rgba(255, 255, 255, 0.06);
+    color: #16a34a;
     font-weight: 600;
+}
+
+/* Thicker stroke is what makes the icon itself look bold. */
+.nav-link.active .nav-icon {
+    stroke-width: 2.75;
 }
 
 .sign-out {
@@ -316,7 +292,7 @@ html {
     padding: 0.6rem 0.7rem;
     color: #d7e4dc;
     text-decoration: none;
-    font-size: 0.9rem;
+    font-size: 0.875rem;
     border-top: 1px solid rgba(255,255,255,0.08);
     margin-top: 0.8rem;
     padding-top: 1rem;
@@ -338,7 +314,7 @@ html {
 .main-area {
     flex: 1;
     min-width: 0;
-    background-color: #f4f6f9;
+    background-color: #f4f7f4;
     overflow-x: hidden;
 }
 
@@ -384,15 +360,15 @@ html {
 }
 
 .clock-time {
-    font-size: 1.3rem;
+    font-size: 1.25rem;
     font-weight: 700;
-    color: #1e293b;
+    color: #1c2f26;
     font-variant-numeric: tabular-nums;
 }
 
 .clock-date {
-    font-size: 0.8rem;
-    color: #64748b;
+    font-size: 0.875rem;
+    color: #5f6f66;
     margin-top: 0.15rem;
 }
 
@@ -406,7 +382,7 @@ html {
     align-items: center;
     padding: 0.6rem 1.5rem;
     background-color: #ffffff;
-    border-bottom: 1px solid #e2e8f0;
+    border-bottom: 1px solid #e2eae5;
 }
 
 .notif-bell-wrap {
@@ -420,7 +396,7 @@ html {
     justify-content: center;
     background: none;
     border: none;
-    color: #475569;
+    color: #41544a;
     cursor: pointer;
     padding: 0.5rem;
     border-radius: 8px;
@@ -432,7 +408,7 @@ html {
 }
 
 .notif-bell-btn:hover {
-    background-color: #f1f5f9;
+    background-color: #eef4f0;
 }
 
 .notif-badge {
@@ -441,7 +417,7 @@ html {
     right: -2px;
     background-color: #ef4444;
     color: #ffffff;
-    font-size: 0.65rem;
+    font-size: 0.75rem;
     font-weight: 700;
     line-height: 1;
     padding: 0.2rem 0.35rem;
@@ -458,7 +434,7 @@ html {
     width: 340px;
     max-height: 420px;
     background-color: #ffffff;
-    border: 1px solid #e2e8f0;
+    border: 1px solid #e2eae5;
     border-radius: 12px;
     box-shadow: 0 12px 32px rgba(15, 23, 42, 0.12);
     overflow: hidden;
@@ -476,22 +452,22 @@ html {
     justify-content: space-between;
     gap: 0.5rem;
     padding: 0.9rem 1rem;
-    border-bottom: 1px solid #f1f5f9;
+    border-bottom: 1px solid #eef4f0;
 }
 
 .notif-dropdown-header-title {
     font-weight: 700;
-    font-size: 0.92rem;
-    color: #0f172a;
+    font-size: 1rem;
+    color: #12211a;
 }
 
 .notif-mark-all {
     background: none;
     border: none;
     padding: 0;
-    font-size: 0.78rem;
+    font-size: 0.75rem;
     font-weight: 600;
-    color: #16a34a;
+    color: #15803d;
     cursor: pointer;
 }
 
@@ -505,6 +481,12 @@ html {
     max-height: 320px;
 }
 
+#notif-dropdown-list .placeholder-text {
+    margin: 0;
+    padding: 2.25rem 1rem;
+    text-align: center;
+}
+
 /* ---- shared notification row: dropdown items + full-page list ---- */
 .notif-item,
 .notif-page-item {
@@ -512,7 +494,7 @@ html {
     align-items: flex-start;
     gap: 0.7rem;
     padding: 0.75rem 1rem;
-    border-bottom: 1px solid #f8fafc;
+    border-bottom: 1px solid #f7faf8;
     cursor: pointer;
     transition: background-color 0.12s ease;
 }
@@ -524,7 +506,7 @@ html {
 
 .notif-item:hover,
 .notif-page-item:hover {
-    background-color: #f8fafc;
+    background-color: #f7faf8;
 }
 
 .notif-icon {
@@ -535,8 +517,8 @@ html {
     display: flex;
     align-items: center;
     justify-content: center;
-    background-color: #f1f5f9;
-    color: #64748b;
+    background-color: #eef4f0;
+    color: #5f6f66;
 }
 
 .notif-icon svg {
@@ -545,16 +527,16 @@ html {
 }
 
 .notif-icon.type-update  { background-color: #dbeafe; color: #2563eb; }
-.notif-icon.type-report  { background-color: #fef3c7; color: #d97706; }
+.notif-icon.type-report  { background-color: #fef3c7; color: #b45309; }
 
 /* Notifications that name a specific person (e.g. "X requested...") get
    that person's initial instead of a generic icon, same avatar language
    as the sidebar and User Management. */
 .notif-icon.avatar {
-    background-color: #16a34a;
+    background-color: #15803d;
     color: #ffffff;
     font-weight: 700;
-    font-size: 0.85rem;
+    font-size: 0.875rem;
 }
 
 .notif-body {
@@ -564,21 +546,21 @@ html {
 
 .notif-message {
     margin: 0;
-    font-size: 0.85rem;
+    font-size: 0.875rem;
     line-height: 1.45;
-    color: #475569;
+    color: #41544a;
 }
 
 .notif-item.unread .notif-message,
 .notif-page-item.unread .notif-message {
-    color: #0f172a;
+    color: #12211a;
     font-weight: 600;
 }
 
 .notif-time {
     display: block;
     font-size: 0.75rem;
-    color: #94a3b8;
+    color: #5f6f66;
     margin-top: 0.2rem;
 }
 
@@ -587,7 +569,7 @@ html {
     width: 0.5rem;
     height: 0.5rem;
     border-radius: 50%;
-    background-color: #16a34a;
+    background-color: #15803d;
     margin-top: 0.4rem;
     visibility: hidden;
 }
@@ -600,16 +582,16 @@ html {
 .notif-view-all {
     display: block;
     text-align: center;
-    padding: 0.65rem;
-    font-size: 0.83rem;
+    padding: 0.85rem;
+    font-size: 0.875rem;
     font-weight: 600;
-    color: #16a34a;
+    color: #15803d;
     text-decoration: none;
-    border-top: 1px solid #f1f5f9;
+    border-top: 1px solid #eef4f0;
 }
 
 .notif-view-all:hover {
-    background-color: #f8fafc;
+    background-color: #f7faf8;
 }
 
 /* Full notifications page */
@@ -627,7 +609,7 @@ html {
     margin: 0;
 }
 
-/* ---- toolbar: bulk-action "Select" menu + status filter ---- */
+/* ---- toolbar: bulk delete + status filter ---- */
 .notif-toolbar {
     display: flex;
     align-items: center;
@@ -637,88 +619,74 @@ html {
     margin: 1rem 0;
 }
 
-.notif-select-wrap,
 .notif-filter-wrap {
     position: relative;
 }
 
-.notif-select-btn {
+.notif-delete-btn {
     display: inline-flex;
     align-items: center;
-    gap: 0.4rem;
-    background-color: #16a34a;
-    color: #ffffff;
-    border: none;
+    gap: 0.45rem;
+    background-color: #ffffff;
+    color: #dc2626;
+    border: 1px solid #fecaca;
     border-radius: 8px;
     padding: 0.5rem 0.9rem;
-    font-size: 0.85rem;
+    min-height: 40px;
+    font-size: 0.875rem;
     font-weight: 600;
     cursor: pointer;
+    transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease;
 }
 
-.notif-select-btn:hover {
-    background-color: #15803d;
+.notif-delete-btn:hover:not(:disabled) {
+    background-color: #dc2626;
+    border-color: #dc2626;
+    color: #ffffff;
 }
 
-.notif-select-btn svg {
-    width: 0.8rem;
-    height: 0.8rem;
+/* Nothing selected yet -- the button is visible so users know where it is,
+   but greyed out until a checkbox is ticked. */
+.notif-delete-btn:disabled {
+    background-color: #f7faf8;
+    border-color: #e2eae5;
+    color: #5f6f66;
+    cursor: not-allowed;
 }
 
-.notif-select-menu {
-    display: none;
-    position: absolute;
-    top: calc(100% + 6px);
-    left: 0;
-    min-width: 12rem;
+.notif-delete-btn svg {
+    width: 1rem;
+    height: 1rem;
+}
+
+.notif-delete-count {
+    background-color: #dc2626;
+    color: #ffffff;
+    border-radius: 999px;
+    min-width: 1.25rem;
+    padding: 0 0.35rem;
+    font-size: 0.75rem;
+    font-weight: 700;
+    line-height: 1.25rem;
+    text-align: center;
+}
+
+.notif-delete-btn:hover:not(:disabled) .notif-delete-count {
     background-color: #ffffff;
-    border: 1px solid #e2e8f0;
-    border-radius: 8px;
-    box-shadow: 0 10px 28px rgba(15, 23, 42, 0.12);
-    padding: 0.35rem;
-    z-index: 20;
-}
-
-.notif-select-menu.open {
-    display: block;
-}
-
-.notif-select-menu button {
-    display: block;
-    width: 100%;
-    text-align: left;
-    background: none;
-    border: none;
-    padding: 0.5rem 0.6rem;
-    font-size: 0.85rem;
-    color: #334155;
-    border-radius: 6px;
-    cursor: pointer;
-}
-
-.notif-select-menu button:hover {
-    background-color: #f1f5f9;
-}
-
-.notif-select-menu button.danger {
     color: #dc2626;
-}
-
-.notif-select-menu button.danger:hover {
-    background-color: #fef2f2;
 }
 
 .notif-filter-select {
     appearance: none;
     background-color: #ffffff;
-    border: 1px solid #e2e8f0;
+    border: 1px solid #e2eae5;
     border-radius: 8px;
     padding: 0.5rem 2rem 0.5rem 0.9rem;
-    font-size: 0.85rem;
+    font-size: 0.875rem;
     font-weight: 600;
-    color: #334155;
+    color: #2f4239;
     cursor: pointer;
-    background-image: linear-gradient(45deg, transparent 50%, #64748b 50%), linear-gradient(135deg, #64748b 50%, transparent 50%);
+    background-image: linear-gradient(45deg, transparent 50%, #5f6f66 50%), linear-gradient(135deg, #5f6f66 50%, transparent 50%);
     background-position: calc(100% - 14px) center, calc(100% - 9px) center;
     background-size: 5px 5px, 5px 5px;
     background-repeat: no-repeat;
@@ -734,9 +702,9 @@ html {
 }
 
 .notif-day-heading {
-    font-size: 0.8rem;
+    font-size: 0.875rem;
     font-weight: 700;
-    color: #64748b;
+    color: #5f6f66;
     margin: 0 0 0.6rem;
 }
 
@@ -745,7 +713,7 @@ html {
     align-items: center;
     gap: 0.85rem;
     padding: 0.85rem 1rem;
-    border-bottom: 1px solid #f1f5f9;
+    border-bottom: 1px solid #eef4f0;
 }
 
 .notif-row:last-child {
@@ -753,14 +721,18 @@ html {
 }
 
 .notif-row:hover {
-    background-color: #f8fafc;
+    background-color: #f7faf8;
+}
+
+.notif-row.selected {
+    background-color: #fef2f2;
 }
 
 .notif-row-checkbox {
     flex-shrink: 0;
     width: 1rem;
     height: 1rem;
-    accent-color: #16a34a;
+    accent-color: #15803d;
     cursor: pointer;
 }
 
@@ -775,20 +747,20 @@ html {
 
 .notif-row-body p {
     margin: 0;
-    font-size: 0.87rem;
-    color: #475569;
+    font-size: 0.875rem;
+    color: #41544a;
     line-height: 1.4;
 }
 
 .notif-row.unread .notif-row-body p {
-    color: #0f172a;
+    color: #12211a;
     font-weight: 600;
 }
 
 .notif-row-time {
     display: block;
-    font-size: 0.76rem;
-    color: #94a3b8;
+    font-size: 0.75rem;
+    color: #5f6f66;
     margin-top: 0.15rem;
 }
 
@@ -796,32 +768,32 @@ html {
     flex-shrink: 0;
     width: 4.5rem;
     text-align: center;
-    font-size: 0.78rem;
+    font-size: 0.75rem;
     font-weight: 600;
-    color: #94a3b8;
+    color: #5f6f66;
 }
 
 .notif-row.unread .notif-row-status {
-    color: #16a34a;
+    color: #15803d;
 }
 
 .notif-row-details {
     flex-shrink: 0;
     display: inline-flex;
     align-items: center;
-    background-color: #0f172a;
+    background-color: #12211a;
     color: #ffffff;
     border: none;
     border-radius: 6px;
     padding: 0.45rem 1rem;
-    font-size: 0.8rem;
+    font-size: 0.875rem;
     font-weight: 600;
     text-decoration: none;
     cursor: pointer;
 }
 
 .notif-row-details:hover {
-    background-color: #1e293b;
+    background-color: #1c2f26;
 }
 
 @media (max-width: 720px) {
@@ -833,36 +805,143 @@ html {
 /*LOGIN PAGE*/
 
 body.login-page {
+    /* ---- auth design tokens ---- */
+    --auth-ink: #16241f;
+    --auth-body: #40514c;
+    --auth-muted: #5b6b66;
+    --auth-line: #d8e0dc;
+    --auth-green: #0d7e5a;
+    --auth-green-dark: #0a6d4e;
+    --auth-green-deep: #0d3632;
+    --auth-danger: #b42318;
+    --auth-ok: #146c43;
+    --auth-ease: cubic-bezier(0.4, 0, 0.2, 1);
+
     margin: 0;
     min-height: 100vh;
     background: #f4f5f4;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    color: #1f2937;
+    /* Scoped to .login-page, so the rest of the app keeps its system font. */
+    font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+    color: var(--auth-body);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+body.login-page :focus-visible {
+    outline: 2px solid var(--auth-green);
+    outline-offset: 2px;
+    border-radius: 6px;
 }
 
 .login-shell {
     display: flex;
     min-height: 100vh;
     width: 100%;
+    background: #f2f2f2;
 }
 
+/* ---------- Brand panel (left) ---------- */
 .brand-panel {
     position: relative;
     flex: 1.12;
-    padding: 2.4rem 3.2rem 1.7rem 3.4rem;
-    background: #0d3632;
+    /* Inset from the viewport so it reads as a card rather than a column.
+       overflow:hidden above the radius is what clips the mesh to the
+       rounded corners. */
+    margin: 1rem;
+    border-radius: 1.75rem;
+    padding: 2.5rem 3.25rem;
+    /* Base tone the mesh blobs sit on. */
+    background: #0b2b23;
     color: #f4f7f5;
     overflow: hidden;
+    isolation: isolate;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
 }
 
+/* ---- Animated mesh gradient ----
+   Four large blurred blobs drifting on their own clocks. Because the cycle
+   lengths (5/7/9/11s) are mutually prime, the pattern does not visibly
+   repeat. Only transform is animated, so the work stays on the
+   compositor instead of forcing layout each frame. */
+.brand-mesh {
+    position: absolute;
+    /* Oversized so a blob never shows a hard edge as it drifts. */
+    inset: -25%;
+    z-index: 0;
+    filter: blur(60px) saturate(1.25);
+    pointer-events: none;
+}
+
+.brand-mesh .blob {
+    position: absolute;
+    display: block;
+    width: 60%;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    will-change: transform;
+}
+
+/* Greens are kept dark on purpose: white body copy sits on top of this, and
+   a brighter green (#16a34a is only 3.3:1 against white) would fail. */
+.brand-mesh .blob-1 {
+    top: -8%;
+    left: -10%;
+    background: #17795a;
+    animation: mesh-drift-1 5s ease-in-out infinite alternate;
+}
+
+.brand-mesh .blob-2 {
+    bottom: -12%;
+    left: 5%;
+    background: #0f5f46;
+    animation: mesh-drift-2 11s ease-in-out infinite alternate;
+}
+
+.brand-mesh .blob-3 {
+    top: 18%;
+    right: -14%;
+    background: #1a8a63;
+    animation: mesh-drift-3 7s ease-in-out infinite alternate;
+}
+
+.brand-mesh .blob-4 {
+    bottom: -6%;
+    right: -8%;
+    background: #0d4f52;
+    animation: mesh-drift-4 9s ease-in-out infinite alternate;
+}
+
+@keyframes mesh-drift-1 {
+    from { transform: translate3d(0, 0, 0) scale(1); }
+    to   { transform: translate3d(18%, 14%, 0) scale(1.25); }
+}
+
+@keyframes mesh-drift-2 {
+    from { transform: translate3d(0, 0, 0) scale(1.15); }
+    to   { transform: translate3d(22%, -18%, 0) scale(0.9); }
+}
+
+@keyframes mesh-drift-3 {
+    from { transform: translate3d(0, 0, 0) scale(1); }
+    to   { transform: translate3d(-20%, 20%, 0) scale(1.3); }
+}
+
+@keyframes mesh-drift-4 {
+    from { transform: translate3d(0, 0, 0) scale(1.1); }
+    to   { transform: translate3d(-16%, -22%, 0) scale(0.95); }
+}
+
+/* Scrim over the mesh. Without it a blob drifting under the paragraph drops
+   that text to about 3.8:1; this holds the whole panel above 6:1 while the
+   colour still reads through. */
 .brand-panel::before {
     content: "";
     position: absolute;
     inset: 0;
-    background: none;
+    z-index: 1;
+    background: linear-gradient(160deg, rgba(6, 26, 20, 0.3), rgba(6, 26, 20, 0.5));
     pointer-events: none;
 }
 
@@ -870,21 +949,27 @@ body.login-page {
 .brand-content,
 .brand-footer {
     position: relative;
-    z-index: 1;
+    z-index: 2;
+}
+
+/* Movement in the corner of the eye is exactly what the OS setting is for. */
+@media (prefers-reduced-motion: reduce) {
+    .brand-mesh .blob {
+        animation: none;
+    }
 }
 
 .brand-header {
     display: flex;
     align-items: center;
     gap: 1rem;
-    margin-top: 0.25rem;
 }
 
 /* The logo art is 251x310, so it must be sized explicitly -- left unstyled
    it renders at natural size and swamps the header. */
 .logo-box {
-    width: 3.4rem;
-    height: 3.4rem;
+    width: 3.25rem;
+    height: 3.25rem;
     display: block;
     object-fit: contain;
     flex-shrink: 0;
@@ -900,80 +985,71 @@ body.login-page {
     font-size: 2rem;
     font-weight: 700;
     line-height: 1;
-    letter-spacing: -0.05em;
+    letter-spacing: -0.04em;
     color: #edf7f3;
 }
 
 .brand-title {
-    font-size: 0.9rem;
-    letter-spacing: 0.16rem;
-    color: rgba(227, 240, 232, 0.82);
+    font-size: 0.875rem;
+    letter-spacing: 0.15em;
+    color: rgba(227, 240, 232, 0.75);
     font-weight: 600;
 }
 
+/* Centres the pitch in whatever height is left instead of pinning it near
+   the top, which left a large hole above the footer on tall screens. */
 .brand-content {
-    margin-top: 3.8rem;
-    margin-left: 0.5rem;
+    margin: auto 0;
+    padding: 3rem 0;
 }
-
-/* .brand-icon-box {
-    width: 5rem;
-    height: 5rem;
-    border-radius: 1.2rem;
-    display: block;
-    object-fit: contain;
-    background: rgba(55, 183, 122, 0.15);
-    border: 1px solid rgba(136, 228, 185, 0.45);
-    margin-bottom: 1.8rem;
-    box-shadow: inset 0 0 20px rgba(74, 227, 162, 0.12);
-    padding: 0.5rem;
-} */
 
 .brand-content h1 {
     margin: 0;
-    font-size: clamp(3rem, 4vw, 5rem);
-    line-height: 0.94;
-    letter-spacing: -0.06em;
+    font-size: clamp(2.75rem, 4vw, 4.5rem);
+    line-height: 0.98;
+    letter-spacing: -0.045em;
     font-weight: 800;
-    max-width: 540px;
+    max-width: 14ch;
+    color: #ffffff;
 }
 
 .brand-content p {
-    max-width: 700px;
-    margin-top: 1.7rem;
-    font-size: 1.05rem;
+    max-width: 46ch;
+    margin: 1.5rem 0 0;
+    font-size: 1rem;
     line-height: 1.65;
-    color: rgba(236, 244, 238, 0.8);
+    color: rgba(236, 244, 238, 0.82);
 }
 
 .chip-row {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.8rem 0.95rem;
-    margin-top: 2.2rem;
-    max-width: 650px;
+    gap: 0.625rem;
+    margin: 2rem 0 0;
+    padding: 0;
+    list-style: none;
+    max-width: 40rem;
 }
 
-.chip-row span {
+.chip-row li {
     display: inline-flex;
     align-items: center;
-    justify-content: center;
-    padding: 0.55rem 1rem;
+    padding: 0.5rem 0.875rem;
     border-radius: 999px;
-    border: 1px solid rgba(192, 224, 204, 0.34);
-    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(192, 224, 204, 0.28);
+    background: rgba(255, 255, 255, 0.04);
     color: #edf6f1;
-    font-size: 0.96rem;
-    line-height: 1;
+    font-size: 0.875rem;
+    line-height: 1.2;
 }
 
 .brand-footer {
-    margin-top: 2.5rem;
-    color: rgba(231, 239, 233, 0.75);
-    font-size: 0.9rem;
-    letter-spacing: 0.02em;
+    color: rgba(231, 239, 233, 0.72);
+    font-size: 0.875rem;
+    line-height: 1.6;
 }
 
+/* ---------- Auth panel (right) ---------- */
 .auth-panel {
     flex: 0.9;
     background: #f2f2f2;
@@ -981,187 +1057,91 @@ body.login-page {
     display: flex;
     justify-content: center;
     align-items: center;
-    padding: 2.5rem 2rem 2rem;
+    padding: 2.5rem 2rem;
 }
 
 .auth-wrapper {
-    width: min(100%, 580px);
+    width: min(100%, 30rem);
     background: #ffffff;
     border: 1px solid #e6e9e7;
     border-radius: 1rem;
-    padding: 2.75rem 2.5rem;
-    box-shadow: 0 6px 20px rgba(15, 42, 32, 0.06);
+    padding: 2.5rem;
+    box-shadow: 0 1px 2px rgba(15, 42, 32, 0.04), 0 12px 32px rgba(15, 42, 32, 0.07);
 }
 
 .auth-wrapper h2 {
     margin: 0;
-    font-size: clamp(2.4rem, 3vw, 4rem);
-    line-height: 1.1;
-    letter-spacing: -0.06em;
+    font-size: clamp(1.875rem, 2.5vw, 2.25rem);
+    line-height: 1.15;
+    letter-spacing: -0.035em;
     font-weight: 800;
-    color: #1d2b2d;
+    color: var(--auth-ink);
 }
 
-.subtitle {
-    margin: 0.85rem 0 1.5rem;
-    font-size: 1.05rem;
-    color: #4a5a5a;
-}
-
-.role-tabs {
-    display: flex;
-    gap: 0.8rem;
-    margin-bottom: 1.6rem;
-}
-
-.role-tab {
-    flex: 1;
-    min-width: 0;
-    border: 1px solid rgba(37, 107, 91, 0.35);
-    background: #f5faf7;
-    color: #1f6f5f;
-    border-radius: 0.95rem;
-    padding: 0.9rem 0.65rem;
-    font-size: 0.94rem;
-    font-weight: 600;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.45rem;
-    min-height: 3.5rem;
-}
-
-.role-tab.active {
-    background: #f1e6ff;
-    border-color: rgba(154, 110, 232, 0.3);
-    box-shadow: inset 0 0 0 1px rgba(154, 110, 232, 0.15);
-}
-
-.role-tab:nth-child(2).active {
-    background: #e3f8ee;
-}
-
-.role-tab:nth-child(3).active {
-    background: #eaf7ff;
+.auth-subtitle {
+    margin: 0.5rem 0 0;
+    font-size: 1rem;
+    color: var(--auth-muted);
 }
 
 .register-page .auth-wrapper {
-    width: min(100%, 600px);
+    width: min(100%, 32rem);
 }
 
-.register-page .auth-panel {
-    padding-top: 2rem;
-    padding-bottom: 2rem;
-}
-
-.register-page h2 {
-    font-size: clamp(2.4rem, 3vw, 4rem);
-    margin-bottom: 1.5rem;
-}
-
-.register-form {
-    gap: 1rem;
-}
-
-.register-form .field-group label {
-    margin-bottom: 0.1rem;
-}
-
-.register-form input,
-.register-form select {
-    width: 100%;
-    border: 1px solid rgba(136, 148, 150, 0.55);
-    border-radius: 0.8rem;
-    background: rgba(255, 255, 255, 0.38);
-    padding: 1rem 1rem;
-    font-size: 1.05rem;
-    color: #1d2b2d;
-    outline: none;
-    transition: border-color 0.2s ease, box-shadow 0.2s ease;
-}
-
-.register-form input::placeholder {
-    color: #7b8286;
-}
-
-.register-form input:focus,
-.register-form select:focus {
-    border-color: rgba(16, 126, 98, 0.8);
-    box-shadow: 0 0 0 3px rgba(16, 126, 98, 0.08);
-}
-
-.register-form select {
-    appearance: none;
-    background-image: linear-gradient(45deg, transparent 50%, rgba(44, 62, 62, 0.8) 50%), linear-gradient(135deg, rgba(44, 62, 62, 0.8) 50%, transparent 50%);
-    background-position: calc(100% - 18px) calc(50% - 2px), calc(100% - 12px) calc(50% - 2px);
-    background-size: 6px 6px, 6px 6px;
-    background-repeat: no-repeat;
-    padding-right: 2.5rem;
-}
-
-.password-error {
-    margin: 0.2rem 0 0;
-    color: #b42318;
-    font-size: 0.9rem;
-    font-weight: 600;
-}
-
-.tab-icon {
-    font-size: 1.2rem;
-    line-height: 1;
-}
-
-.divider {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    color: rgba(79, 95, 101, 0.82);
-    font-size: 0.9rem;
-    text-transform: lowercase;
-    margin: 1.2rem 0 1rem;
-}
-
-.divider::before,
-.divider::after {
-    content: "";
-    height: 1px;
-    flex: 1;
-    background: rgba(145, 156, 156, 0.5);
-}
-
+/* ---------- Alerts ---------- */
 .form-alert,
 .flash-message {
-    margin: 0.5rem 0 1rem;
-    padding: 0.7rem 0.9rem;
-    border-radius: 0.8rem;
-    font-size: 0.9rem;
-    background: rgba(255, 199, 199, 0.24);
-    color: #b42318;
-    border: 1px solid rgba(180, 35, 24, 0.16);
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    margin: 1.25rem 0 0;
+    padding: 0.75rem 0.875rem;
+    border-radius: 0.625rem;
+    font-size: 0.875rem;
+    line-height: 1.5;
+    background: #fef3f2;
+    color: var(--auth-danger);
+    border: 1px solid #fecdca;
+}
+
+.form-alert svg,
+.flash-message svg {
+    width: 1.125rem;
+    height: 1.125rem;
+    flex-shrink: 0;
+    margin-top: 0.0625rem;
 }
 
 .flash-message.success {
-    background: rgba(214, 255, 229, 0.4);
-    color: #146c43;
+    background: #ecfdf3;
+    color: var(--auth-ok);
+    border-color: #abefc6;
 }
 
+/* ---------- Form ---------- */
 .login-form {
     display: flex;
     flex-direction: column;
-    gap: 1.15rem;
-    margin-top: 1rem;
+    gap: 1.25rem;
+    margin-top: 1.75rem;
 }
 
 .field-group {
     display: flex;
     flex-direction: column;
-    gap: 0.55rem;
+    gap: 0.4375rem;
 }
 
 .field-group label {
-    font-size: 1rem;
+    font-size: 0.875rem;
     font-weight: 600;
-    color: #2d3a3f;
+    color: var(--auth-ink);
+}
+
+.field-hint {
+    margin: 0;
+    font-size: 0.875rem;
+    color: var(--auth-muted);
 }
 
 .input-wrap {
@@ -1170,231 +1150,247 @@ body.login-page {
     align-items: center;
 }
 
-.input-wrap input {
+/* One rule for both forms -- login and register previously had separate
+   input styles that had drifted apart in padding, radius and border. */
+.login-form input,
+.login-form select {
     width: 100%;
-    border: 1px solid rgba(136, 148, 150, 0.5);
-    border-radius: 0.8rem;
-    background: rgba(255, 255, 255, 0.42);
-    padding: 1rem 3rem 1rem 1rem;
-    font-size: 1.05rem;
-    color: #1d2b2d;
+    box-sizing: border-box;
+    border: 1px solid var(--auth-line);
+    border-radius: 0.625rem;
+    background: #ffffff;
+    padding: 0.75rem 0.875rem;
+    min-height: 44px;
+    font-family: inherit;
+    font-size: 1rem;
+    color: var(--auth-ink);
     outline: none;
+    transition: border-color 160ms var(--auth-ease),
+                box-shadow 160ms var(--auth-ease);
 }
 
-.input-wrap input::placeholder {
-    color: #7b8286;
+/* Room for the show/hide button. */
+.input-wrap input {
+    padding-right: 3rem;
 }
 
-.input-wrap input:focus {
-    border-color: rgba(16, 126, 98, 0.8);
-    box-shadow: 0 0 0 3px rgba(16, 126, 98, 0.08);
+.login-form input::placeholder {
+    color: #6b7a72;
 }
 
-.field-icon {
+.login-form input:hover,
+.login-form select:hover {
+    border-color: #bcc9c4;
+}
+
+.login-form input:focus,
+.login-form select:focus {
+    border-color: var(--auth-green);
+    box-shadow: 0 0 0 3px rgba(13, 126, 90, 0.12);
+}
+
+.login-form input.has-error,
+.login-form input[aria-invalid="true"] {
+    border-color: var(--auth-danger);
+}
+
+.login-form input.has-error:focus {
+    box-shadow: 0 0 0 3px rgba(180, 35, 24, 0.12);
+}
+
+.login-form select {
+    appearance: none;
+    padding-right: 2.5rem;
+    cursor: pointer;
+    background-image: linear-gradient(45deg, transparent 50%, var(--auth-muted) 50%), linear-gradient(135deg, var(--auth-muted) 50%, transparent 50%);
+    background-position: calc(100% - 18px) center, calc(100% - 13px) center;
+    background-size: 5px 5px, 5px 5px;
+    background-repeat: no-repeat;
+}
+
+/* ---------- Show / hide password ---------- */
+.field-toggle {
     position: absolute;
-    right: 1rem;
-    color: rgba(84, 101, 100, 0.8);
-    font-size: 0.9rem;
+    right: 0.375rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    padding: 0;
+    border: none;
+    border-radius: 0.5rem;
+    background: none;
+    color: var(--auth-muted);
+    cursor: pointer;
+    transition: color 160ms var(--auth-ease), background-color 160ms var(--auth-ease);
 }
 
-.field-icon-eye {
-    font-size: 1.1rem;
+.field-toggle:hover {
+    color: var(--auth-ink);
+    background: #f1f4f3;
 }
 
+.field-toggle svg {
+    width: 1.125rem;
+    height: 1.125rem;
+}
+
+/* Swap the icon to match what the button will do next. */
+.field-toggle .icon-eye-off,
+.field-toggle[aria-pressed="true"] .icon-eye {
+    display: none;
+}
+
+.field-toggle[aria-pressed="true"] .icon-eye-off {
+    display: block;
+}
+
+.password-error {
+    display: flex;
+    margin: 0;
+    color: var(--auth-danger);
+    font-size: 0.875rem;
+    font-weight: 600;
+}
+
+.password-error[hidden] {
+    display: none;
+}
+
+/* ---------- Buttons and links ---------- */
 .primary-btn {
     border: none;
-    border-radius: 0.9rem;
-    background: linear-gradient(180deg, #0d7e5a, #0a6d4e);
+    border-radius: 0.625rem;
+    background: var(--auth-green);
     color: #fff;
-    min-height: 3.6rem;
-    font-size: 1.05rem;
+    min-height: 46px;
+    font-family: inherit;
+    font-size: 1rem;
     font-weight: 700;
     cursor: pointer;
-    margin-top: 0.5rem;
-    box-shadow: 0 8px 18px rgba(13, 126, 90, 0.2);
+    margin-top: 0.25rem;
+    /* The old rule had a large coloured glow and no hover, active or
+       disabled state at all. */
+    transition: background-color 160ms var(--auth-ease),
+                box-shadow 160ms var(--auth-ease);
+}
+
+.primary-btn:hover {
+    background: var(--auth-green-dark);
+    box-shadow: 0 4px 12px rgba(13, 126, 90, 0.24);
+}
+
+.primary-btn:active {
+    background: #085b41;
+    box-shadow: none;
+}
+
+.primary-btn:disabled {
+    background: #9db5ad;
+    cursor: not-allowed;
+    box-shadow: none;
 }
 
 .register-link {
-    margin: 1.3rem 0 0;
+    margin: 1.5rem 0 0;
     text-align: center;
-    color: #3a4f4d;
-    font-size: 1.05rem;
+    color: var(--auth-muted);
+    font-size: 1rem;
 }
 
 .register-link a {
-    color: #107d5c;
+    color: var(--auth-green);
     text-decoration: none;
     font-weight: 700;
 }
 
-.access-box {
-    background: rgba(255, 255, 255, 0.3);
-    border: 1px solid rgba(121, 135, 136, 0.24);
-    border-radius: 1rem;
-    padding: 1.15rem 1.2rem 0.7rem;
+.register-link a:hover {
+    text-decoration: underline;
+    text-underline-offset: 3px;
 }
 
-.access-box h3 {
-    margin: 0 0 0.9rem;
-    font-size: 1.1rem;
-    letter-spacing: 0.08em;
-    color: #2a4649;
-}
-
-.access-item {
-    display: flex;
-    gap: 0.85rem;
-    align-items: flex-start;
-    padding: 0.5rem 0;
-    color: #2b3a3a;
-}
-
-.access-item + .access-item {
-    border-top: 1px solid rgba(132, 147, 146, 0.18);
-}
-
-.access-icon {
-    width: 1.6rem;
-    height: 1.6rem;
-    border-radius: 50%;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-    margin-top: 0.2rem;
-    font-size: 0.9rem;
-    border: 1px solid rgba(123, 137, 145, 0.55);
-    background: rgba(255,255,255,0.35);
-}
-
-.access-icon.purple {
-    color: #7a6ef2;
-}
-
-.access-icon.green {
-    color: #2f9f71;
-}
-
-.access-icon.blue {
-    color: #2b90d9;
-}
-
-.access-item strong {
-    display: block;
-    font-size: 1rem;
-    margin-bottom: 0.2rem;
-    color: #1d2b2d;
-}
-
-.access-item p {
-    margin: 0;
-    font-size: 0.9rem;
-    line-height: 1.5;
-    color: rgba(42, 62, 63, 0.82);
-}
-
-.footer-note {
-    position: absolute;
-    bottom: 1.2rem;
-    right: 2rem;
-    font-size: 0.9rem;
-    color: rgba(48, 64, 67, 0.7);
-}
-
-.help-bubble {
-    position: absolute;
-    right: 1.3rem;
-    bottom: 1.3rem;
-    width: 2.7rem;
-    height: 2.7rem;
-    border-radius: 50%;
-    background: rgba(15, 62, 43, 0.9);
-    color: #fff;
-    display: grid;
-    place-items: center;
-    font-size: 1.7rem;
-    font-weight: 700;
-    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.12);
-}
-
+/* ---------- Responsive ---------- */
 @media (max-width: 980px) {
     .login-shell {
         flex-direction: column;
     }
 
     .brand-panel {
-        min-height: 50vh;
-        padding-bottom: 2rem;
+        min-height: auto;
+        margin: 0.75rem;
+        border-radius: 1.25rem;
+        padding: 2rem 1.75rem;
+    }
+
+    /* Stacked, the pitch no longer needs to fill a column. */
+    .brand-content {
+        margin: 0;
+        padding: 2rem 0 0;
+    }
+
+    .brand-content h1 {
+        font-size: clamp(2rem, 6vw, 2.75rem);
+        max-width: none;
+    }
+
+    .brand-footer {
+        margin-top: 2rem;
     }
 
     .auth-panel {
-        padding-top: 2rem;
-        padding-bottom: 5rem;
-    }
-
-    .auth-wrapper {
-        width: min(100%, 620px);
+        padding: 2rem 1.75rem 3rem;
     }
 }
 
 @media (max-width: 580px) {
     .brand-panel {
-        padding: 1.5rem 1.2rem 1.4rem;
+        margin: 0.5rem;
+        border-radius: 1rem;
+        padding: 1.5rem 1.25rem;
     }
 
     .brand-header {
-        gap: 0.7rem;
+        gap: 0.75rem;
+    }
+
+    .logo-box {
+        width: 2.5rem;
+        height: 2.5rem;
     }
 
     .brand-name {
-        font-size: 1.4rem;
+        font-size: 1.5rem;
     }
 
     .brand-title {
-        letter-spacing: 0.08rem;
-        font-size: 0.72rem;
+        font-size: 0.75rem;
+        letter-spacing: 0.1em;
     }
 
     .brand-content h1 {
-        font-size: 2.6rem;
+        font-size: 2rem;
     }
 
-    .chip-row {
-        gap: 0.55rem;
-    }
-
-    .chip-row span {
-        font-size: 0.78rem;
-        padding: 0.45rem 0.7rem;
+    .chip-row li {
+        font-size: 0.875rem;
+        padding: 0.4375rem 0.75rem;
     }
 
     .auth-panel {
-        padding: 1.4rem 1rem 4rem;
+        padding: 1.5rem 1rem 2.5rem;
     }
 
-    .role-tabs {
-        flex-direction: column;
-    }
-
-    .access-item p {
-        font-size: 0.82rem;
-    }
-
-    .footer-note {
-        right: 1rem;
-        left: 1rem;
-        bottom: 0.8rem;
-        text-align: center;
+    .auth-wrapper {
+        padding: 1.75rem 1.25rem;
     }
 }
-
-
 
 /* generic muted placeholder text -- used across Notifications, ReferenceDataset,
    and anywhere showing an empty-state or hint message */
 .placeholder-text {
-    color: #94a3b8;
-    font-size: 0.85rem;
+    color: #5f6f66;
+    font-size: 0.875rem;
 }
 
 /* Minimal Bootstrap-named utility classes -- this project doesn't load
@@ -1406,16 +1402,24 @@ body.login-page {
 .justify-content-between { justify-content: space-between; }
 .gap-2 { gap: 0.5rem; }
 .text-end { text-align: right; }
-.text-secondary { color: #64748b; }
+.text-secondary { color: #5f6f66; }
 .text-success { color: #15803d; }
 .text-danger { color: #dc2626; }
 .fw-semibold { font-weight: 600; }
 .fw-bold { font-weight: 700; }
 .fst-italic { font-style: italic; }
-.small { font-size: 0.85rem; }
+.small { font-size: 0.875rem; }
+.text-uppercase { text-transform: uppercase; }
+.w-100 { width: 100%; }
 .mb-0 { margin-bottom: 0; }
 .mb-1 { margin-bottom: 0.35rem; }
+.mb-2 { margin-bottom: 0.5rem; }
+.mb-3 { margin-bottom: 1rem; }
+.mb-4 { margin-bottom: 1.5rem; }
+.mt-1 { margin-top: 0.35rem; }
+.mt-2 { margin-top: 0.5rem; }
 .mt-3 { margin-top: 1rem; }
+.mt-4 { margin-top: 1.5rem; }
 
 /* ============================================
    REFERENCE DATASET (excel import page)
@@ -1430,8 +1434,8 @@ body.login-page {
 
 .ref-card h3 {
     margin: 0 0 0.4rem;
-    font-size: 1.05rem;
-    color: #0f172a;
+    font-size: 1.125rem;
+    color: #12211a;
 }
 
 .upload-form {
@@ -1443,18 +1447,18 @@ body.login-page {
 }
 
 .upload-file-input {
-    border: 1px dashed #cbd5e1;
+    border: 1px dashed #c9d6ce;
     border-radius: 8px;
     padding: 0.6rem 0.9rem;
-    font-size: 0.85rem;
-    background-color: #f8fafc;
+    font-size: 0.875rem;
+    background-color: #f7faf8;
 }
 
 .import-info-list {
     margin: 0.6rem 0 0 1.1rem;
     padding: 0;
-    font-size: 0.88rem;
-    color: #334155;
+    font-size: 0.875rem;
+    color: #2f4239;
     line-height: 1.7;
 }
 
@@ -1480,7 +1484,7 @@ body.login-page {
     background: #ffffff;
     border-radius: 10px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-    border: 1px solid #e2e8f0;
+    border: 1px solid #e2eae5;
     overflow: hidden;
     margin-bottom: 2rem;
 }
@@ -1510,7 +1514,7 @@ body.login-page {
     min-width: 100%;
     margin-bottom: 0;
     white-space: nowrap;
-    font-size: 0.85rem;
+    font-size: 0.875rem;
     border-collapse: separate;
     border-spacing: 0;
 }
@@ -1519,27 +1523,27 @@ body.login-page {
 .custom-table td {
     padding: 0.75rem 1rem;
     border-bottom: 1px solid #edf2f7;
-    border-right: 1px solid #f1f5f9;
+    border-right: 1px solid #eef4f0;
 }
 
 /* Sticky Header */
 .custom-table thead th {
     position: sticky;
     top: 0;
-    background-color: #f8fafc;
-    color: #475569;
+    background-color: #f7faf8;
+    color: #41544a;
     font-weight: 600;
     text-transform: uppercase;
-    font-size: 0.725rem;
+    font-size: 0.75rem;
     letter-spacing: 0.5px;
     z-index: 2;
-    border-bottom: 2px solid #cbd5e1;
+    border-bottom: 2px solid #c9d6ce;
 }
 
 /* Site Card */
 .site-card {
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
+  background: #f7faf8;
+  border: 1px solid #e2eae5;
   border-radius: 8px;
   padding: 0.7rem 0.8rem;
   margin-bottom: 0.6rem;
@@ -1557,21 +1561,21 @@ body.login-page {
     background-color: #ffffff;
     z-index: 1;
     font-weight: 600;
-    color: #1e293b;
+    color: #1c2f26;
     box-shadow: 2px 0 5px rgba(0, 0, 0, 0.04);
 }
 
 .custom-table thead th:first-child {
     z-index: 3; /* Keeps top-left corner above both sticky row & sticky column */
-    background-color: #f8fafc;
+    background-color: #f7faf8;
 }
 
 /* Hover States */
 .custom-table tbody tr:hover td {
-    background-color: #f1f5f9;
+    background-color: #eef4f0;
 }
 .custom-table tbody tr:hover td:first-child {
-    background-color: #f1f5f9;
+    background-color: #eef4f0;
 }
 
 /* Typography & Badges */
@@ -1582,11 +1586,9 @@ body.login-page {
 .badge-zone-production,
 .badge-zone-protection {
     background-color: transparent;
-    padding: 3px 9px;
-    border-radius: 8px;
-    border: 1.5px solid currentColor;
+    padding: 3px 0;
     font-weight: 600;
-    font-size: 0.78rem;
+    font-size: 0.75rem;
     display: inline-block;
 }
 
@@ -1619,14 +1621,14 @@ body.login-page {
 
 .um-title-row h2 {
     margin: 0;
-    font-size: 1.45rem;
-    color: #0f172a;
+    font-size: 1.5rem;
+    color: #12211a;
 }
 
 .um-count-pill {
-    background-color: #f1f5f9;
-    color: #475569;
-    font-size: 0.78rem;
+    background-color: #eef4f0;
+    color: #41544a;
+    font-size: 0.75rem;
     font-weight: 700;
     padding: 0.2rem 0.6rem;
     border-radius: 999px;
@@ -1634,8 +1636,8 @@ body.login-page {
 
 .um-subtitle {
     margin: 0.3rem 0 1.4rem;
-    color: #64748b;
-    font-size: 0.9rem;
+    color: #5f6f66;
+    font-size: 0.875rem;
 }
 
 .um-btn-add {
@@ -1647,7 +1649,7 @@ body.login-page {
     border: none;
     border-radius: 8px;
     padding: 0.6rem 1.1rem;
-    font-size: 0.85rem;
+    font-size: 0.875rem;
     font-weight: 600;
     cursor: pointer;
     flex-shrink: 0;
@@ -1693,17 +1695,17 @@ body.login-page {
     gap: 0.4rem;
     min-width: 10.5rem;
     background-color: #ffffff;
-    border: 1px solid #e2e8f0;
+    border: 1px solid #e2eae5;
     border-radius: 8px;
     padding: 0.5rem 0.85rem;
-    font-size: 0.83rem;
+    font-size: 0.875rem;
     font-weight: 600;
-    color: #334155;
+    color: #2f4239;
     cursor: pointer;
 }
 
 .um-filter-btn:hover {
-    border-color: #cbd5e1;
+    border-color: #c9d6ce;
 }
 
 .um-filter-btn-label {
@@ -1715,13 +1717,13 @@ body.login-page {
 .um-filter-btn svg:first-child {
     width: 0.95rem;
     height: 0.95rem;
-    color: #64748b;
+    color: #5f6f66;
 }
 
 .um-filter-btn svg:last-child {
     width: 0.75rem;
     height: 0.75rem;
-    color: #94a3b8;
+    color: #5f6f66;
 }
 
 .um-filter-menu {
@@ -1733,7 +1735,7 @@ body.login-page {
     max-height: 18rem;
     overflow-y: auto;
     background-color: #ffffff;
-    border: 1px solid #e2e8f0;
+    border: 1px solid #e2eae5;
     border-radius: 8px;
     box-shadow: 0 10px 28px rgba(15, 23, 42, 0.1);
     padding: 0.35rem;
@@ -1754,8 +1756,8 @@ body.login-page {
     background: none;
     border: none;
     padding: 0.5rem 0.6rem;
-    font-size: 0.83rem;
-    color: #334155;
+    font-size: 0.875rem;
+    color: #2f4239;
     text-decoration: none;
     border-radius: 6px;
     cursor: pointer;
@@ -1764,7 +1766,7 @@ body.login-page {
 
 .um-filter-menu button:hover,
 .um-filter-menu a:hover {
-    background-color: #f1f5f9;
+    background-color: #eef4f0;
 }
 
 .um-filter-menu button.active,
@@ -1787,53 +1789,53 @@ body.login-page {
     transform: translateY(-50%);
     width: 0.9rem;
     height: 0.9rem;
-    color: #94a3b8;
+    color: #5f6f66;
     pointer-events: none;
 }
 
 .um-search-input {
     width: 100%;
     padding: 0.5rem 0.85rem 0.5rem 2.2rem;
-    border: 1px solid #e2e8f0;
+    border: 1px solid #e2eae5;
     border-radius: 8px;
-    font-size: 0.83rem;
-    color: #1e293b;
+    font-size: 0.875rem;
+    color: #1c2f26;
     background-color: #ffffff;
     outline: none;
     transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .um-search-input::placeholder {
-    color: #94a3b8;
+    color: #6b7a72;
 }
 
 .um-search-input:focus {
-    border-color: #16a34a;
+    border-color: #15803d;
     box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.12);
 }
 
 .um-btn-ghost {
     display: inline-block;
     padding: 0.5rem 0.9rem;
-    border: 1px solid #e2e8f0;
+    border: 1px solid #e2eae5;
     border-radius: 8px;
     background-color: #ffffff;
-    color: #475569;
-    font-size: 0.83rem;
+    color: #41544a;
+    font-size: 0.875rem;
     font-weight: 600;
     text-decoration: none;
     cursor: pointer;
 }
 
 .um-btn-ghost:hover {
-    border-color: #cbd5e1;
-    color: #0f172a;
+    border-color: #c9d6ce;
+    color: #12211a;
 }
 
 /* --- table --- */
 .um-table-card {
     background-color: #ffffff;
-    border: 1px solid #e2e8f0;
+    border: 1px solid #e2eae5;
     border-radius: 12px;
     overflow: hidden;
 }
@@ -1846,7 +1848,7 @@ body.login-page {
        is visible and the whole table reflows column-by-column. */
     table-layout: fixed;
     border-collapse: collapse;
-    font-size: 0.86rem;
+    font-size: 0.875rem;
 }
 
 .um-table col.col-name { width: 30%; }
@@ -1864,11 +1866,11 @@ body.login-page {
 .um-table th {
     text-align: left;
     padding: 0.75rem 1.1rem;
-    font-size: 0.72rem;
+    font-size: 0.75rem;
     font-weight: 700;
-    color: #64748b;
-    background-color: #f8fafc;
-    border-bottom: 1px solid #e2e8f0;
+    color: #5f6f66;
+    background-color: #f7faf8;
+    border-bottom: 1px solid #e2eae5;
     white-space: nowrap;
 }
 
@@ -1881,13 +1883,13 @@ body.login-page {
 .um-th-flex svg {
     width: 0.85rem;
     height: 0.85rem;
-    color: #94a3b8;
+    color: #5f6f66;
 }
 
 .um-table td {
     padding: 0.7rem 1.1rem;
-    border-bottom: 1px solid #f1f5f9;
-    color: #475569;
+    border-bottom: 1px solid #eef4f0;
+    color: #41544a;
     vertical-align: middle;
 }
 
@@ -1896,7 +1898,7 @@ body.login-page {
 }
 
 .um-table tbody tr:hover {
-    background-color: #f8fafc;
+    background-color: #f7faf8;
 }
 
 .um-name-cell {
@@ -1915,9 +1917,9 @@ body.login-page {
     justify-content: center;
     color: #ffffff;
     font-weight: 700;
-    font-size: 0.72rem;
+    font-size: 0.75rem;
     flex-shrink: 0;
-    background-color: #16a34a;
+    background-color: #15803d;
 }
 
 .um-avatar.av-admin { background-color: #7c3aed; }
@@ -1925,14 +1927,14 @@ body.login-page {
 
 .um-name {
     font-weight: 600;
-    color: #0f172a;
+    color: #12211a;
     overflow: hidden;
     text-overflow: ellipsis;
 }
 
 .um-you {
     margin-left: 0.35rem;
-    font-size: 0.64rem;
+    font-size: 0.75rem;
     font-weight: 700;
     text-transform: uppercase;
     color: #15803d;
@@ -1956,7 +1958,7 @@ body.login-page {
 .um-email-cell svg {
     width: 0.9rem;
     height: 0.9rem;
-    color: #94a3b8;
+    color: #5f6f66;
     flex-shrink: 0;
 }
 
@@ -1964,10 +1966,10 @@ body.login-page {
     display: inline-block;
     padding: 0.25rem 0.65rem;
     border-radius: 6px;
-    font-size: 0.72rem;
+    font-size: 0.75rem;
     font-weight: 600;
-    background-color: #f1f5f9;
-    color: #475569;
+    background-color: #eef4f0;
+    color: #41544a;
 }
 
 .um-role.role-admin { background-color: #ede9fe; color: #6d28d9; }
@@ -1987,7 +1989,7 @@ body.login-page {
     background: none;
     border: none;
     border-radius: 6px;
-    color: #94a3b8;
+    color: #5f6f66;
     cursor: pointer;
 }
 
@@ -2002,38 +2004,38 @@ body.login-page {
 }
 
 .um-btn-icon-danger:disabled {
-    color: #e2e8f0;
+    color: #e2eae5;
     cursor: not-allowed;
 }
 
 .um-btn-icon-danger:disabled:hover {
     background-color: transparent;
-    color: #e2e8f0;
+    color: #e2eae5;
 }
 
 /* --- empty state --- */
 .um-empty {
     padding: 3rem 1.5rem;
     text-align: center;
-    color: #64748b;
+    color: #5f6f66;
 }
 
 .um-empty svg {
     width: 2rem;
     height: 2rem;
-    color: #cbd5e1;
+    color: #8d9c94;
     margin-bottom: 0.6rem;
 }
 
 .um-empty strong {
     display: block;
-    color: #0f172a;
+    color: #12211a;
     margin-bottom: 0.25rem;
 }
 
 .um-empty p {
     margin: 0;
-    font-size: 0.87rem;
+    font-size: 0.875rem;
 }
 
 /* --- modals --- */
@@ -2070,8 +2072,8 @@ body.login-page {
 
 .um-modal-head h3 {
     margin: 0;
-    font-size: 1.1rem;
-    color: #0f172a;
+    font-size: 1.125rem;
+    color: #12211a;
 }
 
 .um-modal-close {
@@ -2082,7 +2084,7 @@ body.login-page {
     height: 1.75rem;
     background: none;
     border: none;
-    color: #94a3b8;
+    color: #5f6f66;
     cursor: pointer;
     border-radius: 4px;
 }
@@ -2093,8 +2095,8 @@ body.login-page {
 }
 
 .um-modal-close:hover {
-    color: #0f172a;
-    background-color: #f1f5f9;
+    color: #12211a;
+    background-color: #eef4f0;
 }
 
 .um-modal-body {
@@ -2108,7 +2110,7 @@ body.login-page {
     border: 1px solid #fecaca;
     border-radius: 8px;
     padding: 0.9rem 1rem;
-    font-size: 0.85rem;
+    font-size: 0.875rem;
     color: #7f1d1d;
     line-height: 1.55;
 }
@@ -2127,9 +2129,9 @@ body.login-page {
 
 .um-field label {
     display: block;
-    font-size: 0.82rem;
+    font-size: 0.875rem;
     font-weight: 600;
-    color: #334155;
+    color: #2f4239;
     margin-bottom: 0.35rem;
 }
 
@@ -2138,10 +2140,10 @@ body.login-page {
 .um-field textarea {
     width: 100%;
     padding: 0.6rem 0.8rem;
-    border: 1px solid #e2e8f0;
+    border: 1px solid #e2eae5;
     border-radius: 8px;
-    font-size: 0.88rem;
-    color: #1e293b;
+    font-size: 0.875rem;
+    color: #1c2f26;
     background-color: #ffffff;
     outline: none;
     font-family: inherit;
@@ -2154,19 +2156,19 @@ body.login-page {
 
 .um-field input::placeholder,
 .um-field textarea::placeholder {
-    color: #cbd5e1;
+    color: #6b7a72;
 }
 
 .um-field input:focus,
 .um-field select:focus,
 .um-field textarea:focus {
-    border-color: #16a34a;
+    border-color: #15803d;
     box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.12);
 }
 
 .um-field select:disabled {
-    background-color: #f8fafc;
-    color: #94a3b8;
+    background-color: #f7faf8;
+    color: #5f6f66;
     cursor: not-allowed;
 }
 
@@ -2183,18 +2185,18 @@ body.login-page {
 
 .um-btn-cancel {
     padding: 0.65rem 1rem;
-    border: 1px solid #e2e8f0;
+    border: 1px solid #e2eae5;
     border-radius: 8px;
     background-color: #ffffff;
-    color: #475569;
-    font-size: 0.88rem;
+    color: #41544a;
+    font-size: 0.875rem;
     font-weight: 600;
     cursor: pointer;
 }
 
 .um-btn-cancel:hover {
-    border-color: #cbd5e1;
-    color: #0f172a;
+    border-color: #c9d6ce;
+    color: #12211a;
 }
 
 .um-btn-confirm-danger {
@@ -2203,7 +2205,7 @@ body.login-page {
     border-radius: 8px;
     background-color: #dc2626;
     color: #ffffff;
-    font-size: 0.88rem;
+    font-size: 0.875rem;
     font-weight: 600;
     cursor: pointer;
 }
@@ -2218,7 +2220,7 @@ body.login-page {
     border-radius: 8px;
     background-color: #15803d;
     color: #ffffff;
-    font-size: 0.88rem;
+    font-size: 0.875rem;
     font-weight: 600;
     cursor: pointer;
 }
@@ -2282,12 +2284,16 @@ body.login-page {
    REFORESTATION SITES (flat table + horizontal scroll)
    ============================================ */
 
-.sites-scroll-wrap {
+/* The horizontal-scroll table pattern below is shared with the monitoring
+   reports list, so each rule also matches a neutral .um-scroll-* name. */
+.sites-scroll-wrap,
+.um-scroll-wrap {
     overflow-x: auto;
     scroll-behavior: smooth;
 }
 
-.sites-table {
+.sites-table,
+.um-scroll-table {
     /* Overrides .um-table's fixed layout -- this table has far too many
        columns to squeeze into 100% width, so let it grow naturally and
        scroll horizontally instead. */
@@ -2298,7 +2304,7 @@ body.login-page {
 
 .sites-name-cell {
     font-weight: 600;
-    color: #0f172a;
+    color: #12211a;
 }
 
 .sites-fw-semibold {
@@ -2309,45 +2315,982 @@ body.login-page {
     color: #15803d;
 }
 
-.sites-scroll-controls {
+.sites-scroll-controls,
+.um-scroll-controls {
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 0.75rem;
     padding: 0.7rem 1rem;
-    border-top: 1px solid #e2e8f0;
-    background-color: #f8fafc;
+    border-top: 1px solid #e2eae5;
+    background-color: #f7faf8;
 }
 
-.sites-scroll-btn {
+.sites-scroll-btn,
+.um-scroll-btn {
     display: flex;
     align-items: center;
     justify-content: center;
     width: 2rem;
     height: 2rem;
     border-radius: 50%;
-    border: 1px solid #e2e8f0;
+    border: 1px solid #e2eae5;
     background-color: #ffffff;
-    color: #334155;
+    color: #2f4239;
     cursor: pointer;
 }
 
-.sites-scroll-btn svg {
+.sites-scroll-btn svg,
+.um-scroll-btn svg {
     width: 0.9rem;
     height: 0.9rem;
 }
 
-.sites-scroll-btn:hover:not(:disabled) {
-    border-color: #16a34a;
-    color: #16a34a;
+.sites-scroll-btn:hover:not(:disabled),
+.um-scroll-btn:hover:not(:disabled) {
+    border-color: #15803d;
+    color: #15803d;
 }
 
-.sites-scroll-btn:disabled {
-    color: #cbd5e1;
+.sites-scroll-btn:disabled,
+.um-scroll-btn:disabled {
+    color: #c9d6ce;
     cursor: not-allowed;
 }
 
-.sites-scroll-hint {
-    font-size: 0.76rem;
-    color: #94a3b8;
+.sites-scroll-hint,
+.um-scroll-hint {
+    font-size: 0.75rem;
+    color: #5f6f66;
+}
+
+/* ============================================
+   MONITORING REPORTS
+   Shared by Reports.html (officer), Reportsadmin.html (review list)
+   and Reportdetail.html (single report). These pages arrived using
+   Bootstrap class names, which this project does not load -- the
+   equivalents below are built on the same tokens as the .um-* system
+   so the reports section matches the rest of the app.
+   ============================================ */
+
+/* --- flash messages --- */
+.um-alert {
+    border: 1px solid #e2eae5;
+    border-left: 3px solid #5f6f66;
+    border-radius: 8px;
+    padding: 0.8rem 1rem;
+    margin-bottom: 1.1rem;
+    font-size: 0.875rem;
+    color: #2f4239;
+    background-color: #f7faf8;
+}
+
+.um-alert-success {
+    border-left-color: #15803d;
+    background-color: #f0fdf4;
+    color: #15803d;
+}
+
+.um-alert-danger,
+.um-alert-error {
+    border-left-color: #dc2626;
+    background-color: #fef2f2;
+    color: #991b1b;
+}
+
+.um-alert-warning {
+    border-left-color: #f59e0b;
+    background-color: #fffbeb;
+    color: #78350f;
+}
+
+.um-alert-info {
+    border-left-color: #0ea5e9;
+    background-color: #f0f9ff;
+    color: #075985;
+}
+
+/* --- approval status pill --- */
+.um-status {
+    display: inline-block;
+    padding: 0.2rem 0.6rem;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.um-status.st-pending { background-color: #fef3c7; color: #92400e; }
+.um-status.st-approved { background-color: #dcfce7; color: #15803d; }
+.um-status.st-rejected { background-color: #fee2e2; color: #991b1b; }
+
+/* --- panel: a card holding form controls or prose rather than a table,
+       so unlike .um-table-card it carries its own padding --- */
+.um-panel {
+    background-color: #ffffff;
+    border: 1px solid #e2eae5;
+    border-radius: 12px;
+    padding: 1.3rem 1.5rem 1.5rem;
+    margin-bottom: 1.4rem;
+}
+
+.um-panel-head {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding-bottom: 0.8rem;
+    margin-bottom: 1rem;
+    border-bottom: 1px solid #e2eae5;
+}
+
+.um-panel-head h3 {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 700;
+    color: #12211a;
+}
+
+.um-panel-head svg {
+    width: 1.05rem;
+    height: 1.05rem;
+    color: #15803d;
+    flex-shrink: 0;
+}
+
+.um-step-num {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.6rem;
+    height: 1.6rem;
+    border-radius: 50%;
+    background-color: #15803d;
+    color: #ffffff;
+    font-size: 0.75rem;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+
+/* --- form grid (replaces Bootstrap's .row / .col-md-*) --- */
+.um-field-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+    gap: 1rem;
+}
+
+/* .um-field carries a top margin for stacked modal fields; inside a grid
+   row the gap already spaces them, so drop it. */
+.um-field-row .um-field {
+    margin-top: 0;
+}
+
+.um-field-hint {
+    margin: 0.35rem 0 0;
+    font-size: 0.75rem;
+    color: #5f6f66;
+}
+
+.um-req {
+    color: #dc2626;
+}
+
+/* --- callouts: guidance (blue) and caveats (amber) --- */
+.um-note {
+    background-color: #f0f9ff;
+    border-left: 3px solid #0ea5e9;
+    border-radius: 8px;
+    padding: 0.8rem 1rem;
+    margin-bottom: 1.1rem;
+    font-size: 0.875rem;
+    line-height: 1.65;
+    color: #2f4239;
+}
+
+.um-note strong {
+    color: #075985;
+}
+
+.um-note-warn {
+    background-color: #fffbeb;
+    border-left: 3px solid #f59e0b;
+    border-radius: 8px;
+    padding: 0.8rem 1rem;
+    margin-top: 1rem;
+    font-size: 0.875rem;
+    line-height: 1.65;
+    color: #78350f;
+}
+
+.um-note-warn strong {
+    color: #78350f;
+}
+
+/* Toolbar variant for pages whose only control is the search box, which
+   still belongs on the right like every other table page. */
+.um-toolbar-end {
+    justify-content: flex-end;
+}
+
+/* --- compact row-action button --- */
+.um-btn-row {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.35rem 0.75rem;
+    border: none;
+    border-radius: 7px;
+    background-color: #15803d;
+    color: #ffffff;
+    font-size: 0.75rem;
+    font-weight: 600;
+    font-family: inherit;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.um-btn-row:hover {
+    background-color: #166534;
+}
+
+.um-btn-row svg {
+    width: 0.8rem;
+    height: 0.8rem;
+}
+
+/* --- secondary/outline button --- */
+.um-btn-outline {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.5rem 0.9rem;
+    border: 1px solid #bbf7d0;
+    border-radius: 8px;
+    background-color: #f0fdf4;
+    color: #15803d;
+    font-size: 0.875rem;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+}
+
+.um-btn-outline:hover {
+    border-color: #15803d;
+    background-color: #dcfce7;
+}
+
+.um-btn-outline svg {
+    width: 0.9rem;
+    height: 0.9rem;
+}
+
+.um-back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    margin-bottom: 0.9rem;
+    color: #5f6f66;
+    font-size: 0.875rem;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.um-back-link:hover {
+    color: #15803d;
+}
+
+.um-back-link svg {
+    width: 0.9rem;
+    height: 0.9rem;
+}
+
+/* --- labelled figure grid, used for site facts and report totals --- */
+.um-fact-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.4rem;
+}
+
+.um-fact .lbl {
+    display: block;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #5f6f66;
+}
+
+.um-fact .val {
+    display: block;
+    margin-top: 0.15rem;
+    font-size: 1rem;
+    font-weight: 700;
+    color: #12211a;
+}
+
+.um-fact .val-sm {
+    font-size: 0.875rem;
+}
+
+/* Dark variant: the selected-site summary sits inside the officer's form
+   and needs to read as a result panel rather than another input group. */
+.rep-site-facts {
+    display: none;
+    background-color: #14532d;
+    border-radius: 10px;
+    padding: 1.1rem 1.2rem;
+    margin-top: 1.2rem;
+}
+
+.rep-site-facts.show {
+    display: block;
+}
+
+.rep-site-facts .site-title {
+    margin-bottom: 0.85rem;
+    color: #ffffff;
+    font-size: 1rem;
+    font-weight: 700;
+}
+
+.rep-site-facts .lbl { color: #86efac; }
+.rep-site-facts .val { color: #ffffff; }
+
+/* --- sampling plot rows --- */
+.rep-plot-head,
+.rep-plot-row {
+    display: grid;
+    grid-template-columns: 2.2rem 7rem 1fr 2rem;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.rep-plot-head {
+    margin-bottom: 0.45rem;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #5f6f66;
+}
+
+.rep-plot-row {
+    margin-bottom: 0.5rem;
+}
+
+.rep-plot-row input {
+    width: 100%;
+    padding: 0.45rem 0.65rem;
+    border: 1px solid #e2eae5;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    font-family: inherit;
+    color: #1c2f26;
+    outline: none;
+}
+
+.rep-plot-row input:focus {
+    border-color: #15803d;
+    box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.12);
+}
+
+.rep-plot-num {
+    font-weight: 700;
+    color: #5f6f66;
+    text-align: center;
+    font-size: 0.875rem;
+}
+
+.rep-plot-remove {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.9rem;
+    height: 1.9rem;
+    border: 1px solid #fecaca;
+    border-radius: 8px;
+    background-color: #fef2f2;
+    color: #b91c1c;
+    font-size: 1rem;
+    line-height: 1;
+    font-family: inherit;
+    cursor: pointer;
+}
+
+.rep-plot-remove:hover {
+    border-color: #dc2626;
+    background-color: #fee2e2;
+}
+
+/* --- live survival calculation --- */
+.rep-calc {
+    background-color: #f7faf8;
+    border: 1px solid #e2eae5;
+    border-radius: 10px;
+    padding: 1rem 1.1rem;
+    margin-top: 1.1rem;
+    font-size: 0.875rem;
+}
+
+.rep-calc-line {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.32rem 0;
+    border-bottom: 1px solid #eef2f7;
+}
+
+.rep-calc-line:last-child {
+    border-bottom: none;
+}
+
+.rep-calc-line .lbl { color: #5f6f66; }
+.rep-calc-line .val { font-weight: 600; color: #1c2f26; }
+
+.rep-calc-result {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+    background-color: #14532d;
+    color: #ffffff;
+    border-radius: 10px;
+    padding: 0.85rem 1.1rem;
+    margin-top: 0.85rem;
+    font-weight: 600;
+}
+
+.rep-calc-result.fail {
+    background-color: #991b1b;
+}
+
+.rep-calc-result .big {
+    font-size: 1.5rem;
+    font-weight: 700;
+}
+
+.rep-calc-warn {
+    background-color: #fffbeb;
+    border-left: 3px solid #f59e0b;
+    border-radius: 6px;
+    padding: 0.55rem 0.8rem;
+    margin-top: 0.5rem;
+    font-size: 0.75rem;
+    color: #78350f;
+}
+
+/* --- report detail: headline survival banner --- */
+.rep-headline {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+    background-color: #14532d;
+    color: #ffffff;
+    border-radius: 12px;
+    padding: 1.15rem 1.4rem;
+    margin-bottom: 1.4rem;
+}
+
+.rep-headline.fail {
+    background-color: #991b1b;
+}
+
+.rep-headline .lbl {
+    display: block;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    opacity: 0.75;
+}
+
+.rep-headline .sub {
+    display: block;
+    margin-top: 0.2rem;
+    font-size: 0.875rem;
+    opacity: 0.9;
+}
+
+.rep-headline .big {
+    font-size: 2rem;
+    font-weight: 700;
+}
+
+/* --- plot count bars --- */
+.rep-bar-track {
+    width: 100%;
+    height: 0.45rem;
+    background-color: #e2eae5;
+    border-radius: 999px;
+    overflow: hidden;
+}
+
+.rep-bar-fill {
+    height: 100%;
+    background-color: #15803d;
+}
+
+.rep-bar-fill.low {
+    background-color: #f59e0b;
+}
+
+/* --- photo evidence --- */
+.rep-photo-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 0.9rem;
+}
+
+.rep-photo-card {
+    border: 1px solid #e2eae5;
+    border-radius: 10px;
+    overflow: hidden;
+    background-color: #f7faf8;
+}
+
+.rep-photo-card img {
+    display: block;
+    width: 100%;
+    height: 140px;
+    object-fit: cover;
+}
+
+.rep-photo-meta {
+    padding: 0.55rem 0.65rem;
+    font-size: 0.75rem;
+    line-height: 1.55;
+    color: #41544a;
+}
+
+.rep-badge-ok,
+.rep-badge-flag {
+    display: inline-block;
+    margin: 0.1rem 0.15rem 0.1rem 0;
+    padding: 0.1rem 0.45rem;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 700;
+}
+
+.rep-badge-ok { background-color: #dcfce7; color: #15803d; }
+.rep-badge-flag { background-color: #fef3c7; color: #92400e; }
+
+.rep-map {
+    height: 320px;
+    border: 1px solid #e2eae5;
+    border-radius: 10px;
+}
+
+/* --- review list: status count chips --- */
+/* --- review decision row: status / note / submit --- */
+.rep-decision-row {
+    display: grid;
+    grid-template-columns: minmax(140px, 1fr) minmax(220px, 2fr) auto;
+    gap: 1rem;
+    align-items: end;
+}
+
+.rep-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 1rem;
+    font-size: 0.875rem;
+    color: #2f4239;
+}
+
+.rep-checkbox input {
+    width: 1rem;
+    height: 1rem;
+    accent-color: #15803d;
+    cursor: pointer;
+}
+
+@media (max-width: 720px) {
+    .rep-decision-row {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ============================================
+   DASHBOARD (analytics / data storytelling)
+   Moved out of a <style> block in Dashboard.html so every page keeps
+   its CSS in one place, and so the cards use the same border/radius
+   tokens as .um-table-card and .um-panel instead of their own shadow.
+   ============================================ */
+
+.section-head {
+    margin: 2rem 0 1rem;
+    padding-bottom: 0.6rem;
+    border-bottom: 1px solid #e2eae5;
+}
+
+.section-head:first-of-type {
+    margin-top: 1rem;
+}
+
+.section-head .eyebrow {
+    display: block;
+    font-size: var(--fs-xs);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--brand-600);
+}
+
+.section-head h4 {
+    margin: 0.25rem 0 0.25rem;
+    font-size: var(--fs-xl);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: var(--n-900);
+}
+
+.section-head p {
+    margin: 0;
+    font-size: var(--fs-sm);
+    line-height: 1.6;
+    color: var(--n-500);
+}
+
+.kpi-strip {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 0.85rem;
+    margin-bottom: 1.5rem;
+}
+
+.kpi {
+    background-color: var(--n-0);
+    border: 1px solid var(--n-200);
+    border-radius: var(--r-md);
+    padding: var(--sp-2);
+    box-shadow: var(--sh-sm);
+}
+
+.kpi .num {
+    display: block;
+    font-size: var(--fs-2xl);
+    font-weight: 700;
+    line-height: 1.15;
+    letter-spacing: -0.02em;
+    color: var(--brand-700);
+    /* Figures line up across the strip instead of jittering per glyph. */
+    font-variant-numeric: tabular-nums;
+}
+
+.kpi .lbl {
+    display: block;
+    margin-top: 0.25rem;
+    font-size: var(--fs-xs);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--n-500);
+}
+
+.kpi .sub {
+    display: block;
+    margin-top: 0.25rem;
+    font-size: var(--fs-xs);
+    color: var(--n-500);
+}
+
+.kpi.alert .num {
+    color: #b91c1c;
+}
+
+.chart-card {
+    background-color: var(--n-0);
+    border: 1px solid var(--n-200);
+    border-radius: var(--r-md);
+    padding: var(--sp-3);
+    margin-bottom: var(--sp-2);
+    box-shadow: var(--sh-sm);
+}
+
+.chart-card h5 {
+    margin: 0 0 0.25rem;
+    font-size: var(--fs-base);
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    color: var(--n-900);
+}
+
+.chart-card .takeaway {
+    margin: 0 0 var(--sp-2);
+    font-size: var(--fs-sm);
+    line-height: 1.6;
+    color: var(--n-500);
+    max-width: 68ch;
+}
+
+/* The table inside a chart card brings its own card chrome, so drop the
+   bottom margin .um-table-card would otherwise add inside this one. */
+.chart-card .um-table-card {
+    margin-bottom: 0;
+}
+
+.chart-box {
+    position: relative;
+    height: 300px;
+}
+
+.chart-box.tall {
+    height: 420px;
+}
+
+.chart-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.25rem;
+}
+
+@media (max-width: 992px) {
+    .chart-row {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Reuses the .um-note look so a dashboard finding reads the same as the
+   guidance callouts on the monitoring report pages. */
+.finding {
+    background-color: #f0f9ff;
+    border-left: 3px solid #0ea5e9;
+    border-radius: 8px;
+    padding: 0.85rem 1rem;
+    margin-top: 0.9rem;
+    font-size: 0.875rem;
+    line-height: 1.6;
+    color: #2f4239;
+}
+
+.finding strong {
+    color: #075985;
+}
+
+.finding.warn {
+    background-color: #fffbeb;
+    border-left-color: #f59e0b;
+    color: #78350f;
+}
+
+.finding.warn strong {
+    color: #92400e;
+}
+
+.loading {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: #5f6f66;
+}
+
+
+/* ============================================
+   SHARED REFINEMENTS
+   Applied across every role's pages via the common chrome.
+   ============================================ */
+
+/* ---- Keyboard focus was invisible app-wide ---- */
+.app-body :focus-visible {
+    outline: 2px solid var(--brand-500);
+    outline-offset: 2px;
+    border-radius: 4px;
+}
+
+/* ---- Cards: layered elevation and a hairline instead of a flat blur ---- */
+.card,
+.table-card,
+.um-table-card {
+    border: 1px solid var(--n-200);
+    box-shadow: var(--sh-sm);
+}
+
+/* ---- Empty states are content, so they need to clear 4.5:1 ---- */
+/* --n-400 sits near 2.9:1, which is fine behind a placeholder but not for
+   a message that is the only thing on the page. */
+.placeholder-text {
+    color: var(--n-500);
+}
+
+/* ---- Topbar: sticks, and stops looking like a stray white strip ---- */
+.global-topbar {
+    position: sticky;
+    top: 0;
+    z-index: 30;
+    background-color: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(8px) saturate(1.4);
+    -webkit-backdrop-filter: blur(8px) saturate(1.4);
+}
+
+/* ---- Interactive feedback: nothing moved before ---- */
+.nav-link,
+.notif-bell-btn,
+.card,
+.table-card {
+    transition: background-color 160ms var(--ease),
+                border-color 160ms var(--ease),
+                box-shadow 160ms var(--ease),
+                color 160ms var(--ease);
+}
+
+/* ---- Tables: numbers line up when they share a width ---- */
+.um-table td,
+.table-card td {
+    font-variant-numeric: tabular-nums;
+}
+
+/* ---- Respect the OS motion setting ---- */
+@media (prefers-reduced-motion: reduce) {
+    .app-body *,
+    .app-body *::before,
+    .app-body *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+}
+
+
+/* ---- Chart key ----
+   The delivery and survival bars are banded by threshold. Without this the
+   banding is carried by colour alone, which is unreadable for a red-green
+   colour-vision deficiency and disappears entirely in print. */
+.chart-key {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--sp-1) var(--sp-2);
+    margin: 0 0 var(--sp-2);
+    padding: 0;
+    list-style: none;
+    font-size: var(--fs-xs);
+    color: var(--n-500);
+}
+
+.chart-key li {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+}
+
+.chart-key .dot {
+    width: 0.625rem;
+    height: 0.625rem;
+    border-radius: 3px;
+    flex-shrink: 0;
+}
+
+.chart-key .dot-ok { background: #16a34a; }
+.chart-key .dot-warn { background: #b45309; }
+.chart-key .dot-bad { background: #dc2626; }
+
+/* ---- Loading skeleton ----
+   Holds the page's shape while the analytics fetch is in flight, instead of
+   a line of text that the real content then shoves aside. */
+.dash-skeleton .sk-strip {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 0.85rem;
+    margin-bottom: var(--sp-3);
+}
+
+.dash-skeleton .sk-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--sp-2);
+}
+
+@media (max-width: 992px) {
+    .dash-skeleton .sk-row {
+        grid-template-columns: 1fr;
+    }
+}
+
+.dash-skeleton .sk-box,
+.dash-skeleton .sk-chart {
+    border: 1px solid var(--n-200);
+    border-radius: var(--r-md);
+    background: linear-gradient(90deg, var(--n-50) 25%, var(--n-100) 37%, var(--n-50) 63%);
+    background-size: 400% 100%;
+    animation: sk-shimmer 1.4s ease-in-out infinite;
+}
+
+.dash-skeleton .sk-box { height: 5.5rem; }
+.dash-skeleton .sk-chart { height: 22rem; }
+
+@keyframes sk-shimmer {
+    from { background-position: 100% 50%; }
+    to { background-position: 0 50%; }
+}
+
+/* Announced to screen readers, invisible on screen. */
+.visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* A filter button at the right edge of the toolbar has to drop its menu
+   leftwards, or the panel runs off the page. */
+.um-filter-menu-end {
+    left: auto;
+    right: 0;
+}
+
+/* Carries the per-status counts that used to sit in the card strip, so
+   moving the filter into a dropdown does not lose them. */
+.um-filter-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1.375rem;
+    padding: 0 0.375rem;
+    border-radius: 999px;
+    background: #eef4f0;
+    color: #41544a;
+    font-size: 0.75rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+}
+
+.um-filter-menu a.active .um-filter-count,
+.um-filter-menu button.active .um-filter-count {
+    background: #dcfce7;
+    color: #15803d;
+}
+
+/* ---- Dashboard card hover ----
+   Same lift as the landing page cards: a small rise plus a deeper shadow,
+   so the card the pointer is on separates from the grid. */
+.kpi,
+.chart-card {
+    transition: transform 260ms var(--ease), box-shadow 260ms var(--ease);
+}
+
+.kpi:hover,
+.chart-card:hover {
+    transform: translateY(-5px);
+    box-shadow: var(--sh-md);
+}
+
+/* The nested table card inside a chart card must not lift on its own --
+   the parent already moves, and two stacked transforms read as a glitch. */
+.chart-card .um-table-card:hover {
+    transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .kpi:hover,
+    .chart-card:hover {
+        transform: none;
+    }
 }

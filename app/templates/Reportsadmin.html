@@ -1,195 +1,242 @@
 {% extends "Base.html" %}
 {% block title %}Review Reports - PuNoObservation{% endblock %}
-
-{% block extra_head %}
-<style>
-  .count-strip {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.75rem;
-    margin-bottom: 1.5rem;
-  }
-
-  .count-chip {
-    background: #ffffff;
-    border: 1px solid #e2e8f0;
-    border-radius: 8px;
-    padding: 0.7rem 1.1rem;
-    min-width: 120px;
-    text-decoration: none;
-    color: inherit;
-  }
-
-  .count-chip:hover,
-  .count-chip.active { border-color: #16a34a; color: inherit; }
-
-  .count-chip .num {
-    display: block;
-    font-size: 1.4rem;
-    font-weight: 700;
-    color: #14532d;
-  }
-
-  .count-chip .lbl {
-    display: block;
-    font-size: 0.7rem;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    color: #64748b;
-  }
-
-  .status-pill {
-    display: inline-block;
-    padding: 3px 10px;
-    border-radius: 12px;
-    font-size: 0.75rem;
-    font-weight: 600;
-  }
-
-  .status-pending  { background: #fef3c7; color: #92400e; }
-  .status-approved { background: #dcfce7; color: #15803d; }
-  .status-rejected { background: #fee2e2; color: #991b1b; }
-
-  .rate-good { color: #15803d; font-weight: 700; }
-  .rate-bad  { color: #b91c1c; font-weight: 700; }
-
-  .flag-dot {
-    display: inline-block;
-    background: #fef3c7;
-    color: #92400e;
-    border-radius: 10px;
-    padding: 1px 7px;
-    font-size: 0.7rem;
-    font-weight: 600;
-  }
-
-  .empty-state {
-    text-align: center;
-    padding: 2.5rem 1rem;
-    color: #64748b;
-  }
-</style>
-{% endblock %}
-
+{% block content_class %}page-content-wide{% endblock %}
+{% set active_page = 'review_reports' %}
 {% block content %}
 
-<div class="page-header mb-4">
-  <h2 class="fw-bold text-dark">Review Reports</h2>
-  <p class="text-secondary mb-0">
-    Field monitoring reports. Approving one writes its survival rate back
-    to the planting record.
-  </p>
+<div class="um-header">
+  <div>
+    <div class="um-title-row">
+      <h2>Review Reports</h2>
+      <span class="um-count-pill" id="reports-count">{{ reports|length }}</span>
+    </div>
+    <p class="um-subtitle">
+      Field monitoring reports. Approving one writes its survival rate back to the planting record.
+    </p>
+  </div>
 </div>
 
 {% with messages = get_flashed_messages(with_categories=true) %}
   {% if messages %}
     {% for category, message in messages %}
-      <div class="alert alert-{{ category }}">{{ message }}</div>
+      <div class="um-alert um-alert-{{ category }}">{{ message }}</div>
     {% endfor %}
   {% endif %}
 {% endwith %}
 
-<div class="count-strip">
-  <a href="{{ url_for('admin.review_reports') }}"
-     class="count-chip {% if not status_filter %}active{% endif %}">
-    <span class="num">{{ total_count }}</span>
-    <span class="lbl">All</span>
-  </a>
-  {% for label, n in counts.items() %}
-    <a href="{{ url_for('admin.review_reports', status=label) }}"
-       class="count-chip {% if status_filter == label %}active{% endif %}">
-      <span class="num">{{ n }}</span>
-      <span class="lbl">{{ label }}</span>
-    </a>
-  {% endfor %}
-</div>
+<div class="um-toolbar">
+  <div class="um-search-group">
+    <div class="um-search-wrap">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg>
+      <input type="text" id="report-search-input" class="um-search-input" aria-label="Search reports"
+             placeholder="Search officer, site, barangay, or municipality..."
+             oninput="reportApplyFilters()">
+    </div>
+    <a href="#" id="report-clear-btn" class="um-btn-ghost" hidden onclick="reportClearFilters(); return false;">Clear</a>
+  </div>
 
-{% if reports %}
-  <div class="table-card">
-    <div class="table-scroll-container">
-      <table class="table custom-table align-middle">
-        <thead>
-          <tr>
-            <th>#</th>
-            <th>Officer</th>
-            <th>Site</th>
-            <th>Monitored</th>
-            <th class="text-end">Plots</th>
-            <th class="text-end">Survival</th>
-            <th class="text-end">Intensity</th>
-            <th class="text-end">Photos</th>
-            <th>Flags</th>
-            <th>Status</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for r in reports %}
-          {% set flagged = r.photos | selectattr('flags') | list | length %}
-          <tr>
-            <td class="num-cell">{{ r.report_id }}</td>
-            <td>
-              {% if r.officer %}
-                <div class="fw-semibold">{{ r.officer.username }}</div>
-                <div class="text-secondary small">{{ r.officer.role }}</div>
-              {% else %}—{% endif %}
-            </td>
-            <td>
-              {% if r.site %}
-                <div class="fw-semibold">{{ r.site.site_name }}</div>
-                {% if r.site.location %}
-                  <div class="text-secondary small">
-                    {{ r.site.location.barangay }},
-                    {{ r.site.location.municipality }}
-                  </div>
-                {% endif %}
-              {% else %}—{% endif %}
-            </td>
-            <td>{{ r.monitoring_date.strftime('%Y-%m-%d') }}</td>
-            <td class="num-cell">{{ r.plots_recorded or '—' }}</td>
-            <td class="num-cell">
-              <span class="{% if r.survival_rate >= 85 %}rate-good{% else %}rate-bad{% endif %}">
-                {{ r.survival_rate }}%
-              </span>
-            </td>
-            <td class="num-cell">{{ r.sampling_intensity or '—' }}%</td>
-            <td class="num-cell">{{ r.photos | length }}</td>
-            <td>
-              {% if flagged %}
-                <span class="flag-dot">{{ flagged }} flagged</span>
-              {% else %}
-                <span class="text-secondary small">none</span>
-              {% endif %}
-            </td>
-            <td>
-              <span class="status-pill status-{{ r.approval_status|lower }}">
-                {{ r.approval_status }}
-              </span>
-              {% if r.reviewer %}
-                <div class="text-secondary small">by {{ r.reviewer.username }}</div>
-              {% endif %}
-            </td>
-            <td>
-              <a href="{{ url_for('admin.review_report_detail', report_id=r.report_id) }}"
-                 class="btn btn-success btn-sm">Review</a>
-            </td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
+  <div class="um-filter-wrap">
+    <button type="button" class="um-filter-btn" id="report-filter-btn"
+            aria-expanded="false" aria-haspopup="true"
+            onclick="reportToggleFilterMenu()">
+      <span class="um-filter-btn-label">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M7 12h10"/><path d="M10 18h4"/></svg>
+        <span>{{ status_filter if status_filter else 'All reports' }}</span>
+        <span class="um-filter-count">{{ counts[status_filter] if status_filter else total_count }}</span>
+      </span>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+    </button>
+    <div id="report-filter-menu" class="um-filter-menu um-filter-menu-end">
+      <a href="{{ url_for('admin.review_reports') }}"
+         class="{% if not status_filter %}active{% endif %}">
+        All reports <span class="um-filter-count">{{ total_count }}</span>
+      </a>
+      {% for label, n in counts.items() %}
+        <a href="{{ url_for('admin.review_reports', status=label) }}"
+           class="{% if status_filter == label %}active{% endif %}">
+          {{ label }} <span class="um-filter-count">{{ n }}</span>
+        </a>
+      {% endfor %}
     </div>
   </div>
-{% else %}
-  <div class="empty-state">
-    <h5>
-      {% if status_filter %}
-        No {{ status_filter|lower }} reports
-      {% else %}
-        No monitoring reports yet
-      {% endif %}
-    </h5>
+</div>
+
+<div class="um-table-card">
+  {% if reports %}
+  <div class="um-scroll-wrap" id="reports-scroll">
+    <table class="um-table um-scroll-table" id="reports-table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Officer</th>
+          <th>Site</th>
+          <th>Monitored</th>
+          <th class="text-end">Plots</th>
+          <th class="text-end">Survival</th>
+          <th class="text-end">Intensity</th>
+          <th class="text-end">Photos</th>
+          <th>Flags</th>
+          <th>Status</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in reports %}
+        {% set flagged = r.photos | selectattr('flags') | list | length %}
+        <tr data-search="{{ ((r.officer.username if r.officer else '') ~ ' ' ~ (r.site.site_name if r.site else '') ~ ' ' ~ (r.site.location.barangay if r.site and r.site.location else '') ~ ' ' ~ (r.site.location.municipality if r.site and r.site.location else '') ~ ' ' ~ r.approval_status)|lower|e }}">
+          <td class="num-cell">{{ r.report_id }}</td>
+          <td>
+            {% if r.officer %}
+              <div class="sites-name-cell">{{ r.officer.username }}</div>
+              <div class="text-secondary small">{{ r.officer.role }}</div>
+            {% else %}
+              <span class="text-secondary">&mdash;</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if r.site %}
+              <div class="sites-name-cell">{{ r.site.site_name }}</div>
+              {% if r.site.location %}
+                <div class="text-secondary small">
+                  {{ r.site.location.barangay }}, {{ r.site.location.municipality }}
+                </div>
+              {% endif %}
+            {% else %}
+              <span class="text-secondary">&mdash;</span>
+            {% endif %}
+          </td>
+          <td>{{ r.monitoring_date.strftime('%Y-%m-%d') }}</td>
+          <td class="num-cell">{{ r.plots_recorded or '—' }}</td>
+          <td class="num-cell sites-fw-semibold {% if r.survival_rate >= 85 %}text-success{% else %}text-danger{% endif %}">
+            {{ r.survival_rate }}%
+          </td>
+          <td class="num-cell">{{ r.sampling_intensity or '—' }}%</td>
+          <td class="num-cell">{{ r.photos | length }}</td>
+          <td>
+            {% if flagged %}
+              <span class="rep-badge-flag">{{ flagged }} flagged</span>
+            {% else %}
+              <span class="text-secondary small">none</span>
+            {% endif %}
+          </td>
+          <td>
+            <span class="um-status st-{{ r.approval_status|lower }}">{{ r.approval_status }}</span>
+            {% if r.reviewer %}
+              <div class="text-secondary small">by {{ r.reviewer.username }}</div>
+            {% endif %}
+          </td>
+          <td>
+            <a href="{{ url_for('admin.review_report_detail', report_id=r.report_id) }}" class="um-btn-row">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"/><circle cx="12" cy="12" r="3"/></svg>
+              Review
+            </a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="um-scroll-controls">
+    <button type="button" class="um-scroll-btn" id="reports-scroll-left" onclick="reportsScroll(-1)" aria-label="Scroll table left">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+    </button>
+    <span class="um-scroll-hint">Scroll to see more columns</span>
+    <button type="button" class="um-scroll-btn" id="reports-scroll-right" onclick="reportsScroll(1)" aria-label="Scroll table right">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+    </button>
+  </div>
+
+  <div class="um-empty" id="reports-empty" style="display: none;">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="m9 14 2 2 4-4"/></svg>
+    <strong>No reports match your search</strong>
+    <p>Try a different officer, site, barangay, or municipality.</p>
+  </div>
+  {% else %}
+  <div class="um-empty">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="m9 14 2 2 4-4"/></svg>
+    <strong>
+      {% if status_filter %}No {{ status_filter|lower }} reports{% else %}No monitoring reports yet{% endif %}
+    </strong>
     <p>Reports submitted by field officers appear here for review.</p>
   </div>
-{% endif %}
+  {% endif %}
+</div>
+
+<script>
+  function reportToggleFilterMenu() {
+    const btn = document.getElementById('report-filter-btn');
+    const menu = document.getElementById('report-filter-menu');
+    const open = menu.classList.toggle('open');
+    btn.setAttribute('aria-expanded', String(open));
+  }
+
+  function reportCloseFilterMenu() {
+    const btn = document.getElementById('report-filter-btn');
+    const menu = document.getElementById('report-filter-menu');
+    if (!btn || !menu) return;
+    menu.classList.remove('open');
+    btn.setAttribute('aria-expanded', 'false');
+  }
+
+  document.addEventListener('click', function (e) {
+    const wrap = document.querySelector('.um-filter-wrap');
+    if (wrap && !wrap.contains(e.target)) reportCloseFilterMenu();
+  });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') reportCloseFilterMenu();
+  });
+
+  function reportApplyFilters() {
+    var q = (document.getElementById('report-search-input').value || '').trim().toLowerCase();
+    var rows = document.querySelectorAll('#reports-table tbody tr');
+    var visible = 0;
+
+    rows.forEach(function (row) {
+      var show = !q || row.dataset.search.indexOf(q) !== -1;
+      row.style.display = show ? '' : 'none';
+      if (show) visible++;
+    });
+
+    document.getElementById('reports-count').textContent = visible;
+    document.getElementById('report-clear-btn').style.display = q ? 'inline-block' : 'none';
+
+    var empty = document.getElementById('reports-empty');
+    var scrollWrap = document.getElementById('reports-scroll');
+    var controls = document.querySelector('.um-scroll-controls');
+    if (empty) {
+      var noResults = visible === 0 && rows.length > 0;
+      empty.style.display = noResults ? 'block' : 'none';
+      if (scrollWrap) scrollWrap.style.display = noResults ? 'none' : '';
+      if (controls) controls.style.display = noResults ? 'none' : '';
+    }
+  }
+
+  function reportClearFilters() {
+    document.getElementById('report-search-input').value = '';
+    reportApplyFilters();
+  }
+
+  function reportsScroll(direction) {
+    var el = document.getElementById('reports-scroll');
+    if (el) el.scrollBy({ left: direction * 320, behavior: 'smooth' });
+  }
+
+  (function () {
+    var el = document.getElementById('reports-scroll');
+    var left = document.getElementById('reports-scroll-left');
+    var right = document.getElementById('reports-scroll-right');
+    if (!el || !left || !right) return;
+
+    function updateButtons() {
+      left.disabled = el.scrollLeft <= 4;
+      right.disabled = el.scrollLeft >= el.scrollWidth - el.clientWidth - 4;
+    }
+    el.addEventListener('scroll', updateButtons);
+    window.addEventListener('resize', updateButtons);
+    updateButtons();
+  })();
+</script>
 
 {% endblock %}

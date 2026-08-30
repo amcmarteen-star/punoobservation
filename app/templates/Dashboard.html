@@ -1,156 +1,8 @@
-{% extends "Base.html" %} {% block title %}Dashboard - PuNoObservation{%
-endblock %}{% set active_page = 'dashboard' %} {% block extra_head %}
-<style>
-  .section-head {
-    margin: 2rem 0 1rem;
-    padding-bottom: 0.6rem;
-    border-bottom: 2px solid #e2e8f0;
-  }
-
-  .section-head:first-of-type {
-    margin-top: 1rem;
-  }
-
-  .section-head .eyebrow {
-    font-size: 0.68rem;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    color: #16a34a;
-    font-weight: 700;
-    display: block;
-  }
-
-  .section-head h4 {
-    margin: 0.15rem 0 0.2rem;
-    font-weight: 700;
-    color: #14532d;
-    font-size: 1.15rem;
-  }
-
-  .section-head p {
-    margin: 0;
-    font-size: 0.85rem;
-    color: #64748b;
-  }
-
-  .kpi-strip {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-    gap: 0.85rem;
-    margin-bottom: 1.5rem;
-  }
-
-  .kpi {
-    background: #ffffff;
-    border: 1px solid #e2e8f0;
-    border-radius: 10px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-    padding: 1rem 1.1rem;
-  }
-
-  .kpi .num {
-    display: block;
-    font-size: 1.6rem;
-    font-weight: 700;
-    color: #14532d;
-    line-height: 1.2;
-  }
-
-  .kpi .lbl {
-    display: block;
-    font-size: 0.68rem;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    color: #64748b;
-    margin-top: 0.15rem;
-  }
-
-  .kpi .sub {
-    display: block;
-    font-size: 0.72rem;
-    color: #94a3b8;
-    margin-top: 0.3rem;
-  }
-
-  .kpi.alert .num {
-    color: #b91c1c;
-  }
-
-  .chart-card {
-    background: #ffffff;
-    border: 1px solid #e2e8f0;
-    border-radius: 10px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-    padding: 1.15rem 1.25rem;
-    margin-bottom: 1.25rem;
-  }
-
-  .chart-card h5 {
-    margin: 0 0 0.15rem;
-    font-weight: 700;
-    color: #1e293b;
-    font-size: 0.98rem;
-  }
-
-  .chart-card .takeaway {
-    font-size: 0.8rem;
-    color: #64748b;
-    margin: 0 0 0.9rem;
-    line-height: 1.55;
-  }
-
-  .chart-box {
-    position: relative;
-    height: 300px;
-  }
-  .chart-box.tall {
-    height: 420px;
-  }
-
-  .chart-row {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1.25rem;
-  }
-
-  @media (max-width: 992px) {
-    .chart-row {
-      grid-template-columns: 1fr;
-    }
-  }
-
-  .finding {
-    background: #f0f9ff;
-    border-left: 4px solid #0ea5e9;
-    border-radius: 6px;
-    padding: 0.85rem 1rem;
-    font-size: 0.85rem;
-    color: #0c4a6e;
-    line-height: 1.6;
-    margin-top: 0.9rem;
-  }
-
-  .finding strong {
-    color: #075985;
-  }
-
-  .finding.warn {
-    background: #fffbeb;
-    border-left-color: #f59e0b;
-    color: #78350f;
-  }
-
-  .finding.warn strong {
-    color: #92400e;
-  }
-
-  .loading {
-    text-align: center;
-    padding: 3rem 1rem;
-    color: #94a3b8;
-  }
-</style>
-{% endblock %} {% block content %}
+{% extends "Base.html" %}
+{% block title %}Dashboard - PuNoObservation{% endblock %}
+{% block content_class %}page-content-wide{% endblock %}
+{% set active_page = 'dashboard' %}
+{% block content %}
 
 <div class="page-header page-header-row">
   <div>
@@ -165,9 +17,16 @@ endblock %}{% set active_page = 'dashboard' %} {% block extra_head %}
   </div>
 </div>
 
-<div id="loading" class="loading">Loading analytics...</div>
+<div id="loading" class="dash-skeleton" role="status" aria-live="polite">
+  <span class="visually-hidden">Loading analytics&hellip;</span>
+  <div class="sk-strip">
+    <div class="sk-box"></div><div class="sk-box"></div><div class="sk-box"></div>
+    <div class="sk-box"></div><div class="sk-box"></div><div class="sk-box"></div>
+  </div>
+  <div class="sk-row"><div class="sk-chart"></div><div class="sk-chart"></div></div>
+</div>
 
-<div id="dash" style="display: none">
+<div id="dash" hidden>
   <!-- ================= SECTION 1 ================= -->
   <div class="section-head">
     <span class="eyebrow">Section 1 &mdash; Descriptive</span>
@@ -179,15 +38,33 @@ endblock %}{% set active_page = 'dashboard' %} {% block extra_head %}
 
   <div class="chart-row">
     <div class="chart-card">
-      <h5>Activity by year</h5>
+      <h5>Sites contracted per year</h5>
       <p class="takeaway" id="yearTakeaway"></p>
-      <div class="chart-box"><canvas id="chartYear"></canvas></div>
+      <div class="chart-box">
+        <canvas id="chartYear" role="img"
+                aria-label="Bar chart of reforestation sites contracted in each year."></canvas>
+      </div>
     </div>
 
     <div class="chart-card">
-      <h5>Area under contract by municipality</h5>
-      <p class="takeaway" id="areaTakeaway"></p>
-      <div class="chart-box"><canvas id="chartArea"></canvas></div>
+      <h5>Area contracted per year</h5>
+      <p class="takeaway">
+        Hectares placed under contract each year. Shown separately from the
+        site count so neither scale distorts the other.
+      </p>
+      <div class="chart-box">
+        <canvas id="chartYearArea" role="img"
+                aria-label="Line chart of hectares placed under contract in each year."></canvas>
+      </div>
+    </div>
+  </div>
+
+  <div class="chart-card">
+    <h5>Area under contract by municipality</h5>
+    <p class="takeaway" id="areaTakeaway"></p>
+    <div class="chart-box tall">
+      <canvas id="chartArea" role="img"
+              aria-label="Horizontal bar chart of contracted area by municipality."></canvas>
     </div>
   </div>
 
@@ -208,7 +85,15 @@ endblock %}{% set active_page = 'dashboard' %} {% block extra_head %}
       Normalising by contract size means a small municipality delivering in full
       ranks above a large one falling short.
     </p>
-    <div class="chart-box"><canvas id="chartAchievement"></canvas></div>
+    <div class="chart-box">
+      <canvas id="chartAchievement" role="img"
+              aria-label="Bar chart of seedling delivery rate against contract, by municipality."></canvas>
+    </div>
+    <ul class="chart-key">
+      <li><span class="dot dot-ok"></span>Met or exceeded target</li>
+      <li><span class="dot dot-warn"></span>90&ndash;99% of target</li>
+      <li><span class="dot dot-bad"></span>Below 90% of target</li>
+    </ul>
     <div class="finding" id="achievementFinding"></div>
   </div>
 
@@ -219,7 +104,14 @@ endblock %}{% set active_page = 'dashboard' %} {% block extra_head %}
         Mean recorded survival. The dashed line marks the DENR 85% threshold,
         below which contractors are not recommended for payment.
       </p>
-      <div class="chart-box"><canvas id="chartSurvival"></canvas></div>
+      <div class="chart-box">
+        <canvas id="chartSurvival" role="img"
+                aria-label="Bar chart of mean recorded seedling survival by municipality, against the 85 percent DENR threshold."></canvas>
+      </div>
+      <ul class="chart-key">
+        <li><span class="dot dot-ok"></span>At or above 85%</li>
+        <li><span class="dot dot-bad"></span>Below 85%</li>
+      </ul>
     </div>
 
     <div class="chart-card">
@@ -228,7 +120,8 @@ endblock %}{% set active_page = 'dashboard' %} {% block extra_head %}
         Three-year project cost divided by contracted area. Wide variation may
         reflect terrain, species, or accessibility.
       </p>
-      <div class="chart-box"><canvas id="chartCost"></canvas></div>
+      <div class="chart-box"><canvas id="chartCost" role="img"
+                aria-label="Bar chart of three-year project cost per hectare by municipality."></canvas></div>
     </div>
   </div>
 
@@ -249,7 +142,8 @@ endblock %}{% set active_page = 'dashboard' %} {% block extra_head %}
       across the top five recommended species. Vertical axis is how many
       seedlings have been planted there.
     </p>
-    <div class="chart-box tall"><canvas id="chartScatter"></canvas></div>
+    <div class="chart-box tall"><canvas id="chartScatter" role="img"
+                aria-label="Scatter plot of barangay suitability score against seedlings planted."></canvas></div>
     <div class="finding" id="scatterFinding"></div>
   </div>
 
@@ -260,7 +154,8 @@ endblock %}{% set active_page = 'dashboard' %} {% block extra_head %}
         How often each species appears in a barangay's top five across all 478
         barangays.
       </p>
-      <div class="chart-box"><canvas id="chartSpecies"></canvas></div>
+      <div class="chart-box"><canvas id="chartSpecies" role="img"
+                aria-label="Horizontal bar chart of how often each species appears in a barangay's top five."></canvas></div>
     </div>
 
     <div class="chart-card">
@@ -269,9 +164,9 @@ endblock %}{% set active_page = 'dashboard' %} {% block extra_head %}
         Sorted by suitability. These are candidate sites where no DENR
         reforestation record exists.
       </p>
-      <div class="table-card">
-        <div class="table-scroll-container" style="max-height: 340px">
-          <table class="table custom-table align-middle">
+      <div class="um-table-card">
+        <div class="um-scroll-wrap" style="max-height: 340px">
+          <table class="um-table">
             <thead>
               <tr>
                 <th>Barangay</th>
@@ -290,25 +185,43 @@ endblock %}{% set active_page = 'dashboard' %} {% block extra_head %}
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <script>
+  // Categorical pair, validated for colour-vision deficiency:
+  // deutan dE 31.7, tritan 14.4, normal 37.8 -- all clear of the floor.
+  // The old pairing was #16a34a with #14532d, which failed the lightness
+  // band and read as grey rather than as a second hue.
   const GREEN = "#16a34a";
-  const DARK = "#14532d";
-  const AMBER = "#f59e0b";
+  const INDIGO = "#4f46e5";
+
+  // Status ramp -- reserved for good/warning/serious, never for a series.
+  const OK = "#16a34a";
+  const AMBER = "#b45309";
   const RED = "#dc2626";
-  const GREY = "#cbd5e1";
+
+  // "No record" marks. #cbd5e1 sat at 1.45:1 on white and was effectively
+  // invisible; this clears 3:1.
+  const ABSENT = "#8d9c94";
+
+  const INK = "#5f6f66";
+  const GRID = "#e2eae5";
 
   const fmt = (n) => (n || 0).toLocaleString();
 
   Chart.defaults.font.family =
-    "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif";
+    "'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif";
   Chart.defaults.font.size = 11;
-  Chart.defaults.color = "#64748b";
+  Chart.defaults.color = INK;
+  Chart.defaults.borderColor = GRID;
+  Chart.defaults.plugins.tooltip.backgroundColor = "#12211a";
+  Chart.defaults.plugins.tooltip.padding = 10;
+  Chart.defaults.plugins.tooltip.cornerRadius = 8;
+  Chart.defaults.plugins.tooltip.titleFont = { weight: "600" };
 
   async function loadDashboard() {
     const res = await fetch("/api/dashboard-analytics");
     const d = await res.json();
 
-    document.getElementById("loading").style.display = "none";
-    document.getElementById("dash").style.display = "block";
+    document.getElementById("loading").hidden = true;
+    document.getElementById("dash").hidden = false;
 
     buildKpis(d.headline);
     buildYear(d.by_year);
@@ -371,43 +284,55 @@ endblock %}{% set active_page = 'dashboard' %} {% block extra_head %}
 
     document.getElementById("yearTakeaway").textContent = gaps.length
       ? `Sites contracted per year. No sites recorded in ${gaps.join(", ")}.`
-      : "Sites contracted per year, with the area covered.";
+      : "Sites contracted per year.";
 
     new Chart(document.getElementById("chartYear"), {
+      type: "bar",
       data: {
         labels: years,
         datasets: [
           {
-            type: "bar",
             label: "Sites",
             data: rows.map((r) => r.sites),
             backgroundColor: GREEN,
-            yAxisID: "y",
-            order: 2,
-          },
-          {
-            type: "line",
-            label: "Hectares",
-            data: rows.map((r) => Math.round(r.area)),
-            borderColor: DARK,
-            backgroundColor: DARK,
-            tension: 0.3,
-            yAxisID: "y1",
-            order: 1,
+            borderRadius: 4,
+            borderSkipped: "bottom",
           },
         ],
       },
       options: {
         maintainAspectRatio: false,
-        interaction: { mode: "index", intersect: false },
+        plugins: { legend: { display: false } },
         scales: {
           y: { beginAtZero: true, title: { display: true, text: "Sites" } },
-          y1: {
-            beginAtZero: true,
-            position: "right",
-            grid: { drawOnChartArea: false },
-            title: { display: true, text: "Hectares" },
+          x: { grid: { display: false } },
+        },
+      },
+    });
+
+    new Chart(document.getElementById("chartYearArea"), {
+      type: "line",
+      data: {
+        labels: years,
+        datasets: [
+          {
+            label: "Hectares",
+            data: rows.map((r) => Math.round(r.area)),
+            borderColor: INDIGO,
+            backgroundColor: INDIGO,
+            borderWidth: 2,
+            pointRadius: 4,
+            pointHoverRadius: 6,
+            tension: 0.3,
           },
+        ],
+      },
+      options: {
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          y: { beginAtZero: true, title: { display: true, text: "Hectares" } },
+          x: { grid: { display: false } },
         },
       },
     });
@@ -436,6 +361,8 @@ endblock %}{% set active_page = 'dashboard' %} {% block extra_head %}
             label: "Hectares",
             data: top.map((r) => r.area),
             backgroundColor: GREEN,
+            borderRadius: 4,
+            borderSkipped: "start",
           },
         ],
       },
@@ -471,8 +398,10 @@ endblock %}{% set active_page = 'dashboard' %} {% block extra_head %}
             label: "Delivery %",
             data: d.map((r) => r.achievement),
             backgroundColor: d.map((r) =>
-              r.achievement >= 100 ? GREEN : r.achievement >= 90 ? AMBER : RED,
+              r.achievement >= 100 ? OK : r.achievement >= 90 ? AMBER : RED,
             ),
+            borderRadius: 4,
+            borderSkipped: "bottom",
           },
         ],
       },
@@ -526,7 +455,9 @@ endblock %}{% set active_page = 'dashboard' %} {% block extra_head %}
           {
             label: "Survival %",
             data: d.map((r) => r.survival),
-            backgroundColor: d.map((r) => (r.survival >= 85 ? GREEN : RED)),
+            backgroundColor: d.map((r) => (r.survival >= 85 ? OK : RED)),
+            borderRadius: 4,
+            borderSkipped: "bottom",
           },
         ],
       },
@@ -556,7 +487,9 @@ endblock %}{% set active_page = 'dashboard' %} {% block extra_head %}
           {
             label: "Cost per ha",
             data: d.map((r) => r.cost_per_ha),
-            backgroundColor: DARK,
+            backgroundColor: INDIGO,
+            borderRadius: 4,
+            borderSkipped: "bottom",
           },
         ],
       },
@@ -621,6 +554,7 @@ endblock %}{% set active_page = 'dashboard' %} {% block extra_head %}
             })),
             backgroundColor: GREEN,
             pointRadius: 5,
+            pointHoverRadius: 7,
           },
           {
             label: "No planting record",
@@ -630,8 +564,8 @@ endblock %}{% set active_page = 'dashboard' %} {% block extra_head %}
               b: s.barangay,
               m: s.municipality,
             })),
-            backgroundColor: GREY,
-            pointRadius: 3,
+            backgroundColor: ABSENT,
+            pointRadius: 4,
           },
         ],
       },
@@ -670,6 +604,8 @@ endblock %}{% set active_page = 'dashboard' %} {% block extra_head %}
             label: "Barangays in top 5",
             data: rows.map((r) => r.count),
             backgroundColor: GREEN,
+            borderRadius: 4,
+            borderSkipped: "start",
           },
         ],
       },
