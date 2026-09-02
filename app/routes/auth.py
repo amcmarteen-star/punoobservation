@@ -29,7 +29,7 @@ def register():
         new_user = User(
             username=username,
             email_address=email_address,
-            role="normal user",
+            role="normal_user",
             organization_id=int(organization_id) if organization_id else None
         )
         new_user.set_password(password)
