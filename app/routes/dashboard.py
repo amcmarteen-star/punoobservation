@@ -13,6 +13,11 @@ from app.services.monitoring import (
     extract_photo_metadata, check_timestamp, compute_survival,
     build_boundary, point_in_geojson, haversine_m, save_photo,
 )
+from app.utils.jurisdiction import (
+    scope_sites, scope_locations, allowed_municipalities,
+    can_see_municipality, current_cenro, is_superadmin, scope_label,
+    CENRO_LIST, CENRO_MUNICIPALITIES,
+)
 from app.utils.decorators import login_required,field_officer_required
 
 MANILA = ZoneInfo("Asia/Manila")
@@ -92,6 +97,13 @@ def gis_map():
 
 @dashboard_bp.route('/api/municipality/<name>')
 def municipality_info(name):
+    if not can_see_municipality(name):
+        return jsonify({
+            "found": False,
+            "municipality": name,
+            "reason": "Outside your CENRO jurisdiction.",
+        })   
+    
     locations = Location.query.filter(
         func.lower(Location.municipality) == name.lower()
     ).all()
@@ -118,6 +130,8 @@ def municipality_info(name):
                 "date_established": site.date_established.strftime('%Y-%m-%d') if site.date_established else None,
                 "target_trees": totals[0] or 0,
                 "actual_trees": totals[1] or 0,
+                "lat": location.latitude,
+                "lon": location.longitude,
             })
 
     first = locations[0]
@@ -135,12 +149,13 @@ def municipality_info(name):
 @dashboard_bp.route('/sites')
 @login_required
 def Reforestation_sites():
-    sites = (
+    q = (
         Site.query
         .join(Location)
         .order_by(Location.municipality, Location.barangay, Site.site_name)
-        .all()
     )
+    q = scope_sites(q)
+    sites = q.all()
 
     grouped = defaultdict(lambda: defaultdict(list))
     for s in sites:
@@ -155,7 +170,7 @@ def Reforestation_sites():
 
     site_totals = {t.site_id: t for t in totals}
 
-    return render_template('Sites.html', grouped=grouped, site_totals=site_totals)
+    return render_template('Sites.html', grouped=grouped, site_totals=site_totals, scope = scope_label(),)
 
 @dashboard_bp.route('/notifications')
 @login_required
@@ -329,12 +344,13 @@ def recommendations():
     Open to guests, same as the GIS map, so the panel can see it
     without logging in.
     """
-    municipalities = [
-        m[0] for m in db.session.query(Location.municipality)
+    q = (
+        db.session.query(Location.municipality)
         .filter(Location.elevation_m.isnot(None))
-        .distinct()
-        .order_by(Location.municipality)
-        .all()
+    )
+    q = scope_locations(q)
+    municipalities = [
+        m[0] for m in q.distinct().order_by(Location.municipality).all()
     ]
  
     selected_muni = request.args.get('municipality', '')
@@ -404,6 +420,11 @@ def api_recommend_by_name():
             "found": False,
             "reason": "Provide both municipality and barangay."
         }), 400
+    if not can_see_municipality(muni):
+        return jsonify({
+            "found": False,
+            "reason": "Outside your CENRO jurisdiction.",
+        }), 403
  
     def squash(col):
         """Strip spaces, dots and dashes, then lowercase - in SQL."""
@@ -460,12 +481,12 @@ def api_sites_geo():
 
     Open to guests, same as the rest of the map.
     """
-    rows = (
+    q = (
         db.session.query(Location, Site)
         .join(Site, Site.location_id == Location.location_id)
         .filter(Location.latitude.isnot(None))
-        .all()
     )
+    rows = scope_sites(q).all()
 
     # sum planting figures per site in one query rather than per row
     totals = dict(
@@ -591,11 +612,11 @@ def api_heatmap():
             "error": f"Unknown metric. Use one of: {', '.join(sorted(valid))}"
         }), 400
 
-    rows = (
+    q = (
         db.session.query(Location, Site)
         .join(Site, Site.location_id == Location.location_id)
-        .all()
     )
+    rows = scope_sites(q).all()
 
     planted = dict(
         db.session.query(
@@ -707,30 +728,12 @@ def _quantile_breaks(values, bands=5):
     return seen
 
 
-# ======================================================================
-# PASTE TO HERE
-#
-# Imports needed at the top of dashboard.py (probably already present):
-#     from app.models import Location, Site, ReforestationRecord
-#     from sqlalchemy import func
-# ======================================================================
- 
 """ 
 REQUEST REFORESTATION SITE - routes
 
 TWO BLOCKS. They go in different files.
 Read the headers carefully.
 """
-
-# ======================================================================
-# BLOCK 1
-# PASTE AT THE BOTTOM OF: app/routes/dashboard.py
-#
-# Imports needed at the top of dashboard.py:
-#     from app.models import Request
-#     from datetime import datetime
-#     from zoneinfo import ZoneInfo
-# ======================================================================
 
 
 @dashboard_bp.route('/requests', methods=['GET', 'POST'])
@@ -819,12 +822,13 @@ def requests_page():
         return redirect(url_for('dashboard.requests_page'))
 
     # --- GET ---
-    municipalities = [
-        m[0] for m in db.session.query(Location.municipality)
+    q = (
+        db.session.query(Location.municipality)
         .filter(Location.elevation_m.isnot(None))
-        .distinct()
-        .order_by(Location.municipality)
-        .all()
+    )
+    q = scope_locations(q)
+    municipalities = [
+        m[0] for m in q.distinct().order_by(Location.municipality).all()
     ]
 
     my_requests = (
@@ -844,6 +848,8 @@ def requests_page():
 
 @dashboard_bp.route('/api/barangays/<municipality>')
 def api_barangays(municipality):
+    if not can_see_municipality(municipality):
+        return jsonify([])    
     """
     Barangay names for one municipality.
 
@@ -868,23 +874,6 @@ BLOCK 1 -> app/routes/dashboard.py   (field officer submits)
 BLOCK 2 -> app/routes/admin.py       (admin reviews)
 """
  
-# ======================================================================
-# BLOCK 1
-# PASTE AT THE BOTTOM OF: app/routes/dashboard.py
-#
-# Imports needed at the top of dashboard.py:
-#     from app.models import MonitoringReport, MonitoringPlot, MonitoringPhoto, User
-#     from app.services.monitoring import (
-#         extract_photo_metadata, check_timestamp, compute_survival,
-#         build_boundary, point_in_geojson, haversine_m, save_photo,
-#     )
-#     from app.utils.decorators import field_officer_required
-#     from datetime import datetime
-#     from zoneinfo import ZoneInfo
-#     import json, os
-# ======================================================================
- 
- 
 @dashboard_bp.route('/reports')
 @field_officer_required
 def reports_page():
@@ -892,13 +881,13 @@ def reports_page():
     Field officer landing page: submit a new report, see past ones.
     """
     user_id = session.get('user_id')
- 
-    municipalities = [
-        m[0] for m in db.session.query(Location.municipality)
+    q = (
+        db.session.query(Location.municipality)
         .join(Site, Site.location_id == Location.location_id)
-        .distinct()
-        .order_by(Location.municipality)
-        .all()
+    )
+    q = scope_sites(q)
+    municipalities = [
+        m[0] for m in q.distinct().order_by(Location.municipality).all()
     ]
  
     my_reports = (
@@ -913,6 +902,10 @@ def reports_page():
         active_page='reports',
         municipalities=municipalities,
         my_reports=my_reports,
+        # optional pre-selection, sent from the GIS map
+        preset_municipality=request.args.get('municipality', ''),
+        preset_barangay=request.args.get('barangay', ''),
+        preset_site_id=request.args.get('site_id', ''),
     )
  
  
@@ -928,6 +921,8 @@ def api_sites_in_barangay():
     brgy = request.args.get('barangay', '')
  
     if not muni or not brgy:
+        return jsonify([])
+    if not can_see_municipality(muni):
         return jsonify([])
  
     rows = (
@@ -1317,11 +1312,28 @@ def api_dashboard_analytics():
     # ------------------------------------------------------------------
     # base pull: every site with its location and planting figures
     # ------------------------------------------------------------------
-    rows = (
+    q = (
         db.session.query(Site, Location)
         .join(Location, Site.location_id == Location.location_id)
-        .all()
     )
+    rows = scope_sites(q).all()
+
+    if not rows:
+        return jsonify({
+            "scope": scope_label(),
+            "empty": True,
+            "headline": {
+                "sites": 0, "area_ha": 0, "target": 0, "actual": 0,
+                "achievement": None,
+                "barangays_covered": 0,
+                "barangays_total": scope_locations(Location.query).count(),
+                "coverage_pct": 0,
+                "total_cost": 0, "cost_sites": 0, "avg_cost_per_ha": None,
+            },
+            "by_year": [], "by_municipality": [], "by_zone": [],
+            "scatter": [], "unplanted_top": [], "species_rank": [],
+            "correlation": None, "scatter_n": 0,
+        })
  
     targets = dict(
         db.session.query(
@@ -1408,7 +1420,7 @@ def api_dashboard_analytics():
         z = site.zone_type or "Unspecified"
         by_zone[z] = by_zone.get(z, 0) + 1
  
-    total_barangays = Location.query.count()
+    total_barangays = scope_locations(Location.query).count()
  
     # ------------------------------------------------------------------
     # SECTION 2 - HOW WELL WAS IT DONE
@@ -1444,9 +1456,8 @@ def api_dashboard_analytics():
     # whichever species happens to be a generalist; the top 5 describes
     # how well the site suits the reference set as a whole.
  
-    all_locations = Location.query.filter(
-        Location.elevation_m.isnot(None)
-    ).all()
+    q_loc = Location.query.filter(Location.elevation_m.isnot(None))
+    all_locations = scope_locations(q_loc).all()
  
     planted_by_brgy = {}
     for site, loc in rows:
@@ -1515,6 +1526,7 @@ def api_dashboard_analytics():
     ) if len(with_sites) > 2 else None
  
     return jsonify({
+        "scope": scope_label(),
         "headline": {
             "sites": total_sites,
             "area_ha": round(total_area, 1),
@@ -1573,3 +1585,38 @@ def _pearson(xs, ys):
  
     return num / (dx * dy)
  
+@dashboard_bp.route('/api/published-boundaries')
+def api_published_boundaries():
+    """
+    Site boundaries approved by a CENRO and published by the province.
+
+    Only published boundaries are served. A captured boundary that has
+    not been through both stages is not an official record and does not
+    appear here.
+    """
+    q = Site.query.filter(
+        Site.boundary_published.is_(True),
+        Site.boundary_geojson.isnot(None),
+    )
+
+    out = []
+    for site in scope_sites(q).all():
+        try:
+            geom = json.loads(site.boundary_geojson)
+        except Exception:
+            continue
+
+        out.append({
+            "site_id": site.site_id,
+            "site_name": site.site_name,
+            "site_code": site.site_code,
+            "municipality": site.location.municipality if site.location else None,
+            "barangay": site.location.barangay if site.location else None,
+            "contract_area_ha": site.area_size_ha,
+            "captured_area_ha": site.boundary_area_ha,
+            "captured_at": (site.boundary_captured_at.strftime('%Y-%m-%d')
+                            if site.boundary_captured_at else None),
+            "geometry": geom,
+        })
+
+    return jsonify({"count": len(out), "boundaries": out})

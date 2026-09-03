@@ -198,7 +198,10 @@
             </svg>
             <span class="nav-link-text">Request Reforestation Site</span>
           </a>
-          {% endif %} {% if session.role == 'admin' %}
+
+          {% elif session.role == 'admin' %}
+          <p class="nav-section-title">----</p>
+
           <a
             href="{{ url_for('admin.review_requests') }}"
             class="nav-link {% if active_page == 'review_requests' %}active{% endif %}"
@@ -243,6 +246,18 @@
             </svg>
             <span class="nav-link-text">Review Reports/Monitoring</span>
           </a>
+
+          {% elif session.role == 'superadmin' %}
+          <p class="nav-section-title">Administration</p>
+          
+          {% if session.role == 'superadmin' %}
+          <a
+            href="{{ url_for('admin.publications') }}"
+            class="nav-link {% if active_page == 'publications' %}active{% endif %}"
+          >
+            Boundary Publications
+          </a>
+          {% endif %}
 
           <a
             href="{{ url_for('admin.user_management') }}"

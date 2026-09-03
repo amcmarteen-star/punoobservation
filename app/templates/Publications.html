@@ -1,0 +1,333 @@
+{% extends "Base.html" %} {% block title %}Boundary Publications -
+PuNoObservation{% endblock %} {% set active_page = 'publications' %} {% block
+extra_head %}
+<link
+  rel="stylesheet"
+  href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+/>
+<style>
+  .pub-strip {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+  }
+  .pub-chip {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 0.7rem 1.1rem;
+    min-width: 150px;
+    text-decoration: none;
+    color: inherit;
+  }
+  .pub-chip:hover,
+  .pub-chip.active {
+    border-color: #16a34a;
+    color: inherit;
+  }
+  .pub-chip .num {
+    display: block;
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: #14532d;
+  }
+  .pub-chip .lbl {
+    display: block;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #64748b;
+  }
+
+  .pub-card {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    padding: 1.15rem 1.25rem;
+    margin-bottom: 1.25rem;
+  }
+  .pub-card h5 {
+    margin: 0 0 0.2rem;
+    font-weight: 700;
+    color: #14532d;
+  }
+  .pub-grid {
+    display: grid;
+    grid-template-columns: 1fr 320px;
+    gap: 1.25rem;
+  }
+  @media (max-width: 992px) {
+    .pub-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .pub-map {
+    height: 250px;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+  }
+
+  .pub-line {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.35rem 0;
+    border-bottom: 1px solid #f1f5f9;
+    font-size: 0.87rem;
+  }
+  .pub-line:last-child {
+    border-bottom: none;
+  }
+  .pub-line .lbl {
+    color: #64748b;
+  }
+  .pub-line .val {
+    font-weight: 600;
+  }
+
+  .diff-ok {
+    color: #15803d;
+    font-weight: 700;
+  }
+  .diff-bad {
+    color: #b91c1c;
+    font-weight: 700;
+  }
+
+  .pub-status {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+  }
+  .st-pending {
+    background: #fef3c7;
+    color: #92400e;
+  }
+  .st-published {
+    background: #dcfce7;
+    color: #15803d;
+  }
+  .st-declined {
+    background: #fee2e2;
+    color: #991b1b;
+  }
+
+  .pub-empty {
+    text-align: center;
+    padding: 2.5rem 1rem;
+    color: #64748b;
+  }
+</style>
+{% endblock %} {% block content %}
+
+<div class="page-header mb-3">
+  <h2 class="fw-bold text-dark">Boundary Publications</h2>
+  <p class="text-secondary mb-0">
+    Site boundaries validated by a CENRO, awaiting provincial approval before
+    they appear on the map.
+    <strong>{{ published_sites }}</strong> site(s) currently published.
+  </p>
+</div>
+
+{% with messages = get_flashed_messages(with_categories=true) %} {% if messages
+%}{% for category, message in messages %}
+<div class="alert alert-{{ category }}">{{ message }}</div>
+{% endfor %}{% endif %} {% endwith %}
+
+<div class="pub-strip">
+  {% for label, n in counts.items() %}
+  <a
+    href="{{ url_for('admin.publications', status=label) }}"
+    class="pub-chip {% if status_filter == label %}active{% endif %}"
+  >
+    <span class="num">{{ n }}</span>
+    <span class="lbl">{{ label }}</span>
+  </a>
+  {% endfor %}
+</div>
+
+{% if reports %} {% for r in reports %}
+<div class="pub-card">
+  <div class="d-flex justify-content-between align-items-start mb-2">
+    <div>
+      <h5>{{ r.site.site_name if r.site else 'Unknown site' }}</h5>
+      <div class="text-secondary small">
+        {% if r.site and r.site.location %} {{ r.site.location.barangay }}, {{
+        r.site.location.municipality }} &middot; CENRO {{ r.site.cenro or
+        'unassigned' }} {% endif %}
+      </div>
+    </div>
+    <span
+      class="pub-status {% if r.publication_status == 'Published' %}st-published {% elif r.publication_status == 'Declined' %}st-declined {% else %}st-pending{% endif %}"
+    >
+      {{ r.publication_status }}
+    </span>
+  </div>
+
+  <div class="pub-grid">
+    <div>
+      <div class="pub-line">
+        <span class="lbl">Report</span>
+        <span class="val">
+          #{{ r.report_id }} &middot;
+          <a
+            href="{{ url_for('admin.review_report_detail', report_id=r.report_id) }}"
+          >
+            view full report
+          </a>
+        </span>
+      </div>
+      <div class="pub-line">
+        <span class="lbl">Field officer</span>
+        <span class="val">{{ r.officer.username if r.officer else '—' }}</span>
+      </div>
+      <div class="pub-line">
+        <span class="lbl">Approved by</span>
+        <span class="val">
+          {{ r.reviewer.username if r.reviewer else '—' }} {% if r.date_reviewed
+          %} on {{ r.date_reviewed.strftime('%d %b %Y') }} {% endif %}
+        </span>
+      </div>
+      <div class="pub-line">
+        <span class="lbl">Monitored</span>
+        <span class="val">{{ r.monitoring_date.strftime('%d %b %Y') }}</span>
+      </div>
+      <div class="pub-line">
+        <span class="lbl">Contracted area</span>
+        <span class="val">{{ r.site.area_size_ha if r.site else '—' }} ha</span>
+      </div>
+      <div class="pub-line">
+        <span class="lbl">Captured area</span>
+        <span class="val">{{ r.captured_area_ha }} ha</span>
+      </div>
+      <div class="pub-line">
+        <span class="lbl">Difference</span>
+        <span
+          class="val {% if r.area_difference_pct and r.area_difference_pct|abs > 10 %}diff-bad {% else %}diff-ok{% endif %}"
+        >
+          {{ r.area_difference_pct }}%
+        </span>
+      </div>
+      <div class="pub-line">
+        <span class="lbl">Survival recorded</span>
+        <span class="val">{{ r.survival_rate }}%</span>
+      </div>
+      <div class="pub-line">
+        <span class="lbl">Corner photos flagged</span>
+        <span class="val">
+          {{ r.photos | selectattr('flags') | list | length }} of {{ r.photos |
+          selectattr('photo_type', 'equalto', 'boundary') | list | length }}
+        </span>
+      </div>
+
+      {% if r.publication_note %}
+      <div class="alert alert-secondary small mt-2 mb-0">
+        {{ r.publication_note }}
+      </div>
+      {% endif %}
+    </div>
+
+    <div>
+      <div class="pub-map" id="map-{{ r.report_id }}"></div>
+    </div>
+  </div>
+
+  <form
+    method="POST"
+    action="{{ url_for('admin.publish_boundary', report_id=r.report_id) }}"
+    class="row g-2 align-items-end mt-3 pt-3"
+    style="border-top: 1px solid #e2e8f0"
+  >
+    <div class="col-md-6">
+      <label class="form-label fw-semibold small">
+        Note <span class="text-secondary">(required to decline)</span>
+      </label>
+      <input
+        type="text"
+        name="publication_note"
+        class="form-control form-control-sm"
+        value="{{ r.publication_note or '' }}"
+      />
+    </div>
+    <div class="col-md-6 d-flex gap-2">
+      {% if r.publication_status == 'Published' %}
+      <button
+        type="submit"
+        name="action"
+        value="unpublish"
+        class="btn btn-outline-danger btn-sm"
+      >
+        Withdraw from map
+      </button>
+      {% else %}
+      <button
+        type="submit"
+        name="action"
+        value="publish"
+        class="btn btn-success btn-sm"
+      >
+        Publish to map
+      </button>
+      <button
+        type="submit"
+        name="action"
+        value="decline"
+        class="btn btn-outline-secondary btn-sm"
+      >
+        Decline
+      </button>
+      {% endif %}
+    </div>
+  </form>
+</div>
+{% endfor %} {% else %}
+<div class="pub-empty">
+  <h5>Nothing {{ status_filter|lower }}</h5>
+  <p>
+    Boundaries appear here once a CENRO administrator approves a monitoring
+    report containing corner photographs.
+  </p>
+</div>
+{% endif %}
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+  // One small map per card
+  {% if reports %}
+  {% for r in reports %}
+  (function () {
+    const el = document.getElementById('map-{{ r.report_id }}');
+    const geoData = {{ r.boundary_geojson | tojson }};
+    
+    if (!el || !geoData) return;
+
+    const m = L.map(el, { zoomControl: false, attributionControl: false });
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { 
+      maxZoom: 19 
+    }).addTo(m);
+
+    // If geoData is passed as a JSON string from backend, parse it
+    const parsedData = (typeof geoData === 'string') ? JSON.parse(geoData) : geoData;
+
+    const layer = L.geoJSON(parsedData, {
+      style: { 
+        color: '#16a34a', 
+        weight: 2,
+        fillColor: '#16a34a', 
+        fillOpacity: .25 
+      },
+    }).addTo(m);
+
+    // Only fit bounds if valid geometry layers exist
+    if (layer.getLayers().length > 0) {
+      m.fitBounds(layer.getBounds(), { padding: [20, 20] });
+    }
+  })();
+  {% endfor %}
+  {% endif %}
+</script>
+{% endblock %}

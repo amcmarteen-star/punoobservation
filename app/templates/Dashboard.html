@@ -220,8 +220,19 @@
     const res = await fetch("/api/dashboard-analytics");
     const d = await res.json();
 
+    if (d.empty) {
+      document.getElementById('loading').innerHTML =
+        '<h5>No reforestation data in your jurisdiction</h5>' +
+        '<p>' + d.scope + ' has no imported sites yet.</p>';
+      return;
+    }
+
     document.getElementById("loading").hidden = true;
     document.getElementById("dash").hidden = false;
+
+    document.querySelector('.page-header p').textContent =
+      d.scope + ' \u2014 Districts 5 and 6, Eastern Pangasinan';
+
 
     buildKpis(d.headline);
     buildYear(d.by_year);

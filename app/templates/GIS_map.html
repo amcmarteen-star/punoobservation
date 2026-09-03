@@ -388,6 +388,64 @@
   .muni-panel .site-card-title {
     word-break: break-word;
   }
+  /* site cards become clickable targets */
+  .muni-panel .site-card {
+    cursor: pointer;
+    transition:
+      border-color 0.15s,
+      box-shadow 0.15s;
+  }
+
+  .muni-panel .site-card:hover {
+    border-color: #16a34a;
+    box-shadow: 0 2px 8px rgba(22, 163, 74, 0.18);
+  }
+
+  .muni-panel .site-card.active {
+    border-color: #14532d;
+    background: #f0fdf4;
+  }
+
+  .muni-panel .site-card-foot {
+    display: flex;
+    gap: 0.4rem;
+    margin-top: 0.55rem;
+    padding-top: 0.5rem;
+    border-top: 1px solid #e2e8f0;
+  }
+
+  .muni-panel .btn-locate,
+  .muni-panel .btn-report {
+    flex: 1;
+    border: none;
+    border-radius: 5px;
+    padding: 0.35rem 0.5rem;
+    font-size: 0.74rem;
+    font-weight: 600;
+    cursor: pointer;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+  }
+
+  .muni-panel .btn-locate {
+    background: #e2e8f0;
+    color: #334155;
+  }
+
+  .muni-panel .btn-locate:hover {
+    background: #cbd5e1;
+  }
+
+  .muni-panel .btn-report {
+    background: #14532d;
+    color: #ffffff;
+  }
+
+  .muni-panel .btn-report:hover {
+    background: #166534;
+    color: #ffffff;
+  }
 
   .muni-panel .stat-row span {
     min-width: 0;
@@ -467,7 +525,16 @@ global_topbar %}{% endblock %} {% block topbar%}
       />
       Barangay outlines
     </label>
-
+    <label class="heat-select" style="border-left: none; padding-left: 0.6rem">
+      <input
+        type="checkbox"
+        id="boundaryToggle"
+        checked
+        onchange="toggleBoundaries(this.checked)"
+      />
+      Site boundaries
+      <span class="site-count-note" id="boundaryCount"></span>
+    </label>
     <label class="heat-select" style="border-left: none; padding-left: 0.6rem">
       <input
         type="checkbox"
@@ -490,6 +557,12 @@ global_topbar %}{% endblock %} {% block topbar%}
 {% endblock %} {% block extra_scripts %}
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
+  // Jinja renders this once. The panel is built with innerHTML, so the
+  // role has to be available to plain JavaScript.
+  const USER_ROLE = "{{ session.role or '' }}";
+  const CAN_REPORT = ["field_officer", "admin", "superadmin"].includes(
+    USER_ROLE,
+  );
   const pangasinanBounds = L.latLngBounds(
     L.latLng(15.5, 119.7),
     L.latLng(16.4, 122.9),
@@ -781,6 +854,59 @@ global_topbar %}{% endblock %} {% block topbar%}
                 </button>`;
       }
 
+      // temporary marker dropped when a site card is clicked
+      let locateMarker = null;
+
+      window.locateSite = function (siteId, lat, lon, siteName, brgy) {
+        if (lat === null || lon === null || isNaN(lat)) {
+          alert("This site has no recorded coordinates.");
+          return;
+        }
+
+        // highlight the card that was clicked
+        document.querySelectorAll(".site-card").forEach(function (c) {
+          c.classList.remove("active");
+        });
+        const card = document.getElementById("site-card-" + siteId);
+        if (card) card.classList.add("active");
+
+        locateMarker = L.marker([lat, lon], {
+          icon: L.divIcon({
+            className: "",
+            html: `<div style="background:#dc2626; color:#fff;
+                               border:3px solid #fff; border-radius:50%;
+                               width:26px; height:26px;
+                               display:flex; align-items:center;
+                               justify-content:center; font-size:15px;
+                               box-shadow:0 2px 8px rgba(0,0,0,.45);">
+                     &#9679;
+                   </div>`,
+            iconSize: [26, 26],
+            iconAnchor: [13, 13],
+          }),
+          zIndexOffset: 1000,
+        }).addTo(map);
+
+        locateMarker
+          .bindPopup(
+            `<strong>${siteName}</strong><br>${brgy}<br>
+           <span style="color:#64748b; font-size:0.75rem;">
+             Positioned at the barangay centroid
+           </span>`,
+          )
+          .openPopup();
+
+        map.flyTo([lat, lon], 14, { duration: 0.8 });
+      };
+
+      // small helper: keeps apostrophes in names from breaking the
+      // inline onclick attributes above
+      function escJs(s) {
+        return String(s || "")
+          .replace(/\\/g, "\\\\")
+          .replace(/'/g, "\\'");
+      }
+
       window.reopenMunicipality = function () {
         if (!lastMunicipality) return;
         const layer = municipalityLayers[normalizeName(lastMunicipality)];
@@ -818,6 +944,10 @@ global_topbar %}{% endblock %} {% block topbar%}
       window.closeMuniPanel = function () {
         muniPanel.classList.remove("active");
         clearBarangays();
+        if (locateMarker) {
+          map.removeLayer(locateMarker);
+          locateMarker = null;
+        }
         // panel closing = map gets wider again, zoom back out to full district view
         refitAfterPanelTransition(focusGroup ? focusGroup.getBounds() : null);
       };
@@ -883,14 +1013,39 @@ global_topbar %}{% endblock %} {% block topbar%}
                   data.sites.length
                     ? data.sites
                         .map(
-                          (s) => `
-                  <div class="site-card">
+                          (s, i) => `
+                  <div class="site-card" id="site-card-${s.site_id}"
+                       onclick="locateSite(${s.site_id}, ${s.lat}, ${s.lon},
+                                '${escJs(s.site_name)}',
+                                '${escJs(s.barangay)}')">
                     <div class="site-card-title">${s.site_name}</div>
                     <div class="stat-row"><span class="stat-label">Barangay</span><span>${s.barangay}</span></div>
                     <div class="stat-row"><span class="stat-label">Site Code</span><span>${s.site_code || "—"}</span></div>
                     <div class="stat-row"><span class="stat-label">Area</span><span>${s.area_size_ha} ha</span></div>
                     <div class="stat-row"><span class="stat-label">Target Trees</span><span>${s.target_trees}</span></div>
                     <div class="stat-row"><span class="stat-label">Actual Planted</span><span>${s.actual_trees}</span></div>
+
+                    <div class="site-card-foot">
+                      <button type="button" class="btn-locate"
+                              onclick="event.stopPropagation();
+                                       locateSite(${s.site_id}, ${s.lat}, ${s.lon},
+                                       '${escJs(s.site_name)}',
+                                       '${escJs(s.barangay)}')">
+                        Locate
+                      </button>
+                      {% if session.role == 'field_officer'%}
+                        ${
+                          CAN_REPORT
+                            ? `
+                        <a class="btn-report"
+                          onclick="event.stopPropagation();"
+                          href="/reports?municipality=${encodeURIComponent(s.municipality)}&barangay=${encodeURIComponent(s.barangay)}&site_id=${s.site_id}">
+                          Monitoring Report
+                        </a>`
+                            : ``
+                        }
+                      {% endif %}
+                    </div>
                   </div>
                 `,
                         )
@@ -1058,7 +1213,67 @@ global_topbar %}{% endblock %} {% block topbar%}
           console.error("Site marker load failed:", err);
         }
       }
+      // ==============================================================
+      // PUBLISHED SITE BOUNDARIES
+      // Captured by field officers from GPS corner photographs,
+      // approved by a CENRO, published by the province.
+      // ==============================================================
 
+      let boundaryLayer = null;
+
+      async function loadBoundaries() {
+        try {
+          const res = await fetch("/api/published-boundaries");
+          const data = await res.json();
+
+          const note = document.getElementById("boundaryCount");
+          if (note) note.textContent = `(${data.count})`;
+
+          if (!data.count) return;
+
+          boundaryLayer = L.geoJSON(
+            data.boundaries.map((b) => ({
+              type: "Feature",
+              geometry: b.geometry,
+              properties: b,
+            })),
+            {
+              style: {
+                color: "#0ea5e9",
+                weight: 2.5,
+                fillColor: "#0ea5e9",
+                fillOpacity: 0.2,
+                dashArray: "6,3",
+              },
+              onEachFeature: function (feature, layer) {
+                const p = feature.properties;
+                layer.bindPopup(`
+                  <strong>${p.site_name}</strong><br>
+                  ${p.barangay || ""}, ${p.municipality || ""}<br>
+                  Contracted ${p.contract_area_ha} ha<br>
+                  Captured ${p.captured_area_ha} ha<br>
+                  <span style="color:#64748b; font-size:.72rem;">
+                    Surveyed ${p.captured_at || "date unknown"}
+                  </span>
+                `);
+              },
+            },
+          );
+
+          const toggle = document.getElementById("boundaryToggle");
+          if (!toggle || toggle.checked) boundaryLayer.addTo(map);
+        } catch (err) {
+          console.error("Boundary load failed:", err);
+        }
+      }
+
+      window.toggleBoundaries = function (show) {
+        if (!boundaryLayer) return;
+        if (show) boundaryLayer.addTo(map);
+        else map.removeLayer(boundaryLayer);
+      };
+
+      loadBoundaries();
       // ==============================================================
       // HEATMAP LAYER
       // All 478 barangay polygons, shaded by a chosen metric.
@@ -1234,14 +1449,15 @@ global_topbar %}{% endblock %} {% block topbar%}
             // pick evenly spaced words so 3 bands read low / moderate / high
             const pick = [];
             for (let i = 0; i < n; i++) {
-              pick.push(WORDS[Math.round(i * (WORDS.length - 1) / (n - 1))]);
+              pick.push(WORDS[Math.round((i * (WORDS.length - 1)) / (n - 1))]);
             }
 
             let prev = null;
             for (let i = 0; i < b.length; i++) {
-              const range = prev === null
-                ? `up to ${fmt(b[i])}`
-                : `${fmt(prev + 1)}–${fmt(b[i])}`;
+              const range =
+                prev === null
+                  ? `up to ${fmt(b[i])}`
+                  : `${fmt(prev + 1)}–${fmt(b[i])}`;
               rows += `<div><span class="swatch"
                        style="background:${HEAT_COLORS[i]}"></span>
                        ${pick[i]}

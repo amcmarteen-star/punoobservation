@@ -2,7 +2,7 @@
 from flask import Blueprint, render_template, request, flash, redirect, url_for, session, jsonify
 from app.extensions import db
 from app.models import User, Location, Organization, Site, TreeSpecie, ReforestationRecord, Request, Notification, MonitoringReport, MonitoringPlot, MonitoringPhoto,ReforestationRecord,Site
-from app.utils.decorators import admin_required
+from app.utils.decorators import admin_required, superadmin_required
 import pandas as pd
 from datetime import datetime as dt
 from datetime import datetime
@@ -10,44 +10,79 @@ from dateutil import parser as date_parser
 from sqlalchemy import or_
 from zoneinfo import ZoneInfo
 from app.models import Request as ReforestationRequest
+from app.utils.jurisdiction import (
+    scope_sites, scope_locations, allowed_municipalities,
+    can_see_municipality, current_cenro, is_superadmin, scope_label,
+    CENRO_LIST, CENRO_MUNICIPALITIES,
+)
 
 admin_bp = Blueprint('admin', __name__, url_prefix='/admin')
-
 
 @admin_bp.route('/users/create', methods=['POST'])
 @admin_required
 def create_field_officer():
-    username = request.form.get('username', '').strip().lower()
-    email = request.form.get('email_address', '').strip().lower()
-    password = request.form.get('password')
-    role = request.form.get('role', 'field_officer') # Admin assigns role here
+    """
+    Create a user account.
 
-    existing_user = User.query.filter(
-        (User.username == username) | (User.email_address == email)
-    ).first()
+    TWO RULES:
+      1. Only a superadmin may create an admin or another superadmin.
+         Without this the hierarchy is decorative - any admin could
+         promote themselves by creating a superadmin account.
+      2. A CENRO admin can only create users inside their own CENRO.
+         A superadmin chooses.
+    """
+    username = (request.form.get('username') or '').strip()
+    email = (request.form.get('email_address') or '').strip()
+    password = request.form.get('password') or ''
+    role = (request.form.get('role') or 'field_officer').strip()
 
-    if existing_user:
-        flash("Username or Email already exists.", "danger")
-        return redirect(url_for('admin.manage_users'))
+    if not username or not email or not password:
+        flash("Username, email and password are all required.", "danger")
+        return redirect(url_for('admin.user_management'))
 
-    ALLOWED_ROLES = ['normal_user', 'field_officer', 'admin']
-    if role not in ALLOWED_ROLES:
-        role = 'field_officer'
+    VALID_ROLES = ('superadmin', 'admin', 'field_officer', 'normal_user')
+    if role not in VALID_ROLES:
+        flash("Invalid role.", "danger")
+        return redirect(url_for('admin.user_management'))
+
+    if role in ('superadmin', 'admin') and not is_superadmin():
+        flash("Only provincial administrators can create that role.",
+              "danger")
+        return redirect(url_for('admin.user_management'))
+
+    if User.query.filter_by(username=username).first():
+        flash("That username is already taken.", "danger")
+        return redirect(url_for('admin.user_management'))
+
+    if User.query.filter_by(email_address=email).first():
+        flash("That email address is already registered.", "danger")
+        return redirect(url_for('admin.user_management'))
+
+    # a superadmin picks the CENRO; anyone else can only create within
+    # their own
+    if is_superadmin():
+        cenro = (request.form.get('cenro') or '').strip() or None
+    else:
+        cenro = current_cenro()
+
+    # a superadmin has no CENRO by definition - they oversee all of them
+    if role == 'superadmin':
+        cenro = None
 
     new_user = User(
         username=username,
         email_address=email,
-        role=role
+        role=role,
+        cenro=cenro,
     )
     new_user.set_password(password)
 
     db.session.add(new_user)
     db.session.commit()
 
-    flash(f"User {username} successfully created as {role}.", "success")
+    where = f" for CENRO {cenro}" if cenro else ""
+    flash(f"Created {username} as {role}{where}.", "success")
     return redirect(url_for('admin.user_management'))
-
-
 # ============================================================
 # DENR NGP EXCEL IMPORT -- "Reference Dataset" page
 # ============================================================
@@ -162,26 +197,38 @@ def _get_placeholder_tree_specie():
 def _is_denr_contract_sheet(df_columns):
     """Row-3 header must contain all required columns to count as a valid sheet."""
     return REQUIRED_DENR_COLUMNS.issubset(set(df_columns))
-
-#User Management
-@admin_bp.route('/user-management', methods=['GET'])
+@admin_bp.route('/user-management')
 @admin_required
 def user_management():
-    search = request.args.get('q', '').strip()
+    q = request.args.get('q', '').strip()
+    """
+    User list.
+
+    A CENRO admin sees users in their own office, plus unassigned
+    accounts, and never sees the superadmin. A superadmin sees everyone.
+    """
     query = User.query
 
-    if search:
-        like = f"%{search}%"
-        query = query.filter(
-            or_(
-                User.username.ilike(like),
-                User.email_address.ilike(like),
-                User.role.ilike(like)
-            )
-        )
+    if not is_superadmin():
+        query = query.filter(User.role != 'superadmin')
 
-    users = query.order_by(User.user_id).all()
-    return render_template('Usermanagement.html', users=users, search=search)
+        cenro = current_cenro()
+        if cenro is not None:
+            query = query.filter(
+                db.or_(User.cenro == cenro, User.cenro.is_(None))
+            )
+
+    users = query.order_by(User.role, User.username).all()
+
+    return render_template(
+        'Usermanagement.html',
+        active_page='users',
+        users=users,
+        search=q, 
+        cenro_list=CENRO_LIST,
+        is_super=is_superadmin(),
+        scope=scope_label(),
+    )
 
 @admin_bp.route('/users/<int:user_id>/delete', methods=['POST'])
 @admin_required
@@ -191,11 +238,20 @@ def delete_user(user_id):
         return redirect(url_for('admin.user_management'))
 
     user = User.query.get_or_404(user_id)
+
+    if user.role == 'superadmin' and not is_superadmin():
+        flash("You cannot delete a provincial administrator.", "danger")
+        return redirect(url_for('admin.user_management'))
+
+    cenro = current_cenro()
+    if cenro is not None and user.cenro and user.cenro != cenro:
+        flash("That user is outside your CENRO jurisdiction.", "danger")
+        return redirect(url_for('admin.user_management'))
+
     db.session.delete(user)
     db.session.commit()
     flash("User deleted.", "success")
     return redirect(url_for('admin.user_management'))
-
 # Upload excel file
 @admin_bp.route('/reference-dataset', methods=['GET'])
 @admin_required
@@ -386,21 +442,33 @@ def import_denr_data():
 #     from flask import jsonify
 # ======================================================================
 
-
 @admin_bp.route('/requests')
 @admin_required
 def review_requests():
     """
-    All submitted requests, newest first, for review.
+    Requests awaiting review, newest first.
+
+    An admin sees only requests from barangays inside their CENRO. A
+    superadmin sees all of them. Request has a location_id, so the scope
+    is applied through a join on Location.municipality.
     """
     status_filter = request.args.get('status', '')
+    munis = allowed_municipalities()
 
-    status_filter = request.args.get('status', '')
+    def base():
+        """A scoped query. Used for the table and every count, so the
+        chips can never disagree with the rows."""
+        q = Request.query
+        if munis is not None:
+            q = (
+                q.join(Location, Request.location_id == Location.location_id)
+                 .filter(Location.municipality.in_(munis))
+            )
+        return q
 
-    query = Request.query
+    query = base()
 
     if status_filter == 'Pending':
-        # unanswered: submitted but not yet decided
         query = query.filter(Request.status.in_(['Submitted', 'Under Review']))
     elif status_filter:
         query = query.filter(Request.status == status_filter)
@@ -408,33 +476,38 @@ def review_requests():
     all_requests = query.order_by(Request.date_submitted.desc()).all()
 
     counts = {
-        'Pending': Request.query.filter(
+        'Pending': base().filter(
             Request.status.in_(['Submitted', 'Under Review'])).count(),
-        'Approved': Request.query.filter_by(status='Approved').count(),
-        'Rejected': Request.query.filter_by(status='Rejected').count(),
+        'Approved': base().filter(Request.status == 'Approved').count(),
+        'Rejected': base().filter(Request.status == 'Rejected').count(),
     }
+
     return render_template(
         'RequestsAdmin.html',
         active_page='review_requests',
         all_requests=all_requests,
         counts=counts,
-        total_count=Request.query.count(),
+        total_count=base().count(),
         status_filter=status_filter,
+        scope=scope_label(),
     )
-
 
 @admin_bp.route('/requests/<int:request_id>/review', methods=['POST'])
 @admin_required
 def review_request(request_id):
-    """
-    Set a request's status and notify the person who submitted it.
-
-    The notification is what makes the Notifications page useful. Until
-    now nothing in the system created one.
-    """
     req = Request.query.get_or_404(request_id)
 
+    # a direct POST must respect jurisdiction too. Without this an admin
+    # could act on a request they cannot see.
+    munis = allowed_municipalities()
+    if munis is not None:
+        if not req.location or req.location.municipality not in munis:
+            flash("That request is outside your CENRO jurisdiction.",
+                  "danger")
+            return redirect(url_for('admin.review_requests'))
+
     new_status = (request.form.get('status') or '').strip()
+    # ... rest of the function unchanged ...
     note = (request.form.get('review_note') or '').strip()
 
     allowed = {'Submitted', 'Under Review', 'Approved', 'Rejected'}
@@ -704,43 +777,63 @@ def preview_denr_data():
 @admin_bp.route('/reports')
 @admin_required
 def review_reports():
-    """Monitoring reports awaiting review, newest first."""
+    """
+    Monitoring reports awaiting review.
+
+    Reports carry a site_id, and Site carries the CENRO the DENR
+    importer recorded, so the scope is applied directly on Site.cenro.
+    """
     status_filter = request.args.get('status', '')
- 
-    query = MonitoringReport.query
+    cenro = current_cenro()
+
+    def base():
+        q = MonitoringReport.query
+        if cenro is not None:
+            q = (
+                q.join(Site, MonitoringReport.site_id == Site.site_id)
+                 .filter(Site.cenro == cenro)
+            )
+        return q
+
+    query = base()
     if status_filter:
         query = query.filter(MonitoringReport.approval_status == status_filter)
- 
+
     reports = query.order_by(MonitoringReport.submitted_at.desc()).all()
- 
+
     counts = {
-        'Pending': MonitoringReport.query.filter_by(
-            approval_status='Pending').count(),
-        'Approved': MonitoringReport.query.filter_by(
-            approval_status='Approved').count(),
-        'Rejected': MonitoringReport.query.filter_by(
-            approval_status='Rejected').count(),
+        'Pending': base().filter(
+            MonitoringReport.approval_status == 'Pending').count(),
+        'Approved': base().filter(
+            MonitoringReport.approval_status == 'Approved').count(),
+        'Rejected': base().filter(
+            MonitoringReport.approval_status == 'Rejected').count(),
     }
- 
+
     return render_template(
         'ReportsAdmin.html',
         active_page='review_reports',
         reports=reports,
         counts=counts,
-        total_count=MonitoringReport.query.count(),
+        total_count=base().count(),
         status_filter=status_filter,
+        scope=scope_label(),
     )
- 
  
 @admin_bp.route('/reports/<int:report_id>')
 @admin_required
 def review_report_detail(report_id):
     """Full preview of one report before deciding on it."""
     report = MonitoringReport.query.get_or_404(report_id)
- 
+
+    cenro = current_cenro()
+    if cenro is not None and report.site and report.site.cenro != cenro:
+        flash("That report is outside your CENRO jurisdiction.", "danger")
+        return redirect(url_for('admin.review_reports'))
+
     plot_photos = [p for p in report.photos if p.photo_type == 'plot']
     boundary_photos = [p for p in report.photos if p.photo_type == 'boundary']
- 
+
     return render_template(
         'ReportDetail.html',
         active_page='review_reports',
@@ -754,19 +847,16 @@ def review_report_detail(report_id):
 @admin_bp.route('/reports/<int:report_id>/review', methods=['POST'])
 @admin_required
 def review_report(report_id):
-    """
-    Approve or reject a report.
- 
-    APPROVING WRITES BACK to the reforestation record. This is the point
-    of the whole feature: survival_rate and date_validated have existed
-    as columns since the schema was written and nothing has ever filled
-    them. After approval they carry field-verified numbers.
-    """
     report = MonitoringReport.query.get_or_404(report_id)
- 
+
+    cenro = current_cenro()
+    if cenro is not None and report.site and report.site.cenro != cenro:
+        flash("That report is outside your CENRO jurisdiction.", "danger")
+        return redirect(url_for('admin.review_reports'))
+
     new_status = (request.form.get('status') or '').strip()
     note = (request.form.get('review_note') or '').strip()
-    update_boundary = request.form.get('update_boundary') == 'yes'
+    # update_boundary = request.form.get('update_boundary') == 'yes'
  
     if new_status not in {'Pending', 'Approved', 'Rejected'}:
         flash("Invalid status.", "danger")
@@ -784,18 +874,35 @@ def review_report(report_id):
     report.date_reviewed = datetime.now(ZoneInfo("Asia/Manila"))
  
     if new_status == 'Approved':
+        # survival data is CENRO's call and takes effect immediately
         record = ReforestationRecord.query.get(report.record_id)
         if record:
             record.survival_rate = report.survival_rate
             record.date_validated = report.monitoring_date
- 
-        if update_boundary and report.boundary_geojson and report.site:
-            report.site.boundary_geojson = report.boundary_geojson
-            report.site.boundary_area_ha = report.captured_area_ha
-            report.site.boundary_captured_at = datetime.now(
-                ZoneInfo("Asia/Manila")
-            )
- 
+
+        # the boundary does not. It is queued for provincial review,
+        # because publishing a site boundary changes what every user of
+        # the map sees.
+        if report.boundary_geojson:
+            report.publication_status = 'Pending Publication'
+
+            for su in User.query.filter_by(role='superadmin').all():
+                db.session.add(Notification(
+                    user_id=su.user_id,
+                    notification_type='Report',
+                    message=(
+                        f"Boundary awaiting publication: "
+                        f"{report.site.site_name if report.site else 'a site'} "
+                        f"({report.captured_area_ha} ha captured)."
+                    ),
+                    report_id=report.report_id,
+                    is_read=False,
+                ))
+
+    elif new_status == 'Rejected':
+        # a rejected report cannot be published later
+        report.publication_status = 'Not Applicable'
+
     where = (
         f"{report.site.location.barangay}, {report.site.location.municipality}"
         if report.site and report.site.location else "the site"
@@ -820,7 +927,141 @@ def review_report(report_id):
     flash(f"Report #{report.report_id} marked {new_status}.", "success")
     return redirect(url_for('admin.review_reports'))
  
+@admin_bp.route('/publications')
+@superadmin_required
+def publications():
+    """
+    Boundaries validated by a CENRO and awaiting provincial publication.
 
+    Publishing makes a boundary visible on the map to every user, so it
+    is deliberately a separate decision from approving the field work.
+    """
+    status_filter = request.args.get('status', 'Pending Publication')
+
+    query = MonitoringReport.query.filter(
+        MonitoringReport.approval_status == 'Approved',
+        MonitoringReport.boundary_geojson.isnot(None),
+    )
+
+    if status_filter:
+        query = query.filter(
+            MonitoringReport.publication_status == status_filter
+        )
+
+    reports = query.order_by(MonitoringReport.date_reviewed.desc()).all()
+
+    def count(status):
+        return MonitoringReport.query.filter(
+            MonitoringReport.approval_status == 'Approved',
+            MonitoringReport.boundary_geojson.isnot(None),
+            MonitoringReport.publication_status == status,
+        ).count()
+
+    counts = {
+        'Pending Publication': count('Pending Publication'),
+        'Published': count('Published'),
+        'Declined': count('Declined'),
+    }
+
+    published_sites = Site.query.filter_by(boundary_published=True).count()
+
+    return render_template(
+        'Publications.html',
+        active_page='publications',
+        reports=reports,
+        counts=counts,
+        status_filter=status_filter,
+        published_sites=published_sites,
+    )
+
+
+@admin_bp.route('/publications/<int:report_id>/publish', methods=['POST'])
+@superadmin_required
+def publish_boundary(report_id):
+    """
+    Publish or decline a captured boundary.
+
+    Publishing writes the polygon onto the Site and marks it visible.
+    Declining leaves the report intact but keeps the boundary off the
+    map.
+    """
+    report = MonitoringReport.query.get_or_404(report_id)
+
+    action = (request.form.get('action') or '').strip()
+    note = (request.form.get('publication_note') or '').strip()
+
+    if action not in ('publish', 'decline', 'unpublish'):
+        flash("Invalid action.", "danger")
+        return redirect(url_for('admin.publications'))
+
+    if report.approval_status != 'Approved':
+        flash("Only CENRO-approved reports can be published.", "danger")
+        return redirect(url_for('admin.publications'))
+
+    if not report.boundary_geojson or not report.site:
+        flash("This report has no captured boundary.", "danger")
+        return redirect(url_for('admin.publications'))
+
+    if action == 'decline' and not note:
+        flash("Give a reason when declining a boundary.", "danger")
+        return redirect(url_for('admin.publications'))
+
+    now = datetime.now(ZoneInfo("Asia/Manila"))
+    site = report.site
+
+    if action == 'publish':
+        site.boundary_geojson = report.boundary_geojson
+        site.boundary_area_ha = report.captured_area_ha
+        site.boundary_captured_at = report.monitoring_date
+        site.boundary_published = True
+        site.boundary_published_by = session.get('user_id')
+        site.boundary_published_at = now
+        site.boundary_source_report_id = report.report_id
+
+        # only one boundary per site may be the published one
+        (MonitoringReport.query
+            .filter(MonitoringReport.site_id == site.site_id,
+                    MonitoringReport.report_id != report.report_id,
+                    MonitoringReport.publication_status == 'Published')
+            .update({'publication_status': 'Not Applicable'},
+                    synchronize_session=False))
+
+        report.publication_status = 'Published'
+        msg = f"Boundary published for {site.site_name}."
+
+    elif action == 'unpublish':
+        site.boundary_published = False
+        report.publication_status = 'Pending Publication'
+        msg = f"Boundary withdrawn from the map for {site.site_name}."
+
+    else:  # decline
+        report.publication_status = 'Declined'
+        msg = f"Boundary declined for {site.site_name}."
+
+    report.published_by = session.get('user_id')
+    report.published_at = now
+    report.publication_note = note or None
+
+    # tell the officer and the reviewing admin
+    recipients = {report.user_id}
+    if report.reviewed_by:
+        recipients.add(report.reviewed_by)
+
+    for uid in recipients:
+        db.session.add(Notification(
+            user_id=uid,
+            notification_type='Report',
+            message=(
+                f"{msg}"
+                + (f" Note: {note}" if note else "")
+            ),
+            report_id=report.report_id,
+            is_read=False,
+        ))
+
+    db.session.commit()
+    flash(msg, "success")
+    return redirect(url_for('admin.publications'))
 
 
 

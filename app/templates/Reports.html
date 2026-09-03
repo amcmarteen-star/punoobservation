@@ -1,8 +1,6 @@
-{% extends "Base.html" %}
-{% block title %}Monitoring Reports - PuNoObservation{% endblock %}
-{% block content_class %}page-content-wide{% endblock %}
-{% set active_page = 'reports' %}
-{% block content %}
+{% extends "Base.html" %} {% block title %}Monitoring Reports -
+PuNoObservation{% endblock %} {% block content_class %}page-content-wide{%
+endblock %} {% set active_page = 'reports' %} {% block content %}
 
 <div class="um-header">
   <div>
@@ -15,19 +13,17 @@
   </div>
 </div>
 
-{% with messages = get_flashed_messages(with_categories=true) %}
-  {% if messages %}
-    {% for category, message in messages %}
-      <div class="um-alert um-alert-{{ category }}">{{ message }}</div>
-    {% endfor %}
-  {% endif %}
-{% endwith %}
+{% with messages = get_flashed_messages(with_categories=true) %} {% if messages
+%} {% for category, message in messages %}
+<div class="um-alert um-alert-{{ category }}">{{ message }}</div>
+{% endfor %} {% endif %} {% endwith %}
 
-<form method="POST"
-      action="{{ url_for('dashboard.submit_report') }}"
-      enctype="multipart/form-data"
-      id="reportForm">
-
+<form
+  method="POST"
+  action="{{ url_for('dashboard.submit_report') }}"
+  enctype="multipart/form-data"
+  id="reportForm"
+>
   <!-- ============ STEP 1 : LOCATION ============ -->
   <div class="um-panel">
     <div class="um-panel-head">
@@ -38,15 +34,17 @@
     <div class="um-field-row">
       <div class="um-field">
         <label for="province">Province</label>
-        <input type="text" id="province" value="Pangasinan" disabled>
+        <input type="text" id="province" value="Pangasinan" disabled />
       </div>
 
       <div class="um-field">
-        <label for="municipality">Municipality <span class="um-req">*</span></label>
+        <label for="municipality"
+          >Municipality <span class="um-req">*</span></label
+        >
         <select id="municipality" required>
           <option value="">Choose</option>
           {% for m in municipalities %}
-            <option value="{{ m }}">{{ m }}</option>
+          <option value="{{ m }}">{{ m }}</option>
           {% endfor %}
         </select>
       </div>
@@ -106,28 +104,42 @@
 
     <div class="um-note">
       <strong>How to do this.</strong>
-      Lay out square plots of equal size spread across the site. In each
-      plot, count only the seedlings that are <strong>alive</strong>.
-      Enter one row per plot below.
-      <br><br>
-      DENR uses a <strong>5% sampling intensity</strong>, meaning the
-      plots together cover 5% of the site area. With 400 m&sup2; plots on
-      a 25 ha site that is about 31 plots. The calculation below tells
-      you the intensity you have reached as you type.
-      <br><br>
-      You do not type the survival rate. It is calculated from your
-      counts.
+      Lay out square plots of equal size spread across the site. In each plot,
+      count only the seedlings that are <strong>alive</strong>. Enter one row
+      per plot below. <br /><br />
+      DENR uses a <strong>5% sampling intensity</strong>, meaning the plots
+      together cover 5% of the site area. With 400 m&sup2; plots on a 25 ha site
+      that is about 31 plots. The calculation below tells you the intensity you
+      have reached as you type. <br /><br />
+      You do not type the survival rate. It is calculated from your counts.
     </div>
 
     <div class="um-field-row mb-3">
       <div class="um-field">
-        <label for="monitoring_date">Monitoring date <span class="um-req">*</span></label>
-        <input type="date" name="monitoring_date" id="monitoring_date" required>
+        <label for="monitoring_date"
+          >Monitoring date <span class="um-req">*</span></label
+        >
+        <input
+          type="date"
+          name="monitoring_date"
+          id="monitoring_date"
+          required
+        />
       </div>
 
       <div class="um-field">
-        <label for="plot_size_sqm">Plot size (m&sup2;) <span class="um-req">*</span></label>
-        <input type="number" step="1" min="1" name="plot_size_sqm" id="plot_size_sqm" value="400" required>
+        <label for="plot_size_sqm"
+          >Plot size (m&sup2;) <span class="um-req">*</span></label
+        >
+        <input
+          type="number"
+          step="1"
+          min="1"
+          name="plot_size_sqm"
+          id="plot_size_sqm"
+          value="400"
+          required
+        />
         <p class="um-field-hint">400 m&sup2; is a 20 m &times; 20 m plot.</p>
       </div>
     </div>
@@ -142,10 +154,22 @@
     <div id="plotRows"></div>
 
     <button type="button" class="um-btn-outline mt-2" onclick="addPlotRow()">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
+        <path d="M5 12h14" />
+        <path d="M12 5v14" />
+      </svg>
       Add plot
     </button>
-    <p class="um-field-hint">Photographs for these plots are attached in step 3.</p>
+    <p class="um-field-hint">
+      Photographs for these plots are attached in step 3.
+    </p>
 
     <!-- live calculation -->
     <div class="rep-calc" id="calcPanel">
@@ -156,13 +180,13 @@
 
     <div class="um-note-warn">
       <strong>Please read.</strong>
-      This estimate assumes seedlings are distributed evenly across the
-      site. Plots placed only in healthy areas, or only in poor ones,
-      will not represent the site. Spread them out.
-      <br><br>
-      The result is an <strong>estimate from a sample</strong>, not a
-      full count. A low sampling intensity or wide variation between
-      plots makes it less reliable, and the calculation will say so.
+      This estimate assumes seedlings are distributed evenly across the site.
+      Plots placed only in healthy areas, or only in poor ones, will not
+      represent the site. Spread them out.
+      <br /><br />
+      The result is an <strong>estimate from a sample</strong>, not a full
+      count. A low sampling intensity or wide variation between plots makes it
+      less reliable, and the calculation will say so.
     </div>
   </div>
 
@@ -175,37 +199,52 @@
 
     <div class="um-note">
       <strong>Use a GPS camera app.</strong>
-      The system reads the location and time out of each photo
-      automatically. You do not type coordinates.
-      <br><br>
-      If a photo has no GPS data, or was taken far from the site, it is
-      still accepted &mdash; it is marked for the reviewing officer to
-      check. Nothing is rejected automatically.
+      The system reads the location and time out of each photo automatically.
+      You do not type coordinates.
+      <br /><br />
+      If a photo has no GPS data, or was taken far from the site, it is still
+      accepted &mdash; it is marked for the reviewing officer to check. Nothing
+      is rejected automatically.
     </div>
 
     <div class="um-field">
       <label for="plot_photos">Plot photographs</label>
-      <input type="file" name="plot_photos" id="plot_photos" multiple accept="image/*">
-      <p class="um-field-hint">Evidence of what you counted. One per plot is ideal.</p>
+      <input
+        type="file"
+        name="plot_photos"
+        id="plot_photos"
+        multiple
+        accept="image/*"
+      />
+      <p class="um-field-hint">
+        Evidence of what you counted. One per plot is ideal.
+      </p>
     </div>
 
     <div class="um-field">
-      <label for="boundary_photos">Corner photographs &mdash; site boundary</label>
-      <input type="file" name="boundary_photos" id="boundary_photos" multiple accept="image/*">
+      <label for="boundary_photos"
+        >Corner photographs &mdash; site boundary</label
+      >
+      <input
+        type="file"
+        name="boundary_photos"
+        id="boundary_photos"
+        multiple
+        accept="image/*"
+      />
       <p class="um-field-hint">
         Stand at each corner of the site and take one photo.
-        <strong>At least 4 corners</strong> are needed to draw the
-        boundary. The system joins the coordinates into a polygon and
-        compares its area against the contracted area.
+        <strong>At least 4 corners</strong> are needed to draw the boundary. The
+        system joins the coordinates into a polygon and compares its area
+        against the contracted area.
       </p>
     </div>
 
     <div class="um-note-warn">
-      The boundary is drawn as the smallest shape enclosing all your
-      corner points. If the site is not a simple convex shape &mdash; an
-      L-shape, or one bending around a stream &mdash; the drawn area will
-      be larger than the real parcel. The comparison against contracted
-      area will show this.
+      The boundary is drawn as the smallest shape enclosing all your corner
+      points. If the site is not a simple convex shape &mdash; an L-shape, or
+      one bending around a stream &mdash; the drawn area will be larger than the
+      real parcel. The comparison against contracted area will show this.
     </div>
   </div>
 
@@ -218,13 +257,26 @@
 
     <div class="um-field">
       <label for="remarks">Field remarks</label>
-      <textarea name="remarks" id="remarks" rows="3"
-                placeholder="Condition of the site, causes of mortality, grazing, fire damage, access problems."></textarea>
+      <textarea
+        name="remarks"
+        id="remarks"
+        rows="3"
+        placeholder="Condition of the site, causes of mortality, grazing, fire damage, access problems."
+      ></textarea>
     </div>
 
     <div class="d-flex align-items-center gap-2 mt-3">
       <button type="submit" class="um-btn-add">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <path d="M20 6 9 17l-5-5" />
+        </svg>
         Submit for review
       </button>
       <span class="text-secondary small">
@@ -232,7 +284,6 @@
       </span>
     </div>
   </div>
-
 </form>
 
 <!-- ============ PAST REPORTS ============ -->
@@ -242,7 +293,9 @@
       <h2>My Reports</h2>
       <span class="um-count-pill">{{ my_reports|length }}</span>
     </div>
-    <p class="um-subtitle">Every report you have submitted, with its review status.</p>
+    <p class="um-subtitle">
+      Every report you have submitted, with its review status.
+    </p>
   </div>
 </div>
 
@@ -269,27 +322,32 @@
           <td class="num-cell">{{ r.report_id }}</td>
           <td>
             {% if r.site %}
-              <div class="sites-name-cell">{{ r.site.site_name }}</div>
-              {% if r.site.location %}
-                <div class="text-secondary small">
-                  {{ r.site.location.barangay }}, {{ r.site.location.municipality }}
-                </div>
-              {% endif %}
-            {% else %}
-              <span class="text-secondary">&mdash;</span>
+            <div class="sites-name-cell">{{ r.site.site_name }}</div>
+            {% if r.site.location %}
+            <div class="text-secondary small">
+              {{ r.site.location.barangay }}, {{ r.site.location.municipality }}
+            </div>
+            {% endif %} {% else %}
+            <span class="text-secondary">&mdash;</span>
             {% endif %}
           </td>
           <td>{{ r.monitoring_date.strftime('%Y-%m-%d') }}</td>
           <td class="num-cell">{{ r.plots_recorded or '—' }}</td>
           <td class="num-cell">{{ r.total_counted or '—' }}</td>
-          <td class="num-cell sites-fw-semibold {% if r.survival_rate >= 85 %}text-success{% else %}text-danger{% endif %}">
+          <td
+            class="num-cell sites-fw-semibold {% if r.survival_rate >= 85 %}text-success{% else %}text-danger{% endif %}"
+          >
             {{ r.survival_rate }}%
           </td>
           <td class="num-cell">{{ r.sampling_intensity }}%</td>
           <td>
-            <span class="um-status st-{{ r.approval_status|lower }}">{{ r.approval_status }}</span>
+            <span class="um-status st-{{ r.approval_status|lower }}"
+              >{{ r.approval_status }}</span
+            >
             {% if r.review_note %}
-              <div class="text-secondary small fst-italic">{{ r.review_note }}</div>
+            <div class="text-secondary small fst-italic">
+              {{ r.review_note }}
+            </div>
             {% endif %}
           </td>
           <td>{{ r.submitted_at.strftime('%Y-%m-%d') }}</td>
@@ -300,17 +358,60 @@
   </div>
 
   <div class="um-scroll-controls">
-    <button type="button" class="um-scroll-btn" id="myreports-scroll-left" onclick="myReportsScroll(-1)" aria-label="Scroll table left">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+    <button
+      type="button"
+      class="um-scroll-btn"
+      id="myreports-scroll-left"
+      onclick="myReportsScroll(-1)"
+      aria-label="Scroll table left"
+    >
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2.5"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
+        <path d="m15 18-6-6 6-6" />
+      </svg>
     </button>
     <span class="um-scroll-hint">Scroll to see more columns</span>
-    <button type="button" class="um-scroll-btn" id="myreports-scroll-right" onclick="myReportsScroll(1)" aria-label="Scroll table right">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+    <button
+      type="button"
+      class="um-scroll-btn"
+      id="myreports-scroll-right"
+      onclick="myReportsScroll(1)"
+      aria-label="Scroll table right"
+    >
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2.5"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
+        <path d="m9 18 6-6-6-6" />
+      </svg>
     </button>
   </div>
   {% else %}
   <div class="um-empty">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="m9 14 2 2 4-4"/></svg>
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    >
+      <rect width="8" height="4" x="8" y="2" rx="1" ry="1" />
+      <path
+        d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"
+      />
+      <path d="m9 14 2 2 4-4" />
+    </svg>
     <strong>No reports yet</strong>
     <p>Submitted monitoring reports appear here with their review status.</p>
   </div>
@@ -321,68 +422,87 @@
   // ---------- cascading location pickers ----------
   let currentSite = null;
 
-  document.getElementById('municipality').addEventListener('change', async function () {
-    const brgy = document.getElementById('barangay');
-    const siteSel = document.getElementById('site_id');
+  document
+    .getElementById("municipality")
+    .addEventListener("change", async function () {
+      const brgy = document.getElementById("barangay");
+      const siteSel = document.getElementById("site_id");
 
-    siteSel.innerHTML = '<option value="">Choose a barangay first</option>';
-    siteSel.disabled = true;
-    hideFacts();
-
-    if (!this.value) {
-      brgy.innerHTML = '<option value="">Choose a municipality first</option>';
-      brgy.disabled = true;
-      return;
-    }
-
-    brgy.innerHTML = '<option value="">Loading...</option>';
-    brgy.disabled = true;
-
-    const res = await fetch('/api/barangays/' + encodeURIComponent(this.value));
-    const names = await res.json();
-
-    brgy.innerHTML = '<option value="">Choose a barangay</option>' +
-      names.map(n => `<option value="${n}">${n}</option>`).join('');
-    brgy.disabled = false;
-  });
-
-  document.getElementById('barangay').addEventListener('change', async function () {
-    const siteSel = document.getElementById('site_id');
-    const muni = document.getElementById('municipality').value;
-    hideFacts();
-
-    if (!this.value) {
       siteSel.innerHTML = '<option value="">Choose a barangay first</option>';
       siteSel.disabled = true;
+      hideFacts();
+
+      if (!this.value) {
+        brgy.innerHTML =
+          '<option value="">Choose a municipality first</option>';
+        brgy.disabled = true;
+        return;
+      }
+
+      brgy.innerHTML = '<option value="">Loading...</option>';
+      brgy.disabled = true;
+
+      const res = await fetch(
+        "/api/barangays/" + encodeURIComponent(this.value),
+      );
+      const names = await res.json();
+
+      brgy.innerHTML =
+        '<option value="">Choose a barangay</option>' +
+        names.map((n) => `<option value="${n}">${n}</option>`).join("");
+      brgy.disabled = false;
+    });
+
+  document
+    .getElementById("barangay")
+    .addEventListener("change", async function () {
+      const siteSel = document.getElementById("site_id");
+      const muni = document.getElementById("municipality").value;
+      hideFacts();
+
+      if (!this.value) {
+        siteSel.innerHTML = '<option value="">Choose a barangay first</option>';
+        siteSel.disabled = true;
+        return;
+      }
+
+      siteSel.innerHTML = '<option value="">Loading...</option>';
+      siteSel.disabled = true;
+
+      const res = await fetch(
+        "/api/sites-in-barangay?municipality=" +
+          encodeURIComponent(muni) +
+          "&barangay=" +
+          encodeURIComponent(this.value),
+      );
+      const sites = await res.json();
+
+      if (!sites.length) {
+        siteSel.innerHTML = '<option value="">No sites recorded here</option>';
+        return;
+      }
+
+      window._sites = {};
+      sites.forEach((s) => {
+        window._sites[s.site_id] = s;
+      });
+
+      siteSel.innerHTML =
+        '<option value="">Choose a site</option>' +
+        sites
+          .map(
+            (s) =>
+              `<option value="${s.site_id}">${s.site_name} (${s.area_size_ha} ha)</option>`,
+          )
+          .join("");
+      siteSel.disabled = false;
+    });
+
+  document.getElementById("site_id").addEventListener("change", function () {
+    if (!this.value) {
+      hideFacts();
       return;
     }
-
-    siteSel.innerHTML = '<option value="">Loading...</option>';
-    siteSel.disabled = true;
-
-    const res = await fetch(
-      '/api/sites-in-barangay?municipality=' + encodeURIComponent(muni) +
-      '&barangay=' + encodeURIComponent(this.value)
-    );
-    const sites = await res.json();
-
-    if (!sites.length) {
-      siteSel.innerHTML = '<option value="">No sites recorded here</option>';
-      return;
-    }
-
-    window._sites = {};
-    sites.forEach(s => { window._sites[s.site_id] = s; });
-
-    siteSel.innerHTML = '<option value="">Choose a site</option>' +
-      sites.map(s =>
-        `<option value="${s.site_id}">${s.site_name} (${s.area_size_ha} ha)</option>`
-      ).join('');
-    siteSel.disabled = false;
-  });
-
-  document.getElementById('site_id').addEventListener('change', function () {
-    if (!this.value) { hideFacts(); return; }
     currentSite = window._sites[this.value];
     showFacts(currentSite);
     recalc();
@@ -390,31 +510,32 @@
 
   function hideFacts() {
     currentSite = null;
-    document.getElementById('siteFacts').classList.remove('show');
+    document.getElementById("siteFacts").classList.remove("show");
   }
 
   function showFacts(s) {
-    document.getElementById('siteTitle').textContent =
-      s.site_name + (s.site_code ? '  ·  ' + s.site_code : '');
-    document.getElementById('factArea').textContent = s.area_size_ha + ' ha';
-    document.getElementById('factTarget').textContent =
+    document.getElementById("siteTitle").textContent =
+      s.site_name + (s.site_code ? "  ·  " + s.site_code : "");
+    document.getElementById("factArea").textContent = s.area_size_ha + " ha";
+    document.getElementById("factTarget").textContent =
       s.target_trees.toLocaleString();
-    document.getElementById('factPlanted').textContent =
+    document.getElementById("factPlanted").textContent =
       s.actual_planted.toLocaleString();
-    document.getElementById('factYear').textContent = s.year_contracted || '—';
-    document.getElementById('factZone').textContent = s.zone_type || '—';
-    document.getElementById('factBoundary').textContent =
-      s.has_boundary ? s.boundary_area_ha + ' ha' : 'not captured';
-    document.getElementById('siteFacts').classList.add('show');
+    document.getElementById("factYear").textContent = s.year_contracted || "—";
+    document.getElementById("factZone").textContent = s.zone_type || "—";
+    document.getElementById("factBoundary").textContent = s.has_boundary
+      ? s.boundary_area_ha + " ha"
+      : "not captured";
+    document.getElementById("siteFacts").classList.add("show");
   }
 
   // ---------- plot rows ----------
   function addPlotRow() {
-    const wrap = document.getElementById('plotRows');
+    const wrap = document.getElementById("plotRows");
     const n = wrap.children.length + 1;
 
-    const row = document.createElement('div');
-    row.className = 'rep-plot-row';
+    const row = document.createElement("div");
+    row.className = "rep-plot-row";
     row.innerHTML = `
       <span class="rep-plot-num">${n}</span>
       <input type="number" name="plot_count" min="0" placeholder="0" aria-label="Seedlings counted in this plot" oninput="recalc()">
@@ -426,32 +547,34 @@
   }
 
   function removePlotRow(btn) {
-    btn.closest('.rep-plot-row').remove();
+    btn.closest(".rep-plot-row").remove();
     renumber();
     recalc();
   }
 
   function renumber() {
-    document.querySelectorAll('#plotRows .rep-plot-row').forEach((r, i) => {
-      r.querySelector('.rep-plot-num').textContent = i + 1;
+    document.querySelectorAll("#plotRows .rep-plot-row").forEach((r, i) => {
+      r.querySelector(".rep-plot-num").textContent = i + 1;
     });
   }
 
   // start with three rows
-  addPlotRow(); addPlotRow(); addPlotRow();
+  addPlotRow();
+  addPlotRow();
+  addPlotRow();
 
   // ---------- live calculation ----------
   let calcTimer = null;
 
-  document.getElementById('plot_size_sqm').addEventListener('input', recalc);
+  document.getElementById("plot_size_sqm").addEventListener("input", recalc);
 
   function recalc() {
     clearTimeout(calcTimer);
-    calcTimer = setTimeout(doCalc, 350);   // wait for typing to settle
+    calcTimer = setTimeout(doCalc, 350); // wait for typing to settle
   }
 
   async function doCalc() {
-    const panel = document.getElementById('calcPanel');
+    const panel = document.getElementById("calcPanel");
 
     if (!currentSite) {
       panel.innerHTML =
@@ -460,8 +583,8 @@
     }
 
     const counts = [...document.querySelectorAll('input[name="plot_count"]')]
-      .map(i => i.value.trim())
-      .filter(v => v !== '');
+      .map((i) => i.value.trim())
+      .filter((v) => v !== "");
 
     if (!counts.length) {
       panel.innerHTML =
@@ -469,12 +592,12 @@
       return;
     }
 
-    const res = await fetch('/api/preview-survival', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+    const res = await fetch("/api/preview-survival", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         counts: counts,
-        plot_size_sqm: document.getElementById('plot_size_sqm').value,
+        plot_size_sqm: document.getElementById("plot_size_sqm").value,
         site_area_ha: currentSite.area_size_ha,
         seedlings_planted: currentSite.actual_planted,
       }),
@@ -483,8 +606,7 @@
     const c = await res.json();
 
     if (!c.ok) {
-      panel.innerHTML =
-        `<div class="text-danger">${c.reason || 'Cannot calculate.'}</div>`;
+      panel.innerHTML = `<div class="text-danger">${c.reason || "Cannot calculate."}</div>`;
       return;
     }
 
@@ -492,29 +614,35 @@
       `<div class="rep-calc-line"><span class="lbl">${l}</span><span class="val">${v}</span></div>`;
 
     let html =
-      line('Plots recorded', c.plots_recorded) +
-      line('Total counted alive', c.total_counted.toLocaleString()) +
-      line('Mean per plot', c.mean_per_plot + ' (sd ' + c.stdev_per_plot + ')') +
-      line('Area sampled', c.area_sampled_ha + ' ha of ' + currentSite.area_size_ha + ' ha') +
-      line('Sampling intensity', c.sampling_intensity + '%') +
-      line('Density', c.density_per_ha.toLocaleString() + ' per ha') +
-      line('Estimated survivors', c.estimated_survivors.toLocaleString()) +
-      line('Originally planted', currentSite.actual_planted.toLocaleString());
+      line("Plots recorded", c.plots_recorded) +
+      line("Total counted alive", c.total_counted.toLocaleString()) +
+      line(
+        "Mean per plot",
+        c.mean_per_plot + " (sd " + c.stdev_per_plot + ")",
+      ) +
+      line(
+        "Area sampled",
+        c.area_sampled_ha + " ha of " + currentSite.area_size_ha + " ha",
+      ) +
+      line("Sampling intensity", c.sampling_intensity + "%") +
+      line("Density", c.density_per_ha.toLocaleString() + " per ha") +
+      line("Estimated survivors", c.estimated_survivors.toLocaleString()) +
+      line("Originally planted", currentSite.actual_planted.toLocaleString());
 
     if (c.survival_rate !== null) {
       const fail = !c.meets_threshold;
       html += `
-        <div class="rep-calc-result ${fail ? 'fail' : ''}">
+        <div class="rep-calc-result ${fail ? "fail" : ""}">
           <span>Survival rate</span>
           <span class="big">${c.survival_rate}%</span>
         </div>
         <div class="text-secondary small mt-1">
           DENR reference threshold is 85%.
-          ${c.meets_threshold ? 'This site meets it.' : 'This site is below it.'}
+          ${c.meets_threshold ? "This site meets it." : "This site is below it."}
         </div>`;
     }
 
-    c.warnings.forEach(w => {
+    c.warnings.forEach((w) => {
       html += `<div class="rep-calc-warn">${w}</div>`;
     });
 
@@ -523,23 +651,91 @@
 
   // ---------- my reports table scroll ----------
   function myReportsScroll(direction) {
-    const el = document.getElementById('myreports-scroll');
-    if (el) el.scrollBy({ left: direction * 320, behavior: 'smooth' });
+    const el = document.getElementById("myreports-scroll");
+    if (el) el.scrollBy({ left: direction * 320, behavior: "smooth" });
   }
 
   (function () {
-    const el = document.getElementById('myreports-scroll');
-    const left = document.getElementById('myreports-scroll-left');
-    const right = document.getElementById('myreports-scroll-right');
+    const el = document.getElementById("myreports-scroll");
+    const left = document.getElementById("myreports-scroll-left");
+    const right = document.getElementById("myreports-scroll-right");
     if (!el || !left || !right) return;
 
     function updateButtons() {
       left.disabled = el.scrollLeft <= 4;
       right.disabled = el.scrollLeft >= el.scrollWidth - el.clientWidth - 4;
     }
-    el.addEventListener('scroll', updateButtons);
-    window.addEventListener('resize', updateButtons);
+    el.addEventListener("scroll", updateButtons);
+    window.addEventListener("resize", updateButtons);
     updateButtons();
+  })();
+
+  // ---------- pre-selection from the GIS map ----------
+  //
+  // The three dropdowns cascade, and each level loads by fetch. So the
+  // selections have to be applied in sequence, waiting for each list to
+  // arrive before setting the next.
+  (async function applyPreset() {
+    const pm = "{{ preset_municipality }}";
+    const pb = "{{ preset_barangay }}";
+    const ps = "{{ preset_site_id }}";
+
+    if (!pm || !pb || !ps) return;
+
+    const muniSel = document.getElementById("municipality");
+    const brgySel = document.getElementById("barangay");
+    const siteSel = document.getElementById("site_id");
+
+    muniSel.value = pm;
+    if (!muniSel.value) return; // municipality not in the list
+
+    // load barangays for that municipality
+    const r1 = await fetch("/api/barangays/" + encodeURIComponent(pm));
+    const names = await r1.json();
+    brgySel.innerHTML =
+      '<option value="">Choose a barangay</option>' +
+      names.map((n) => `<option value="${n}">${n}</option>`).join("");
+    brgySel.disabled = false;
+    brgySel.value = pb;
+    if (!brgySel.value) return;
+
+    // load sites for that barangay
+    const r2 = await fetch(
+      "/api/sites-in-barangay?municipality=" +
+        encodeURIComponent(pm) +
+        "&barangay=" +
+        encodeURIComponent(pb),
+    );
+    const sites = await r2.json();
+
+    window._sites = {};
+    sites.forEach((s) => {
+      window._sites[s.site_id] = s;
+    });
+
+    siteSel.innerHTML =
+      '<option value="">Choose a site</option>' +
+      sites
+        .map(
+          (s) =>
+            `<option value="${s.site_id}">${s.site_name} (${s.area_size_ha} ha)</option>`,
+        )
+        .join("");
+    siteSel.disabled = false;
+    siteSel.value = ps;
+
+    if (siteSel.value) {
+      currentSite = window._sites[ps];
+      showFacts(currentSite);
+      recalc();
+
+      // tell the officer where this came from
+      const banner = document.createElement("div");
+      banner.className = "alert alert-info";
+      banner.textContent =
+        "Site pre-selected from the GIS map. Change it above if needed.";
+      document.querySelector(".page-header").after(banner);
+    }
   })();
 </script>
 

@@ -55,6 +55,7 @@ def login():
             session['user_id'] = user.user_id
             session['username'] = user.username
             session['role'] = user.role
+            session['cenro'] = user.cenro             
             return redirect(url_for('dashboard.index'))
         else:
             return render_template('Log_in.html', error="Incorrect Username or Password")
