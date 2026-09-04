@@ -400,6 +400,15 @@ def build_boundary(points, contract_area_ha=None):
         )
         return out
 
+    unique = set(valid)
+    if len(unique) < MIN_BOUNDARY_POINTS:
+        out["reason"] = (
+            f"{len(valid)} corner photo(s) had GPS, but only "
+            f"{len(unique)} distinct location(s). Corner photographs must "
+            f"be taken at different points around the site."
+        )
+        return out
+
     hull = convex_hull(valid)
 
     if len(hull) < 3:
@@ -548,3 +557,39 @@ def save_photo(file_storage, static_folder, report_id, index):
     file_storage.save(path)
 
     return f"{UPLOAD_SUBDIR}/{name}".replace("\\", "/")
+
+REQUEST_SUBDIR = os.path.join("uploads", "requests")
+ALLOWED_DOC_EXT = {".jpg", ".jpeg", ".png", ".heic", ".pdf"}
+
+
+def save_request_file(file_storage, static_folder, request_id, index):
+    """
+    Save one request attachment.
+
+    Returns (relative_path, sha256, mime_type) or None if the extension
+    is not allowed.
+
+    PDFs are permitted here but not for monitoring photographs, because
+    a request letter is a document while a plot photograph is evidence
+    that must carry EXIF.
+    """
+    ext = os.path.splitext(file_storage.filename or "")[1].lower()
+    if ext not in ALLOWED_DOC_EXT:
+        return None
+
+    folder = os.path.join(static_folder, REQUEST_SUBDIR)
+    os.makedirs(folder, exist_ok=True)
+
+    file_storage.stream.seek(0)
+    raw = file_storage.stream.read()
+    digest = hashlib.sha256(raw).hexdigest()
+    file_storage.stream.seek(0)
+
+    stamp = datetime.now().strftime("%Y%m%d%H%M%S")
+    name = f"req{request_id}_{index}_{stamp}{ext}"
+    file_storage.save(os.path.join(folder, name))
+
+    mime = "application/pdf" if ext == ".pdf" else f"image/{ext.lstrip('.')}"
+    rel = f"{REQUEST_SUBDIR}/{name}".replace("\\", "/")
+
+    return rel, digest, mime

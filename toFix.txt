@@ -1,7 +1,1 @@
-fix zooming when districts are chosen: fix center ex: district 5 center district 5, both district center between both districts
-
-use border when no district filter is added
-
-add district legends
-
-Validate barangay names against barangay.geojson before creating a Location. Skip unmatched rows and report them in the flash message.
+Revie request all request filter not working same with review and report

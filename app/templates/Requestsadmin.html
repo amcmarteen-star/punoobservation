@@ -1,11 +1,7 @@
-{% extends "Base.html" %}
-{% block title %}Review Requests - PuNoObservation{% endblock %}
-{% block content_class %}page-content-wide{% endblock %}
-{% set active_page = 'review_requests' %}
-
-{% block extra_head %}
+{% extends "Base.html" %} {% block title %}Review Requests - PuNoObservation{%
+endblock %} {% block content_class %}page-content-wide{% endblock %} {% set
+active_page = 'review_requests' %} {% block extra_head %}
 <style>
-
   .status-pill {
     display: inline-block;
     padding: 3px 10px;
@@ -14,10 +10,22 @@
     font-weight: 600;
   }
 
-  .status-submitted    { background: #e0f2fe; color: #075985; }
-  .status-under-review { background: #fef3c7; color: #92400e; }
-  .status-approved     { background: #dcfce7; color: #15803d; }
-  .status-rejected     { background: #fee2e2; color: #991b1b; }
+  .status-submitted {
+    background: #e0f2fe;
+    color: #075985;
+  }
+  .status-under-review {
+    background: #fef3c7;
+    color: #92400e;
+  }
+  .status-approved {
+    background: #dcfce7;
+    color: #15803d;
+  }
+  .status-rejected {
+    background: #fee2e2;
+    color: #991b1b;
+  }
 
   .review-form {
     display: flex;
@@ -50,63 +58,127 @@
     font-size: 0.75rem;
   }
 </style>
-{% endblock %}
-
-{% block content %}
+{% endblock %} {% block content %}
 
 <div class="um-header">
   <div>
     <div class="um-title-row">
       <h2>Review Requests</h2>
-      <span class="um-count-pill" id="req-count">{{ all_requests|length }}</span>
+      <span class="um-count-pill" id="req-count"
+        >{{ all_requests|length }}</span
+      >
     </div>
-    <p class="um-subtitle">Reforestation site requests submitted by users. Setting a status notifies the person who submitted it.</p>
+    <p class="um-subtitle">
+      Reforestation site requests submitted by users. Setting a status notifies
+      the person who submitted it.
+    </p>
   </div>
 </div>
 
-{% with messages = get_flashed_messages(with_categories=true) %}
-  {% if messages %}
-    {% for category, message in messages %}
-      <div class="alert alert-{{ 'danger' if category == 'danger' else 'success' }}">
-        {{ message }}
-      </div>
-    {% endfor %}
-  {% endif %}
-{% endwith %}
+{% with messages = get_flashed_messages(with_categories=true) %} {% if messages
+%} {% for category, message in messages %}
+<div class="alert alert-{{ 'danger' if category == 'danger' else 'success' }}">
+  {{ message }}
+</div>
+{% endfor %} {% endif %} {% endwith %}
 
 <!-- ============ FILTER + SEARCH ============ -->
 <div class="um-toolbar">
   <div class="um-search-group">
     <div class="um-search-wrap">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg>
-      <input type="text" id="req-search-input" class="um-search-input" aria-label="Search requests"
-             placeholder="Search requester, location, or description..."
-             oninput="reqApplyFilters()">
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        aria-hidden="true"
+      >
+        <path d="m21 21-4.34-4.34" />
+        <circle cx="11" cy="11" r="8" />
+      </svg>
+      <input
+        type="text"
+        id="req-search-input"
+        class="um-search-input"
+        aria-label="Search requests"
+        placeholder="Search requester, location, or description..."
+        oninput="reqApplyFilters()"
+      />
     </div>
-    <a href="#" id="req-clear-btn" class="um-btn-ghost" hidden onclick="reqClearFilters(); return false;">Clear</a>
+    <a
+      href="#"
+      id="req-clear-btn"
+      class="um-btn-ghost"
+      hidden
+      onclick="
+        reqClearFilters();
+        return false;
+      "
+      >Clear</a
+    >
   </div>
 
+  {# 'all' is the only value the route treats as unfiltered; an absent
+     status defaults to Pending. Both are folded into is_all so the
+     button, the menu highlight and the empty state agree. #}
+  {% set is_all = not status_filter or status_filter == 'all' %}
+
   <div class="um-filter-wrap">
-    <button type="button" class="um-filter-btn" id="req-filter-btn"
-            aria-expanded="false" aria-haspopup="true"
-            onclick="reqToggleFilterMenu()">
+    <button
+      type="button"
+      class="um-filter-btn"
+      id="req-filter-btn"
+      aria-expanded="false"
+      aria-haspopup="true"
+      onclick="reqToggleFilterMenu()"
+    >
       <span class="um-filter-btn-label">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M7 12h10"/><path d="M10 18h4"/></svg>
-        <span>{{ status_filter if status_filter else 'All requests' }}</span>
-        <span class="um-filter-count">{{ counts[status_filter] if status_filter else total_count }}</span>
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"
+        >
+          <path d="M3 6h18" />
+          <path d="M7 12h10" />
+          <path d="M10 18h4" />
+        </svg>
+        <span>{{ 'All requests' if is_all else status_filter }}</span>
+        <span class="um-filter-count"
+          >{{ total_count if is_all else counts.get(status_filter, 0) }}</span
+        >
       </span>
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        aria-hidden="true"
+      >
+        <path d="m6 9 6 6 6-6" />
+      </svg>
     </button>
     <div id="req-filter-menu" class="um-filter-menu um-filter-menu-end">
-      <a href="{{ url_for('admin.review_requests') }}"
-         class="{% if not status_filter %}active{% endif %}">
+      <a
+        href="{{ url_for('admin.review_requests', status='all') }}"
+        class="{% if is_all %}active{% endif %}"
+      >
         All requests <span class="um-filter-count">{{ total_count }}</span>
       </a>
       {% for label, n in counts.items() %}
-        <a href="{{ url_for('admin.review_requests', status=label) }}"
-           class="{% if status_filter == label %}active{% endif %}">
-          {{ label }} <span class="um-filter-count">{{ n }}</span>
-        </a>
+      <a
+        href="{{ url_for('admin.review_requests', status=label) }}"
+        class="{% if status_filter == label %}active{% endif %}"
+      >
+        {{ label }} <span class="um-filter-count">{{ n }}</span>
+      </a>
       {% endfor %}
     </div>
   </div>
@@ -129,27 +201,26 @@
           <th>Submitted</th>
           <th>Status</th>
           <th>Action</th>
+          <th></th>
         </tr>
       </thead>
       <tbody>
         {% for r in all_requests %}
-        <tr data-search="{{ ((r.requester.username if r.requester else '') ~ ' ' ~ (r.location.barangay if r.location else '') ~ ' ' ~ (r.location.municipality if r.location else '') ~ ' ' ~ (r.description or '') ~ ' ' ~ (r.request_type or ''))|lower|e }}">
+        <tr
+          data-search="{{ ((r.requester.username if r.requester else '') ~ ' ' ~ (r.location.barangay if r.location else '') ~ ' ' ~ (r.location.municipality if r.location else '') ~ ' ' ~ (r.description or '') ~ ' ' ~ (r.request_type or ''))|lower|e }}"
+        >
           <td class="num-cell">{{ r.request_id }}</td>
           <td>
             {% if r.requester %}
-              <div class="fw-semibold">{{ r.requester.username }}</div>
-              <div class="req-cell-secondary">{{ r.requester.role }}</div>
-            {% else %}
-              &mdash;
-            {% endif %}
+            <div class="fw-semibold">{{ r.requester.username }}</div>
+            <div class="req-cell-secondary">{{ r.requester.role }}</div>
+            {% else %} &mdash; {% endif %}
           </td>
           <td>
             {% if r.location %}
-              <div class="fw-semibold">{{ r.location.barangay }}</div>
-              <div class="req-cell-secondary">{{ r.location.municipality }}</div>
-            {% else %}
-              &mdash;
-            {% endif %}
+            <div class="fw-semibold">{{ r.location.barangay }}</div>
+            <div class="req-cell-secondary">{{ r.location.municipality }}</div>
+            {% else %} &mdash; {% endif %}
           </td>
           <td>{{ r.request_type }}</td>
           <td class="num-cell">{{ r.proposed_area_ha or '—' }}</td>
@@ -157,29 +228,42 @@
           <td>{{ r.contact_number or '—' }}</td>
           <td>{{ r.date_submitted.strftime('%Y-%m-%d') }}</td>
           <td>
-            <span class="status-pill status-{{ r.status|lower|replace(' ', '-') }}">
+            <span
+              class="status-pill status-{{ r.status|lower|replace(' ', '-') }}"
+            >
               {{ r.status }}
             </span>
             {% if r.reviewed_by and r.reviewer %}
-              <div class="req-cell-secondary">by {{ r.reviewer.username }}</div>
-            {% endif %}
-            {% if r.review_note %}
-              <div class="req-cell-secondary fst-italic">{{ r.review_note }}</div>
+            <div class="req-cell-secondary">by {{ r.reviewer.username }}</div>
+            {% endif %} {% if r.review_note %}
+            <div class="req-cell-secondary fst-italic">{{ r.review_note }}</div>
             {% endif %}
           </td>
           <td>
-            <form method="POST"
-                  action="{{ url_for('admin.review_request', request_id=r.request_id) }}"
-                  class="review-form">
+            <a
+              href="{{ url_for('admin.review_request_detail', request_id=r.request_id) }}"
+              class="btn btn-success btn-sm"
+              >View</a
+            >
+          </td>
+          <td>
+            <form
+              method="POST"
+              action="{{ url_for('admin.review_request', request_id=r.request_id) }}"
+              class="review-form"
+            >
               <select name="status" required aria-label="Set request status">
                 <option value="">Set status</option>
                 <option value="Under Review">Under Review</option>
                 <option value="Approved">Approved</option>
                 <option value="Rejected">Rejected</option>
               </select>
-              <input type="text" name="review_note"
-                     placeholder="Note (required to reject)"
-                     aria-label="Review note">
+              <input
+                type="text"
+                name="review_note"
+                placeholder="Note (required to reject)"
+                aria-label="Review note"
+              />
               <button type="submit" class="um-btn-confirm">Save</button>
             </form>
           </td>
@@ -190,29 +274,80 @@
   </div>
 
   <div class="sites-scroll-controls">
-      <button type="button" class="sites-scroll-btn" id="req-scroll-left" onclick="reqScroll(-1)" aria-label="Scroll table left">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
-      </button>
-      <span class="sites-scroll-hint">Scroll to see more columns</span>
-      <button type="button" class="sites-scroll-btn" id="req-scroll-right" onclick="reqScroll(1)" aria-label="Scroll table right">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
-      </button>
+    <button
+      type="button"
+      class="sites-scroll-btn"
+      id="req-scroll-left"
+      onclick="reqScroll(-1)"
+      aria-label="Scroll table left"
+    >
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2.5"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
+        <path d="m15 18-6-6 6-6" />
+      </svg>
+    </button>
+    <span class="sites-scroll-hint">Scroll to see more columns</span>
+    <button
+      type="button"
+      class="sites-scroll-btn"
+      id="req-scroll-right"
+      onclick="reqScroll(1)"
+      aria-label="Scroll table right"
+    >
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2.5"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
+        <path d="m9 18 6-6-6-6" />
+      </svg>
+    </button>
   </div>
 
-  <div class="um-empty" id="req-empty" style="display: none;">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/></svg>
+  <div class="um-empty" id="req-empty" style="display: none">
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    >
+      <path
+        d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"
+      />
+      <circle cx="12" cy="10" r="3" />
+    </svg>
     <strong>No requests match your search</strong>
     <p>Try a different requester, location, or description.</p>
   </div>
   {% else %}
   <div class="um-empty">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/></svg>
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    >
+      <path
+        d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"
+      />
+      <circle cx="12" cy="10" r="3" />
+    </svg>
     <strong>
-      {% if status_filter %}
-        No requests with status "{{ status_filter }}"
-      {% else %}
-        No requests submitted yet
-      {% endif %}
+      {% if is_all %} No requests submitted yet {% else %} No requests with
+      status "{{ status_filter }}" {% endif %}
     </strong>
     <p>Requests submitted by users will appear here for review.</p>
   </div>
@@ -221,78 +356,82 @@
 
 <script>
   function reqToggleFilterMenu() {
-    const btn = document.getElementById('req-filter-btn');
-    const menu = document.getElementById('req-filter-menu');
-    const open = menu.classList.toggle('open');
-    btn.setAttribute('aria-expanded', String(open));
+    const btn = document.getElementById("req-filter-btn");
+    const menu = document.getElementById("req-filter-menu");
+    const open = menu.classList.toggle("open");
+    btn.setAttribute("aria-expanded", String(open));
   }
 
   function reqCloseFilterMenu() {
-    const btn = document.getElementById('req-filter-btn');
-    const menu = document.getElementById('req-filter-menu');
+    const btn = document.getElementById("req-filter-btn");
+    const menu = document.getElementById("req-filter-menu");
     if (!btn || !menu) return;
-    menu.classList.remove('open');
-    btn.setAttribute('aria-expanded', 'false');
+    menu.classList.remove("open");
+    btn.setAttribute("aria-expanded", "false");
   }
 
-  document.addEventListener('click', function (e) {
-    const wrap = document.querySelector('.um-filter-wrap');
+  document.addEventListener("click", function (e) {
+    const wrap = document.querySelector(".um-filter-wrap");
     if (wrap && !wrap.contains(e.target)) reqCloseFilterMenu();
   });
 
-  document.addEventListener('keydown', function (e) {
-    if (e.key === 'Escape') reqCloseFilterMenu();
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape") reqCloseFilterMenu();
   });
 
   function reqApplyFilters() {
-    var q = (document.getElementById('req-search-input').value || '').trim().toLowerCase();
-    var rows = document.querySelectorAll('#req-table tbody tr');
+    var q = (document.getElementById("req-search-input").value || "")
+      .trim()
+      .toLowerCase();
+    var rows = document.querySelectorAll("#req-table tbody tr");
     var visible = 0;
 
     rows.forEach(function (row) {
       var show = !q || row.dataset.search.indexOf(q) !== -1;
-      row.style.display = show ? '' : 'none';
+      row.style.display = show ? "" : "none";
       if (show) visible++;
     });
 
-    var countEl = document.getElementById('req-count');
+    var countEl = document.getElementById("req-count");
     if (countEl) countEl.textContent = visible;
 
-    document.getElementById('req-clear-btn').style.display = q ? 'inline-block' : 'none';
+    document.getElementById("req-clear-btn").style.display = q
+      ? "inline-block"
+      : "none";
 
-    var empty = document.getElementById('req-empty');
-    var scrollWrap = document.getElementById('req-scroll');
-    var controls = document.querySelector('.sites-scroll-controls');
+    var empty = document.getElementById("req-empty");
+    var scrollWrap = document.getElementById("req-scroll");
+    var controls = document.querySelector(".sites-scroll-controls");
     if (empty) {
       var noResults = visible === 0 && rows.length > 0;
-      empty.style.display = noResults ? 'block' : 'none';
-      if (scrollWrap) scrollWrap.style.display = noResults ? 'none' : '';
-      if (controls) controls.style.display = noResults ? 'none' : '';
+      empty.style.display = noResults ? "block" : "none";
+      if (scrollWrap) scrollWrap.style.display = noResults ? "none" : "";
+      if (controls) controls.style.display = noResults ? "none" : "";
     }
   }
 
   function reqClearFilters() {
-    document.getElementById('req-search-input').value = '';
+    document.getElementById("req-search-input").value = "";
     reqApplyFilters();
   }
 
   function reqScroll(direction) {
-    var el = document.getElementById('req-scroll');
-    if (el) el.scrollBy({ left: direction * 320, behavior: 'smooth' });
+    var el = document.getElementById("req-scroll");
+    if (el) el.scrollBy({ left: direction * 320, behavior: "smooth" });
   }
 
   (function () {
-    var el = document.getElementById('req-scroll');
-    var left = document.getElementById('req-scroll-left');
-    var right = document.getElementById('req-scroll-right');
+    var el = document.getElementById("req-scroll");
+    var left = document.getElementById("req-scroll-left");
+    var right = document.getElementById("req-scroll-right");
     if (!el || !left || !right) return;
 
     function updateButtons() {
       left.disabled = el.scrollLeft <= 4;
       right.disabled = el.scrollLeft >= el.scrollWidth - el.clientWidth - 4;
     }
-    el.addEventListener('scroll', updateButtons);
-    window.addEventListener('resize', updateButtons);
+    el.addEventListener("scroll", updateButtons);
+    window.addEventListener("resize", updateButtons);
     updateButtons();
   })();
 </script>

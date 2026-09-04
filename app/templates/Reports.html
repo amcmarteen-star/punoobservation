@@ -1,16 +1,21 @@
-{% extends "Base.html" %} {% block title %}Monitoring Reports -
+﻿{% extends "Base.html" %} {% block title %}Monitoring Reports -
 PuNoObservation{% endblock %} {% block content_class %}page-content-wide{%
 endblock %} {% set active_page = 'reports' %} {% block content %}
 
 <div class="um-header">
   <div>
     <div class="um-title-row">
-      <h2>Monitoring Report</h2>
+      <h2>New Monitoring Report</h2>
     </div>
     <p class="um-subtitle">
       Record a field survival assessment for a reforestation site.
     </p>
   </div>
+
+  <a href="{{ url_for('dashboard.my_reports_page') }}" class="um-btn-ghost">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z"/><path d="M14 2v5a1 1 0 0 0 1 1h5"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></svg>
+    View my reports
+  </a>
 </div>
 
 {% with messages = get_flashed_messages(with_categories=true) %} {% if messages
@@ -69,27 +74,27 @@ endblock %} {% set active_page = 'reports' %} {% block content %}
       <div class="um-fact-grid">
         <div class="um-fact">
           <span class="lbl">Area</span>
-          <span class="val" id="factArea">—</span>
+          <span class="val" id="factArea">â€”</span>
         </div>
         <div class="um-fact">
           <span class="lbl">Target seedlings</span>
-          <span class="val" id="factTarget">—</span>
+          <span class="val" id="factTarget">â€”</span>
         </div>
         <div class="um-fact">
           <span class="lbl">Actually planted</span>
-          <span class="val" id="factPlanted">—</span>
+          <span class="val" id="factPlanted">â€”</span>
         </div>
         <div class="um-fact">
           <span class="lbl">Year contracted</span>
-          <span class="val" id="factYear">—</span>
+          <span class="val" id="factYear">â€”</span>
         </div>
         <div class="um-fact">
           <span class="lbl">Zone</span>
-          <span class="val" id="factZone">—</span>
+          <span class="val" id="factZone">â€”</span>
         </div>
         <div class="um-fact">
           <span class="lbl">Boundary on file</span>
-          <span class="val" id="factBoundary">—</span>
+          <span class="val" id="factBoundary">â€”</span>
         </div>
       </div>
     </div>
@@ -286,137 +291,6 @@ endblock %} {% set active_page = 'reports' %} {% block content %}
   </div>
 </form>
 
-<!-- ============ PAST REPORTS ============ -->
-<div class="um-header mt-4">
-  <div>
-    <div class="um-title-row">
-      <h2>My Reports</h2>
-      <span class="um-count-pill">{{ my_reports|length }}</span>
-    </div>
-    <p class="um-subtitle">
-      Every report you have submitted, with its review status.
-    </p>
-  </div>
-</div>
-
-<div class="um-table-card">
-  {% if my_reports %}
-  <div class="um-scroll-wrap" id="myreports-scroll">
-    <table class="um-table um-scroll-table">
-      <thead>
-        <tr>
-          <th>#</th>
-          <th>Site</th>
-          <th>Monitored</th>
-          <th class="text-end">Plots</th>
-          <th class="text-end">Counted</th>
-          <th class="text-end">Survival</th>
-          <th class="text-end">Intensity</th>
-          <th>Status</th>
-          <th>Submitted</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for r in my_reports %}
-        <tr>
-          <td class="num-cell">{{ r.report_id }}</td>
-          <td>
-            {% if r.site %}
-            <div class="sites-name-cell">{{ r.site.site_name }}</div>
-            {% if r.site.location %}
-            <div class="text-secondary small">
-              {{ r.site.location.barangay }}, {{ r.site.location.municipality }}
-            </div>
-            {% endif %} {% else %}
-            <span class="text-secondary">&mdash;</span>
-            {% endif %}
-          </td>
-          <td>{{ r.monitoring_date.strftime('%Y-%m-%d') }}</td>
-          <td class="num-cell">{{ r.plots_recorded or '—' }}</td>
-          <td class="num-cell">{{ r.total_counted or '—' }}</td>
-          <td
-            class="num-cell sites-fw-semibold {% if r.survival_rate >= 85 %}text-success{% else %}text-danger{% endif %}"
-          >
-            {{ r.survival_rate }}%
-          </td>
-          <td class="num-cell">{{ r.sampling_intensity }}%</td>
-          <td>
-            <span class="um-status st-{{ r.approval_status|lower }}"
-              >{{ r.approval_status }}</span
-            >
-            {% if r.review_note %}
-            <div class="text-secondary small fst-italic">
-              {{ r.review_note }}
-            </div>
-            {% endif %}
-          </td>
-          <td>{{ r.submitted_at.strftime('%Y-%m-%d') }}</td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
-
-  <div class="um-scroll-controls">
-    <button
-      type="button"
-      class="um-scroll-btn"
-      id="myreports-scroll-left"
-      onclick="myReportsScroll(-1)"
-      aria-label="Scroll table left"
-    >
-      <svg
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="2.5"
-        stroke-linecap="round"
-        stroke-linejoin="round"
-      >
-        <path d="m15 18-6-6 6-6" />
-      </svg>
-    </button>
-    <span class="um-scroll-hint">Scroll to see more columns</span>
-    <button
-      type="button"
-      class="um-scroll-btn"
-      id="myreports-scroll-right"
-      onclick="myReportsScroll(1)"
-      aria-label="Scroll table right"
-    >
-      <svg
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="2.5"
-        stroke-linecap="round"
-        stroke-linejoin="round"
-      >
-        <path d="m9 18 6-6-6-6" />
-      </svg>
-    </button>
-  </div>
-  {% else %}
-  <div class="um-empty">
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      stroke-width="2"
-      stroke-linecap="round"
-      stroke-linejoin="round"
-    >
-      <rect width="8" height="4" x="8" y="2" rx="1" ry="1" />
-      <path
-        d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"
-      />
-      <path d="m9 14 2 2 4-4" />
-    </svg>
-    <strong>No reports yet</strong>
-    <p>Submitted monitoring reports appear here with their review status.</p>
-  </div>
-  {% endif %}
-</div>
 
 <script>
   // ---------- cascading location pickers ----------
@@ -515,14 +389,14 @@ endblock %} {% set active_page = 'reports' %} {% block content %}
 
   function showFacts(s) {
     document.getElementById("siteTitle").textContent =
-      s.site_name + (s.site_code ? "  ·  " + s.site_code : "");
+      s.site_name + (s.site_code ? "  Â·  " + s.site_code : "");
     document.getElementById("factArea").textContent = s.area_size_ha + " ha";
     document.getElementById("factTarget").textContent =
       s.target_trees.toLocaleString();
     document.getElementById("factPlanted").textContent =
       s.actual_planted.toLocaleString();
-    document.getElementById("factYear").textContent = s.year_contracted || "—";
-    document.getElementById("factZone").textContent = s.zone_type || "—";
+    document.getElementById("factYear").textContent = s.year_contracted || "â€”";
+    document.getElementById("factZone").textContent = s.zone_type || "â€”";
     document.getElementById("factBoundary").textContent = s.has_boundary
       ? s.boundary_area_ha + " ha"
       : "not captured";
@@ -648,27 +522,6 @@ endblock %} {% set active_page = 'reports' %} {% block content %}
 
     panel.innerHTML = html;
   }
-
-  // ---------- my reports table scroll ----------
-  function myReportsScroll(direction) {
-    const el = document.getElementById("myreports-scroll");
-    if (el) el.scrollBy({ left: direction * 320, behavior: "smooth" });
-  }
-
-  (function () {
-    const el = document.getElementById("myreports-scroll");
-    const left = document.getElementById("myreports-scroll-left");
-    const right = document.getElementById("myreports-scroll-right");
-    if (!el || !left || !right) return;
-
-    function updateButtons() {
-      left.disabled = el.scrollLeft <= 4;
-      right.disabled = el.scrollLeft >= el.scrollWidth - el.clientWidth - 4;
-    }
-    el.addEventListener("scroll", updateButtons);
-    window.addEventListener("resize", updateButtons);
-    updateButtons();
-  })();
 
   // ---------- pre-selection from the GIS map ----------
   //

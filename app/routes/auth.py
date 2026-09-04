@@ -1,6 +1,7 @@
 from flask import Blueprint, render_template, request, redirect, url_for, session, flash
 from app.extensions import db
 from app.models import User, Organization
+from app.utils.audit import log_action, log_login
 
 auth_bp = Blueprint('auth', __name__)
 
@@ -55,9 +56,11 @@ def login():
             session['user_id'] = user.user_id
             session['username'] = user.username
             session['role'] = user.role
-            session['cenro'] = user.cenro             
+            session['cenro'] = user.cenro
+            log_login(user.username, True, user.role, user.user_id)             
             return redirect(url_for('dashboard.index'))
         else:
+            log_login(username, False)
             return render_template('Log_in.html', error="Incorrect Username or Password")
 
     return render_template("Log_in.html")
@@ -65,5 +68,6 @@ def login():
 
 @auth_bp.route('/logout')
 def logout():
+    log_action('logout', 'users', session.get('user_id'), commit=True)
     session.clear()
     return redirect(url_for('auth.login'))

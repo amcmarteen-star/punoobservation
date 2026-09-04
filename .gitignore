@@ -3,3 +3,7 @@ __pycache__/
 *.py[cod]
 database.db
 .env
+app/static/uploads/monitoring/*
+!app/static/uploads/monitoring/.gitkeep
+app/static/uploads/requests/*
+!app/static/uploads/requests/.gitkeep

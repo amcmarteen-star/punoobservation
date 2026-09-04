@@ -125,6 +125,213 @@
   tr.beyond-top.is-hidden {
     display: none;
   }
+
+  /* ---------- clickable species rows ---------- */
+  tr.rec-row {
+    cursor: pointer;
+  }
+
+  tr.rec-row:hover,
+  tr.rec-row:focus-visible {
+    background: #f2f8f4;
+    outline: none;
+  }
+
+  tr.rec-row:focus-visible td:first-child {
+    box-shadow: inset 3px 0 0 #16a34a;
+  }
+
+  .rec-open-hint {
+    display: block;
+    font-size: 0.7rem;
+    color: #6b7a72;
+    margin-top: 2px;
+  }
+
+  /* ---------- evaluation modal ---------- */
+  .rec-modal {
+    width: min(100%, 48rem);
+    max-height: 88vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .rec-modal .um-modal-body {
+    overflow-y: auto;
+  }
+
+  .rec-sci {
+    font-style: italic;
+    color: #5f6f66;
+    font-size: 0.85rem;
+    font-weight: 400;
+  }
+
+  .rec-section {
+    margin-top: 1.4rem;
+  }
+
+  .rec-section:first-child {
+    margin-top: 0.25rem;
+  }
+
+  .rec-section h4 {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    color: #41544a;
+    margin: 0 0 0.6rem;
+    padding-bottom: 0.4rem;
+    border-bottom: 1px solid #e2eae5;
+  }
+
+  .rec-tiles {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+    gap: 0.6rem;
+  }
+
+  .rec-tile {
+    background: #f7faf8;
+    border: 1px solid #e2eae5;
+    border-radius: 8px;
+    padding: 0.6rem 0.75rem;
+  }
+
+  .rec-tile .k {
+    display: block;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #5f6f66;
+  }
+
+  .rec-tile .v {
+    display: block;
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #12211a;
+    margin-top: 2px;
+  }
+
+  .rec-tile .v .undefined-metric {
+    font-size: 0.95rem;
+    color: #6b7a72;
+    font-weight: 600;
+  }
+
+  .rec-grid {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.8rem;
+  }
+
+  .rec-grid th,
+  .rec-grid td {
+    padding: 0.45rem 0.55rem;
+    border-bottom: 1px solid #eef4f0;
+    text-align: left;
+  }
+
+  .rec-grid th {
+    font-weight: 600;
+    color: #41544a;
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+  }
+
+  .rec-grid td.num,
+  .rec-grid th.num {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .rec-grid tr.skipped td {
+    color: #8d9c94;
+  }
+
+  .match-strong  { color: #15803d; font-weight: 600; }
+  .match-moderate{ color: #92400e; font-weight: 600; }
+  .match-weak    { color: #b91c1c; font-weight: 600; }
+  .match-none    { color: #8d9c94; }
+
+  /* confusion matrix */
+  .rec-cm {
+    border-collapse: collapse;
+    font-size: 0.8rem;
+    width: 100%;
+  }
+
+  .rec-cm th,
+  .rec-cm td {
+    border: 1px solid #e2eae5;
+    padding: 0.5rem 0.6rem;
+    text-align: center;
+  }
+
+  .rec-cm th {
+    background: #f7faf8;
+    font-weight: 600;
+    color: #41544a;
+    font-size: 0.72rem;
+  }
+
+  .rec-cm th.rowhead {
+    text-align: left;
+    white-space: nowrap;
+  }
+
+  .rec-cm .cm-n {
+    display: block;
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: #12211a;
+  }
+
+  .rec-cm .cm-tag {
+    display: block;
+    font-size: 0.68rem;
+    letter-spacing: 0.5px;
+    color: #6b7a72;
+  }
+
+  .rec-cm td.hit { background: #f0fdf4; }
+  .rec-cm td.miss { background: #fffbeb; }
+
+  .rec-read {
+    background: #f7faf8;
+    border-left: 3px solid #16a34a;
+    border-radius: 0 8px 8px 0;
+    padding: 0.7rem 0.9rem;
+    margin-top: 0.7rem;
+    font-size: 0.82rem;
+    line-height: 1.6;
+    color: #2f4239;
+  }
+
+  .rec-caveat {
+    border-left-color: #d1a054;
+    background: #fffbeb;
+    color: #6b5321;
+  }
+
+  .rec-meta {
+    font-size: 0.75rem;
+    color: #6b7a72;
+    margin-top: 0.5rem;
+    line-height: 1.5;
+  }
+
+  .rec-loading,
+  .rec-error {
+    padding: 2rem 0;
+    text-align: center;
+    color: #5f6f66;
+    font-size: 0.875rem;
+  }
+
+  .rec-error { color: #b91c1c; }
 </style>
 {% endblock %}
 
@@ -256,7 +463,12 @@
         </thead>
         <tbody>
           {% for r in result.all_scores %}
-          <tr class="{% if loop.index > 5 %}beyond-top is-hidden{% endif %}">
+          <tr class="rec-row {% if loop.index > 5 %}beyond-top is-hidden{% endif %}"
+              data-tree-id="{{ r.tree_id }}"
+              data-rank="{{ loop.index }}"
+              tabindex="0"
+              role="button"
+              aria-label="Show evaluation metrics for {{ r.specie_name }}">
             <td>
               <span class="rank-badge {% if loop.index > 5 %}muted{% endif %}">
                 {{ loop.index }}
@@ -267,6 +479,7 @@
               {% if r.scientific_name %}
                 <div class="sci-name">{{ r.scientific_name }}</div>
               {% endif %}
+              <span class="rec-open-hint">Click for evaluation metrics</span>
             </td>
             <td>
               <div class="d-flex align-items-center gap-2">
@@ -330,7 +543,249 @@
     {% endif %}
   </div>
 
+  <!-- ============ EVALUATION MODAL ============ -->
+  <div class="um-modal-overlay" id="rec-eval-modal">
+    <div class="um-modal rec-modal" role="dialog" aria-modal="true"
+         aria-labelledby="rec-eval-title">
+      <div class="um-modal-head">
+        <h3 id="rec-eval-title">Species evaluation</h3>
+        <button type="button" class="um-modal-close" id="rec-eval-close"
+                aria-label="Close dialog">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+        </button>
+      </div>
+      <div class="um-modal-body" id="rec-eval-body">
+        <div class="rec-loading">Loading…</div>
+      </div>
+    </div>
+  </div>
+
   <script>
+    (function () {
+      const LOCATION_ID = {{ result.location_id }};
+      const overlay = document.getElementById('rec-eval-modal');
+      const body = document.getElementById('rec-eval-body');
+      const title = document.getElementById('rec-eval-title');
+      const cache = {};
+      let lastFocused = null;
+
+      function esc(value) {
+        return String(value === null || value === undefined ? '' : value)
+          .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+      }
+
+      // None from the server means the metric is undefined, not zero.
+      // Printing 0.000 for "never recommended anywhere" would misinform.
+      function metric(value) {
+        return value === null || value === undefined
+          ? '<span class="undefined-metric">not defined</span>'
+          : value.toFixed(3);
+      }
+
+      function num(value) {
+        return value === null || value === undefined ? '—' : value;
+      }
+
+      function matchCell(row) {
+        if (!row.used) return '<span class="match-none">skipped</span>';
+        return '<span class="match-' + esc(row.match) + '">'
+          + esc(row.match) + '</span>';
+      }
+
+      function rangeCell(row) {
+        if (row.in_range === true) return '<span class="in-range-yes">Inside</span>';
+        if (row.in_range === false) return '<span class="in-range-no">Outside</span>';
+        return '<span class="match-none">not testable</span>';
+      }
+
+      function render(d) {
+        const sp = d.species;
+        const site = d.site;
+        const m = d.species_metrics;
+        const c = d.corpus;
+
+        title.innerHTML = esc(sp.specie_name)
+          + (sp.scientific_name
+              ? ' <span class="rec-sci">' + esc(sp.scientific_name) + '</span>'
+              : '');
+
+        let html = '';
+
+        /* ---- 1. this barangay ---- */
+        html += '<div class="rec-section">'
+          + '<h4>This barangay — ' + esc(site.barangay) + ', '
+          + esc(site.municipality) + '</h4>'
+          + '<div class="rec-tiles">'
+          + '<div class="rec-tile"><span class="k">Similarity</span>'
+          + '<span class="v">' + site.similarity.toFixed(4) + '</span></div>'
+          + '<div class="rec-tile"><span class="k">Within ranges</span>'
+          + '<span class="v">' + (site.within_all_ranges ? 'Yes' : 'No')
+          + '</span></div>'
+          + '<div class="rec-tile"><span class="k">Features used</span>'
+          + '<span class="v">' + site.features_used + ' of '
+          + site.features_total + '</span></div>'
+          + '</div>';
+
+        html += '<table class="rec-grid" style="margin-top:.7rem;">'
+          + '<thead><tr><th>Feature</th><th>Site</th><th>Species profile</th>'
+          + '<th class="num">Normalised</th><th>Agreement</th>'
+          + '<th>Published range</th></tr></thead><tbody>';
+
+        d.features.forEach(function (row) {
+          html += '<tr' + (row.used ? '' : ' class="skipped"') + '>'
+            + '<td>' + esc(row.label) + '</td>'
+            + '<td>' + esc(row.site_value) + '</td>'
+            + '<td>' + esc(row.species_value) + '</td>'
+            + '<td class="num">'
+            + (row.used
+                ? row.site_norm.toFixed(2) + ' vs ' + row.species_norm.toFixed(2)
+                : '—')
+            + '</td>'
+            + '<td>' + matchCell(row) + '</td>'
+            + '<td>' + rangeCell(row) + '</td>'
+            + '</tr>';
+        });
+
+        html += '</tbody></table>'
+          + '<div class="rec-read">' + esc(d.interpretation.similarity)
+          + '</div></div>';
+
+        /* ---- 2. per-species classification metrics ---- */
+        html += '<div class="rec-section">'
+          + '<h4>Species-level evaluation — ' + c.barangays_evaluated
+          + ' barangays</h4>'
+          + '<div class="rec-tiles">'
+          + '<div class="rec-tile"><span class="k">Precision</span>'
+          + '<span class="v">' + metric(m.precision) + '</span></div>'
+          + '<div class="rec-tile"><span class="k">Recall</span>'
+          + '<span class="v">' + metric(m.recall) + '</span></div>'
+          + '<div class="rec-tile"><span class="k">F1 score</span>'
+          + '<span class="v">' + metric(m.f1) + '</span></div>'
+          + '<div class="rec-tile"><span class="k">Accuracy</span>'
+          + '<span class="v">' + metric(m.accuracy) + '</span></div>'
+          + '</div>';
+
+        html += '<table class="rec-cm" style="margin-top:.7rem;">'
+          + '<thead><tr><th class="rowhead">Confusion matrix</th>'
+          + '<th>Within published ranges</th><th>Outside ranges</th>'
+          + '</tr></thead><tbody>'
+          + '<tr><th class="rowhead">In top ' + c.top_k + '</th>'
+          + '<td class="hit"><span class="cm-n">' + num(m.tp)
+          + '</span><span class="cm-tag">true positive</span></td>'
+          + '<td class="miss"><span class="cm-n">' + num(m.fp)
+          + '</span><span class="cm-tag">false positive</span></td></tr>'
+          + '<tr><th class="rowhead">Not in top ' + c.top_k + '</th>'
+          + '<td class="miss"><span class="cm-n">' + num(m.fn)
+          + '</span><span class="cm-tag">false negative</span></td>'
+          + '<td class="hit"><span class="cm-n">' + num(m.tn)
+          + '</span><span class="cm-tag">true negative</span></td></tr>'
+          + '</tbody></table>'
+          + '<div class="rec-read">' + esc(d.interpretation.species)
+          + '</div></div>';
+
+        /* ---- 3. engine-wide ranking metrics ---- */
+        html += '<div class="rec-section">'
+          + '<h4>Engine-wide ranking metrics</h4>'
+          + '<table class="rec-grid"><thead><tr><th>K</th>'
+          + '<th class="num">Precision@K</th><th class="num">NDCG@K</th>'
+          + '</tr></thead><tbody>';
+
+        d.engine_metrics.rows.forEach(function (row) {
+          html += '<tr><td>' + row.k + '</td>'
+            + '<td class="num">' + metric(row.precision_at_k) + '</td>'
+            + '<td class="num">' + metric(row.ndcg_at_k) + '</td></tr>';
+        });
+
+        html += '</tbody></table>'
+          + '<div class="rec-read">' + esc(d.interpretation.engine)
+          + '</div></div>';
+
+        /* ---- 4. how to read all of it ---- */
+        html += '<div class="rec-section">'
+          + '<h4>Basis</h4>'
+          + '<div class="rec-meta">'
+          + 'Ground truth: ' + esc(c.ground_truth) + '.<br>'
+          + 'Scope: ' + esc(d.scope) + ' — ' + c.barangays_scored
+          + ' barangays scored, ' + c.barangays_evaluated
+          + ' evaluated, ' + c.skipped_no_truth
+          + ' excluded for having no relevant species and therefore no '
+          + 'ground truth. ' + c.species_count
+          + ' species in the reference dataset.'
+          + '</div>'
+          + '<div class="rec-read rec-caveat">'
+          + esc(d.interpretation.caveat) + '</div>'
+          + (sp.source
+              ? '<div class="rec-meta">Species data source: '
+                + esc(sp.source) + '.</div>'
+              : '')
+          + '</div>';
+
+        body.innerHTML = html;
+      }
+
+      function open(treeId, fallbackName) {
+        lastFocused = document.activeElement;
+        overlay.classList.add('open');
+        document.getElementById('rec-eval-close').focus();
+
+        if (cache[treeId]) {
+          render(cache[treeId]);
+          return;
+        }
+
+        title.textContent = fallbackName;
+        body.innerHTML = '<div class="rec-loading">Computing metrics…</div>';
+
+        fetch('/api/species-evaluation/' + treeId
+              + '?location_id=' + LOCATION_ID)
+          .then(function (res) { return res.json(); })
+          .then(function (data) {
+            if (!data.found) {
+              body.innerHTML = '<div class="rec-error">'
+                + esc(data.reason || 'Could not load metrics.') + '</div>';
+              return;
+            }
+            cache[treeId] = data;
+            render(data);
+          })
+          .catch(function () {
+            body.innerHTML = '<div class="rec-error">'
+              + 'Could not load metrics. Check your connection and try again.'
+              + '</div>';
+          });
+      }
+
+      function close() {
+        overlay.classList.remove('open');
+        if (lastFocused) lastFocused.focus();
+      }
+
+      document.querySelectorAll('tr.rec-row').forEach(function (row) {
+        const treeId = row.getAttribute('data-tree-id');
+        const name = row.querySelector('.fw-semibold').textContent.trim();
+
+        row.addEventListener('click', function () { open(treeId, name); });
+        row.addEventListener('keydown', function (e) {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            open(treeId, name);
+          }
+        });
+      });
+
+      document.getElementById('rec-eval-close')
+        .addEventListener('click', close);
+
+      overlay.addEventListener('click', function (e) {
+        if (e.target === overlay) close();
+      });
+
+      document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && overlay.classList.contains('open')) close();
+      });
+    })();
+
     (function () {
       const btn = document.getElementById('toggleAll');
       const label = document.getElementById('resultCount');

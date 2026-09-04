@@ -27,7 +27,6 @@ with published ecology. Source B tests whether it reproduces recorded
 practice. A large gap between them is itself a finding.
 """
 
-import math
 import os
 import sys
 
@@ -41,61 +40,12 @@ from app.services.recommender import (
     is_within_ranges,
 )
 
+# The metric mathematics lives in the service layer, not here, so that
+# this script and the species detail panel in the web interface cannot
+# report different figures for the same data.
+from app.services.recommender_eval import precision_at_k, ndcg_at_k
+
 K_VALUES = [1, 3, 5]
-
-
-# ----------------------------------------------------------------------
-# The metrics
-# ----------------------------------------------------------------------
-
-def precision_at_k(ranked_names, relevant_names, k):
-    """
-    Of the top K recommendations, what fraction are relevant?
-
-        Precision@K = (relevant items in top K) / K
-
-    Range 0 to 1. Higher is better.
-    Order within the top K does not matter.
-    """
-    if k == 0:
-        return 0.0
-    top = ranked_names[:k]
-    hits = sum(1 for name in top if name in relevant_names)
-    return hits / k
-
-
-def dcg(gains):
-    """
-    Discounted Cumulative Gain.
-
-        DCG = sum over positions i of  gain_i / log2(i + 1)
-
-    The divisor grows with position, so a relevant item ranked 1st
-    contributes more than the same item ranked 5th. This is what makes
-    NDCG sensitive to ordering, unlike Precision@K.
-    """
-    return sum(g / math.log2(i + 2) for i, g in enumerate(gains))
-
-
-def ndcg_at_k(ranked_names, relevant_names, k):
-    """
-    Normalized Discounted Cumulative Gain.
-
-        NDCG@K = DCG of your ranking / DCG of the perfect ranking
-
-    The perfect ranking places every relevant species first. Dividing by
-    it puts the score on a 0 to 1 scale regardless of how many relevant
-    species exist, which makes results comparable across barangays.
-
-    Binary relevance is used here: 1 if relevant, 0 otherwise.
-    """
-    gains = [1.0 if n in relevant_names else 0.0 for n in ranked_names[:k]]
-    actual = dcg(gains)
-
-    ideal_gains = [1.0] * min(len(relevant_names), k)
-    ideal = dcg(ideal_gains)
-
-    return actual / ideal if ideal > 0 else 0.0
 
 
 # ----------------------------------------------------------------------
