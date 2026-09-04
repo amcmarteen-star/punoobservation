@@ -75,17 +75,27 @@
     <section class="landing-section" id="about">
         <div class="landing-shell">
             <div class="landing-about">
-                <div class="landing-plates landing-reveal landing-from-left">
-                    <figure class="landing-plate landing-plate-main">
+                <div class="landing-plates landing-reveal landing-from-left" data-plates>
+                    <div class="landing-plate-stage">
+                    <figure class="landing-plate">
                         <img src="{{ url_for('static', filename='images/landing/reforestation-site.jpg') }}" alt="Volunteers planting seedlings by hand across an open hillside" width="8000" height="4000" loading="lazy" decoding="async">
                     </figure>
-                    <!-- <div class="landing-badge">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.77 4.78 4 4 0 0 1-6.75 0 4 4 0 0 1-4.78-4.77 4 4 0 0 1 0-6.76Z"/><path d="m9 12 2 2 4-4"/></svg>
-                        <span>In partnership with<br>DENR-CENRO</span>
-                    </div> -->
-                    <figure class="landing-plate landing-plate-second">
+                    <figure class="landing-plate">
+                        <img src="{{ url_for('static', filename='images/landing/seedlings.jpg') }}" alt="Young seedlings raised in a nursery, ready for planting out" width="1600" height="1067" loading="lazy" decoding="async">
+                    </figure>
+                    <figure class="landing-plate">
                         <img src="{{ url_for('static', filename='images/landing/field-monitoring.jpg') }}" alt="Aerial view of a planting site being worked, seen from directly above" width="1800" height="1350" loading="lazy" decoding="async">
                     </figure>
+                    <figure class="landing-plate">
+                        <img src="{{ url_for('static', filename='images/landing/planting-hands.jpg') }}" alt="An older and a younger pair of hands together firming the soil around a newly planted seedling" width="2000" height="1333" loading="lazy" decoding="async">
+                    </figure>
+                    <figure class="landing-plate">
+                        <img src="{{ url_for('static', filename='images/landing/seedling-roots.jpg') }}" alt="A nursery worker holding up a seedling with its root ball intact, ready for transplanting" width="2000" height="1333" loading="lazy" decoding="async">
+                    </figure>
+                    <figure class="landing-plate">
+                        <img src="{{ url_for('static', filename='images/landing/nursery-trays.jpg') }}" alt="Rows of potted saplings growing on a nursery bench" width="2000" height="1333" loading="lazy" decoding="async">
+                    </figure>
+                    </div>
                 </div>
 
                 <div class="landing-reveal" style="--reveal-delay: 120ms">
@@ -97,8 +107,8 @@
                         reforestation projects across Eastern Pangasinan.
                     </p>
                     <p class="landing-lead">
-                        It centralizes planting site records, geospatial mapping, tree
-                        inventories, species recommendations, and progress monitoring into one
+                        It centralizes planting site records, geospatial mapping, 
+                        species recommendations, and progress monitoring into one
                         shared system, making environmental data more accessible and
                         decision-making more efficient.
                     </p>

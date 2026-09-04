@@ -209,10 +209,91 @@
         if (onScreen) { start(); }
     }
 
+    /* ---------- About-section photograph carousel ----------
+       Three photographs on screen at once, the middle one largest. Every
+       tick they move round one slot: the middle goes left, the right
+       comes to the middle, and the left wraps round to the right.
+
+       There are more photographs than slots, so position is worked out
+       from the distance to whichever card is currently in the middle
+       rather than kept on the elements. A card two steps out is placed
+       just past the visible three and left invisible, which is what
+       makes a card arrive by sliding in rather than fading up out of
+       nothing. Everything further round waits parked off to the right. */
+    function initPlates() {
+        var root = document.querySelector("[data-plates]");
+        if (!root) return;
+
+        var slides = Array.prototype.slice.call(root.querySelectorAll(".landing-plate"));
+        if (slides.length < 3) return;
+
+        var CLASSES = ["is-center", "is-right", "is-far-right", "is-far-left", "is-left"];
+        var HOLD = 2500;
+        var count = slides.length;
+        var centre = 1;
+        var timer = null;
+
+        /* Clicking a card off to the side brings it in. There is no
+           other control: the set runs on its own, and a picture people
+           want to hold still is held by hovering it. */
+        slides.forEach(function (slide, i) {
+            slide.addEventListener("click", function () { centre = i; paint(); restart(); });
+        });
+
+        /* Steps forward from the middle card, so the one before it comes
+           out as count - 1 and lands in the left-hand slot. */
+        function slotFor(i) {
+            var step = (i - centre + count) % count;
+            if (step === 0) return "is-center";
+            if (step === 1) return "is-right";
+            if (step === 2) return "is-far-right";
+            if (step === count - 1) return "is-left";
+            if (step === count - 2) return "is-far-left";
+            return null;
+        }
+
+        function paint() {
+            slides.forEach(function (el, i) {
+                var slot = slotFor(i);
+                CLASSES.forEach(function (name) {
+                    el.classList.toggle(name, name === slot);
+                });
+            });
+        }
+
+        /* middle -> left, right -> middle, left -> right */
+        function advance() {
+            centre = (centre + 1) % count;
+            paint();
+        }
+
+        function stop() { if (timer) { clearInterval(timer); timer = null; } }
+        function restart() {
+            stop();
+            if (reduced.matches) return;
+            timer = setInterval(advance, HOLD);
+        }
+
+        /* Hovering holds the set still on whichever picture is being
+           looked at, and the tab going to the background stops it
+           entirely rather than racing through it unseen. */
+        root.addEventListener("mouseenter", stop);
+        root.addEventListener("mouseleave", restart);
+        root.addEventListener("focusin", stop);
+        root.addEventListener("focusout", restart);
+        document.addEventListener("visibilitychange", function () {
+            if (document.hidden) { stop(); } else { restart(); }
+        });
+
+        paint();
+        restart();
+    }
+
     function init() {
         initNav();
         initReveals();
         initMarquee();
+        initPlates();
     }
 
     if (document.readyState === "loading") {

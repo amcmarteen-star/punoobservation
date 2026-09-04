@@ -129,6 +129,10 @@
 .landing-section {
     --section-bg: var(--paper);
     background: var(--section-bg);
+    /* The plate triptych runs past the shell on purpose. Clipping here --
+       on the full-width section -- cuts it at the screen edge and keeps a
+       horizontal scrollbar off the page. */
+    overflow-x: clip;
     padding-block: clamp(var(--sp-8), 7vw, var(--sp-14));
     scroll-margin-top: 6rem;
 }
@@ -217,6 +221,11 @@
     align-items: center;
     justify-content: space-between;
     gap: var(--sp-3);
+    /* Capped to the same width as the page content, so the bar sits over
+       the columns it belongs to rather than stretching the width of the
+       screen and leaving its own middle empty. */
+    max-width: var(--shell);
+    margin-inline: auto;
     height: 60px;
     padding: 0 0.75rem 0 1rem;
     border-radius: var(--pill);
@@ -403,35 +412,110 @@
 }
 
 
-/* A tall plate, then a badge and a shorter plate stacked beside it. The
-   badge reaches back over the tall plate so the two columns read as one
-   composition rather than two loose pictures. */
+/* Three photographs at once, the middle one largest, rotating one slot
+   every few seconds. The description keeps its own column beside this
+   and never moves.
+
+   Every card sits in the same place and is moved into its slot by a
+   transform alone -- no card is ever re-laid-out, so the rotation is one
+   smooth motion rather than three elements reflowing past each other.
+   The percentages in translate are of the card's own width, which is why
+   the spacing holds at every screen size. */
 .landing-plates {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 0.88fr);
-    grid-template-rows: auto 1fr;
-    align-items: stretch;
-    gap: var(--sp-2);
+    margin-left: calc(-1 * max(0px, (100vw - var(--shell)) / 2) - var(--sp-3));
+}
+
+.landing-plate-stage {
+    position: relative;
+    aspect-ratio: 16 / 9;
+    min-height: 19rem;
+    max-height: 34rem;
 }
 
 .landing-plate {
-    position: relative;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 40%;
     margin: 0;
-    max-width: 100%;
+    aspect-ratio: 3 / 4;
+    border-radius: var(--r);
     overflow: hidden;
     isolation: isolate;
-    border-radius: var(--r);
     box-shadow: var(--sh-md);
+    cursor: pointer;
+    /* The resting state is also the waiting state: a card with no slot
+       is parked off to the right at zero opacity, so it fades in as it
+       reaches the right-hand slot and never appears from nowhere. */
+    z-index: 0;
+    opacity: 0;
+    pointer-events: none;
+    transform: translate(calc(-50% + 130%), -50%) scale(0.62);
+    transition: transform 0.85s var(--ease), opacity 0.85s var(--ease),
+                box-shadow 0.85s var(--ease);
 }
+
+.landing-plate.is-center {
+    z-index: 3;
+    opacity: 1;
+    pointer-events: auto;
+    box-shadow: var(--sh-lg);
+    transform: translate(-50%, -50%) scale(1);
+}
+.landing-plate.is-left {
+    z-index: 2;
+    opacity: 0.88;
+    pointer-events: auto;
+    transform: translate(calc(-50% - 80%), -50%) scale(0.78);
+}
+.landing-plate.is-right {
+    z-index: 2;
+    opacity: 0.88;
+    pointer-events: auto;
+    transform: translate(calc(-50% + 80%), -50%) scale(0.78);
+}
+.landing-plate.is-left:hover,
+.landing-plate.is-right:hover { opacity: 1; }
+
+/* One step outside the trio on either side. Still invisible, but placed,
+   so entering and leaving the set is a slide rather than a fade in
+   place. */
+.landing-plate.is-far-left {
+    z-index: 1;
+    opacity: 0;
+    transform: translate(calc(-50% - 130%), -50%) scale(0.62);
+}
+.landing-plate.is-far-right {
+    z-index: 1;
+    opacity: 0;
+    transform: translate(calc(-50% + 130%), -50%) scale(0.62);
+}
+
 .landing-plate img {
     width: 100%;
     height: 100%;
     object-fit: cover;
-    transition: transform 0.8s var(--ease);
+    /* The drift below only runs on the middle card. The transition is
+       what carries the zoom back down when a card leaves the middle,
+       instead of letting it snap. */
+    transition: transform 0.85s var(--ease);
+}
+/* The volunteers shot has its subject low in the frame, so it is nudged
+   up rather than cropped through the middle. */
+.landing-plate:first-child img { object-position: 50% 42%; }
+
+/* A slow drift on whichever card is in the middle, so the one being
+   looked at never feels frozen while it waits its turn. */
+@media (prefers-reduced-motion: no-preference) {
+    .landing-plate.is-center img { animation: landing-plate-drift 7s linear forwards; }
+}
+@keyframes landing-plate-drift {
+    from { transform: scale(1.005); }
+    to { transform: scale(1.07); }
 }
 
-/* On hover the plate pushes in slightly and a skewed band of light
-   crosses it once, then clears. */
+/* On hover a skewed band of light crosses the picture once, then clears
+   -- the same gesture the coverage cards and the screenshots use. */
 .landing-plate::after {
     content: "";
     position: absolute;
@@ -453,29 +537,17 @@
         rgba(255, 255, 255, 0) 100%
     );
 }
-
 @media (prefers-reduced-motion: no-preference) {
-    .landing-plate:hover img { transform: scale(1.07); }
     .landing-plate:hover::after { animation: landing-sheen 0.95s var(--ease); }
 }
+/* Shared by the plates and the coverage cards: a band of light enters
+   from the left, crosses, and leaves. It is only ever driven by a hover,
+   so it never runs on its own. */
 @keyframes landing-sheen {
     0%   { opacity: 0; transform: skewX(-20deg) translateX(0); }
     15%  { opacity: 1; }
     85%  { opacity: 1; }
     100% { opacity: 0; transform: skewX(-20deg) translateX(340%); }
-}
-
-.landing-plate-main {
-    grid-column: 1;
-    grid-row: 1 / span 2;
-    min-height: 32rem;
-    aspect-ratio: 3 / 4;
-}
-.landing-plate-main img { object-position: 50% 42%; }
-
-.landing-plate-second {
-    grid-column: 2;
-    grid-row: 2;
 }
 
 .landing-badge {
@@ -981,7 +1053,10 @@
     .landing-hero-inner { grid-template-columns: minmax(0, 1fr); gap: var(--sp-6); }
     .landing-hero-map { max-width: 26rem; }
     .landing-about { grid-template-columns: minmax(0, 1fr); }
-    .landing-plates { max-width: 34rem; }
+    /* Stacked above the copy there is no gutter left to reach into, so
+       the frame comes back inside the shell and rounds all four corners. */
+    .landing-plates { margin-left: 0; }
+    .landing-plate-stage { min-height: 0; }
     .landing-feature { grid-template-columns: minmax(0, 1fr); gap: var(--sp-4); }
     .landing-feature:nth-child(odd) .landing-feature-media { order: 0; }
     .landing-feature-copy { max-width: none; }
@@ -1006,8 +1081,6 @@
         margin-left: 0;
         white-space: normal;
     }
-    .landing-plate-main { grid-row: 2; min-height: 0; aspect-ratio: 3 / 4; }
-    .landing-plate-second { grid-row: 2; }
     .landing-footer-grid { grid-template-columns: minmax(0, 1fr); gap: var(--sp-4); }
     .landing-footer-bottom { flex-direction: column; }
 }
