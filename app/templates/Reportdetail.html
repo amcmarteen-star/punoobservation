@@ -317,10 +317,11 @@
     </div>
 
     {% if report.boundary_geojson %}
-    <label class="rep-checkbox" for="updateBoundary">
-      <input type="checkbox" name="update_boundary" value="yes" id="updateBoundary" />
-      Replace the stored site boundary with the one captured in this report
-    </label>
+    <div class="alert alert-info mt-3 mb-0 small">
+      This report contains a captured site boundary. Approving it queues
+      the boundary for publication by the provincial administrator. It
+      will not appear on the map until then.
+    </div>
     {% endif %}
 
     <div class="um-alert um-alert-warning mt-3 mb-0">

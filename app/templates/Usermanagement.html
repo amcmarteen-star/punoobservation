@@ -1,268 +1,605 @@
-{% extends "Base.html" %}
-{% block title %}User Management - PuNoObservation{% endblock %}
-{% block content_class %}page-content-wide{% endblock %}
-{% set active_page = 'users' %}
-
-{% block content %}
+{% extends "Base.html" %} {% block title %}User Management - PuNoObservation{%
+endblock %} {% block content_class %}page-content-wide{% endblock %} {% set
+active_page = 'users' %} {% block content %}
 
 <div class="um-header">
-    <div>
-        <div class="um-title-row">
-            <h2>User Management</h2>
-            <span class="um-count-pill">{{ users|length }}</span>
-        </div>
-        <p class="um-subtitle">Manage your team members and their account permissions here.</p>
+  <div>
+    <div class="um-title-row">
+      <h2>User Management</h2>
+      <span class="um-count-pill">{{ users|length }}</span>
     </div>
-    <button type="button" class="um-btn-add" onclick="umOpen('um-add-modal')">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
-        Add User
-    </button>
+    <p class="um-subtitle">
+      Manage your team members and their account permissions here.
+    </p>
+  </div>
+  <button type="button" class="um-btn-add" onclick="umOpen('um-add-modal')">
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2.5"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    >
+      <path d="M5 12h14" />
+      <path d="M12 5v14" />
+    </svg>
+    Add User
+  </button>
 </div>
 
 <div class="um-toolbar">
+  <div class="um-search-group">
+    <form method="GET" class="um-search-wrap">
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
+        <path d="m21 21-4.34-4.34" />
+        <circle cx="11" cy="11" r="8" />
+      </svg>
+      <input
+        type="text"
+        name="q"
+        class="um-search-input"
+        aria-label="Search users"
+        placeholder="Search username, email, or role..."
+        value="{{ search }}"
+      />
+    </form>
+    {% if search %}
+    <a href="{{ url_for('admin.user_management') }}" class="um-btn-ghost"
+      >Clear</a
+    >
+    {% endif %}
+  </div>
 
-    <div class="um-search-group">
-        <form method="GET" class="um-search-wrap">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg>
-            <input type="text" name="q" class="um-search-input"
-                   aria-label="Search users"
-                   placeholder="Search username, email, or role..."
-                   value="{{ search }}">
-        </form>
-        {% if search %}
-            <a href="{{ url_for('admin.user_management') }}" class="um-btn-ghost">Clear</a>
-        {% endif %}
+  <div class="um-filter-wrap">
+    <button type="button" class="um-filter-btn" onclick="umToggleFilterMenu()">
+      <span class="um-filter-btn-label">
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+          <path d="M16 3.128a4 4 0 0 1 0 7.744" />
+          <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+          <circle cx="9" cy="7" r="4" />
+        </svg>
+        <span id="um-filter-label">Role</span>
+      </span>
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
+        <path d="m6 9 6 6 6-6" />
+      </svg>
+    </button>
+    <div id="um-filter-menu" class="um-filter-menu um-filter-menu-end">
+      <button
+        type="button"
+        class="active"
+        onclick="umFilterRole('all', 'Role')"
+      >
+        All roles
+      </button>
+      <button
+        type="button"
+        onclick="umFilterRole('superadmin', 'Provincial Admin')"
+      >
+        Provincial Admin
+      </button>
+      <button type="button" onclick="umFilterRole('admin', 'Administrator')">
+        Administrator
+      </button>
+      <button
+        type="button"
+        onclick="umFilterRole('field_officer', 'Field Officer')"
+      >
+        Field Officer
+      </button>
+      <button
+        type="button"
+        onclick="umFilterRole('normal_user', 'Normal User')"
+      >
+        Normal User
+      </button>
     </div>
-
-    <div class="um-filter-wrap">
-        <button type="button" class="um-filter-btn" onclick="umToggleFilterMenu()">
-            <span class="um-filter-btn-label">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><path d="M16 3.128a4 4 0 0 1 0 7.744"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><circle cx="9" cy="7" r="4"/></svg>
-                <span id="um-filter-label">Role</span>
-            </span>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
-        </button>
-        <div id="um-filter-menu" class="um-filter-menu um-filter-menu-end">
-            <button type="button" class="active" onclick="umFilterRole('all', 'Role')">All roles</button>
-            <button type="button" onclick="umFilterRole('admin', 'Administrator')">Administrator</button>
-            <button type="button" onclick="umFilterRole('field_officer', 'Field Officer')">Field Officer</button>
-            <button type="button" onclick="umFilterRole('normal_user', 'Normal User')">Normal User</button>
-        </div>
-    </div>
+  </div>
 </div>
+<!-- <div
+  class="req-form-card mb-4"
+  style="
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 1.25rem;
+  "
+>
+  <h5 class="fw-bold text-success mb-3">Create User</h5>
 
-<div class="um-table-card">
-    {% if users %}
-    <table class="um-table" id="um-table">
-        <colgroup>
-            <col class="col-name">
-            <col class="col-email">
-            <col class="col-role">
-            <col class="col-actions">
-        </colgroup>
-        <thead>
-            <tr>
-                <th>
-                    <span class="um-th-flex">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                        Full name
-                    </span>
-                </th>
-                <th>
-                    <span class="um-th-flex">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 7-8.991 5.727a2 2 0 0 1-2.009 0L2 7"/><rect x="2" y="4" width="20" height="16" rx="2"/></svg>
-                        Email
-                    </span>
-                </th>
-                <th>
-                    <span class="um-th-flex">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/></svg>
-                        Role
-                    </span>
-                </th>
-                <th class="um-actions-cell">Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for u in users %}
-            <tr data-role="{{ u.role }}">
-                <td>
-                    <div class="um-name-cell">
-                        <span class="um-avatar {% if u.role == 'admin' %}av-admin{% elif u.role == 'field_officer' %}av-officer{% endif %}">
-                            {{ u.username[:2]|upper }}
-                        </span>
-                        <span class="um-name">
-                            {{ u.username }}
-                            {% if u.user_id == session.user_id %}<span class="um-you">You</span>{% endif %}
-                        </span>
-                    </div>
-                </td>
-                <td>
-                    <div class="um-email-cell">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 7-8.991 5.727a2 2 0 0 1-2.009 0L2 7"/><rect x="2" y="4" width="20" height="16" rx="2"/></svg>
-                        <span class="um-email-text">{{ u.email_address }}</span>
-                    </div>
-                </td>
-                <td>
-                    {% if u.role == 'admin' %}
-                        <span class="um-role role-admin">Administrator</span>
-                    {% elif u.role == 'field_officer' %}
-                        <span class="um-role role-officer">Field Officer</span>
-                    {% else %}
-                        <span class="um-role role-user">Normal User</span>
-                    {% endif %}
-                </td>
-                <td class="um-actions-cell">
-                    {% if u.user_id == session.user_id %}
-                        <button type="button" class="um-btn-icon-danger" disabled
-                                aria-label="You cannot delete your own account"
-                                title="You cannot delete your own account">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 11v6"/><path d="M14 11v6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-                        </button>
-                    {% else %}
-                        <button type="button" class="um-btn-icon-danger" aria-label="Delete user" title="Delete user"
-                                onclick="umConfirmDelete('{{ u.username|e }}', '{{ u.role|replace('_', ' ')|title }}', '{{ url_for('admin.delete_user', user_id=u.user_id) }}')">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 11v6"/><path d="M14 11v6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-                        </button>
-                    {% endif %}
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-    {% else %}
-    <div class="um-empty">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><path d="M16 3.128a4 4 0 0 1 0 7.744"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><circle cx="9" cy="7" r="4"/></svg>
-        {% if search %}
-            <strong>No users match "{{ search }}"</strong>
-            <p>Try a different username, email, or role.</p>
-        {% else %}
-            <strong>No users yet</strong>
-            <p>Add the first account using the button above.</p>
+  <form
+    method="POST"
+    action="{{ url_for('admin.create_field_officer') }}"
+    class="row g-3"
+  >
+    <div class="col-md-3">
+      <label class="form-label fw-semibold">Username</label>
+      <input type="text" name="username" class="form-control" required />
+    </div>
+
+    <div class="col-md-3">
+      <label class="form-label fw-semibold">Email</label>
+      <input type="email" name="email_address" class="form-control" required />
+    </div>
+
+    <div class="col-md-2">
+      <label class="form-label fw-semibold">Password</label>
+      <input type="password" name="password" class="form-control" required />
+    </div>
+
+    <div class="col-md-2">
+      <label class="form-label fw-semibold">Role</label>
+      <select name="role" class="form-select" required>
+        <option value="field_officer">Field Officer</option>
+        <option value="normal_user">Normal User</option>
+        {% if is_super %}
+        <option value="admin">CENRO Admin</option>
+        <option value="superadmin">Provincial Admin</option>
         {% endif %}
+      </select>
+    </div>
+
+    {% if is_super %}
+    <div class="col-md-2">
+      <label class="form-label fw-semibold">CENRO</label>
+      <select name="cenro" class="form-select">
+        <option value="">Unassigned</option>
+        {% for c in cenro_list %}
+        <option value="{{ c }}">{{ c }}</option>
+        {% endfor %}
+      </select>
     </div>
     {% endif %}
+
+    <div class="col-12">
+      <button type="submit" class="btn btn-success">Create User</button>
+    </div>
+  </form>
+</div> -->
+<div class="um-table-card">
+  {% if users %}
+  <table class="um-table" id="um-table">
+    <colgroup>
+      <col class="col-name" />
+      <col class="col-email" />
+      <col class="col-role" />
+      <col class="col-cenro" />
+      <col class="col-actions" />
+    </colgroup>
+    <thead>
+      <tr>
+        <th>
+          <span class="um-th-flex">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
+              <circle cx="12" cy="7" r="4" />
+            </svg>
+            Full name
+          </span>
+        </th>
+        <th>
+          <span class="um-th-flex">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="m22 7-8.991 5.727a2 2 0 0 1-2.009 0L2 7" />
+              <rect x="2" y="4" width="20" height="16" rx="2" />
+            </svg>
+            Email
+          </span>
+        </th>
+        <th>
+          <span class="um-th-flex">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path
+                d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"
+              />
+            </svg>
+            Role
+          </span>
+        </th>
+        <th>
+          <span class="um-th-flex">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path
+                d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"
+              />
+            </svg>
+            CENRO
+          </span>
+        </th>
+        <th class="um-actions-cell">Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for u in users %}
+      <tr data-role="{{ u.role }}">
+        <td>
+          <div class="um-name-cell">
+            <span
+class="um-avatar {% if u.role in ['admin', 'superadmin'] %}av-admin{% elif u.role == 'field_officer' %}av-officer{% endif %}"            >
+              {{ u.username[:2]|upper }}
+            </span>
+            <span class="um-name">
+              {{ u.username }} {% if u.user_id == session.user_id %}<span
+                class="um-you"
+                >You</span
+              >{% endif %}
+            </span>
+          </div>
+        </td>
+        <td>
+          <div class="um-email-cell">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="m22 7-8.991 5.727a2 2 0 0 1-2.009 0L2 7" />
+              <rect x="2" y="4" width="20" height="16" rx="2" />
+            </svg>
+            <span class="um-email-text">{{ u.email_address }}</span>
+          </div>
+        </td>
+        <td>
+          {% if u.role == 'superadmin' %}
+          <span class="um-role role-admin">Provincial Admin</span>
+          {% elif u.role == 'admin' %}
+          <span class="um-role role-admin">CENRO Admin</span>
+          {% elif u.role == 'field_officer' %}
+          <span class="um-role role-officer">Field Officer</span>
+          {% else %}
+          <span class="um-role role-user">Normal User</span>
+          {% endif %}
+        </td>
+        <td>
+          {% if u.cenro %}
+          <span class="um-role role-user">{{ u.cenro }}</span>
+          {% else %}
+          <span class="text-secondary small">Province-wide</span>
+          {% endif %}
+        </td>
+        <td class="um-actions-cell">
+          {% if u.user_id == session.user_id %}
+          <button
+            type="button"
+            class="um-btn-icon-danger"
+            disabled
+            aria-label="You cannot delete your own account"
+            title="You cannot delete your own account"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M10 11v6" />
+              <path d="M14 11v6" />
+              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
+              <path d="M3 6h18" />
+              <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+            </svg>
+          </button>
+          {% else %}
+          <button
+            type="button"
+            class="um-btn-icon-danger"
+            aria-label="Delete user"
+            title="Delete user"
+            onclick="umConfirmDelete('{{ u.username|e }}', '{{ u.role|replace('_', ' ')|title }}', '{{ url_for('admin.delete_user', user_id=u.user_id) }}')"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M10 11v6" />
+              <path d="M14 11v6" />
+              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
+              <path d="M3 6h18" />
+              <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+            </svg>
+          </button>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div class="um-empty">
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    >
+      <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+      <path d="M16 3.128a4 4 0 0 1 0 7.744" />
+      <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+      <circle cx="9" cy="7" r="4" />
+    </svg>
+    {% if search %}
+    <strong>No users match "{{ search }}"</strong>
+    <p>Try a different username, email, or role.</p>
+    {% else %}
+    <strong>No users yet</strong>
+    <p>Add the first account using the button above.</p>
+    {% endif %}
+  </div>
+  {% endif %}
 </div>
 
 <!-- Delete confirmation modal -->
 <div class="um-modal-overlay" id="um-delete-modal">
-    <div class="um-modal">
-        <div class="um-modal-head">
-            <h3>Delete User Account</h3>
-            <button type="button" class="um-modal-close" aria-label="Close dialog" onclick="umClose('um-delete-modal')">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
-            </button>
-        </div>
-        <div class="um-modal-body">
-            <div class="um-warn">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
-                <span>
-                    Permanently delete the account of <strong id="um-del-name"></strong>
-                    (<span id="um-del-role"></span>)? This also removes their related
-                    records and cannot be undone.
-                </span>
-            </div>
-        </div>
-        <form method="POST" id="um-delete-form" class="um-modal-foot">
-            <button type="button" class="um-btn-cancel" onclick="umClose('um-delete-modal')">Cancel</button>
-            <button type="submit" class="um-btn-confirm-danger">Yes, Delete</button>
-        </form>
+  <div class="um-modal">
+    <div class="um-modal-head">
+      <h3>Delete User Account</h3>
+      <button
+        type="button"
+        class="um-modal-close"
+        aria-label="Close dialog"
+        onclick="umClose('um-delete-modal')"
+      >
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <path d="M18 6 6 18" />
+          <path d="m6 6 12 12" />
+        </svg>
+      </button>
     </div>
+    <div class="um-modal-body">
+      <div class="um-warn">
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <path
+            d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"
+          />
+          <path d="M12 9v4" />
+          <path d="M12 17h.01" />
+        </svg>
+        <span>
+          Permanently delete the account of
+          <strong id="um-del-name"></strong> (<span id="um-del-role"></span>)?
+          This also removes their related records and cannot be undone.
+        </span>
+      </div>
+    </div>
+    <form method="POST" id="um-delete-form" class="um-modal-foot">
+      <button
+        type="button"
+        class="um-btn-cancel"
+        onclick="umClose('um-delete-modal')"
+      >
+        Cancel
+      </button>
+      <button type="submit" class="um-btn-confirm-danger">Yes, Delete</button>
+    </form>
+  </div>
 </div>
 
 <!-- Add user modal -->
 <div class="um-modal-overlay" id="um-add-modal">
-    <div class="um-modal">
-        <div class="um-modal-head">
-            <h3>Add New User</h3>
-            <button type="button" class="um-modal-close" aria-label="Close dialog" onclick="umClose('um-add-modal')">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
-            </button>
-        </div>
-        <form method="POST" action="{{ url_for('admin.create_field_officer') }}">
-            <div class="um-modal-body">
-                <div class="um-field">
-                    <label for="um-username">Username</label>
-                    <input type="text" id="um-username" name="username" placeholder="e.g. juandelacruz" required>
-                </div>
-                <div class="um-field">
-                    <label for="um-email">Email</label>
-                    <input type="email" id="um-email" name="email_address" placeholder="e.g. juan@denr.gov.ph" required>
-                </div>
-                <div class="um-field">
-                    <label for="um-password">Temporary Password</label>
-                    <input type="password" id="um-password" name="password" placeholder="Set an initial password" required>
-                </div>
-                <div class="um-field">
-                    <label for="um-role">Role</label>
-                    <select id="um-role" name="role">
-                        <option value="field_officer">Field Officer</option>
-                        <option value="normal_user">Normal User</option>
-                        <option value="admin">Administrator</option>
-                    </select>
-                </div>
-            </div>
-            <div class="um-modal-foot">
-                <button type="button" class="um-btn-cancel" onclick="umClose('um-add-modal')">Cancel</button>
-                <button type="submit" class="um-btn-confirm">Add User</button>
-            </div>
-        </form>
+  <div class="um-modal">
+    <div class="um-modal-head">
+      <h3>Add New User</h3>
+      <button
+        type="button"
+        class="um-modal-close"
+        aria-label="Close dialog"
+        onclick="umClose('um-add-modal')"
+      >
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <path d="M18 6 6 18" />
+          <path d="m6 6 12 12" />
+        </svg>
+      </button>
     </div>
+    <form method="POST" action="{{ url_for('admin.create_field_officer') }}">
+      <div class="um-modal-body">
+        <div class="um-field">
+          <label for="um-username">Username</label>
+          <input
+            type="text"
+            id="um-username"
+            name="username"
+            placeholder="e.g. juandelacruz"
+            required
+          />
+        </div>
+        <div class="um-field">
+          <label for="um-email">Email</label>
+          <input
+            type="email"
+            id="um-email"
+            name="email_address"
+            placeholder="e.g. juan@denr.gov.ph"
+            required
+          />
+        </div>
+        <div class="um-field">
+          <label for="um-password">Temporary Password</label>
+          <input
+            type="password"
+            id="um-password"
+            name="password"
+            placeholder="Set an initial password"
+            required
+          />
+        </div>
+        <div class="um-field">
+          <label for="um-role">Role</label>
+          <select id="um-role" name="role">
+            <option value="field_officer">Field Officer</option>
+            <option value="normal_user">Normal User</option>
+            {% if is_super %}
+            <option value="admin">CENRO Administrator</option>
+            <option value="superadmin">Provincial Administrator</option>
+            {% endif %}
+          </select>
+        </div>
+
+        {% if is_super %}
+        <div class="um-field">
+          <label for="um-cenro">CENRO</label>
+          <select id="um-cenro" name="cenro">
+            <option value="">Unassigned (province-wide)</option>
+            {% for c in cenro_list %}
+            <option value="{{ c }}">{{ c }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        {% endif %}
+      </div>
+      <div class="um-modal-foot">
+        <button
+          type="button"
+          class="um-btn-cancel"
+          onclick="umClose('um-add-modal')"
+        >
+          Cancel
+        </button>
+        <button type="submit" class="um-btn-confirm">Add User</button>
+      </div>
+    </form>
+  </div>
 </div>
 
 <script>
-    function umOpen(id) {
-        document.getElementById(id).classList.add('open');
-    }
+  function umOpen(id) {
+    document.getElementById(id).classList.add("open");
+  }
 
-    function umClose(id) {
-        document.getElementById(id).classList.remove('open');
-    }
+  function umClose(id) {
+    document.getElementById(id).classList.remove("open");
+  }
 
-    function umConfirmDelete(name, role, action) {
-        document.getElementById('um-del-name').textContent = name;
-        document.getElementById('um-del-role').textContent = role;
-        document.getElementById('um-delete-form').setAttribute('action', action);
-        umOpen('um-delete-modal');
-    }
+  function umConfirmDelete(name, role, action) {
+    document.getElementById("um-del-name").textContent = name;
+    document.getElementById("um-del-role").textContent = role;
+    document.getElementById("um-delete-form").setAttribute("action", action);
+    umOpen("um-delete-modal");
+  }
 
-    function umToggleFilterMenu() {
-        document.getElementById('um-filter-menu').classList.toggle('open');
-    }
+  function umToggleFilterMenu() {
+    document.getElementById("um-filter-menu").classList.toggle("open");
+  }
 
-    function umFilterRole(role, label) {
-        document.getElementById('um-filter-label').textContent = label;
-        document.querySelectorAll('#um-filter-menu button').forEach(function (btn) {
-            btn.classList.toggle('active', btn.getAttribute('onclick').includes("'" + role + "'"));
-        });
-        document.querySelectorAll('#um-table tbody tr').forEach(function (row) {
-            row.style.display = (role === 'all' || row.dataset.role === role) ? '' : 'none';
-        });
-        document.getElementById('um-filter-menu').classList.remove('open');
-    }
-
-    document.addEventListener('click', function (e) {
-        var wrap = document.querySelector('.um-filter-wrap');
-        var menu = document.getElementById('um-filter-menu');
-        if (wrap && menu && !wrap.contains(e.target)) {
-            menu.classList.remove('open');
-        }
+  function umFilterRole(role, label) {
+    document.getElementById("um-filter-label").textContent = label;
+    document.querySelectorAll("#um-filter-menu button").forEach(function (btn) {
+      btn.classList.toggle(
+        "active",
+btn.getAttribute("onclick").includes("umFilterRole('" + role + "'")      );
     });
-
-    // close modals when clicking the dark backdrop, or on Escape
-    document.querySelectorAll('.um-modal-overlay').forEach(function (overlay) {
-        overlay.addEventListener('click', function (e) {
-            if (e.target === overlay) overlay.classList.remove('open');
-        });
+    document.querySelectorAll("#um-table tbody tr").forEach(function (row) {
+      row.style.display =
+        role === "all" || row.dataset.role === role ? "" : "none";
     });
+    document.getElementById("um-filter-menu").classList.remove("open");
+  }
 
-    document.addEventListener('keydown', function (e) {
-        if (e.key === 'Escape') {
-            document.querySelectorAll('.um-modal-overlay.open').forEach(function (o) {
-                o.classList.remove('open');
-            });
-        }
+  document.addEventListener("click", function (e) {
+    var wrap = document.querySelector(".um-filter-wrap");
+    var menu = document.getElementById("um-filter-menu");
+    if (wrap && menu && !wrap.contains(e.target)) {
+      menu.classList.remove("open");
+    }
+  });
+
+  // close modals when clicking the dark backdrop, or on Escape
+  document.querySelectorAll(".um-modal-overlay").forEach(function (overlay) {
+    overlay.addEventListener("click", function (e) {
+      if (e.target === overlay) overlay.classList.remove("open");
     });
+  });
+
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape") {
+      document.querySelectorAll(".um-modal-overlay.open").forEach(function (o) {
+        o.classList.remove("open");
+      });
+    }
+  });
 </script>
 
 {% endblock %}

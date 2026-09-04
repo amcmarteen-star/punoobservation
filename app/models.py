@@ -51,7 +51,8 @@ class User(db.Model):
     email_address = db.Column(db.String(120), unique=True, nullable=False)
     password_hash = db.Column(db.String(200), nullable=False)
     role = db.Column(db.String(20), nullable=False, default='normal_user')  # 'normal_user', 'field_officer', 'admin'
-
+    cenro = db.Column(db.String(100), nullable=True)
+    
     # Relationships
     # reports = db.relationship('MonitoringReport', backref='officer', lazy=True)
     notifications = db.relationship('Notification', backref='user', lazy=True)
@@ -72,6 +73,14 @@ class Site(db.Model):
     site_name = db.Column(db.String(150), nullable=False)
     area_size_ha = db.Column(db.Float, nullable=False)
     boundary_geojson = db.Column(db.Text, nullable=True)
+    boundary_published = db.Column(db.Boolean, default=False,
+                                   server_default=db.false(),
+                                   nullable=False)
+    boundary_published_by = db.Column(
+        db.Integer, db.ForeignKey('users.user_id'), nullable=True
+    )
+    boundary_published_at = db.Column(db.DateTime, nullable=True)
+    boundary_source_report_id = db.Column(db.Integer, nullable=True)
     boundary_area_ha = db.Column(db.Float, nullable=True)
     boundary_captured_at = db.Column(db.DateTime, nullable=True)
     # land_map_boundary = db.Column(Geometry('POLYGON', srid=4326), nullable=True)
@@ -188,6 +197,19 @@ class MonitoringReport(db.Model):
         db.Integer, db.ForeignKey('users.user_id'), nullable=True
     )
     date_reviewed = db.Column(db.DateTime, nullable=True)
+    # Not Applicable | Pending Publication | Published | Declined
+    #
+    # Separate from approval_status on purpose. A CENRO admin decides
+    # whether the field work is sound; the provincial administrator
+    # decides whether it becomes the official boundary of record.
+    publication_status = db.Column(db.String(30), nullable=False,
+                                   default='Not Applicable',
+                                   server_default='Not Applicable')
+    published_by = db.Column(
+        db.Integer, db.ForeignKey('users.user_id'), nullable=True
+    )
+    published_at = db.Column(db.DateTime, nullable=True)
+    publication_note = db.Column(db.Text, nullable=True)
 
     submitted_at = db.Column(
         db.DateTime,
@@ -213,6 +235,11 @@ class MonitoringReport(db.Model):
         'User',
         foreign_keys=[reviewed_by],
         backref=db.backref('reviewed_reports', foreign_keys=[reviewed_by])
+    )
+    publisher = db.relationship(
+        'User',
+        foreign_keys=[published_by],
+        backref=db.backref('published_reports', foreign_keys=[published_by])
     )
 
 class MonitoringPhoto(db.Model):
