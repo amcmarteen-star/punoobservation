@@ -55,17 +55,16 @@
     {% endif %}
 </div>
 
-{% if session.role == "admin" %}
 <div class="notif-tabs">
-  {% for key, label in [('all','All'), ('reports','Reports'), ('requests','Requests')] %}
-    <a href="{{ url_for('dashboard.notifications_page', tab=key, status=status) }}"
+  {% for key, label in [('unread','Unread'), ('all','All'),
+                        ('reports','Reports'), ('requests','Requests')] %}
+    <a href="{{ url_for('dashboard.notifications_page', tab=key) }}"
        class="notif-tab {% if tab == key %}active{% endif %}">
       {{ label }}
       <span class="notif-tab-count">{{ counts[key] }}</span>
     </a>
   {% endfor %}
 </div>
-{% endif %}
 
 <div class="notif-toolbar">
     <button type="button" id="notif-delete-btn" class="notif-delete-btn"
@@ -75,12 +74,11 @@
         Delete
         <span class="notif-delete-count" id="notif-delete-count" hidden>0</span>
     </button>
-
-    <select class="notif-filter-select" aria-label="Filter notifications by read status" onchange="notifFilterChange(this.value)">
+    <!-- <select class="notif-filter-select" aria-label="Filter notifications by read status" onchange="notifFilterChange(this.value)">
         <option value="all" {% if status == 'all' %}selected{% endif %}>All</option>
         <option value="unread" {% if status == 'unread' %}selected{% endif %}>Unread</option>
         <option value="read" {% if status == 'read' %}selected{% endif %}>Read</option>
-    </select>
+    </select> -->
 </div>
 
 <div class="card">
@@ -90,12 +88,21 @@
             <p class="notif-day-heading">{{ group.label }}</p>
             {% for n in group.notifications %}
                 {% set details_url = none %}
-                {% if session.role == 'admin' and n.notification_type == 'New Request' %}
+
+                {% if n.report_id %}
+                    {# a report notification: admins review it, officers see their own list #}
+                    {% if session.role in ['admin', 'superadmin'] %}
+                        {% set details_url = url_for('admin.review_report_detail', report_id=n.report_id) %}
+                    {% else %}
+                        {% set details_url = url_for('dashboard.reports_page') %}
+                    {% endif %}
+
+                {% elif n.notification_type == 'New Request' %}
                     {% set details_url = url_for('admin.review_requests') %}
-                {% elif session.role != 'admin' and n.notification_type == 'Request Update' %}
+
+                {% elif n.notification_type == 'Request Update' %}
                     {% set details_url = url_for('dashboard.requests_page') %}
                 {% endif %}
-
                 <div class="notif-row {% if not n.is_read %}unread{% endif %}"
                      data-id="{{ n.notification_id }}">
                     <input type="checkbox" class="notif-row-checkbox"
@@ -132,7 +139,7 @@
                     {% else %}
                         <button type="button" class="notif-row-details"
                                 onclick="markNotificationRead({{ n.notification_id }}, this.closest('.notif-row'))">
-                            Details
+                            Mark read
                         </button>
                     {% endif %}
                 </div>
@@ -140,7 +147,10 @@
         </div>
         {% endfor %}
     {% else %}
-        <p class="placeholder-text">No notifications yet.</p>
+        <p class="placeholder-text">
+          {% if tab == 'unread' %}Nothing unread.
+          {% else %}No notifications here.{% endif %}
+        </p>
     {% endif %}
 </div>
 
@@ -155,8 +165,11 @@
     }
 
     function notifBeaconRead(id) {
-        // fire-and-forget so it doesn't block the Details link navigating away
-        navigator.sendBeacon(`/api/notifications/${id}/read`);
+        // sendBeacon needs a body, or the request may be dropped
+        navigator.sendBeacon(
+            `/api/notifications/${id}/read`,
+            new Blob([], { type: 'application/x-www-form-urlencoded' })
+        );
     }
 
     function notifSelectedIds() {

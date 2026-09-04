@@ -48,7 +48,7 @@
     </button>
     <div id="report-filter-menu" class="um-filter-menu um-filter-menu-end">
       <a href="{{ url_for('admin.review_reports') }}"
-         class="{% if not status_filter %}active{% endif %}">
+         class="{% if status_filter == 'all' %}active{% endif %}">
         All reports <span class="um-filter-count">{{ total_count }}</span>
       </a>
       {% for label, n in counts.items() %}

@@ -262,7 +262,152 @@
     background: #fef3c7;
     color: #92400e;
   }
+    /* --- monitoring history --- */
+  .muni-panel .hist-visit {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-left: 4px solid #16a34a;
+    border-radius: 8px;
+    padding: 0.7rem 0.8rem;
+    margin-bottom: 0.7rem;
+  }
 
+  .muni-panel .hist-visit.below { border-left-color: #dc2626; }
+
+  .muni-panel .hist-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.5rem;
+    margin-bottom: 0.35rem;
+  }
+
+  .muni-panel .hist-date {
+    font-weight: 700;
+    color: #14532d;
+    font-size: 0.85rem;
+  }
+
+  .muni-panel .hist-rate {
+    font-weight: 700;
+    font-size: 1rem;
+    color: #15803d;
+    white-space: nowrap;
+  }
+
+  .muni-panel .hist-rate.below { color: #b91c1c; }
+
+  .muni-panel .hist-meta {
+    font-size: 0.72rem;
+    color: #475569;
+    line-height: 1.6;
+  }
+
+  .muni-panel .hist-photos {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 4px;
+    margin-top: 0.5rem;
+  }
+
+  .muni-panel .hist-photos img {
+    width: 100%;
+    height: 56px;
+    object-fit: cover;
+    border-radius: 4px;
+    border: 1px solid #e2e8f0;
+    cursor: pointer;
+    display: block;
+  }
+
+  .muni-panel .hist-photos img:hover { border-color: #16a34a; }
+
+  .muni-panel .hist-more {
+    font-size: 0.7rem;
+    color: #64748b;
+    text-align: center;
+    padding-top: 4px;
+  }
+
+  /* tiny inline survival trend */
+  .muni-panel .trend-box {
+    background: #14532d;
+    border-radius: 8px;
+    padding: 0.7rem 0.8rem;
+    margin-bottom: 0.8rem;
+    color: #fff;
+  }
+
+  .muni-panel .trend-box .big {
+    font-size: 1.5rem;
+    font-weight: 700;
+    display: block;
+  }
+
+  .muni-panel .trend-box .lbl {
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    letter-spacing: .5px;
+    opacity: .8;
+  }
+
+  .muni-panel .trend-bars {
+    display: flex;
+    align-items: flex-end;
+    gap: 3px;
+    height: 34px;
+    margin-top: 0.5rem;
+  }
+
+  .muni-panel .trend-bar {
+    flex: 1;
+    background: #86efac;
+    border-radius: 2px 2px 0 0;
+    min-height: 3px;
+  }
+
+  .muni-panel .trend-bar.below { background: #fca5a5; }
+
+  /* full-size photo viewer */
+  .photo-lightbox {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.85);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 5000;
+    padding: 2rem;
+  }
+
+  .photo-lightbox.open { display: flex; }
+
+  .photo-lightbox img {
+    max-width: 90%;
+    max-height: 80%;
+    border-radius: 8px;
+  }
+
+  .photo-lightbox .lb-caption {
+    position: absolute;
+    bottom: 1.5rem;
+    color: #fff;
+    font-size: 0.85rem;
+    text-align: center;
+    max-width: 80%;
+  }
+
+  .photo-lightbox .lb-close {
+    position: absolute;
+    top: 1rem;
+    right: 1.5rem;
+    background: none;
+    border: none;
+    color: #fff;
+    font-size: 2rem;
+    cursor: pointer;
+    line-height: 1;
+  }
   /* --- reforestation site markers --- */
   .site-marker {
     background: #16a34a;
@@ -554,6 +699,11 @@ global_topbar %}{% endblock %} {% block topbar%}
     <div class="muni-panel-inner" id="muni-panel-inner"></div>
   </div>
 </div>
+<div class="photo-lightbox" id="photoLightbox" onclick="closeLightbox()">
+  <button type="button" class="lb-close" onclick="closeLightbox()">&times;</button>
+  <img id="lightboxImg" src="" alt="monitoring photograph">
+  <div class="lb-caption" id="lightboxCaption"></div>
+</div>
 {% endblock %} {% block extra_scripts %}
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
@@ -703,14 +853,177 @@ global_topbar %}{% endblock %} {% block topbar%}
         }
       }
 
-      // ==============================================================
-      // BARANGAY RECOMMENDATIONS
-      // Objective 3: the recommendation engine, inside the map.
-      // ==============================================================
 
       // remembered so the Back link can return to the municipality view
       let lastMunicipality = null;
 
+      // ==============================================================
+      // SITE MONITORING HISTORY
+      // Past field visits for one site: survival over time, plot
+      // counts, and the photographs taken that day.
+      // ==============================================================
+
+      window.showSiteHistory = async function (siteId) {
+        const panel = document.getElementById("muni-panel");
+        const inner = document.getElementById("muni-panel-inner");
+
+        panel.classList.add("active");
+        inner.innerHTML =
+          '<p class="placeholder-text">Loading monitoring history...</p>';
+
+        let d;
+        try {
+          const res = await fetch('/api/site-history/' + siteId);
+          d = await res.json();
+        } catch (err) {
+          console.error(err);
+          inner.innerHTML =
+            '<p class="placeholder-text">Could not load history.</p>';
+          return;
+        }
+
+        if (!d.found) {
+          inner.innerHTML = `
+            <div class="panel-header">
+              <button class="close-btn" onclick="closeMuniPanel()">&#10005;</button>
+              <p class="panel-eyebrow">Monitoring History</p>
+              <h3>Not available</h3>
+            </div>
+            <div class="panel-body">
+              ${backLink()}
+              <p class="placeholder-text" style="padding:0;">${d.reason}</p>
+            </div>`;
+          return;
+        }
+
+        // --- survival trend bars, oldest to newest ---
+        let trendHtml = '';
+        if (d.trend.length) {
+          const bars = d.trend.map(t => `
+            <div class="trend-bar ${t.rate < 85 ? 'below' : ''}"
+                 style="height:${Math.max(3, t.rate)}%"
+                 title="${t.date}: ${t.rate}%"></div>`).join('');
+
+          trendHtml = `
+            <div class="trend-box">
+              <span class="lbl">Latest survival rate</span>
+              <span class="big">${d.latest_survival}%</span>
+              <span class="lbl">
+                ${d.report_count} monitoring visit${d.report_count > 1 ? 's' : ''}
+                ${d.trend.length > 1 ? '&middot; oldest to newest below' : ''}
+              </span>
+              ${d.trend.length > 1
+                ? `<div class="trend-bars">${bars}</div>` : ''}
+            </div>`;
+        }
+
+        // --- each visit ---
+        const visits = d.history.map(h => {
+          const shown = h.photos.slice(0, 6);
+
+          const thumbs = shown.map(p => `
+            <img src="/static/${p.url}"
+                 onclick="openLightbox('/static/${p.url}',
+                          '${escJs(h.date_display)} &middot; ${p.type} photo' +
+                          ${p.taken ? `' &middot; ${escJs(p.taken)}'` : `''`})"
+                 alt="monitoring photo">`).join('');
+
+          return `
+            <div class="hist-visit ${h.meets_threshold ? '' : 'below'}">
+              <div class="hist-head">
+                <span class="hist-date">${h.date_display}</span>
+                <span class="hist-rate ${h.meets_threshold ? '' : 'below'}">
+                  ${h.survival_rate}%
+                </span>
+              </div>
+
+              <div class="hist-meta">
+                ${h.plots_recorded} plot${h.plots_recorded > 1 ? 's' : ''},
+                ${h.total_counted.toLocaleString()} counted alive<br>
+                Mean ${h.mean_per_plot} per plot (sd ${h.stdev_per_plot})<br>
+                Sampling intensity ${h.sampling_intensity}%<br>
+                Estimated survivors ${h.estimated_survivors.toLocaleString()}<br>
+                ${h.officer ? `Surveyed by ${h.officer}<br>` : ''}
+                ${h.reviewed_by
+                   ? `Approved by ${h.reviewed_by} on ${h.date_reviewed}` : ''}
+                ${h.remarks ? `<br><em>${h.remarks}</em>` : ''}
+              </div>
+
+              ${shown.length ? `<div class="hist-photos">${thumbs}</div>` : ''}
+              ${h.photo_count > 6
+                ? `<div class="hist-more">
+                     +${h.photo_count - 6} more photograph(s)
+                   </div>` : ''}
+            </div>`;
+        }).join('');
+
+        inner.innerHTML = `
+          <div class="panel-header">
+            <button class="close-btn" onclick="closeMuniPanel()">&#10005;</button>
+            <p class="panel-eyebrow">Monitoring History</p>
+            <h3>${d.site_name}</h3>
+            <p class="panel-subtext">
+              ${d.barangay || ''}, ${d.municipality || ''}
+            </p>
+          </div>
+          <div class="panel-body">
+            ${backLink()}
+
+            <div class="stat-row">
+              <span class="stat-label">Site code</span>
+              <span>${d.site_code || '—'}</span>
+            </div>
+            <div class="stat-row">
+              <span class="stat-label">Area</span>
+              <span>${d.area_size_ha} ha</span>
+            </div>
+            <div class="stat-row">
+              <span class="stat-label">Seedlings planted</span>
+              <span>${d.seedlings_planted.toLocaleString()}</span>
+            </div>
+            <div class="stat-row">
+              <span class="stat-label">Year contracted</span>
+              <span>${d.year_contracted || '—'}</span>
+            </div>
+
+            ${trendHtml}
+
+            <p class="info-title">Field Visits</p>
+
+            ${d.report_count
+              ? visits
+              : `<p class="placeholder-text" style="padding:0;">
+                   No approved monitoring reports for this site yet.
+                   Reports appear here once a CENRO administrator has
+                   reviewed them.
+                 </p>`}
+
+            <p class="placeholder-text"
+               style="padding:.5rem 0 0; font-size:.7rem;">
+              Only reports approved by a CENRO administrator are shown.
+              Survival rates are estimates from plot sampling.
+            </p>
+          </div>`;
+      };
+
+      window.openLightbox = function (src, caption) {
+        document.getElementById('lightboxImg').src = src;
+        document.getElementById('lightboxCaption').innerHTML = caption || '';
+        document.getElementById('photoLightbox').classList.add('open');
+      };
+
+      window.closeLightbox = function () {
+        document.getElementById('photoLightbox').classList.remove('open');
+      };
+
+      document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') closeLightbox();
+      });
+
+      // ==============================================================
+      // BARANGAY RECOMMENDATIONS
+      // Objective 3: the recommendation engine, inside the map.
+      // ==============================================================
       window.showBarangayRecommendations = async function (muniName, brgyName) {
         const panel = document.getElementById("muni-panel");
         const inner = document.getElementById("muni-panel-inner");
@@ -1032,6 +1345,11 @@ global_topbar %}{% endblock %} {% block topbar%}
                                        '${escJs(s.site_name)}',
                                        '${escJs(s.barangay)}')">
                         Locate
+                      </button>
+                      <button type="button" class="btn-locate"
+                              onclick="event.stopPropagation();
+                                       showSiteHistory(${s.site_id})">
+                        History
                       </button>
                       {% if session.role == 'field_officer'%}
                         ${
@@ -1572,6 +1890,13 @@ global_topbar %}{% endblock %} {% block topbar%}
                 <div class="stat-row">
                   <span class="stat-label">Planted</span>
                   <span>${s.actual_trees.toLocaleString()}</span>
+                </div>
+                <div style="margin-top:.5rem; padding-top:.5rem;
+                            border-top:1px solid #e2e8f0;">
+                  <button type="button" class="back-link" style="margin:0;"
+                          onclick="showSiteHistory(${s.site_id})">
+                    View monitoring history
+                  </button>
                 </div>
               </div>
             `,

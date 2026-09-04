@@ -1,0 +1,249 @@
+{% extends "Base.html" %}
+{% block title %}Request #{{ req.request_id }} - PuNoObservation{% endblock %}
+{% set active_page = 'review_requests' %}
+
+{% block extra_head %}
+<style>
+  .rq-panel {
+    background:#fff; border:1px solid #e2e8f0; border-radius:10px;
+    box-shadow:0 2px 8px rgba(0,0,0,.04);
+    padding:1.15rem 1.25rem; margin-bottom:1.25rem;
+  }
+  .rq-panel h5 {
+    margin:0 0 .9rem; font-weight:700; color:#14532d; font-size:1rem;
+    padding-bottom:.5rem; border-bottom:1px solid #e2e8f0;
+  }
+
+  .rq-line { display:flex; justify-content:space-between;
+             padding:.4rem 0; border-bottom:1px solid #f1f5f9; font-size:.88rem; }
+  .rq-line:last-child { border-bottom:none; }
+  .rq-line .lbl { color:#64748b; }
+  .rq-line .val { font-weight:600; text-align:right; }
+
+  .rq-status { display:inline-block; padding:3px 10px; border-radius:12px;
+               font-size:.75rem; font-weight:600; }
+  .st-submitted    { background:#e0f2fe; color:#075985; }
+  .st-under-review { background:#fef3c7; color:#92400e; }
+  .st-approved     { background:#dcfce7; color:#15803d; }
+  .st-rejected     { background:#fee2e2; color:#991b1b; }
+
+  .rq-docs { display:grid; grid-template-columns:repeat(auto-fill,minmax(160px,1fr));
+             gap:.9rem; }
+  .rq-doc { border:1px solid #e2e8f0; border-radius:8px; overflow:hidden;
+            background:#f8fafc; text-decoration:none; color:inherit; display:block; }
+  .rq-doc:hover { border-color:#16a34a; color:inherit; }
+  .rq-doc img { width:100%; height:130px; object-fit:cover; display:block; }
+  .rq-doc .pdf-tile {
+    height:130px; display:flex; align-items:center; justify-content:center;
+    background:#fee2e2; color:#991b1b; font-weight:700; font-size:1.1rem;
+  }
+  .rq-doc .doc-meta { padding:.45rem .6rem; font-size:.72rem; color:#475569;
+                      word-break:break-all; }
+
+  .rq-empty { text-align:center; padding:2rem 1rem; color:#94a3b8;
+              font-size:.85rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<a href="{{ url_for('admin.review_requests') }}" class="text-secondary small">
+  &larr; Back to all requests
+</a>
+
+<div class="page-header mt-2 mb-4">
+  <h2 class="fw-bold text-dark">
+    Request #{{ req.request_id }}
+    <span class="rq-status st-{{ req.status|lower|replace(' ','-') }}">
+      {{ req.status }}
+    </span>
+  </h2>
+  <p class="text-secondary mb-0">
+    Submitted by {{ req.requester.username if req.requester else 'unknown' }}
+    on {{ req.date_submitted.strftime('%d %b %Y, %I:%M %p') }}
+  </p>
+</div>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}{% for category, message in messages %}
+    <div class="alert alert-{{ category }}">{{ message }}</div>
+  {% endfor %}{% endif %}
+{% endwith %}
+
+<!-- ===== REQUEST ===== -->
+<div class="rq-panel">
+  <h5>Request</h5>
+
+  <div class="rq-line">
+    <span class="lbl">Type</span>
+    <span class="val">{{ req.request_type }}</span>
+  </div>
+  <div class="rq-line">
+    <span class="lbl">Location</span>
+    <span class="val">
+      {% if req.location %}
+        {{ req.location.barangay }}, {{ req.location.municipality }}
+      {% else %}&mdash;{% endif %}
+    </span>
+  </div>
+  <div class="rq-line">
+    <span class="lbl">Proposed area</span>
+    <span class="val">
+      {% if req.proposed_area_ha %}{{ req.proposed_area_ha }} ha
+      {% else %}not stated{% endif %}
+    </span>
+  </div>
+  <div class="rq-line">
+    <span class="lbl">Contact</span>
+    <span class="val">{{ req.contact_number or '—' }}</span>
+  </div>
+  {% if req.requester and req.requester.organization %}
+  <div class="rq-line">
+    <span class="lbl">Organisation</span>
+    <span class="val">
+      {{ req.requester.organization.organization_name }}
+    </span>
+  </div>
+  {% endif %}
+
+  {% if req.description %}
+  <div class="mt-3">
+    <div class="lbl text-secondary small text-uppercase">Description</div>
+    <p class="mb-0">{{ req.description }}</p>
+  </div>
+  {% endif %}
+</div>
+
+<!-- ===== DOCUMENTS ===== -->
+<div class="rq-panel">
+  <h5>Supporting documents ({{ req.attachments | length }})</h5>
+
+  {% if req.attachments %}
+    <div class="rq-docs">
+      {% for a in req.attachments %}
+        <a class="rq-doc" target="_blank"
+           href="{{ url_for('static', filename=a.file_url) }}">
+          {% if a.mime_type == 'application/pdf' %}
+            <div class="pdf-tile">PDF</div>
+          {% else %}
+            <img src="{{ url_for('static', filename=a.file_url) }}"
+                 alt="{{ a.original_name }}">
+          {% endif %}
+          <div class="doc-meta">
+            {{ a.original_name or 'document' }}<br>
+            <span class="text-secondary">
+              {{ a.uploaded_at.strftime('%d %b %Y') }}
+            </span>
+          </div>
+        </a>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="rq-empty">
+      No documents attached. The requester did not upload a letter or
+      endorsement.
+    </div>
+  {% endif %}
+</div>
+
+<!-- ===== CONTEXT ===== -->
+<div class="rq-panel">
+  <h5>Context for this barangay</h5>
+
+  {% if existing_sites %}
+    <p class="text-secondary small">
+      {{ existing_sites | length }} reforestation site(s) already recorded
+      here:
+    </p>
+    {% for s in existing_sites %}
+      <div class="rq-line">
+        <span class="lbl">{{ s.site_name }}</span>
+        <span class="val">{{ s.area_size_ha }} ha, {{ s.year_contracted or '—' }}</span>
+      </div>
+    {% endfor %}
+  {% else %}
+    <p class="text-secondary small mb-0">
+      No reforestation site is recorded in this barangay. This would be
+      the first.
+    </p>
+  {% endif %}
+
+  {% if req.location %}
+    <a href="{{ url_for('dashboard.recommendations',
+                        municipality=req.location.municipality,
+                        barangay=req.location.barangay) }}"
+       class="btn btn-outline-success btn-sm mt-3">
+      See recommended species for {{ req.location.barangay }}
+    </a>
+  {% endif %}
+
+  {% if related %}
+    <p class="info-title text-secondary small fw-semibold mt-3 mb-1">
+      OTHER REQUESTS FROM THIS BARANGAY
+    </p>
+    {% for r in related %}
+      <div class="rq-line">
+        <span class="lbl">
+          #{{ r.request_id }} &middot; {{ r.request_type }}
+          &middot; {{ r.date_submitted.strftime('%d %b %Y') }}
+        </span>
+        <span class="val">
+          <span class="rq-status st-{{ r.status|lower|replace(' ','-') }}">
+            {{ r.status }}
+          </span>
+        </span>
+      </div>
+    {% endfor %}
+  {% endif %}
+</div>
+
+<!-- ===== DECISION ===== -->
+<div class="rq-panel">
+  <h5>Decision</h5>
+
+  {% if req.status not in ['Submitted'] %}
+    <div class="alert alert-info">
+      Currently {{ req.status|lower }}
+      {% if req.reviewer %}, set by {{ req.reviewer.username }}{% endif %}
+      {% if req.date_reviewed %}
+        on {{ req.date_reviewed.strftime('%d %b %Y') }}
+      {% endif %}.
+      {% if req.review_note %}<br>Note: {{ req.review_note }}{% endif %}
+      <br><br>
+      Setting a new status will replace this.
+    </div>
+  {% endif %}
+
+  <form method="POST"
+        action="{{ url_for('admin.review_request', request_id=req.request_id) }}"
+        class="row g-3 align-items-end">
+    <div class="col-md-3">
+      <label class="form-label fw-semibold">Status</label>
+      <select name="status" class="form-select" required>
+        <option value="">Choose</option>
+        <option value="Under Review">Under Review</option>
+        <option value="Approved">Approve</option>
+        <option value="Rejected">Reject</option>
+      </select>
+    </div>
+
+    <div class="col-md-6">
+      <label class="form-label fw-semibold">
+        Note <span class="text-secondary small">(required to reject)</span>
+      </label>
+      <input type="text" name="review_note" class="form-control"
+             value="{{ req.review_note or '' }}"
+             placeholder="Reason, or a note for the requester">
+    </div>
+
+    <div class="col-md-3">
+      <button type="submit" class="btn btn-success w-100">Save decision</button>
+    </div>
+  </form>
+
+  <p class="text-secondary small mt-3 mb-0">
+    The requester is notified whenever the status changes.
+  </p>
+</div>
+
+{% endblock %}

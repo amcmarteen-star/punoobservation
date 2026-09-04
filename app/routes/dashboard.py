@@ -2,7 +2,12 @@
 from flask import Blueprint, render_template, session, jsonify, redirect, url_for, request, flash, current_app
 from app.extensions import db
 from app.utils.decorators import login_required
-from app.models import Site, ReforestationRecord, MonitoringReport, Location, Notification, Request, User, MonitoringReport, MonitoringPlot, MonitoringPhoto
+from app.models import (
+    Site, ReforestationRecord, MonitoringReport, MonitoringPlot,
+    MonitoringPhoto, Location, Notification, Request, RequestAttachment,
+    User,
+)
+from app.utils.audit import log_action, log_login
 from sqlalchemy import func
 from collections import defaultdict
 from datetime import datetime
@@ -11,7 +16,7 @@ from app.services.recommender import recommend_for_location
 import json, os, re
 from app.services.monitoring import (
     extract_photo_metadata, check_timestamp, compute_survival,
-    build_boundary, point_in_geojson, haversine_m, save_photo,
+    build_boundary, point_in_geojson, haversine_m, save_photo, save_request_file,
 )
 from app.utils.jurisdiction import (
     scope_sites, scope_locations, allowed_municipalities,
@@ -176,42 +181,63 @@ def Reforestation_sites():
 @login_required
 def notifications_page():
     user_id = session.get('user_id')
-    tab = request.args.get('tab', 'all')
-    status = request.args.get('status', 'all')  # all | read | unread
+    tab = request.args.get('tab', 'unread')
 
-    # Two notification types belong to requests:
-    #   'New Request'    -> sent to admins when a user submits
-    #   'Request Update' -> sent to the user when an admin decides
     REQUEST_TYPES = ['Request Update', 'New Request']
 
     query = Notification.query.filter_by(user_id=user_id)
 
-    if tab == 'requests':
+    if tab == 'unread':
+        query = query.filter(Notification.is_read.is_(False))
+    elif tab == 'read':
+        query = query.filter(Notification.is_read.is_(True))
+    elif tab == 'requests':
         query = query.filter(Notification.notification_type.in_(REQUEST_TYPES))
     elif tab == 'reports':
         query = query.filter(Notification.notification_type == 'Report')
 
-    if status == 'unread':
-        query = query.filter_by(is_read=False)
-    elif status == 'read':
-        query = query.filter_by(is_read=True)
-
     notifications = query.order_by(Notification.created_at.desc()).all()
 
-    # group into "Today" / "Yesterday" / date sections, in the order they
-    # already come back (newest first)
-    grouped = []
-    seen_labels = {}
+    # --- group by day, and add a relative time string ---
+    now = datetime.now(ZoneInfo("Asia/Manila"))
+    today = now.date()
+
+    def time_ago(dt):
+        if not dt:
+            return ""
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=ZoneInfo("Asia/Manila"))
+        secs = (now - dt).total_seconds()
+        if secs < 60:
+            return "just now"
+        if secs < 3600:
+            return f"{int(secs // 60)} min ago"
+        if secs < 86400:
+            return f"{int(secs // 3600)} hr ago"
+        return dt.strftime('%d %b, %I:%M %p')
+
+    groups = []
+    current = None
+
     for n in notifications:
-        label = _day_label(n.created_at)
-        n.time_ago = _time_ago(n.created_at)
-        if label not in seen_labels:
-            seen_labels[label] = {"label": label, "notifications": []}
-            grouped.append(seen_labels[label])
-        seen_labels[label]["notifications"].append(n)
+        n.time_ago = time_ago(n.created_at)          # attached for the template
+
+        d = n.created_at.date() if n.created_at else today
+        if d == today:
+            label = "Today"
+        elif (today - d).days == 1:
+            label = "Yesterday"
+        else:
+            label = d.strftime('%d %B %Y')
+
+        if current is None or current["label"] != label:
+            current = {"label": label, "notifications": []}
+            groups.append(current)
+        current["notifications"].append(n)
 
     base = Notification.query.filter_by(user_id=user_id)
     counts = {
+        'unread': base.filter(Notification.is_read.is_(False)).count(),
         'all': base.count(),
         'reports': base.filter(
             Notification.notification_type == 'Report').count(),
@@ -219,16 +245,13 @@ def notifications_page():
             Notification.notification_type.in_(REQUEST_TYPES)).count(),
     }
 
-    unread = base.filter_by(is_read=False).count()
-
     return render_template(
         'Notifications.html',
         active_page='notifications',
-        grouped=grouped,
+        grouped=groups,
         counts=counts,
-        unread=unread,
+        unread=counts['unread'],
         tab=tab,
-        status=status,
     )
 
 @dashboard_bp.route('/api/notifications')
@@ -798,6 +821,31 @@ def requests_page():
         )
         db.session.add(new_request)
         db.session.flush()          # assigns request_id before commit
+                # --- attachments ---
+        saved = 0
+        rejected = []
+
+        for i, f in enumerate(request.files.getlist('attachments'), start=1):
+            if not f or not f.filename:
+                continue
+
+            result = save_request_file(
+                f, current_app.static_folder, new_request.request_id, i
+            )
+
+            if result is None:
+                rejected.append(f.filename)
+                continue
+
+            rel, digest, mime = result
+            db.session.add(RequestAttachment(
+                request_id=new_request.request_id,
+                file_url=rel,
+                original_name=f.filename[:255],
+                file_hash=digest,
+                mime_type=mime,
+            ))
+            saved += 1
 
         # tell every admin a request came in
         admins = User.query.filter_by(role='admin').all()
@@ -812,6 +860,9 @@ def requests_page():
                 is_read=False,
             ))
 
+        log_action('submit_request', 'request', new_request.request_id,
+                f"{request_type} for {barangay}, {municipality}")
+            
         db.session.commit()
 
         flash(
@@ -819,6 +870,14 @@ def requests_page():
             "You will be notified when it is reviewed.",
             "success",
         )
+        if saved:
+            flash(f"{saved} document(s) attached.", "info")
+        if rejected:
+            flash(
+                "Not attached (images and PDF only): "
+                + ", ".join(rejected),
+                "warning",
+            )
         return redirect(url_for('dashboard.requests_page'))
 
     # --- GET ---
@@ -1250,7 +1309,11 @@ def submit_report():
             report_id=report.report_id,
             is_read=False,
         ))
- 
+
+    log_action('submit_report', 'monitoring_report', report.report_id,
+               f"Submitted for {site.site_name}: "
+               f"{calc['plots_recorded']} plots, "
+               f"survival {report.survival_rate}%") 
     db.session.commit()
  
     msg = (
@@ -1620,3 +1683,103 @@ def api_published_boundaries():
         })
 
     return jsonify({"count": len(out), "boundaries": out})
+
+@dashboard_bp.route('/api/site-history/<int:site_id>')
+def api_site_history(site_id):
+    """
+    Monitoring history for one site, newest visit first.
+
+    ONLY APPROVED REPORTS ARE RETURNED.
+
+    A pending report has not been validated by anyone. Showing it on a
+    public map would present an unreviewed figure as though it were an
+    official record. Rejected reports are excluded for the same reason.
+    """
+    site = Site.query.get(site_id)
+    if site is None:
+        return jsonify({"found": False, "reason": "Site not found."}), 404
+
+    # jurisdiction still applies
+    cenro = current_cenro()
+    if cenro is not None and site.cenro != cenro:
+        return jsonify({
+            "found": False,
+            "reason": "Outside your CENRO jurisdiction.",
+        }), 403
+
+    reports = (
+        MonitoringReport.query
+        .filter(MonitoringReport.site_id == site.site_id,
+                MonitoringReport.approval_status == 'Approved')
+        .order_by(MonitoringReport.monitoring_date.desc())
+        .all()
+    )
+
+    planted = db.session.query(
+        func.sum(ReforestationRecord.actual_quantity_planted)
+    ).filter(ReforestationRecord.site_id == site.site_id).scalar() or 0
+
+    history = []
+    for r in reports:
+        photos = [
+            {
+                "url": p.photo_url,
+                "type": p.photo_type,
+                "lat": p.latitude,
+                "lon": p.longitude,
+                "taken": (p.date_time_taken.strftime('%d %b %Y, %I:%M %p')
+                          if p.date_time_taken else None),
+                "flags": p.flags,
+                "inside": p.inside_boundary,
+            }
+            for p in r.photos
+        ]
+
+        history.append({
+            "report_id": r.report_id,
+            "monitoring_date": r.monitoring_date.strftime('%Y-%m-%d'),
+            "date_display": r.monitoring_date.strftime('%d %B %Y'),
+            "officer": r.officer.username if r.officer else None,
+            "survival_rate": r.survival_rate,
+            "meets_threshold": r.survival_rate >= 85,
+            "plots_recorded": r.plots_recorded,
+            "total_counted": r.total_counted,
+            "mean_per_plot": r.mean_per_plot,
+            "stdev_per_plot": r.stdev_per_plot,
+            "sampling_intensity": r.sampling_intensity,
+            "estimated_survivors": r.estimated_survivors,
+            "remarks": r.remarks,
+            "reviewed_by": r.reviewer.username if r.reviewer else None,
+            "date_reviewed": (r.date_reviewed.strftime('%d %b %Y')
+                              if r.date_reviewed else None),
+            "captured_area_ha": r.captured_area_ha,
+            "photo_count": len(photos),
+            "photos": photos,
+            "plots": [
+                {"n": p.plot_number, "alive": p.seedlings_alive,
+                 "note": p.plot_notes}
+                for p in sorted(r.plots, key=lambda x: x.plot_number)
+            ],
+        })
+
+    # survival trend, oldest first, for the small chart
+    trend = [
+        {"date": h["monitoring_date"], "rate": h["survival_rate"]}
+        for h in reversed(history)
+    ]
+
+    return jsonify({
+        "found": True,
+        "site_id": site.site_id,
+        "site_name": site.site_name,
+        "site_code": site.site_code,
+        "municipality": site.location.municipality if site.location else None,
+        "barangay": site.location.barangay if site.location else None,
+        "area_size_ha": site.area_size_ha,
+        "year_contracted": site.year_contracted,
+        "seedlings_planted": int(planted),
+        "report_count": len(history),
+        "latest_survival": history[0]["survival_rate"] if history else None,
+        "trend": trend,
+        "history": history,
+    })

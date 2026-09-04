@@ -1,0 +1,178 @@
+{% extends "Base.html" %}
+{% block title %}Audit Log - PuNoObservation{% endblock %}
+{% block content_class %}page-content-wide{% endblock %}
+{% set active_page = 'audit_log' %}
+
+{% block extra_head %}
+<style>
+  .al-strip { display:flex; flex-wrap:wrap; gap:.6rem; margin-bottom:1.25rem; }
+  .al-chip {
+    background:#fff; border:1px solid #e2e8f0; border-radius:8px;
+    padding:.55rem .9rem; text-decoration:none; color:inherit; font-size:.82rem;
+  }
+  .al-chip:hover, .al-chip.active { border-color:#16a34a; color:inherit; }
+  .al-chip .n { font-weight:700; color:#14532d; margin-left:.35rem; }
+
+  .al-filters {
+    display:flex; flex-wrap:wrap; gap:.75rem; align-items:end;
+    background:#fff; border:1px solid #e2e8f0; border-radius:10px;
+    padding:1rem; margin-bottom:1.25rem;
+  }
+
+  .al-act {
+    display:inline-block; padding:2px 8px; border-radius:4px;
+    font-size:.72rem; font-weight:600; white-space:nowrap;
+  }
+  .act-login          { background:#e0f2fe; color:#075985; }
+  .act-login_failed   { background:#fee2e2; color:#991b1b; }
+  .act-logout         { background:#f1f5f9; color:#475569; }
+  .act-create_user    { background:#dcfce7; color:#15803d; }
+  .act-delete_user    { background:#fee2e2; color:#991b1b; }
+  .act-import_dataset { background:#fef3c7; color:#92400e; }
+  .act-publish_boundary { background:#dbeafe; color:#1e40af; }
+  .act-review_report,
+  .act-review_request { background:#ede9fe; color:#5b21b6; }
+  .act-submit_report,
+  .act-submit_request { background:#f0fdf4; color:#166534; }
+
+  .al-role { font-size:.7rem; color:#94a3b8; }
+  .al-ip { font-family:monospace; font-size:.72rem; color:#94a3b8; }
+  .al-empty { text-align:center; padding:3rem 1rem; color:#64748b; }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="um-header">
+  <div>
+    <div class="um-title-row">
+      <h2>Audit Log</h2>
+      <span class="um-count-pill">{{ total }}</span>
+    </div>
+    <p class="um-subtitle">
+      System activity, newest first. Records are written once and cannot
+      be edited or removed.
+      {% if failed_logins %}
+        <strong class="text-danger">
+          {{ failed_logins }} failed login attempt(s) recorded.
+        </strong>
+      {% endif %}
+    </p>
+  </div>
+</div>
+
+<div class="al-strip">
+  <a href="{{ url_for('admin.audit_log', days=days) }}"
+     class="al-chip {% if not action_filter %}active{% endif %}">
+    All actions <span class="n">{{ total }}</span>
+  </a>
+  {% for act, n in action_counts.items() %}
+    <a href="{{ url_for('admin.audit_log', action=act, days=days) }}"
+       class="al-chip {% if action_filter == act %}active{% endif %}">
+      {{ act|replace('_', ' ')|title }} <span class="n">{{ n }}</span>
+    </a>
+  {% endfor %}
+</div>
+
+<form method="GET" class="al-filters">
+  <input type="hidden" name="action" value="{{ action_filter }}">
+
+  <div>
+    <label class="form-label fw-semibold small mb-1">User</label>
+    <select name="user" class="form-select form-select-sm"
+            onchange="this.form.submit()">
+      <option value="">Everyone</option>
+      {% for u in usernames %}
+        <option value="{{ u }}" {% if user_filter == u %}selected{% endif %}>
+          {{ u }}
+        </option>
+      {% endfor %}
+    </select>
+  </div>
+
+  <div>
+    <label class="form-label fw-semibold small mb-1">Period</label>
+    <select name="days" class="form-select form-select-sm"
+            onchange="this.form.submit()">
+      {% for v, l in [('1','Last 24 hours'), ('7','Last 7 days'),
+                      ('30','Last 30 days'), ('all','All time')] %}
+        <option value="{{ v }}" {% if days == v %}selected{% endif %}>{{ l }}</option>
+      {% endfor %}
+    </select>
+  </div>
+
+  <div>
+    <a href="{{ url_for('admin.audit_log') }}" class="btn btn-outline-secondary btn-sm">
+      Clear filters
+    </a>
+  </div>
+</form>
+
+<div class="um-table-card">
+  {% if entries %}
+  <div class="um-scroll-wrap">
+    <table class="um-table">
+      <thead>
+        <tr>
+          <th>When</th>
+          <th>Who</th>
+          <th>Action</th>
+          <th>Detail</th>
+          <th>Target</th>
+          <th>IP</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for e in entries %}
+        <tr>
+          <td style="white-space:nowrap;">
+            {{ e.created_at.strftime('%d %b %Y') }}
+            <div class="al-role">{{ e.created_at.strftime('%I:%M:%S %p') }}</div>
+          </td>
+          <td>
+            <div class="fw-semibold">{{ e.username or 'unknown' }}</div>
+            <div class="al-role">
+              {{ e.role or '—' }}{% if e.cenro %} &middot; {{ e.cenro }}{% endif %}
+            </div>
+          </td>
+          <td>
+            <span class="al-act act-{{ e.action }}">
+              {{ e.action|replace('_', ' ') }}
+            </span>
+          </td>
+          <td>{{ e.detail or '—' }}</td>
+          <td class="al-role">
+            {% if e.entity_type %}
+              {{ e.entity_type }}{% if e.entity_id %} #{{ e.entity_id }}{% endif %}
+            {% else %}—{% endif %}
+          </td>
+          <td class="al-ip">{{ e.ip_address or '—' }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {% if entries|length >= 500 %}
+  <p class="text-secondary small p-3 mb-0">
+    Showing the 500 most recent entries. Narrow the period or the action
+    to see older records.
+  </p>
+  {% endif %}
+
+  {% else %}
+  <div class="al-empty">
+    <h5>No activity recorded</h5>
+    <p>
+      {% if action_filter or user_filter or days != 'all' %}
+        Nothing matches these filters. Try widening the period.
+      {% else %}
+        Logging began when this feature was added, so earlier activity
+        is not recorded. Entries will appear as the system is used.
+      {% endif %}
+    </p>
+  </div>
+  {% endif %}
+</div>
+
+{% endblock %}

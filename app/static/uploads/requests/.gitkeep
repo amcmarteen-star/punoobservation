@@ -1,0 +1,2 @@
+app/static/uploads/requests/*
+!app/static/uploads/requests/.gitkeep

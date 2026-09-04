@@ -1,13 +1,14 @@
 # app/routes/admin.py
 from flask import Blueprint, render_template, request, flash, redirect, url_for, session, jsonify
 from app.extensions import db
-from app.models import User, Location, Organization, Site, TreeSpecie, ReforestationRecord, Request, Notification, MonitoringReport, MonitoringPlot, MonitoringPhoto,ReforestationRecord,Site
+from app.models import User, Location, Organization, Site, TreeSpecie, ReforestationRecord, Request, Notification, MonitoringReport, MonitoringPlot, MonitoringPhoto,ReforestationRecord,Site,AuditLog
 from app.utils.decorators import admin_required, superadmin_required
+from app.utils.audit import log_action, log_login
 import pandas as pd
 from datetime import datetime as dt
-from datetime import datetime
+from datetime import datetime, timedelta
 from dateutil import parser as date_parser
-from sqlalchemy import or_
+from sqlalchemy import or_, func
 from zoneinfo import ZoneInfo
 from app.models import Request as ReforestationRequest
 from app.utils.jurisdiction import (
@@ -15,6 +16,7 @@ from app.utils.jurisdiction import (
     can_see_municipality, current_cenro, is_superadmin, scope_label,
     CENRO_LIST, CENRO_MUNICIPALITIES,
 )
+from app.utils.decorators import superadmin_required
 
 admin_bp = Blueprint('admin', __name__, url_prefix='/admin')
 
@@ -78,6 +80,10 @@ def create_field_officer():
     new_user.set_password(password)
 
     db.session.add(new_user)
+    db.session.flush()
+    log_action('create_user', 'users', new_user.user_id,
+               f"Created {role} '{username}'"
+               + (f" for CENRO {cenro}" if cenro else " (province-wide)"))
     db.session.commit()
 
     where = f" for CENRO {cenro}" if cenro else ""
@@ -248,6 +254,9 @@ def delete_user(user_id):
         flash("That user is outside your CENRO jurisdiction.", "danger")
         return redirect(url_for('admin.user_management'))
 
+    log_action('delete_user', 'users', user.user_id,
+               f"Deleted {user.role} '{user.username}'"
+               + (f" ({user.cenro})" if user.cenro else ""))
     db.session.delete(user)
     db.session.commit()
     flash("User deleted.", "success")
@@ -412,6 +421,14 @@ def import_denr_data():
                     error_samples.append(f"Sheet '{sheet_name}' row {idx + 4}: {e}")
                 continue
 
+    log_action('import_dataset', 'dataset', None,
+               f"Imported '{uploaded_file.filename}': "
+               f"{len(sheets_processed)} sheet(s), "
+               f"{sites_created} site(s) created, "
+               f"{sites_updated} updated, {records_created} record(s), "
+               f"{rows_skipped} row(s) skipped",
+               commit=True)    
+    
     db.session.commit()
 
     flash(
@@ -431,17 +448,6 @@ def import_denr_data():
     return redirect(url_for('admin.reference_dataset'))
 
 
-# ======================================================================
-# BLOCK 2
-# PASTE AT THE BOTTOM OF: app/routes/admin.py
-#
-# Imports needed at the top of admin.py:
-#     from app.models import Request, Notification, Location
-#     from datetime import datetime
-#     from zoneinfo import ZoneInfo
-#     from flask import jsonify
-# ======================================================================
-
 @admin_bp.route('/requests')
 @admin_required
 def review_requests():
@@ -452,7 +458,7 @@ def review_requests():
     superadmin sees all of them. Request has a location_id, so the scope
     is applied through a join on Location.municipality.
     """
-    status_filter = request.args.get('status', '')
+    status_filter = request.args.get('status', 'Pending')
     munis = allowed_municipalities()
 
     def base():
@@ -468,7 +474,9 @@ def review_requests():
 
     query = base()
 
-    if status_filter == 'Pending':
+    if status_filter == 'all':
+        pass
+    elif status_filter == 'Pending':
         query = query.filter(Request.status.in_(['Submitted', 'Under Review']))
     elif status_filter:
         query = query.filter(Request.status == status_filter)
@@ -483,7 +491,7 @@ def review_requests():
     }
 
     return render_template(
-        'RequestsAdmin.html',
+        'Requestsadmin.html',
         active_page='review_requests',
         all_requests=all_requests,
         counts=counts,
@@ -539,6 +547,10 @@ def review_request(request_id):
         is_read=False,
     ))
 
+    log_action('review_request', 'request', req.request_id,
+               f"Marked {new_status}"
+               + (f": {note}" if note else ""))
+        
     db.session.commit()
 
     flash(f"Request #{req.request_id} marked {new_status}.", "success")
@@ -783,7 +795,7 @@ def review_reports():
     Reports carry a site_id, and Site carries the CENRO the DENR
     importer recorded, so the scope is applied directly on Site.cenro.
     """
-    status_filter = request.args.get('status', '')
+    status_filter = request.args.get('status', 'Pending')
     cenro = current_cenro()
 
     def base():
@@ -796,7 +808,7 @@ def review_reports():
         return q
 
     query = base()
-    if status_filter:
+    if status_filter and status_filter != 'all':
         query = query.filter(MonitoringReport.approval_status == status_filter)
 
     reports = query.order_by(MonitoringReport.submitted_at.desc()).all()
@@ -835,7 +847,7 @@ def review_report_detail(report_id):
     boundary_photos = [p for p in report.photos if p.photo_type == 'boundary']
 
     return render_template(
-        'ReportDetail.html',
+        'Reportdetail.html',
         active_page='review_reports',
         report=report,
         plots=sorted(report.plots, key=lambda p: p.plot_number),
@@ -886,18 +898,22 @@ def review_report(report_id):
         if report.boundary_geojson:
             report.publication_status = 'Pending Publication'
 
-            for su in User.query.filter_by(role='superadmin').all():
-                db.session.add(Notification(
-                    user_id=su.user_id,
-                    notification_type='Report',
-                    message=(
+        for su in User.query.filter_by(role='superadmin').all():
+            db.session.add(Notification(
+                user_id=su.user_id,
+                notification_type='Report',
+                message=(
+                    (
                         f"Boundary awaiting publication: "
                         f"{report.site.site_name if report.site else 'a site'} "
                         f"({report.captured_area_ha} ha captured)."
-                    ),
-                    report_id=report.report_id,
-                    is_read=False,
-                ))
+                    )
+                    if report.boundary_geojson
+                    else f"Monitoring report #{report.report_id} was approved."
+                ),
+                report_id=report.report_id,
+                is_read=False,
+            ))
 
     elif new_status == 'Rejected':
         # a rejected report cannot be published later
@@ -921,7 +937,12 @@ def review_report(report_id):
         report_id=report.report_id,
         is_read=False,
     ))
- 
+
+    log_action('review_report', 'monitoring_report', report.report_id,
+               f"Marked {new_status} "
+               f"(survival {report.survival_rate}%)"
+               + (f": {note}" if note else ""))
+
     db.session.commit()
  
     flash(f"Report #{report.report_id} marked {new_status}.", "success")
@@ -1059,39 +1080,119 @@ def publish_boundary(report_id):
             is_read=False,
         ))
 
+    log_action('publish_boundary', 'site',
+               site.site_id if site else None,
+               f"{action.title()} boundary for "
+               f"{site.site_name if site else 'unknown site'} "
+               f"({report.captured_area_ha} ha)"
+               + (f": {note}" if note else ""))    
+
     db.session.commit()
     flash(msg, "success")
     return redirect(url_for('admin.publications'))
 
+@admin_bp.route('/requests/<int:request_id>')
+@admin_required
+def review_request_detail(request_id):
+    """
+    Full view of one request, with its attached documents.
 
+    The jurisdiction check is repeated here because a list filter does
+    not prevent someone typing the URL directly.
+    """
+    req = Request.query.get_or_404(request_id)
 
+    munis = allowed_municipalities()
+    if munis is not None:
+        if not req.location or req.location.municipality not in munis:
+            flash("That request is outside your CENRO jurisdiction.",
+                  "danger")
+            return redirect(url_for('admin.review_requests'))
 
+    # any other requests from the same barangay, for context
+    related = []
+    if req.location:
+        related = (
+            Request.query
+            .filter(Request.location_id == req.location_id,
+                    Request.request_id != req.request_id)
+            .order_by(Request.date_submitted.desc())
+            .limit(5).all()
+        )
 
+    # sites already in that barangay
+    existing_sites = []
+    if req.location:
+        existing_sites = Site.query.filter_by(
+            location_id=req.location_id
+        ).all()
 
+    return render_template(
+        'Requestdetail.html',
+        active_page='review_requests',
+        req=req,
+        related=related,
+        existing_sites=existing_sites,
+    )
 
+@admin_bp.route('/audit-log')
+@superadmin_required
+def audit_log():
+    """
+    System activity, newest first.
 
+    Provincial oversight only. A CENRO administrator seeing the full log
+    would see actions outside their jurisdiction, and an administrator
+    able to read the record of their own actions is a weaker control.
+    """
+    action_filter = request.args.get('action', '')
+    user_filter = request.args.get('user', '')
+    days = request.args.get('days', '7')
 
+    query = AuditLog.query
 
+    if action_filter:
+        query = query.filter(AuditLog.action == action_filter)
 
+    if user_filter:
+        query = query.filter(AuditLog.username == user_filter)
 
+    if days and days != 'all':
+        try:
+            cutoff = datetime.now(ZoneInfo("Asia/Manila")) - timedelta(
+                days=int(days)
+            )
+            query = query.filter(AuditLog.created_at >= cutoff)
+        except ValueError:
+            pass
 
+    entries = query.order_by(AuditLog.created_at.desc()).limit(500).all()
 
+    # counts per action, for the filter chips
+    action_counts = dict(
+        db.session.query(AuditLog.action, func.count(AuditLog.log_id))
+        .group_by(AuditLog.action)
+        .order_by(func.count(AuditLog.log_id).desc())
+        .all()
+    )
 
+    usernames = [
+        u[0] for u in db.session.query(AuditLog.username)
+        .filter(AuditLog.username.isnot(None))
+        .distinct().order_by(AuditLog.username).all()
+    ]
 
+    failed_logins = AuditLog.query.filter_by(action='login_failed').count()
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    return render_template(
+        'Auditlog.html',
+        active_page='audit_log',
+        entries=entries,
+        action_counts=action_counts,
+        usernames=usernames,
+        action_filter=action_filter,
+        user_filter=user_filter,
+        days=days,
+        failed_logins=failed_logins,
+        total=AuditLog.query.count(),
+    )

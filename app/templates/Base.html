@@ -258,6 +258,14 @@
             Boundary Publications
           </a>
           {% endif %}
+          {% if session.role == 'superadmin' %}
+          <a
+            href="{{ url_for('admin.audit_log') }}"
+            class="nav-link {% if active_page == 'audit_log' %}active{% endif %}"
+          >
+            Audit Log
+          </a>
+          {% endif %}
 
           <a
             href="{{ url_for('admin.user_management') }}"

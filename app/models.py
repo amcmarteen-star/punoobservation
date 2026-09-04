@@ -358,6 +358,11 @@ class Request(db.Model):
         backref=db.backref('reviewed_requests', foreign_keys=[reviewed_by])
     )
 
+    attachments = db.relationship(
+        'RequestAttachment', backref='request', lazy=True,
+        cascade="all, delete-orphan"
+    )
+
 class Notification(db.Model):
     __tablename__ = 'notification'
     
@@ -371,4 +376,70 @@ class Notification(db.Model):
         db.DateTime,
         nullable = False,
         default = lambda: datetime.now(ZoneInfo("Asia/Manila"))
+    )
+
+class AuditLog(db.Model):
+    """
+    An immutable record of consequential actions.
+
+    Rows are written, never updated or deleted. A log that can be edited
+    is not evidence of anything.
+
+    user_id is nullable so a failed login attempt - where no user is
+    established - can still be recorded.
+    """
+    __tablename__ = 'audit_log'
+
+    log_id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(
+        db.Integer, db.ForeignKey('users.user_id'), nullable=True
+    )
+    username = db.Column(db.String(80), nullable=True)
+    role = db.Column(db.String(20), nullable=True)
+    cenro = db.Column(db.String(100), nullable=True)
+
+    # 'login' | 'login_failed' | 'logout' | 'create_user' | 'delete_user'
+    # | 'import_dataset' | 'review_request' | 'review_report'
+    # | 'publish_boundary' | 'submit_report' | 'submit_request'
+    action = db.Column(db.String(50), nullable=False)
+
+    # 'users' | 'site' | 'request' | 'monitoring_report' | 'dataset'
+    entity_type = db.Column(db.String(50), nullable=True)
+    entity_id = db.Column(db.Integer, nullable=True)
+
+    detail = db.Column(db.Text, nullable=True)
+    ip_address = db.Column(db.String(45), nullable=True)
+
+    created_at = db.Column(
+        db.DateTime,
+        nullable=False,
+        default=lambda: datetime.now(ZoneInfo("Asia/Manila"))
+    )
+
+    actor = db.relationship('User', foreign_keys=[user_id])
+
+class RequestAttachment(db.Model):
+    """
+    A document attached to a reforestation request.
+
+    Usually a photographed or scanned letter - a barangay endorsement,
+    a landowner's consent, an organisation's formal request.
+    """
+    __tablename__ = 'request_attachment'
+
+    attachment_id = db.Column(db.Integer, primary_key=True)
+    request_id = db.Column(
+        db.Integer, db.ForeignKey('request.request_id'), nullable=False
+    )
+
+    file_url = db.Column(db.String(255), nullable=False)
+    original_name = db.Column(db.String(255), nullable=True)
+    file_hash = db.Column(db.String(64), nullable=True)
+    mime_type = db.Column(db.String(60), nullable=True)
+    caption = db.Column(db.String(200), nullable=True)
+
+    uploaded_at = db.Column(
+        db.DateTime,
+        nullable=False,
+        default=lambda: datetime.now(ZoneInfo("Asia/Manila"))
     )
