@@ -57,7 +57,6 @@ def login():
             session['username'] = user.username
             session['role'] = user.role
             session['cenro'] = user.cenro
-            session['cenro'] = user.cenro
             log_login(user.username, True, user.role, user.user_id)             
             return redirect(url_for('dashboard.index'))
         else:

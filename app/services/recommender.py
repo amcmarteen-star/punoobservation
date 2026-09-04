@@ -266,7 +266,13 @@ def recommend_for_location(location, top_k=5):
         pv = species_vector(sp, bounds)
         score, used = cosine_similarity(sv, pv)
 
-        results.append({
+        # The full-precision score is carried alongside the row so the
+        # ranking can sort on it. Sorting on the rounded 'similarity'
+        # instead would make two species that differ in the 6th decimal
+        # tie, and the tie would then be broken by database insertion
+        # order - which changed the top 5 in 3 of 478 barangays and made
+        # the interface disagree with the evaluation script.
+        results.append((score, {
             "tree_id": sp.tree_id,
             "specie_name": sp.specie_name,
             "scientific_name": sp.scientific_name,
@@ -280,12 +286,14 @@ def recommend_for_location(location, top_k=5):
             "salinity_requirement": sp.salinity_requirement,
             "habitat": SALINITY_LABELS.get(sp.salinity_requirement, "unknown"),
             "source": sp.source,
-        })
+        }))
 
-    results.sort(key=lambda x: x["similarity"], reverse=True)
+    results.sort(key=lambda pair: -pair[0])
+    results = [row for _, row in results]
 
     return {
         "found": True,
+        "location_id": location.location_id,
         "municipality": location.municipality,
         "barangay": location.barangay,
         "site_profile": {

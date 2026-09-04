@@ -393,19 +393,19 @@ def build_boundary(points, contract_area_ha=None):
 
     valid = [p for p in points if p and p[0] is not None and p[1] is not None]
 
+    if len(valid) < MIN_BOUNDARY_POINTS:
+        out["reason"] = (
+            f"{len(valid)} corner photo(s) carried GPS data. "
+            f"At least {MIN_BOUNDARY_POINTS} are needed to form a boundary."
+        )
+        return out
+
     unique = set(valid)
     if len(unique) < MIN_BOUNDARY_POINTS:
         out["reason"] = (
             f"{len(valid)} corner photo(s) had GPS, but only "
             f"{len(unique)} distinct location(s). Corner photographs must "
             f"be taken at different points around the site."
-        )
-        return out
-
-    if len(valid) < MIN_BOUNDARY_POINTS:
-        out["reason"] = (
-            f"{len(valid)} corner photo(s) carried GPS data. "
-            f"At least {MIN_BOUNDARY_POINTS} are needed to form a boundary."
         )
         return out
 

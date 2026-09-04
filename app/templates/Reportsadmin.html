@@ -35,20 +35,25 @@
     <a href="#" id="report-clear-btn" class="um-btn-ghost" hidden onclick="reportClearFilters(); return false;">Clear</a>
   </div>
 
+  {# 'all' is the only value the route treats as unfiltered; an absent
+     status defaults to Pending. Both are folded into is_all so the
+     button, the menu highlight and the empty state agree. #}
+  {% set is_all = not status_filter or status_filter == 'all' %}
+
   <div class="um-filter-wrap">
     <button type="button" class="um-filter-btn" id="report-filter-btn"
             aria-expanded="false" aria-haspopup="true"
             onclick="reportToggleFilterMenu()">
       <span class="um-filter-btn-label">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M7 12h10"/><path d="M10 18h4"/></svg>
-        <span>{{ status_filter if status_filter else 'All reports' }}</span>
-        <span class="um-filter-count">{{ counts[status_filter] if status_filter else total_count }}</span>
+        <span>{{ 'All reports' if is_all else status_filter }}</span>
+        <span class="um-filter-count">{{ total_count if is_all else counts.get(status_filter, 0) }}</span>
       </span>
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
     </button>
     <div id="report-filter-menu" class="um-filter-menu um-filter-menu-end">
-      <a href="{{ url_for('admin.review_reports') }}"
-         class="{% if status_filter == 'all' %}active{% endif %}">
+      <a href="{{ url_for('admin.review_reports', status='all') }}"
+         class="{% if is_all %}active{% endif %}">
         All reports <span class="um-filter-count">{{ total_count }}</span>
       </a>
       {% for label, n in counts.items() %}
@@ -156,7 +161,7 @@
   <div class="um-empty">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="m9 14 2 2 4-4"/></svg>
     <strong>
-      {% if status_filter %}No {{ status_filter|lower }} reports{% else %}No monitoring reports yet{% endif %}
+      {% if is_all %}No monitoring reports yet{% else %}No {{ status_filter|lower }} reports{% endif %}
     </strong>
     <p>Reports submitted by field officers appear here for review.</p>
   </div>

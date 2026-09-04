@@ -120,6 +120,11 @@ active_page = 'review_requests' %} {% block extra_head %}
     >
   </div>
 
+  {# 'all' is the only value the route treats as unfiltered; an absent
+     status defaults to Pending. Both are folded into is_all so the
+     button, the menu highlight and the empty state agree. #}
+  {% set is_all = not status_filter or status_filter == 'all' %}
+
   <div class="um-filter-wrap">
     <button
       type="button"
@@ -143,9 +148,9 @@ active_page = 'review_requests' %} {% block extra_head %}
           <path d="M7 12h10" />
           <path d="M10 18h4" />
         </svg>
-        <span>{{ status_filter if status_filter else 'All requests' }}</span>
+        <span>{{ 'All requests' if is_all else status_filter }}</span>
         <span class="um-filter-count"
-          >{{ counts[status_filter] if status_filter else total_count }}</span
+          >{{ total_count if is_all else counts.get(status_filter, 0) }}</span
         >
       </span>
       <svg
@@ -162,8 +167,8 @@ active_page = 'review_requests' %} {% block extra_head %}
     </button>
     <div id="req-filter-menu" class="um-filter-menu um-filter-menu-end">
       <a
-        href="{{ url_for('admin.review_requests') }}"
-        class="{% if status_filter == 'all' %}active{% endif %}"
+        href="{{ url_for('admin.review_requests', status='all') }}"
+        class="{% if is_all %}active{% endif %}"
       >
         All requests <span class="um-filter-count">{{ total_count }}</span>
       </a>
@@ -341,8 +346,8 @@ active_page = 'review_requests' %} {% block extra_head %}
       <circle cx="12" cy="10" r="3" />
     </svg>
     <strong>
-      {% if status_filter %} No requests with status "{{ status_filter }}" {%
-      else %} No requests submitted yet {% endif %}
+      {% if is_all %} No requests submitted yet {% else %} No requests with
+      status "{{ status_filter }}" {% endif %}
     </strong>
     <p>Requests submitted by users will appear here for review.</p>
   </div>

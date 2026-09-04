@@ -5,14 +5,15 @@ from app.utils.decorators import login_required
 from app.models import (
     Site, ReforestationRecord, MonitoringReport, MonitoringPlot,
     MonitoringPhoto, Location, Notification, Request, RequestAttachment,
-    User,
+    User, TreeSpecie,
 )
-from app.utils.audit import log_action, log_login
+from app.utils.audit import log_action
 from sqlalchemy import func
 from collections import defaultdict
 from datetime import datetime
 from zoneinfo import ZoneInfo
 from app.services.recommender import recommend_for_location
+from app.services.recommender_eval import species_evaluation
 import json, os, re
 from app.services.monitoring import (
     extract_photo_metadata, check_timestamp, compute_survival,
@@ -473,6 +474,57 @@ def api_recommend_by_name():
         }), 404
  
     return jsonify(recommend_for_location(location, top_k=5))
+
+
+@dashboard_bp.route('/api/species-evaluation/<int:tree_id>')
+def api_species_evaluation(tree_id):
+    """
+    Evaluation metrics for one species, opened from one barangay.
+
+    Backs the detail panel on the recommendation page. Returns three
+    things: why THIS barangay scored the way it did, how the species
+    performs as a classifier across every barangay in the user's scope
+    (precision, recall, F1, confusion matrix), and the engine-wide
+    Precision@K / NDCG@K for context.
+
+    Open to guests, same as the recommendation page itself. Metrics are
+    computed over the barangays the caller is allowed to see, so an admin
+    gets figures for their own CENRO rather than the province.
+    """
+    species = TreeSpecie.query.get(tree_id)
+    if species is None:
+        return jsonify({"found": False, "reason": "Species not found."}), 404
+
+    location_id = request.args.get('location_id', type=int)
+    if location_id is None:
+        return jsonify({
+            "found": False,
+            "reason": "Provide location_id.",
+        }), 400
+
+    location = Location.query.get(location_id)
+    if location is None:
+        return jsonify({"found": False, "reason": "Barangay not found."}), 404
+    if not can_see_municipality(location.municipality):
+        return jsonify({
+            "found": False,
+            "reason": "Outside your CENRO jurisdiction.",
+        }), 403
+
+    species_list = TreeSpecie.query.filter_by(is_reference=True).all()
+    if not species_list:
+        return jsonify({
+            "found": False,
+            "reason": "No reference species to evaluate against.",
+        }), 404
+
+    q_loc = Location.query.filter(Location.elevation_m.isnot(None))
+    locations = scope_locations(q_loc).all()
+
+    payload = species_evaluation(species, location, locations, species_list)
+    payload["scope"] = scope_label()
+    return jsonify(payload)
+
 
 """
 ADD THIS ROUTE TO: app/routes/dashboard.py
@@ -937,9 +989,13 @@ BLOCK 2 -> app/routes/admin.py       (admin reviews)
 @field_officer_required
 def reports_page():
     """
-    Field officer landing page: submit a new report, see past ones.
+    The submission form for a new monitoring report.
+
+    Submitting and reviewing are separate tasks, so they are separate
+    pages: past reports live on my_reports_page. An officer coming back
+    to check a review decision should not have to scroll past a blank
+    form to reach it.
     """
-    user_id = session.get('user_id')
     q = (
         db.session.query(Location.municipality)
         .join(Site, Site.location_id == Location.location_id)
@@ -948,26 +1004,101 @@ def reports_page():
     municipalities = [
         m[0] for m in q.distinct().order_by(Location.municipality).all()
     ]
- 
-    my_reports = (
-        MonitoringReport.query
-        .filter_by(user_id=user_id)
-        .order_by(MonitoringReport.submitted_at.desc())
-        .all()
-    )
- 
+
     return render_template(
         'Reports.html',
         active_page='reports',
         municipalities=municipalities,
-        my_reports=my_reports,
         # optional pre-selection, sent from the GIS map
         preset_municipality=request.args.get('municipality', ''),
         preset_barangay=request.args.get('barangay', ''),
         preset_site_id=request.args.get('site_id', ''),
     )
- 
- 
+
+
+@dashboard_bp.route('/my-reports')
+@field_officer_required
+def my_reports_page():
+    """
+    Everything this officer has submitted, newest first.
+
+    The status filter defaults to 'all', not 'Pending' as the admin
+    review queue does. This is an archive rather than a work queue: the
+    officer usually wants the whole record, and the Pending view is one
+    click away when they want to know what is still outstanding.
+    """
+    user_id = session.get('user_id')
+    status_filter = request.args.get('status', 'all')
+
+    def base():
+        """Scoped to the caller. Used for the table and every count, so
+        the chips can never disagree with the rows."""
+        return MonitoringReport.query.filter_by(user_id=user_id)
+
+    query = base()
+    if status_filter and status_filter != 'all':
+        query = query.filter(
+            MonitoringReport.approval_status == status_filter
+        )
+
+    my_reports = query.order_by(MonitoringReport.submitted_at.desc()).all()
+
+    counts = {
+        'Pending': base().filter(
+            MonitoringReport.approval_status == 'Pending').count(),
+        'Approved': base().filter(
+            MonitoringReport.approval_status == 'Approved').count(),
+        'Rejected': base().filter(
+            MonitoringReport.approval_status == 'Rejected').count(),
+    }
+
+    return render_template(
+        'Myreports.html',
+        active_page='my_reports',
+        my_reports=my_reports,
+        counts=counts,
+        total_count=base().count(),
+        status_filter=status_filter,
+    )
+
+
+@dashboard_bp.route('/reports/<int:report_id>')
+@field_officer_required
+def my_report_detail(report_id):
+    """
+    Read-only view of one report the officer submitted themselves.
+
+    The summary table on /reports gives a row per report; this is the
+    rest of it - the plot counts, the photographs with their GPS flags,
+    the captured boundary, and the reviewer's note. An officer whose
+    report was rejected needs the note to know what to correct, and the
+    photo flags to know which photograph caused it.
+
+    Restricted to the officer's OWN reports. Admins reviewing someone
+    else's work go through admin.review_report_detail instead, which is
+    the same page plus the decision form; this route deliberately has no
+    way to approve anything.
+    """
+    report = MonitoringReport.query.get_or_404(report_id)
+
+    if report.user_id != session.get('user_id'):
+        flash("You can only view reports you submitted.", "danger")
+        return redirect(url_for('dashboard.my_reports_page'))
+
+    plot_photos = [p for p in report.photos if p.photo_type == 'plot']
+    boundary_photos = [p for p in report.photos if p.photo_type == 'boundary']
+
+    return render_template(
+        'Reportdetail.html',
+        active_page='my_reports',
+        report=report,
+        plots=sorted(report.plots, key=lambda p: p.plot_number),
+        plot_photos=plot_photos,
+        boundary_photos=boundary_photos,
+        can_review=False,
+    )
+
+
 @dashboard_bp.route('/api/sites-in-barangay')
 def api_sites_in_barangay():
     """
@@ -1327,8 +1458,11 @@ def submit_report():
  
     for w in calc['warnings']:
         flash(w, "warning")
- 
-    return redirect(url_for('dashboard.reports_page'))
+
+    # On success the officer lands on their own list, where the new
+    # report is the top row with its Pending status visible. Validation
+    # failures above stay on the form so the entry can be corrected.
+    return redirect(url_for('dashboard.my_reports_page'))
  
  
 def _load_barangay_geometry(municipality, barangay):

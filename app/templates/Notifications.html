@@ -90,11 +90,14 @@
                 {% set details_url = none %}
 
                 {% if n.report_id %}
-                    {# a report notification: admins review it, officers see their own list #}
+                    {# a report notification: admins review it, officers open
+                       their own copy read-only. The officer route rejects a
+                       report they did not submit, so a stale notification
+                       bounces to their list rather than exposing anything. #}
                     {% if session.role in ['admin', 'superadmin'] %}
                         {% set details_url = url_for('admin.review_report_detail', report_id=n.report_id) %}
                     {% else %}
-                        {% set details_url = url_for('dashboard.reports_page') %}
+                        {% set details_url = url_for('dashboard.my_report_detail', report_id=n.report_id) %}
                     {% endif %}
 
                 {% elif n.notification_type == 'New Request' %}

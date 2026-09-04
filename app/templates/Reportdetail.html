@@ -1,7 +1,17 @@
 {% extends "Base.html" %}
 {% block title %}Report #{{ report.report_id }} - PuNoObservation{% endblock %}
 {% block content_class %}page-content-wide{% endblock %}
-{% set active_page = 'review_reports' %}
+
+{#
+  Shared by two routes:
+    admin.review_report_detail   can_review = true   adds the decision form
+    dashboard.my_report_detail   can_review = false  read-only, own report
+
+  The officer sees exactly what the reviewer sees, minus the ability to
+  decide. Showing them the same photo flags and boundary figures the
+  reviewer is judging is the point: a rejected report is only fixable if
+  the officer can see what was wrong with it.
+#}
 
 {% block extra_head %}
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -9,10 +19,17 @@
 
 {% block content %}
 
+{% if can_review %}
 <a href="{{ url_for('admin.review_reports') }}" class="um-back-link">
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
   Back to all reports
 </a>
+{% else %}
+<a href="{{ url_for('dashboard.my_reports_page') }}" class="um-back-link">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
+  Back to my reports
+</a>
+{% endif %}
 
 <div class="um-header">
   <div>
@@ -274,6 +291,7 @@
 {% endfor %}
 
 <!-- ============ DECISION ============ -->
+{% if can_review %}
 <div class="um-panel">
   <div class="um-panel-head">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>
@@ -332,6 +350,52 @@
     </div>
   </form>
 </div>
+{% else %}
+<div class="um-panel">
+  <div class="um-panel-head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>
+    <h3>Review status</h3>
+  </div>
+
+  {% if report.approval_status == 'Pending' %}
+  <div class="um-alert um-alert-info mb-0">
+    <strong>Awaiting review.</strong>
+    This report has been submitted and is queued for your CENRO to check.
+    Nothing further is needed from you until a decision is recorded.
+  </div>
+
+  {% elif report.approval_status == 'Approved' %}
+  <div class="um-alert um-alert-success mb-0">
+    <strong>Approved</strong>
+    {% if report.reviewer %}by {{ report.reviewer.username }}{% endif %}
+    {% if report.date_reviewed %}on {{ report.date_reviewed.strftime('%d %b %Y') }}{% endif %}.
+    The survival rate of {{ report.survival_rate }}% is now recorded against
+    the planting record for this site.
+    {% if report.review_note %}<br /><br />Note: {{ report.review_note }}{% endif %}
+  </div>
+
+  {% else %}
+  <div class="um-alert um-alert-danger mb-0">
+    <strong>Rejected</strong>
+    {% if report.reviewer %}by {{ report.reviewer.username }}{% endif %}
+    {% if report.date_reviewed %}on {{ report.date_reviewed.strftime('%d %b %Y') }}{% endif %}.
+    {% if report.review_note %}
+      <br /><br /><strong>Reason:</strong> {{ report.review_note }}
+    {% endif %}
+    <br /><br />
+    Nothing was written to the planting record. Correct what the note
+    describes and submit a new report for this site.
+  </div>
+  {% endif %}
+
+  {% if report.boundary_geojson and report.approval_status == 'Approved' %}
+  <p class="text-secondary small mt-3 mb-0">
+    The captured boundary is queued for publication by the provincial
+    administrator. It does not appear on the public map until then.
+  </p>
+  {% endif %}
+</div>
+{% endif %}
 
 {% if report.boundary_geojson %}
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>

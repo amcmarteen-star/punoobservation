@@ -3,7 +3,7 @@ from flask import Blueprint, render_template, request, flash, redirect, url_for,
 from app.extensions import db
 from app.models import User, Location, Organization, Site, TreeSpecie, ReforestationRecord, Request, Notification, MonitoringReport, MonitoringPlot, MonitoringPhoto,ReforestationRecord,Site,AuditLog
 from app.utils.decorators import admin_required, superadmin_required
-from app.utils.audit import log_action, log_login
+from app.utils.audit import log_action
 import pandas as pd
 from datetime import datetime as dt
 from datetime import datetime, timedelta
@@ -823,7 +823,7 @@ def review_reports():
     }
 
     return render_template(
-        'ReportsAdmin.html',
+        'Reportsadmin.html',
         active_page='review_reports',
         reports=reports,
         counts=counts,
@@ -853,6 +853,7 @@ def review_report_detail(report_id):
         plots=sorted(report.plots, key=lambda p: p.plot_number),
         plot_photos=plot_photos,
         boundary_photos=boundary_photos,
+        can_review=True,
     )
  
  
