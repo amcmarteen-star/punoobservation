@@ -1,183 +1,157 @@
-/* ============================================
+/* ============================================================
    LANDING PAGE  (PuNoObservation)
 
-   Type and spacing run on fixed scales rather than one-off values, so the
-   page reads as one system. Sizes are the 12/14/16/18/20/24/32 scale and
-   spacing is an 8px rhythm -- pick the nearest token, don't invent a value.
-   ============================================ */
+   Visual world: "field record" on paper. A light ground, an
+   expanded grotesk for display, mono for anything that is a
+   measurement, and photography carrying the drama.
+
+   Rules this file follows, so later edits stay consistent:
+     - Radius: surfaces 16px, anything interactive is a pill.
+     - Theme: light, page-wide. Photographs may be dark, but no
+       section inverts the page ground.
+     - Accent: one green family. --accent for text and icons,
+       --lime as a fill behind near-black text. Lime is never
+       text on paper, it does not carry enough contrast.
+     - Motion: transform and opacity only, all of it gated
+       behind prefers-reduced-motion.
+   ============================================================ */
 
 .landing-page {
-    /* ---- type scale (16px base) ---- */
-    --fs-xs: 0.75rem;      /* 12 */
-    --fs-sm: 0.875rem;     /* 14 */
-    --fs-base: 1rem;       /* 16 */
-    --fs-lg: 1.125rem;     /* 18 */
-    --fs-xl: 1.25rem;      /* 20 */
-    --fs-2xl: 1.5rem;      /* 24 */
+    /* ---- type scale ---- */
+    --fs-xs: 0.75rem;
+    --fs-sm: 0.875rem;
+    --fs-base: 1rem;
+    --fs-lg: 1.125rem;
+    --fs-xl: 1.375rem;
+    --fs-h3: clamp(1.25rem, 1.1rem + 0.7vw, 1.75rem);
+    --fs-h2: clamp(2rem, 1.3rem + 3vw, 3.5rem);
+    --fs-h1: clamp(2.5rem, 1.5rem + 3.9vw, 4.5rem);
+    --fs-figure: clamp(2.75rem, 1.6rem + 4.8vw, 5.25rem);
 
     /* ---- spacing rhythm (8px) ---- */
-    --sp-1: 0.5rem;        /* 8  */
-    --sp-2: 1rem;          /* 16 */
-    --sp-3: 1.5rem;        /* 24 */
-    --sp-4: 2rem;          /* 32 */
-    --sp-6: 3rem;          /* 48 */
-    --sp-8: 4rem;          /* 64 */
-    --sp-10: 5rem;         /* 80 */
+    --sp-1: 0.5rem;
+    --sp-2: 1rem;
+    --sp-3: 1.5rem;
+    --sp-4: 2rem;
+    --sp-6: 3rem;
+    --sp-8: 4rem;
+    --sp-10: 5rem;
+    --sp-14: 7rem;
 
     /* ---- colour ----
-       Every value below carries at least 4.5:1 against the surface it sits
-       on. The bright #16a34a is reserved for large text and icons only. */
-    --c-ink: #111c17;
-    --c-body: #4a5a51;
-    --c-muted: #5f6f66;
-    --c-green: #15803d;
-    --c-green-dark: #14532d;
-    --c-green-bright: #16a34a;
-    --c-green-deep: #0d3b22;
-    --c-green-deeper: #0f2b1c;
-    --c-green-darkest: #08170f;
-    --c-lime: #bef264;
-    --c-gold: #ffc94d;
-    --c-line: #e2e8e4;
-    --c-surface: #ffffff;
-    --c-surface-alt: #f2f4f1;
+       Every value below clears 4.5:1 against the surface it sits on. */
+    --paper: #f5f7f2;
+    --paper-2: #ffffff;
+    --paper-3: #ebefe6;
+    --ink: #0d1c14;
+    --body: #4a5a51;
+    --mute: #67786e;
+    --accent: #15803d;
+    --accent-deep: #14532d;
+    --lime: #bef264;
+    --on-lime: #08170f;
+    --bone: #eef4ec;
+    --frame: #2c3a32;
+    --line: #dde4d8;
+    --line-soft: #e7ece2;
 
-    /* ---- radius ---- */
-    --r-sm: 0.75rem;
-    --r-md: 1.25rem;
-    --r-lg: 1.5rem;
+    /* ---- shape ---- */
+    --r: 16px;
+    --r-sm: 10px;
+    --pill: 999px;
 
-    /* ---- elevation: layered rather than one soft blur ---- */
-    --sh-sm: 0 1px 2px rgba(16, 36, 26, 0.04), 0 2px 8px rgba(16, 36, 26, 0.04);
-    --sh-md: 0 2px 4px rgba(16, 36, 26, 0.04), 0 8px 24px rgba(16, 36, 26, 0.07);
-    --sh-lg: 0 4px 8px rgba(16, 36, 26, 0.05), 0 16px 40px rgba(16, 36, 26, 0.10);
+    /* Shadows are tinted to the ground rather than pure black. */
+    --sh-sm: 0 1px 2px rgba(19, 44, 30, 0.04), 0 2px 8px rgba(19, 44, 30, 0.04);
+    --sh-md: 0 2px 4px rgba(19, 44, 30, 0.04), 0 10px 28px rgba(19, 44, 30, 0.07);
+    --sh-lg: 0 4px 8px rgba(19, 44, 30, 0.05), 0 20px 48px rgba(19, 44, 30, 0.11);
 
-    --ease: cubic-bezier(0.4, 0, 0.2, 1);
+    --ease: cubic-bezier(0.16, 1, 0.3, 1);
+    --shell: 78rem;
 }
+
+.landing-page *,
+.landing-page *::before,
+.landing-page *::after { box-sizing: border-box; }
 
 .landing-page {
     margin: 0;
-    font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+    background: var(--paper);
+    color: var(--body);
+    font-family: "Inter Tight", system-ui, -apple-system, "Segoe UI", sans-serif;
     font-size: var(--fs-base);
-    color: var(--c-body);
-    background: var(--c-surface);
+    line-height: 1.6;
     overflow-x: hidden;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
 }
 
-/* Inter is optically large; negative tracking is what keeps headings from
-   looking loose at display sizes. */
+/* Archivo carries a width axis. Widening the display face is what makes
+   the headings feel built rather than merely large. */
 .landing-page h1,
 .landing-page h2,
-.landing-page h3,
-.landing-page h4 {
-    font-family: inherit;
-    color: var(--c-ink);
-    line-height: 1.15;
-    letter-spacing: -0.02em;
+.landing-page h3 {
+    margin: 0;
+    font-family: "Archivo", "Inter Tight", system-ui, sans-serif;
+    font-variation-settings: "wdth" 112;
+    color: var(--ink);
+    line-height: 1.02;
+    letter-spacing: -0.03em;
     text-wrap: balance;
 }
 
-.landing-page a {
-    text-decoration: none;
-    color: inherit;
-}
+.landing-page h1 { font-size: var(--fs-h1); font-weight: 800; }
+.landing-page h2 { font-size: var(--fs-h2); font-weight: 700; }
+.landing-page h3 { font-size: var(--fs-h3); font-weight: 700; line-height: 1.15; letter-spacing: -0.02em; }
+/* :where() keeps these resets at zero specificity, so a single class is
+   enough to override them. Without it .landing-page p was silently
+   cancelling the top margin on every paragraph that sets one. */
+:where(.landing-page p) { margin: 0; }
+:where(.landing-page a) { color: inherit; text-decoration: none; }
+.landing-page img { display: block; max-width: 100%; height: auto; }
 
 .landing-page :focus-visible {
-    outline: 2px solid var(--c-green-bright);
+    outline: 2px solid var(--accent);
     outline-offset: 3px;
     border-radius: 4px;
 }
 
-.landing-container {
-    max-width: 72rem;
-    margin: 0 auto;
-    padding: 0 var(--sp-3);
-}
-
-/* The sticky nav would otherwise sit on top of an anchored heading. */
-.landing-section,
-.landing-hero {
-    scroll-margin-top: var(--sp-8);
-}
-
-/* ---------- Nav ---------- */
-.landing-nav-wrap {
-    position: sticky;
-    top: var(--sp-2);
-    z-index: 50;
-    padding: 0 var(--sp-2);
-}
-
-.landing-nav {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--sp-2);
-    max-width: 72rem;
-    margin: 0 auto;
-    /* Vertical padding is most of the bar's height, so trimming it here is
-       what actually makes the bar shorter. */
-    padding: 0.5rem var(--sp-3);
-    border-radius: var(--r-md);
-    background: rgba(255, 255, 255, 0.88);
-    backdrop-filter: blur(12px) saturate(1.4);
-    -webkit-backdrop-filter: blur(12px) saturate(1.4);
-    border: 1px solid var(--c-line);
-    box-shadow: var(--sh-sm);
-}
-
-.landing-brand {
-    display: flex;
-    align-items: center;
-    gap: 0.375rem;
-    font-weight: 600;
-    font-size: var(--fs-sm);
-    letter-spacing: -0.02em;
-    color: var(--c-green-dark);
-}
-
-.landing-logo-box {
-    width: 1.75rem;
-    height: 1.75rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-}
-
-.landing-logo-box img {
+.landing-shell {
     width: 100%;
-    height: 100%;
-    object-fit: contain;
+    max-width: var(--shell);
+    margin-inline: auto;
+    padding-inline: var(--sp-3);
 }
 
-.landing-brand .accent {
-    color: var(--c-green-bright);
+/* Sections alternate ground so each block of the page reads as its own
+   panel. --section-bg is declared here so anything sitting inside a
+   section (marquee fade edges, for one) can match whichever ground it
+   happens to be on. */
+.landing-section {
+    --section-bg: var(--paper);
+    background: var(--section-bg);
+    padding-block: clamp(var(--sp-8), 7vw, var(--sp-14));
+    scroll-margin-top: 6rem;
 }
+.landing-section-alt { --section-bg: var(--paper-2); }
 
-.landing-nav-links {
-    display: flex;
+/* Mono is reserved for measurements and system labels, never for prose. */
+.landing-tag {
+    display: inline-flex;
     align-items: center;
-    gap: var(--sp-4);
-    font-size: var(--fs-sm);
+    gap: 0.5rem;
+    font-family: "JetBrains Mono", ui-monospace, monospace;
+    font-size: 0.6875rem;
     font-weight: 500;
-    color: var(--c-body);
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--accent);
 }
+.landing-tag svg { width: 14px; height: 14px; }
 
-.landing-nav-links a {
-    transition: color 200ms var(--ease);
-}
-
-.landing-nav-links a:hover {
-    color: var(--c-green);
-}
-
-.landing-nav-actions {
-    display: flex;
-    align-items: center;
-    gap: var(--sp-1);
+.landing-lead {
+    font-size: var(--fs-lg);
+    color: var(--body);
+    max-width: 58ch;
 }
 
 /* ---------- Buttons ---------- */
@@ -185,663 +159,855 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: var(--sp-1);
-    padding: 0.6875rem var(--sp-3);
-    /* 44px floor: anything smaller is hard to hit accurately on a phone. */
-    min-height: 44px;
-    border-radius: 999px;
-    font-family: inherit;
-    font-weight: 600;
-    font-size: var(--fs-sm);
-    letter-spacing: -0.01em;
+    gap: 0.5rem;
+    white-space: nowrap;
+    padding: 0.8125rem 1.5rem;
+    border-radius: var(--pill);
     border: 1px solid transparent;
+    font-family: inherit;
+    font-size: var(--fs-sm);
+    font-weight: 600;
+    letter-spacing: -0.01em;
     cursor: pointer;
-    transition: background-color 200ms var(--ease),
-                border-color 200ms var(--ease),
-                box-shadow 200ms var(--ease);
+    transition: transform 0.18s var(--ease), background-color 0.18s var(--ease),
+                border-color 0.18s var(--ease), box-shadow 0.18s var(--ease);
 }
+.landing-btn:active { transform: translateY(1px); }
+.landing-btn svg { width: 16px; height: 16px; }
 
-.landing-btn.landing-btn-primary {
-    background: var(--c-green-dark);
-    color: #ffffff;
+/* Lime is bright enough to carry near-black text, which is what keeps the
+   brand colour on the primary action without failing contrast. */
+.landing-page .landing-btn-primary {
+    background: var(--lime);
+    color: var(--on-lime);
     box-shadow: var(--sh-sm);
 }
+.landing-page .landing-btn-primary:hover { background: #cbf67f; box-shadow: var(--sh-md); }
 
-.landing-btn.landing-btn-primary:hover {
-    background: #0f3f22;
-    box-shadow: var(--sh-md);
+.landing-page .landing-btn-ghost {
+    background: var(--paper-2);
+    border-color: var(--line);
+    color: var(--ink);
 }
+.landing-page .landing-btn-ghost:hover { border-color: #c3cfba; box-shadow: var(--sh-sm); }
 
-.landing-btn.landing-btn-outline {
-    background: var(--c-surface);
-    color: var(--c-green-dark);
-    border-color: #d1dbd4;
-}
+.landing-btn-sm { padding: 0.5625rem 1.125rem; font-size: 0.8125rem; }
 
-.landing-btn.landing-btn-outline:hover {
-    border-color: var(--c-green-dark);
-    box-shadow: var(--sh-sm);
-}
-
-.landing-btn-sm {
-    padding: 0.4375rem 0.875rem;
-    min-height: 34px;
-    font-size: var(--fs-sm);
-}
-
-.landing-btn.landing-btn-lime {
-    background: var(--c-lime);
-    color: var(--c-green-dark);
-}
-
-.landing-btn.landing-btn-lime:hover {
-    background: #a3e635;
-}
-
-/* Outline button on a dark background (final CTA) -- needs its own variant
-   since .landing-btn-outline hardcodes a white background, which would put
-   white text on a white pill and make it invisible. */
-.landing-btn.landing-btn-outline-dark {
-    background: transparent;
-    color: #ffffff;
-    border-color: rgba(255, 255, 255, 0.35);
-}
-
-.landing-btn.landing-btn-outline-dark:hover {
-    background: rgba(255, 255, 255, 0.1);
-    border-color: rgba(255, 255, 255, 0.6);
-}
-
-/* ---------- Hero ---------- */
-.landing-hero {
-    position: relative;
-    padding: var(--sp-10) 0 var(--sp-8);
-    text-align: center;
-    overflow: hidden;
-    background-color: #f6f7f5;
-    background-image: radial-gradient(#d7ded9 1px, transparent 1px);
-    background-size: 22px 22px;
-}
-
-.landing-hero::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: radial-gradient(ellipse 60% 55% at 50% 0%, #f6f7f5 10%, rgba(246, 247, 245, 0) 75%), linear-gradient(180deg, #f6f7f5 60%, #ffffff 100%);
-    pointer-events: none;
-}
-
-.landing-hero-inner {
-    position: relative;
-    z-index: 1;
-    max-width: 44rem;
-    margin: 0 auto;
-}
-
-.landing-hero h1 {
-    /* 32px -> 56px. The floor drops below the old 36px because this headline
-       wraps to four lines on a phone, where 36px reads as a wall of text. */
-    font-size: clamp(2rem, 5vw, 3.5rem);
-    /* 1.08 is fine for a single line but cramped once it wraps. */
-    line-height: 1.1;
-    letter-spacing: -0.035em;
-    font-weight: 700;
-    margin: 0 0 var(--sp-3);
-}
-
-.landing-hero h1 .highlight {
-    color: var(--c-green-bright);
-    position: relative;
-    /* Keeps the word and its underline on the same line. */
-    white-space: nowrap;
-}
-
-/* Sized in em, not rem, so the underline stays in proportion to the headline
-   at every clamp step instead of looking heavy on mobile and thin on desktop.
-   The slight overhang on each side is what makes it read as hand-drawn. */
-.landing-hero h1 .highlight .underline-svg {
-    position: absolute;
-    left: -0.04em;
-    bottom: -0.1em;
-    width: calc(100% + 0.08em);
-    height: 0.2em;
-    overflow: visible;
-}
-
-.landing-hero h1 .highlight .underline-svg path {
-    stroke: var(--c-gold);
-    stroke-width: 5;
-}
-
-.landing-hero p.lead {
-    font-size: var(--fs-lg);
-    color: var(--c-muted);
-    max-width: 36rem;
-    margin: 0 auto var(--sp-4);
-    line-height: 1.6;
-}
-
-.landing-formal-title {
-    max-width: 40rem;
-    margin: 0 auto var(--sp-4);
-    padding-top: var(--sp-3);
-    border-top: 1px solid var(--c-line);
-    font-size: var(--fs-sm);
-    font-style: italic;
-    color: var(--c-muted);
-    line-height: 1.6;
-}
-
-.landing-hero-buttons {
-    display: flex;
-    justify-content: center;
-    gap: var(--sp-1);
-    flex-wrap: wrap;
-    margin-bottom: var(--sp-2);
-}
-
-.landing-hero-login-note {
-    font-size: var(--fs-sm);
-    color: var(--c-muted);
-    margin: 0 0 var(--sp-6);
-}
-
-.landing-hero-login-note a {
-    color: var(--c-green);
-    font-weight: 600;
-    text-decoration: underline;
-    text-underline-offset: 3px;
-}
-
-.landing-coverage {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: var(--sp-1);
-    flex-wrap: wrap;
-    font-size: var(--fs-sm);
-    color: var(--c-muted);
-}
-
-.landing-coverage span {
+.landing-page .landing-link {
     display: inline-flex;
     align-items: center;
-    gap: 0.375rem;
-}
-
-.landing-coverage strong {
-    color: var(--c-green-dark);
-    font-weight: 700;
-    /* Stops the row twitching if the numbers ever become dynamic. */
-    font-variant-numeric: tabular-nums;
-}
-
-.landing-coverage .sep {
-    color: #cbd5d0;
-}
-
-/* ---------- Section shared ---------- */
-.landing-section {
-    padding: var(--sp-10) 0;
-}
-
-.landing-section-head {
-    text-align: center;
-    max-width: 36rem;
-    margin: 0 auto var(--sp-6);
-}
-
-.landing-eyebrow {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.375rem;
-    font-size: var(--fs-xs);
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    /* Darker than the bright brand green: this is small bold text and needs
-       4.5:1, which #16a34a does not clear on white. */
-    color: var(--c-green);
-    margin-bottom: var(--sp-1);
-}
-
-.landing-eyebrow svg {
-    width: 0.875rem;
-    height: 0.875rem;
-}
-
-.landing-section-head h2 {
-    /* 28px -> 40px */
-    font-size: clamp(1.75rem, 3vw, 2.5rem);
-    font-weight: 700;
-    letter-spacing: -0.03em;
-    margin: 0 0 var(--sp-2);
-}
-
-.landing-section-head p {
-    color: var(--c-muted);
+    gap: 0.4375rem;
     font-size: var(--fs-base);
-    line-height: 1.6;
-    margin: 0;
-}
-
-.landing-section-head .landing-role-note {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.375rem;
-    margin: var(--sp-2) 0 0;
-    font-size: var(--fs-sm);
-    color: var(--c-muted);
-}
-
-.landing-role-note svg {
-    width: 1rem;
-    height: 1rem;
-    flex-shrink: 0;
-    color: var(--c-green-bright);
-}
-
-/* ---------- Feature cards ---------- */
-.landing-feature-big {
-    background: var(--c-surface-alt);
-    border-radius: var(--r-lg);
-    padding: var(--sp-4);
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: var(--sp-4);
-    align-items: center;
-    margin-bottom: var(--sp-2);
-}
-
-.landing-feature-big h3 {
-    font-size: var(--fs-2xl);
     font-weight: 600;
-    margin: 0 0 var(--sp-1);
+    color: var(--accent);
+}
+.landing-link svg { width: 17px; height: 17px; transition: transform 0.2s var(--ease); }
+.landing-link:hover svg { transform: translateX(3px); }
+
+/* ---------- Nav ---------- */
+.landing-nav-wrap {
+    position: sticky;
+    top: 0;
+    z-index: 60;
+    padding: var(--sp-2) clamp(1.25rem, 4vw, 4rem) 0;
 }
 
-.landing-feature-big p {
-    color: var(--c-body);
-    font-size: var(--fs-base);
-    line-height: 1.6;
-    margin: 0 0 var(--sp-3);
-}
-
-.landing-feature-row {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: var(--sp-2);
-}
-
-/* "Who It's For" has three roles, so it needs its own column count. */
-.landing-role-row {
-    grid-template-columns: repeat(3, 1fr);
-}
-
-@media (max-width: 1100px) and (min-width: 901px) {
-    .landing-role-row {
-        grid-template-columns: repeat(2, 1fr);
-    }
-}
-
-.landing-feature-card {
-    background: var(--c-surface-alt);
-    border-radius: var(--r-lg);
-    padding: var(--sp-3);
-    transition: transform 260ms var(--ease), box-shadow 260ms var(--ease);
-}
-
-.landing-feature-card:hover {
-    transform: translateY(-5px);
-    box-shadow: var(--sh-md);
-}
-
-.landing-feature-card h3 {
-    font-size: var(--fs-xl);
-    font-weight: 600;
-    margin: 0 0 var(--sp-1);
-}
-
-.landing-feature-card p {
-    color: var(--c-body);
-    font-size: var(--fs-sm);
-    line-height: 1.6;
-    margin: 0 0 var(--sp-3);
-}
-
-/* --- real product screenshots --- */
-.landing-feature-screenshot {
-    background: var(--c-surface);
-    border-radius: var(--r-sm);
-    border: 1px solid #e5e9e4;
-    box-shadow: var(--sh-md);
-    overflow: hidden;
-}
-
-.landing-feature-screenshot img {
-    display: block;
-    width: 100%;
-    height: auto;
-}
-
-/* ---------- More-features chips ---------- */
-.landing-more {
-    margin-top: var(--sp-4);
-    text-align: center;
-}
-
-.landing-more-label {
-    font-size: var(--fs-xs);
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: var(--c-muted);
-    margin-bottom: var(--sp-2);
-}
-
-.landing-chip-row {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: var(--sp-1);
-}
-
-.landing-chip-row span {
-    display: inline-flex;
-    align-items: center;
-    padding: 0.5rem var(--sp-2);
-    border-radius: 999px;
-    border: 1px solid var(--c-line);
-    background: var(--c-surface);
-    color: var(--c-body);
-    font-size: var(--fs-sm);
-    font-weight: 500;
-    white-space: nowrap;
-    transition: border-color 200ms var(--ease), color 200ms var(--ease);
-}
-
-.landing-chip-row span:hover {
-    border-color: #a7d8b8;
-    color: var(--c-green-dark);
-}
-
-/* ---------- Data-source band (dark) ---------- */
-.landing-data-band {
-    background: var(--c-green-deep);
-    border-radius: var(--r-lg);
-    padding: var(--sp-8) var(--sp-4);
-    text-align: center;
-    color: #ffffff;
-}
-
-.landing-data-band .landing-eyebrow {
-    color: var(--c-lime);
-}
-
-.landing-data-band h2 {
-    color: #ffffff;
-    font-size: clamp(1.75rem, 3vw, 2.5rem);
-    letter-spacing: -0.03em;
-    margin: 0 0 var(--sp-2);
-}
-
-.landing-data-band p {
-    color: rgba(255, 255, 255, 0.8);
-    max-width: 36rem;
-    margin: 0 auto var(--sp-6);
-    font-size: var(--fs-base);
-    line-height: 1.6;
-}
-
-.landing-data-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: var(--sp-2);
-    max-width: 44rem;
-    margin: 0 auto;
-}
-
-@media (min-width: 640px) {
-    .landing-data-grid {
-        grid-template-columns: repeat(6, 1fr);
-    }
-}
-
-.landing-data-item {
-    background: rgba(255, 255, 255, 0.07);
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    border-radius: var(--r-sm);
-    padding: var(--sp-2) var(--sp-1);
-    transition: transform 260ms var(--ease),
-                background-color 260ms var(--ease),
-                border-color 260ms var(--ease);
-}
-
-.landing-data-item:hover {
-    transform: translateY(-5px);
-    background-color: rgba(255, 255, 255, 0.13);
-    border-color: rgba(190, 242, 100, 0.42);
-}
-
-.landing-data-item .icon {
-    width: 2.25rem;
-    height: 2.25rem;
-    margin: 0 auto var(--sp-1);
-    border-radius: 0.625rem;
-    background: rgba(255, 255, 255, 0.12);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.landing-data-item .icon svg {
-    width: 1.125rem;
-    height: 1.125rem;
-    color: var(--c-lime);
-}
-
-.landing-data-item span {
-    display: block;
-    font-size: var(--fs-xs);
-    font-weight: 600;
-    line-height: 1.4;
-    color: #e8fbe0;
-}
-
-/* ---------- Final CTA ---------- */
-.landing-final-cta {
-    background: var(--c-green-deeper);
-    border-radius: var(--r-lg);
-    padding: var(--sp-8) var(--sp-4);
+.landing-nav {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: var(--sp-3);
-    flex-wrap: wrap;
+    height: 60px;
+    padding: 0 0.75rem 0 1rem;
+    border-radius: var(--pill);
+    /* The bar sits on the hero photograph, so it carries its own light
+       surface instead of inheriting whatever is behind it. */
+    background: rgba(245, 247, 242, 0.9);
+    border: 1px solid var(--line);
+    backdrop-filter: blur(16px) saturate(1.4);
+    -webkit-backdrop-filter: blur(16px) saturate(1.4);
+    transition: background-color 0.3s var(--ease), box-shadow 0.3s var(--ease);
 }
 
-.landing-final-cta h2 {
-    color: #ffffff;
-    font-size: clamp(1.5rem, 2.5vw, 2rem);
-    letter-spacing: -0.03em;
-    margin: 0;
-    max-width: 28rem;
+.landing-nav-wrap.is-stuck .landing-nav {
+    background: rgba(245, 247, 242, 0.95);
+    box-shadow: var(--sh-md);
 }
 
-.landing-final-cta h2 .accent {
-    color: var(--c-lime);
-    text-decoration: underline;
-    text-decoration-thickness: 2px;
-    text-underline-offset: 4px;
-}
-
-.landing-final-cta-buttons {
+.landing-page .landing-brand {
     display: flex;
-    gap: var(--sp-1);
+    align-items: center;
+    gap: 0.5rem;
+    font-family: "Archivo", sans-serif;
+    font-variation-settings: "wdth" 108;
+    font-weight: 700;
+    font-size: 0.9375rem;
+    letter-spacing: -0.02em;
+    color: var(--ink);
+}
+.landing-brand img { width: 26px; height: auto; }
+.landing-brand .accent { color: var(--accent); }
+
+.landing-nav-links {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-3);
+    font-size: var(--fs-sm);
+    font-weight: 500;
+    color: var(--body);
+}
+.landing-nav-links a { transition: color 0.18s var(--ease); }
+.landing-nav-links a:hover { color: var(--ink); }
+
+.landing-nav-actions { display: flex; align-items: center; gap: 0.5rem; }
+
+/* ---------- Hero ----------
+   The photograph fills the whole section. Copy sits on it under a scrim,
+   which is image treatment; the page ground below stays light. */
+.landing-hero {
+    position: relative;
+    min-height: 100dvh;
+    display: flex;
+    align-items: center;
+    margin-top: -76px;   /* pull the sticky nav onto the photograph */
+    padding-top: 76px;
+    overflow: hidden;
+    isolation: isolate;
+}
+
+.landing-hero-media { position: absolute; inset: 0; z-index: -2; }
+.landing-hero-media img { width: 100%; height: 100%; object-fit: cover; }
+
+/* The photograph drifts slowly so the hero is never quite still. */
+@media (prefers-reduced-motion: no-preference) {
+    .landing-hero-media img {
+        transform-origin: 58% 45%;
+        animation: landing-drift 34s var(--ease) infinite alternate;
+    }
+}
+@keyframes landing-drift {
+    from { transform: scale(1.04); }
+    to   { transform: scale(1.16); }
+}
+
+/* Two scrims: one across so the copy column stays readable, one down so the
+   section below meets the photograph instead of cutting against it. */
+.landing-hero-scrim {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background:
+        linear-gradient(100deg, rgba(6, 20, 13, 0.88) 4%, rgba(6, 20, 13, 0.68) 36%, rgba(6, 20, 13, 0.22) 72%, rgba(6, 20, 13, 0.42) 100%),
+        linear-gradient(to bottom, rgba(6, 20, 13, 0.45) 0%, transparent 26%, transparent 60%, rgba(6, 20, 13, 0.6) 100%);
+}
+
+/* Copy on the left, the province on the right. */
+.landing-hero-inner {
+    width: 100%;
+    padding-inline: clamp(1.25rem, 4vw, 4rem);
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 0.58fr);
+    align-items: center;
+    gap: clamp(var(--sp-4), 5vw, var(--sp-10));
+}
+.landing-hero-copy { max-width: 46rem; }
+
+/* ---------- Hero map ----------
+   Pangasinan in outline, with the two surveyed districts filled. Both the
+   province and the districts come from the geojson the GIS map uses, so
+   the shapes stay registered against each other. */
+.landing-hero-map { margin: 0; }
+.landing-hero-map svg {
+    width: 100%;
+    height: auto;
+    overflow: visible;
+    filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.75)) drop-shadow(0 10px 34px rgba(0, 0, 0, 0.5));
+}
+.landing-hero-map path {
+    stroke-linejoin: round;
+    vector-effect: non-scaling-stroke;
+}
+.map-province {
+    fill: rgba(10, 24, 16, 0.28);
+    stroke: rgba(238, 244, 236, 0.7);
+    stroke-width: 1.5;
+}
+.map-d5 {
+    fill: rgba(190, 242, 100, 0.88);
+    stroke: #e2fca6;
+    stroke-width: 1.2;
+}
+.map-d6 {
+    fill: rgba(190, 242, 100, 0.36);
+    stroke: rgba(190, 242, 100, 0.85);
+    stroke-width: 1.2;
+}
+
+.landing-hero-map figcaption {
+    display: flex;
     flex-wrap: wrap;
+    gap: var(--sp-2);
+    margin-top: var(--sp-3);
+    font-family: "JetBrains Mono", monospace;
+    font-size: 0.625rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: #cbd8ce;
+}
+.map-key { display: inline-flex; align-items: center; gap: 0.5rem; }
+.map-key::before {
+    content: "";
+    width: 12px;
+    height: 12px;
+    border-radius: 3px;
+}
+.map-key-5::before { background: rgba(190, 242, 100, 0.88); }
+.map-key-6::before { background: rgba(190, 242, 100, 0.36); box-shadow: inset 0 0 0 1px rgba(190, 242, 100, 0.85); }
+.landing-hero h1 {
+    margin-bottom: var(--sp-4);
+    font-size: clamp(2.5rem, 1.1rem + 4.6vw, 4.75rem);
+    font-weight: 600;
+    line-height: 1.06;
+    letter-spacing: -0.025em;
+    color: var(--bone);
+    font-variation-settings: "wdth" 100;
+}
+.landing-hero h1 .accent { color: #d5f0a6; }
+.landing-hero .landing-lead { max-width: 36rem; color: #d7e0d9; }
+
+.landing-hero-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-top: var(--sp-4);
+}
+
+/* ---------- About ---------- */
+.landing-about {
+    display: grid;
+    grid-template-columns: minmax(0, 1.18fr) minmax(0, 1fr);
+    gap: clamp(var(--sp-4), 4vw, var(--sp-8));
+    align-items: center;
+}
+.landing-about h2 { margin: var(--sp-2) 0 var(--sp-3); }
+.landing-about .landing-lead + .landing-lead { margin-top: var(--sp-2); }
+
+.landing-credit {
+    margin-top: var(--sp-6);
+    padding-left: var(--sp-2);
+    border-left: 2px solid var(--accent);
+    font-size: 0.8125rem;
+    line-height: 1.5;
+    color: var(--mute);
+    max-width: 52ch;
+}
+
+
+/* A tall plate, then a badge and a shorter plate stacked beside it. The
+   badge reaches back over the tall plate so the two columns read as one
+   composition rather than two loose pictures. */
+.landing-plates {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 0.88fr);
+    grid-template-rows: auto 1fr;
+    align-items: stretch;
+    gap: var(--sp-2);
+}
+
+.landing-plate {
+    position: relative;
+    margin: 0;
+    max-width: 100%;
+    overflow: hidden;
+    isolation: isolate;
+    border-radius: var(--r);
+    box-shadow: var(--sh-md);
+}
+.landing-plate img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.8s var(--ease);
+}
+
+/* On hover the plate pushes in slightly and a skewed band of light
+   crosses it once, then clears. */
+.landing-plate::after {
+    content: "";
+    position: absolute;
+    top: -12%;
+    bottom: -12%;
+    left: -70%;
+    width: 58%;
+    z-index: 1;
+    pointer-events: none;
+    opacity: 0;
+    transform: skewX(-20deg) translateX(0);
+    background: linear-gradient(
+        90deg,
+        rgba(255, 255, 255, 0) 0%,
+        rgba(255, 255, 255, 0.1) 28%,
+        rgba(255, 255, 255, 0.55) 46%,
+        rgba(255, 255, 255, 0.16) 58%,
+        rgba(255, 255, 255, 0.08) 82%,
+        rgba(255, 255, 255, 0) 100%
+    );
+}
+
+@media (prefers-reduced-motion: no-preference) {
+    .landing-plate:hover img { transform: scale(1.07); }
+    .landing-plate:hover::after { animation: landing-sheen 0.95s var(--ease); }
+}
+@keyframes landing-sheen {
+    0%   { opacity: 0; transform: skewX(-20deg) translateX(0); }
+    15%  { opacity: 1; }
+    85%  { opacity: 1; }
+    100% { opacity: 0; transform: skewX(-20deg) translateX(340%); }
+}
+
+.landing-plate-main {
+    grid-column: 1;
+    grid-row: 1 / span 2;
+    min-height: 32rem;
+    aspect-ratio: 3 / 4;
+}
+.landing-plate-main img { object-position: 50% 42%; }
+
+.landing-plate-second {
+    grid-column: 2;
+    grid-row: 2;
+}
+
+.landing-badge {
+    grid-column: 2;
+    grid-row: 1;
+    align-self: start;
+    display: flex;
+    align-items: center;
+    gap: var(--sp-3);
+    margin-left: clamp(-5rem, -20%, -1.5rem);
+    padding: var(--sp-3);
+    border-radius: var(--r);
+    background: var(--accent);
+    color: #ffffff;
+    box-shadow: var(--sh-lg);
+}
+.landing-badge svg { width: 36px; height: 36px; flex-shrink: 0; }
+.landing-badge span {
+    padding-left: var(--sp-3);
+    border-left: 1px solid rgba(255, 255, 255, 0.4);
+    font-size: 0.8125rem;
+    font-weight: 700;
+    line-height: 1.4;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+/* ---------- Coverage marquee ----------
+   The strip runs on its own. Hovering does not stop it, it eases the speed
+   down so a photograph can be looked at without chasing it. */
+.landing-carousel-head {
+    margin-bottom: var(--sp-6);
+    text-align: center;
+}
+.landing-carousel-head h2 { margin-top: var(--sp-2); }
+
+.landing-marquee {
+    position: relative;
+    width: 100vw;
+    margin-inline: calc(50% - 50vw);
+    padding-block: 4px;
+    overflow: hidden;
+}
+
+/* Soft edges, so slides enter and leave rather than being chopped off. */
+.landing-marquee::before,
+.landing-marquee::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    z-index: 2;
+    width: clamp(24px, 7vw, 120px);
+    pointer-events: none;
+}
+.landing-marquee::before { left: 0; background: linear-gradient(to right, var(--section-bg, var(--paper)), rgba(255, 255, 255, 0)); }
+.landing-marquee::after { right: 0; background: linear-gradient(to left, var(--section-bg, var(--paper)), rgba(255, 255, 255, 0)); }
+
+.landing-track {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-2);
+    width: max-content;
+    will-change: transform;
+}
+/* pan-y leaves vertical page scrolling alone while the strip takes over
+   horizontal drags. */
+.landing-marquee.is-running .landing-track { cursor: grab; touch-action: pan-y; }
+.landing-marquee.is-dragging .landing-track { cursor: grabbing; }
+.landing-marquee.is-dragging .landing-slide img { transform: none; }
+
+/* Without JavaScript, or under reduced motion, the strip stays a plain
+   horizontal scroller rather than an animation. */
+.landing-marquee:not(.is-running) { overflow-x: auto; scrollbar-width: none; }
+.landing-marquee:not(.is-running)::-webkit-scrollbar { display: none; }
+@media (prefers-reduced-motion: reduce) {
+    .landing-track { transform: none !important; }
+}
+
+/* A caption sitting on a photograph needs its own scrim. That is image
+   treatment, not a second theme. */
+.landing-slide {
+    position: relative;
+    flex: 0 0 min(30rem, 78vw);
+    border-radius: var(--r);
+    overflow: hidden;
+    isolation: isolate;
+    aspect-ratio: 4 / 3;
+    box-shadow: var(--sh-md);
+}
+.landing-slide img {
+    position: absolute;
+    inset: 0;
+    z-index: -2;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.7s var(--ease);
+}
+.landing-slide::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background: linear-gradient(to top, rgba(6, 20, 13, 0.95) 6%, rgba(6, 20, 13, 0.5) 44%, rgba(6, 20, 13, 0.04) 100%);
+    transition: opacity 0.45s var(--ease);
+}
+
+/* A sheen sweeps across the photograph on hover, the same gesture the
+   hero plates and the feature screenshots use, so every image on the page
+   answers a pointer the same way. */
+.landing-slide::before {
+    content: "";
+    position: absolute;
+    top: -12%;
+    bottom: -12%;
+    left: -70%;
+    width: 58%;
+    z-index: 1;
+    pointer-events: none;
+    opacity: 0;
+    transform: skewX(-20deg) translateX(0);
+    background: linear-gradient(
+        90deg,
+        rgba(255, 255, 255, 0) 0%,
+        rgba(255, 255, 255, 0.1) 28%,
+        rgba(255, 255, 255, 0.45) 46%,
+        rgba(255, 255, 255, 0.14) 58%,
+        rgba(255, 255, 255, 0.06) 82%,
+        rgba(255, 255, 255, 0) 100%
+    );
+}
+
+@media (prefers-reduced-motion: no-preference) {
+    .landing-slide:hover img { transform: scale(1.06); }
+    .landing-slide:hover::before { animation: landing-sheen 0.95s var(--ease); }
+}
+@media (prefers-reduced-motion: reduce) { .landing-slide:hover img { transform: none; } }
+
+/* The caption sits on the photograph, so it carries its own scrim rather
+   than a panel. */
+.landing-slide-body {
+    position: absolute;
+    inset-inline: 0;
+    bottom: 0;
+    z-index: 2;
+    padding: var(--sp-3);
+}
+.landing-slide-body h3 { font-size: var(--fs-xl); color: var(--bone); }
+
+/* Only the title is on the card at rest. The description is collapsed to
+   zero height rather than merely hidden, so it takes no room until the
+   card is pointed at. The max-height is a ceiling for the animation, not
+   a real limit -- these captions run to three lines at most. */
+.landing-slide-body p {
+    max-height: 0;
+    margin-top: 0;
+    opacity: 0;
+    overflow: hidden;
+    transform: translateY(8px);
+    font-size: var(--fs-sm);
+    color: #d3ddd5;
+    max-width: 36ch;
+    transition: max-height 0.45s var(--ease), opacity 0.3s var(--ease),
+                transform 0.4s var(--ease), margin-top 0.45s var(--ease);
+}
+.landing-slide:hover .landing-slide-body p,
+.landing-slide:focus-within .landing-slide-body p {
+    max-height: 7rem;
+    margin-top: 0.5rem;
+    opacity: 1;
+    transform: none;
+}
+
+/* Without a pointer there is nothing to hover, so the caption is simply
+   there. Same for anyone who has asked for less motion. */
+@media (hover: none) {
+    .landing-slide-body p { max-height: 7rem; margin-top: 0.5rem; opacity: 1; transform: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .landing-slide-body p { transition: none; }
+}
+
+
+/* The "More features" strip reuses the marquee, but carries pills rather
+   than photographs. Every pill is the same height whatever its label, so
+   the row reads as one band -- the height comes from the icon badge, not
+   from the text, and nothing wraps. */
+.landing-mini {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.625rem;
+    height: 52px;
+    padding: 0 1.25rem 0 0.625rem;
+    border-radius: var(--pill);
+    border: 1px solid var(--line);
+    background: var(--paper-2);
+    box-shadow: var(--sh-sm);
+    font-size: var(--fs-base);
+    font-weight: 500;
+    line-height: 1;
+    color: var(--ink);
+    white-space: nowrap;
+    user-select: none;
+    transition: border-color 0.25s var(--ease), box-shadow 0.25s var(--ease),
+                transform 0.25s var(--ease);
+}
+.landing-mini:hover {
+    border-color: #c3cfba;
+    box-shadow: var(--sh-md);
+    transform: translateY(-2px);
+}
+.landing-mini > span {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 34px;
+    width: 34px;
+    height: 34px;
+    border-radius: var(--pill);
+    background: var(--bone);
+    color: var(--accent);
+}
+.landing-mini svg { width: 17px; height: 17px; }
+
+/* ---------- Features ---------- */
+/* A centred header for a section whose content runs full width beneath it. */
+.landing-head-center { text-align: center; }
+.landing-head-center h2 { margin-inline: auto; max-width: 24ch; }
+.landing-head-center .landing-note {
+    justify-content: center;
+    margin-inline: auto;
+    text-align: left;
+}
+
+/* One feature per row, with the photograph changing sides down the list
+   so the eye has somewhere new to land each time. */
+.landing-features {
+    display: grid;
+    gap: clamp(var(--sp-8), 8vw, var(--sp-14));
+    margin-top: var(--sp-8);
+}
+
+.landing-feature {
+    display: grid;
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+    align-items: center;
+    gap: clamp(var(--sp-4), 4.5vw, var(--sp-8));
+}
+.landing-feature:nth-child(odd) .landing-feature-media { order: 2; }
+
+.landing-feature-copy { max-width: 38rem; }
+.landing-feature-copy h3 {
+    margin: var(--sp-2) 0 var(--sp-3);
+    font-size: clamp(1.75rem, 1.1rem + 2.1vw, 2.75rem);
+    font-weight: 600;
+    line-height: 1.1;
+    letter-spacing: -0.025em;
+    font-variation-settings: "wdth" 100;
+}
+.landing-feature-copy p { color: var(--body); font-size: clamp(1.125rem, 0.99rem + 0.55vw, 1.375rem); line-height: 1.55; }
+.landing-feature-cta { margin-top: var(--sp-3); }
+
+/* The screenshots arrive inside their own device mockups on transparent
+   backgrounds, so they need no bezel. The cap stops the squarer mockups
+   from towering over the copy beside them. */
+.landing-shot {
+    display: flex;
+    justify-content: center;
+}
+.landing-shot img {
+    width: auto;
+    max-width: 100%;
+    max-height: clamp(18rem, 32vw, 30rem);
+}
+
+/* Hover on a screenshot: the mockup lifts a little and a highlight sweeps
+   across it. The sweep is masked with the same image so it follows the
+   device silhouette instead of a rectangle -- these PNGs are transparent
+   around the mockup, so a plain box would give the shape away. */
+.landing-shot { position: relative; isolation: isolate; }
+.landing-shot img {
+    transition: transform 0.55s var(--ease);
+}
+.landing-glint {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+    opacity: 0;
+    background: linear-gradient(
+        105deg,
+        rgba(255, 255, 255, 0) 38%,
+        rgba(255, 255, 255, 0.55) 48%,
+        rgba(255, 255, 255, 0.85) 52%,
+        rgba(255, 255, 255, 0.5) 56%,
+        rgba(255, 255, 255, 0) 66%
+    );
+    background-size: 260% 100%;
+    background-position: 130% 0;
+    -webkit-mask-image: var(--shot-src);
+    mask-image: var(--shot-src);
+    -webkit-mask-size: contain;
+    mask-size: contain;
+    -webkit-mask-position: center;
+    mask-position: center;
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+    .landing-shot:hover img { transform: translateY(-8px) scale(1.015); }
+    .landing-shot:hover .landing-glint { animation: landing-glint-sweep 0.9s var(--ease); }
+}
+@keyframes landing-glint-sweep {
+    0%   { opacity: 0; background-position: 130% 0; }
+    12%  { opacity: 1; }
+    88%  { opacity: 1; }
+    100% { opacity: 0; background-position: -60% 0; }
+}
+
+.landing-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: clamp(var(--sp-8), 6vw, var(--sp-10));
+}
+.landing-chips span {
+    padding: 0.4375rem 0.875rem;
+    border-radius: var(--pill);
+    border: 1px solid var(--line);
+    background: var(--paper-2);
+    font-size: 0.8125rem;
+    color: var(--body);
+}
+
+.landing-note {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    margin-top: var(--sp-6);
+    font-size: var(--fs-base);
+    color: var(--mute);
+    max-width: 64ch;
+}
+.landing-note svg { width: 18px; height: 18px; flex-shrink: 0; margin-top: 3px; color: var(--accent); }
+
+/* ---------- Closing call to action ----------
+   The one photographic card with light text on it. It is an image with a
+   caption, which is why it does not break the light ground of the page. */
+.landing-close {
+    position: relative;
+    border-radius: var(--r);
+    overflow: hidden;
+    isolation: isolate;
+    padding: clamp(var(--sp-8), 9vw, var(--sp-14)) var(--sp-4);
+    text-align: center;
+    box-shadow: var(--sh-lg);
+}
+.landing-close-media { position: absolute; inset: 0; z-index: -2; }
+.landing-close-media img { width: 100%; height: 100%; object-fit: cover; }
+.landing-close::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background: radial-gradient(120% 92% at 50% 50%, rgba(6, 20, 13, 0.58) 0%, rgba(6, 20, 13, 0.86) 100%);
+}
+.landing-close h2 {
+    max-width: 20ch;
+    margin-inline: auto;
+    color: var(--bone);
+    font-variation-settings: "wdth" 118;
+}
+.landing-close p { margin: var(--sp-3) auto 0; max-width: 48ch; color: #d3ddd5; }
+.landing-close-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    justify-content: center;
+    margin-top: var(--sp-6);
+}
+/* On the photograph the ghost button needs its own surface to stay legible. */
+.landing-page .landing-hero .landing-btn-ghost,
+.landing-page .landing-close .landing-btn-ghost {
+    background: rgba(255, 255, 255, 0.14);
+    border-color: rgba(238, 244, 236, 0.42);
+    color: var(--bone);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+}
+.landing-page .landing-hero .landing-btn-ghost:hover,
+.landing-page .landing-close .landing-btn-ghost:hover {
+    background: rgba(255, 255, 255, 0.24);
+    border-color: rgba(238, 244, 236, 0.6);
 }
 
 /* ---------- Footer ---------- */
+/* The footer carries the same lime as the primary action, so the page
+   closes on the brand colour. Everything on it is near-black: lime is a
+   fill behind dark text, never a ground for light text. */
 .landing-footer {
-    background: var(--c-green-darkest);
-    color: rgba(255, 255, 255, 0.7);
-    padding-top: var(--sp-6);
+    background: var(--lime);
+    color: var(--on-lime);
+    padding-block: var(--sp-8) var(--sp-4);
+    font-size: var(--fs-base);
 }
-
 .landing-footer-grid {
     display: grid;
-    grid-template-columns: 1.4fr 1fr 1fr 1fr;
-    gap: var(--sp-4);
-    padding-bottom: var(--sp-6);
+    grid-template-columns: 1.6fr repeat(3, 1fr);
+    gap: var(--sp-6);
 }
-
 .landing-footer-brand {
     display: flex;
     align-items: center;
-    gap: var(--sp-1);
-    margin-bottom: var(--sp-1);
+    gap: 0.5rem;
+    font-family: "Archivo", sans-serif;
+    font-weight: 700;
+    font-size: var(--fs-xl);
+    color: var(--on-lime);
 }
-
-.landing-footer-brand img {
-    width: 1.75rem;
-    height: 1.75rem;
-    object-fit: contain;
+.landing-footer-brand img { width: 30px; height: auto; }
+.landing-footer .tagline {
+    margin-top: 0.75rem;
+    color: rgba(8, 23, 15, 0.78);
+    max-width: 34ch;
 }
-
-.landing-footer-brand span {
-    font-weight: 600;
-    letter-spacing: -0.02em;
-    color: #ffffff;
-    font-size: var(--fs-base);
-}
-
-.landing-footer p.tagline {
-    font-size: var(--fs-sm);
-    line-height: 1.6;
-    max-width: 20rem;
-    color: rgba(255, 255, 255, 0.62);
-}
-
-.landing-footer h5 {
-    font-size: var(--fs-sm);
-    font-weight: 600;
-    color: #ffffff;
+.landing-footer h4 {
     margin: 0 0 var(--sp-2);
+    font-family: "JetBrains Mono", monospace;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: rgba(8, 23, 15, 0.68);
 }
-
-.landing-footer ul {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 0.625rem;
+.landing-footer ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.75rem; }
+.landing-footer li a {
+    color: rgba(8, 23, 15, 0.86);
+    transition: color 0.18s var(--ease);
 }
-
-.landing-footer ul a {
-    font-size: var(--fs-sm);
-    color: rgba(255, 255, 255, 0.68);
-    transition: color 200ms var(--ease);
-}
-
-.landing-footer ul a:hover {
-    color: var(--c-lime);
-}
+.landing-footer li a:hover { color: var(--on-lime); text-decoration: underline; }
 
 .landing-footer-academic {
-    text-align: center;
-    border-top: 1px solid rgba(255, 255, 255, 0.08);
-    padding: var(--sp-3) var(--sp-3) 0;
+    margin-top: var(--sp-8);
+    padding-top: var(--sp-4);
+    border-top: 1px solid rgba(8, 23, 15, 0.16);
+    color: rgba(8, 23, 15, 0.78);
 }
-
-.landing-footer-academic p {
-    margin: 0 0 0.25rem;
-    font-size: var(--fs-sm);
-    color: rgba(255, 255, 255, 0.62);
-}
-
-.landing-footer-academic p:last-child {
-    margin-bottom: 0;
-}
-
-.landing-footer-academic strong {
-    color: rgba(255, 255, 255, 0.9);
-}
-
+.landing-footer-academic strong { color: var(--on-lime); font-weight: 700; }
 .landing-footer-bottom {
-    text-align: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--sp-2) var(--sp-4);
+    justify-content: space-between;
+    margin-top: var(--sp-4);
+    color: rgba(8, 23, 15, 0.72);
     font-size: var(--fs-sm);
-    /* Was 0.45 alpha, which fell below 4.5:1 on this near-black ground. */
-    color: rgba(255, 255, 255, 0.6);
-    padding: var(--sp-3) 0;
+}
+.landing-footer :focus-visible { outline-color: var(--on-lime); }
+
+/* ---------- Scroll reveal ----------
+   Driven by IntersectionObserver, never a scroll listener. The offset is
+   built from three variables so one transition can serve every case:
+   --reveal-x slides a photograph in from its own side of the page, and
+   --reveal-sign flips the vertical direction, which is what lets an
+   element that is being scrolled back up drop in from above rather than
+   rise from below. */
+@media (prefers-reduced-motion: no-preference) {
+    .has-js .landing-reveal {
+        opacity: 0;
+        transform: translate3d(
+            calc(var(--reveal-x, 0px) * var(--reveal-sign, 1)),
+            calc(var(--reveal-y, 26px) * var(--reveal-sign, 1)),
+            0
+        ) scale(0.985);
+        transition: opacity 0.75s var(--ease), transform 0.75s var(--ease);
+        transition-delay: var(--reveal-delay, 0ms);
+    }
+    .has-js .landing-reveal.landing-from-left { --reveal-x: -52px; --reveal-y: 14px; }
+    .has-js .landing-reveal.landing-from-right { --reveal-x: 52px; --reveal-y: 14px; }
+
+    /* Set by the script once an element has left the top of the screen. */
+    .has-js .landing-reveal.is-above { --reveal-sign: -1; }
+
+    .has-js .landing-reveal.is-in {
+        opacity: 1;
+        transform: none;
+    }
 }
 
 /* ---------- Responsive ---------- */
+@media (max-width: 1080px) {
+    .landing-nav-links { display: none; }
+}
+
 @media (max-width: 900px) {
-    .landing-section {
-        padding: var(--sp-8) 0;
-    }
-    .landing-hero {
-        padding: var(--sp-8) 0 var(--sp-6);
-    }
-    .landing-feature-big,
-    .landing-feature-row {
-        grid-template-columns: 1fr;
-    }
-    .landing-feature-big {
-        padding: var(--sp-3);
-    }
-    .landing-data-grid {
-        grid-template-columns: repeat(3, 1fr);
-    }
-    .landing-footer-grid {
-        grid-template-columns: repeat(2, 1fr);
-    }
-    .landing-nav-links {
-        display: none;
-    }
-    /* Back to a full-size tap target -- the compact desktop bar is a pointer
-       affordance, but on a phone these are the only two buttons up here. */
-    .landing-nav-actions .landing-btn {
-        min-height: 44px;
-    }
-    .landing-final-cta {
-        justify-content: center;
-        text-align: center;
-        padding: var(--sp-6) var(--sp-3);
-    }
-    .landing-final-cta h2 {
-        max-width: none;
-    }
-    .landing-final-cta-buttons {
-        justify-content: center;
-    }
+    /* The hero keeps its negative top margin, so the top padding has to
+       clear the nav bar as well as give the headline room. */
+    .landing-hero { min-height: auto; padding-block: calc(76px + var(--sp-6)) var(--sp-8); }
+    .landing-hero-inner { grid-template-columns: minmax(0, 1fr); gap: var(--sp-6); }
+    .landing-hero-map { max-width: 26rem; }
+    .landing-about { grid-template-columns: minmax(0, 1fr); }
+    .landing-plates { max-width: 34rem; }
+    .landing-feature { grid-template-columns: minmax(0, 1fr); gap: var(--sp-4); }
+    .landing-feature:nth-child(odd) .landing-feature-media { order: 0; }
+    .landing-feature-copy { max-width: none; }
+    .landing-footer-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
+/* Below this width the wordmark and both nav buttons stop fitting on one
+   line, so the mark carries the brand and the buttons keep their room. */
 @media (max-width: 560px) {
-    .landing-hero-buttons .landing-btn {
-        width: 100%;
-    }
-    .landing-data-grid {
-        grid-template-columns: repeat(2, 1fr);
-    }
-    .landing-footer-grid {
-        grid-template-columns: 1fr;
-        gap: var(--sp-3);
-    }
+    .landing-page .landing-brand > span { display: none; }
+    .landing-nav { gap: var(--sp-2); padding-inline: 0.75rem; }
+    .landing-brand img { width: 30px; }
 }
 
-/* ---------- Reduced motion ---------- */
-/* Some people get motion sick from movement on screen, and the OS lets them
-   ask for less of it. Keep the colour change, drop the lift. */
-@media (prefers-reduced-motion: reduce) {
-    .landing-feature-card,
-    .landing-data-item {
-        transition: none;
+@media (max-width: 640px) {
+    .landing-hero-buttons .landing-btn { flex: 1 1 auto; }
+    /* The badge cannot keep its two lines on one row at this width, so it
+       moves above both plates and is allowed to wrap. */
+    .landing-badge {
+        grid-column: 1 / -1;
+        grid-row: 1;
+        margin-left: 0;
+        white-space: normal;
     }
-
-    .landing-feature-card:hover,
-    .landing-data-item:hover {
-        transform: none;
-    }
+    .landing-plate-main { grid-row: 2; min-height: 0; aspect-ratio: 3 / 4; }
+    .landing-plate-second { grid-row: 2; }
+    .landing-footer-grid { grid-template-columns: minmax(0, 1fr); gap: var(--sp-4); }
+    .landing-footer-bottom { flex-direction: column; }
 }

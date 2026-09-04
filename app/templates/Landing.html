@@ -3,296 +3,363 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#f5f7f2">
     <title>PuNoObservation - Map, match, and grow your forest</title>
+    <meta name="description" content="A decision support platform for tree species recommendation and reforestation management across Eastern Pangasinan, with geospatial visualization for DENR and partner teams.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@100..125,400..800&family=Inter+Tight:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="preload" as="image" href="{{ url_for('static', filename='images/landing/hero-canopy.jpg') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/landing.css') }}">
 </head>
+<script>document.documentElement.classList.add("has-js");</script>
 <body class="landing-page">
 
+    <span class="landing-nav-sentinel" aria-hidden="true"></span>
+
     <div class="landing-nav-wrap">
-        <nav class="landing-nav">
+        <nav class="landing-nav" aria-label="Main">
             <a href="{{ url_for('dashboard.home') }}" class="landing-brand">
-                <span class="landing-logo-box">
-                    <img src="{{ url_for('static', filename='images/finallogo.png') }}" alt="" width="251" height="310">
-                </span>
+                <img src="{{ url_for('static', filename='images/finallogo.png') }}" alt="" width="251" height="310">
                 <span>PuNo<span class="accent">Observation</span></span>
             </a>
             <div class="landing-nav-links">
                 <a href="#about">About</a>
+                <a href="#coverage">Coverage</a>
                 <a href="#features">Features</a>
-                <a href="#users">Who It's For</a>
-                <a href="#data">Data</a>
             </div>
             <div class="landing-nav-actions">
-                <a href="{{ url_for('auth.login') }}" class="landing-btn landing-btn-outline landing-btn-sm">Log In</a>
-                <a href="{{ url_for('auth.register') }}" class="landing-btn landing-btn-primary landing-btn-sm">Start Now</a>
+                <a href="{{ url_for('auth.login') }}" class="landing-btn landing-btn-ghost landing-btn-sm">Log in</a>
+                <a href="{{ url_for('auth.register') }}" class="landing-btn landing-btn-primary landing-btn-sm">Create account</a>
             </div>
         </nav>
     </div>
 
     <header class="landing-hero">
-        <div class="landing-container">
-            <div class="landing-hero-inner">
-                <h1>
-                    One platform to map, match, and
-                    <span class="highlight">
-                        grow
-                        <svg class="underline-svg" viewBox="0 0 200 14" preserveAspectRatio="none" aria-hidden="true">
-                            <path d="M2 9 C 50 2, 150 2, 198 8" stroke-linecap="round" fill="none" vector-effect="non-scaling-stroke"/>
-                        </svg>
-                    </span>
-                    your forest
-                </h1>
+        <div class="landing-hero-media">
+            <img src="{{ url_for('static', filename='images/landing/hero-canopy.jpg') }}" alt="Low sun and mist through a stand of tall forest trees" width="2200" height="1467" fetchpriority="high" decoding="async">
+        </div>
+        <div class="landing-hero-scrim"></div>
 
-                <p class="lead">
-                    PuNoObservation helps DENR and partner teams map every planting site,
-                    match the right native species to the soil, and track survival with
-                    real, data-driven precision.
+        <div class="landing-hero-inner">
+            <div class="landing-hero-copy">
+                <h1>Empowering <span>Reforestation through</span> <span class="accent">Data Driven Decisions</span>.</h1>
+                <p class="landing-lead">
+                    Monitor Reforestation initiatives, visualize planting sites,
+                    and receive tree species recommendations based on your location and site conditions
+                    and many more features to help you make informed decisions for your reforestation projects.
                 </p>
-
-                <p class="landing-formal-title">
-                    A Web-Based Decision Support Platform for Tree Species Recommendation and
-                    Reforestation Management with Geospatial Visualization in Eastern Pangasinan
-                </p>
-
-                <div class="landing-hero-buttons">
-                    <a href="{{ url_for('auth.register') }}" class="landing-btn landing-btn-primary">Start for Free</a>
-                    <a href="{{ url_for('dashboard.gis_map') }}" class="landing-btn landing-btn-outline">Explore the Map</a>
-                </div>
-
-                <p class="landing-hero-login-note">
-                    Administrator or Field Officer? <a href="{{ url_for('auth.login') }}">Log In to your account</a>
-                </p>
-
-                <div class="landing-coverage">
-                    <span><strong>19</strong> municipalities</span>
-                    <span class="sep">&middot;</span>
-                    <span><strong>478</strong> barangays</span>
-                    <span class="sep">&middot;</span>
-                    <span><strong>58</strong> native species</span>
+                <div class="landing-hero-buttons landing-reveal" style="--reveal-delay: 220ms">
+                    <a href="{{ url_for('auth.register') }}" class="landing-btn landing-btn-primary">Create account</a>
+                    <a href="{{ url_for('dashboard.gis_map') }}" class="landing-btn landing-btn-ghost">Open the map</a>
                 </div>
             </div>
+
+            <!-- Pangasinan, with the two districts the platform covers picked
+                 out. Built from the same geojson files the GIS map renders. -->
+            <figure class="landing-hero-map landing-reveal" style="--reveal-delay: 260ms">
+                <svg viewBox="0 0 1000 732" role="img" aria-label="Map of Pangasinan with the 5th and 6th districts highlighted">
+                    <path class="map-province" d="M888.6 550.6L874.5 541.5L859.5 527.1L851 526.2L847.6 524.4L840.9 526.3L827 524.3L810.1 530.1L794 530.5L782.1 534.7L773.7 535.7L769.4 544.5L736.1 542.6L737.9 530.2L732.9 516.6L715 492L699 555.4L680.8 597L623.8 633.3L599.8 617.1L557 601.7L548.3 601.6L544.8 605.5L541.4 606.8L534.2 614.8L523.9 631.2L519.4 633.2L519.9 637.6L518.2 642.8L521.6 650.7L514.8 655.2L513.3 657.8L513.6 661.9L502.5 675.1L490.9 680.2L489.1 685.1L483.6 688L489.8 704.1L475.6 706.5L464.5 714.1L449.7 719.7L430.1 732L425.7 720.8L399.2 681.8L372.2 636L368.4 628.1L361.4 602.2L355.8 587L352.1 560.9L348.5 555.8L340.4 549.8L333.3 547.4L325.5 547.4L301.2 560.4L291.2 562.2L286.4 561.4L269.7 551.8L244.9 533.3L238.1 530.9L225.1 538.7L212.9 564.7L212.7 568.1L205.7 577.9L201.7 576.1L195.4 573.1L190.9 577.9L178.8 577.9L179.4 565.2L172.8 565.4L170.4 561.6L167.4 562.3L162.4 567.1L159.6 565.7L149.1 565.2L139.2 576L132.5 564L127.4 565.7L122 564.2L118.3 565.1L117 562.7L125 562.7L121.7 561.5L117.4 559.2L115.1 560.2L112.7 559.2L115.8 555.5L115.1 558.3L120.1 555.5L123.6 550.4L126.8 548.3L131.7 547.8L135.2 545L140.2 536.1L137.8 528.4L133.1 523.5L135.7 522L132.9 518L131.7 513.7L128.3 511.9L124.1 507L121.9 501.9L122.6 498.4L120.9 489L112.2 476.7L108.6 463.2L105.1 459.2L98.3 445.3L95.4 436.1L96.4 433.6L90.8 427.9L84.5 426.9L83 419.7L81.4 426.2L83 428.2L80.9 430.1L75.7 429.9L73.4 432.1L63.2 429.9L53.7 433.1L52 444.8L47.2 462.8L43.4 462.2L41 464.4L36.7 457.5L30.3 454.5L21.2 461.3L21.2 468.8L18.9 469.8L16.3 462L13.9 460.2L10.7 453.9L12.5 451.6L9.9 445.2L0 423.6L1.5 416.6L6.5 412.1L11.1 405.5L11.3 400.1L7.5 396.7L9.6 391.5L8.3 383.8L12.5 383.3L16.3 377.6L20.3 375.2L19.1 363.6L14.7 359.2L7.5 358L5.1 351.3L6.9 343.1L13 331.3L12.2 322.5L16.3 316.8L15.3 311.9L10.7 303.7L11.2 296.3L13.7 288.9L17.2 291.4L21.7 288.8L24.4 283.8L25.1 278.4L27.5 275.5L23.9 276.9L21.4 267.5L18 264.5L16.8 253.3L19.1 251.1L18.7 248.6L16 246.6L9.2 246.4L4.9 248.6L4.9 244.1L3.2 242.2L7.8 236.5L9 232.8L7.3 221L12 214.3L11.5 208L15.6 199.1L21.1 192.9L23.2 185.3L28.8 181.4L26 177.1L19.8 173.6L21.5 168.2L20.9 159.5L20.1 149.8L20.3 147.3L21.5 139.2L25.5 133.7L26.9 124.4L25.1 119.7L27.2 116.8L28.1 110.6L31.7 102L41.4 89.2L59.9 72.9L74.8 71.2L90 76.1L91.6 72.5L90.6 67.2L99.4 57.6L105.1 53.9L113.1 44.6L114.3 48.1L117.7 48.8L122.2 45.6L129.5 45.8L132.1 49L134.5 56.1L138.5 58.2L141.8 55L144.9 52.5L149.6 53.5L149 62.8L143.3 64.7L145.6 67.8L148 67.5L149.9 69.5L150.8 74.9L148.7 78.3L150.3 85L149.4 89.5L152.5 94.9L152.7 99L150.6 106.8L148 107.7L149.3 110.4L145 115.5L141.6 127.4L138.6 131.9L142.7 134.5L143 142.6L140.4 145.1L145.8 144.2L147.3 149.2L139.9 160.9L145.7 164.5L148.7 168.5L140.6 179.1L143.8 180.4L146.6 175.2L147.4 178.5L147.7 175.2L152.5 172L154.6 177.1L157.2 176.9L159 180.8L175.5 184.6L177.6 198.3L180.4 198.6L181.9 188.2L186.8 190.2L185.4 192.2L188 192.6L190.2 194.8L195.6 194.5L197.1 197.5L188.9 205.7L192.7 207.4L192 210.6L194.2 206.9L198.2 212.2L196.3 215.1L199.9 213.8L201.5 217.5L202.3 214.8L204.6 213.8L209.6 216.8L210.4 220L213.6 220L215 222.2L219.6 225.6L220.5 230.8L222.5 232.9L223.6 240.7L230.4 244.4L238.2 237.2L236.9 232.9L238.7 229.3L239.2 223.5L239.7 228.4L242 229.1L240.4 224.6L243.4 226.1L245.1 224.2L244.6 228.1L247 230.6L250.5 230.8L248.4 228.1L251 229.3L252.5 226.9L251.4 223L254.3 224.6L255.5 227.7L252.9 234.3L258.4 233.5L259.5 237.1L264.4 239.6L269.9 240.4L274 235.3L276.6 237.8L272.9 240.1L272.3 244.7L275.7 249L282.1 249.7L288.2 242.4L288.8 245.3L287.3 248.1L291.6 251.9L292.2 254.5L299.1 257.4L301.9 263.7L304.9 263.3L308.3 264.9L304.8 268.5L303.8 273.9L301.2 269L296 268.4L296 265.4L292 261.3L290.1 265.8L290 270.5L297.2 273.2L303.8 282.2L303.5 284.9L300.1 286.5L293 283.5L293.4 286.9L289.4 290.4L289.3 298.2L292.9 302.8L294.2 309.9L299.2 313L303.4 310.7L304.7 312.9L303.6 315.1L311 323.4L309.3 328.4L306.9 327L307.4 323.4L305.1 320.2L302.4 319.8L298.3 322.1L296.2 325.6L297.7 328.2L296.4 332.4L301.2 338.2L305.3 336.9L309.6 338.5L307.1 340.5L310.3 344.4L322 350.1L327.8 355.2L333.6 357.9L346.3 382.2L337.9 361.4L335.6 360L354.5 362.5L368 360.1L377 353.7L380.2 355.7L386.4 355.9L387.9 359.4L394.1 361.7L404.2 362.9L431.7 357.2L448.8 352.1L490.7 333.5L493.8 334.3L491.9 340.5L496.8 333.3L496.4 329.4L498.3 326.2L522.9 309.6L529.4 303.1L533.3 294.4L547.3 296.6L551.1 295.6L544 295.1L535.5 291.2L543.9 285.3L557.6 272.3L569.9 257.5L574.3 249.7L576.1 241.4L572.9 233.6L569.6 212.3L567.8 208.9L575.5 207.9L584.1 203L594.7 205.7L619.3 204.2L639.5 206.2L640.9 200.2L637.8 195.9L645.3 190.5L650.6 183.5L680.3 197.1L747.4 214.7L772.3 227.2L808.2 223.8L869.2 215.1L931 241.6L944.5 275.8L954 284.3L963.9 299.8L963.7 323.3L972.6 345.8L977.4 352.5L983.4 367.2L989.4 376.5L995.1 400.2L1000 412.4L996.8 420.1L984.8 469.8L983.7 472.4L971.9 480L966.8 490.5L962.1 493L961.5 504.4L960.2 508.6L954.8 512.7L954.4 519.3L952.5 522.7L952.4 531.1L950.2 536.8L947.2 539.7L946.2 543.7L947.7 547.4L945.8 551.9L939 555.7L928.6 558.9L925.4 561.4L915.1 577.4L912.3 577.2L903 564.9L888.6 550.6ZM318.3 292.4L320.7 296.1L316.3 294.5L312.7 298.1L308 297.1L307 293.9L308.5 290.9L307 288.7L309.6 288.9L310 286.5L313.2 284.9L319.2 289.1L318.3 292.4ZM251 222L250.8 225.9L246.8 227.5L249.8 222.2L249.3 219.8L248.4 217L250.8 219.5L251 222ZM243.6 216L242.5 219.8L241.6 223L238.7 220.3L240.6 217.3L237.3 216L241.3 214.6L243.6 216ZM246.2 211.3L248.2 214.1L245.3 213.1L244.6 210.6L249.1 209.4L246.2 211.3ZM250.5 203L249.3 205.5L246.5 204.9L247.2 201.5L248.2 204L250.3 201L252.6 203.4ZM224.2 188.3L216.7 190.8L212.7 195.3L207 196.6L203.4 192.4L204 183.8L196 180.1L197.2 177.9L194.7 175.9L196.3 172L191.8 170.3L181.3 162.2L180.4 159.8L182.9 158.7L183.2 155.9L178.2 158L177.1 160.8L169.5 156.9L173.1 154.8L175.7 156.2L177.1 154.2L175.9 148.4L171.9 143.7L167 139.4L163.6 141.6L160.3 139.9L161.5 135.5L159.4 131.7L156.9 132.6L155 135.5L147.7 141.1L146.2 138.3L147.5 136.2L144.1 133.8L143.5 126.6L145.8 120.5L149.9 118.5L153.2 121.1L158.9 116.4L162.6 120L165.2 119L161.5 118.1L160.3 107.4L162.7 108.9L165.5 104.5L165 100.7L169.8 98.5L172.6 99.1L174.6 106.7L170.7 109.2L170.9 112L168.1 116.5L174.5 118L177.6 121.5L181.6 123.4L178.8 120.4L176.8 118.2L179.2 112.2L178.3 109.9L181.6 107.4L184.3 102.3L185.2 94.9L184.3 88.7L189.6 83.3L197.5 85.8L204.6 82.7L204.8 87.2L200.3 88.4L203.2 93.8L204.8 89.4L214.1 93.7L214.1 96.5L210.5 102L213.1 107.9L223.4 115L232.3 115.6L223.6 125.2L223.1 128.8L220.8 130.5L212.1 146.9L212.2 150.9L217.2 155.7L220 164.3L224 169.5L230 170L228.3 176.2L228.9 180.1L226.8 185.8L224.2 188.3ZM171.6 94.9L164.6 91.6L165.8 86.5L169.2 88.2L170.5 91.9L171.6 94.9ZM164.6 58.4L158.9 58.6L156 59.2L154.8 50.8L152 48.5L143.3 49.3L138.1 52.1L138.4 45.1L136 36.4L136.4 30.6L139 27.1L138.4 22.3L142.6 16.8L147 17.5L149.6 19.5L152.5 19.2L156.7 16.8L154.6 15.1L157 15.1L160.2 16L158.6 18.3L160.6 20.2L165.8 25.1L165.8 28.5L168 30.7L170.9 29.7L171.6 33.6L174.7 36.4L175.6 43.3L177.3 40L177.8 45.6L180.9 44.3L182.6 54L180.5 55.8L180.6 58.3L180.8 61.7L183 62.9L180.8 66L175.9 64.3L171 62.3L170 59.5L167.9 58.2L165.5 57.4ZM183.2 69.6L176.6 79.5L172.7 82.2L168.7 82.4L167 77.1L168.4 71.9L171.4 71.2L172.5 73.4L172.4 70.9L183.2 69.6ZM203.6 76.1L202.5 73.2L205.3 71.3L204.4 74.7L205.3 78.3L203.6 76.1Z"/>
+                    <path class="map-d6" d="M713.4 490.5L714.8 492.5L732.9 516.6L737.9 530.2L736.1 542.6L743.7 543.7L769.4 544.5L773.7 535.7L782.1 534.7L794 530.5L791.8 524.2L780.9 511.4L779.2 509.4L778.4 507L769.7 483.6L762.7 453.6L761.1 454.9L758.3 454.7L756.3 455.7L753.9 458.3L753 460.3L747.6 460.2L745.2 460.1L742.1 461.8L744 472.8L741.6 475.6L735.4 479.8L732.3 481.7L723.3 483.8L720.1 485.2L713.5 490.4ZM720.3 380.8L747.4 382.6L750.2 385L751.2 388.9L750.9 412.4L751.9 419.6L750.6 433.8L750.9 438.5L755.1 438.9L762.1 441.1L765 439.5L765.5 436.3L760.3 428.9L757.7 424.5L758.7 420.5L763.7 418.9L773.6 411.8L779.1 410.4L782.6 406.4L791.9 407.7L799.2 406.9L801.1 405.6L800.7 401.3L802.1 397.7L806.6 395.5L814.1 397.6L818 392.1L821.7 389.2L820 383.9L818.6 382.1L814.5 380.3L812.9 378.1L809.7 372.7L811 365.4L813.8 362.7L818.5 353.1L817.7 349.9L777 352.5L752.1 356.2L750.3 360.3L735.8 368.6L720.3 380.8ZM794 530.5L810.1 530.1L829.1 524L840.9 526.3L843 525L845.6 524.5L847.6 524.4L830.7 473.9L827.3 444L825.4 441.1L819.1 444L810.2 441.6L802.9 442.8L799.9 439.7L792.7 437L787.9 439L782.1 438.4L775.5 439.7L778.1 443.4L775.1 446.5L772.6 447.8L765.3 451.7L762.6 453.1L769.7 483.6L778.4 507L779.2 509.4L780.9 511.4L791.8 524.2L794 530.5ZM880.7 390.5L972.6 345.8L963.7 323.3L963.9 299.8L901.4 330.3L864 351.5L868.9 365.2L877.6 381.4L880.7 390.5ZM750.3 282.4L754.9 285.1L754.8 292.8L757.8 302.8L756.4 307.5L758 313.3L752.7 330.6L752.1 356.2L777 352.5L817.7 349.9L819.8 343.1L827.7 347.6L830.5 344.9L830.9 340.8L827.8 325.2L829.3 317.1L816.3 302.3L808.7 296.3L806.6 288.4L800.1 282.9L794.8 273.1L787.9 271L791.3 268.4L795.2 262.2L799.5 262.8L801.8 259.4L807.9 256L804.5 252.3L795.6 252.4L800.1 242.4L795.7 241.2L794 238.9L800.7 236.4L802.9 230.2L806.5 230.3L811 225.3L808.2 223.8L772.3 227.2L747.4 214.7L734.7 212.2L742.5 219.3L744.2 222.4L744.4 227.3L740.5 231.6L740.9 236.2L746.2 241.1L754.8 254.3L753.1 259.8L753.5 270.3L753 272.9L752.3 276.7L751.7 279.7L750.3 282.4ZM963.9 299.8L954 284.3L944.5 275.8L931 241.6L869.2 215.1L808.2 223.8L811 225.3L806.5 230.3L802.9 230.2L800.7 236.4L794 238.9L795.7 241.2L800.1 242.4L795.6 252.4L804.5 252.3L807.9 256L801.8 259.4L799.5 262.8L795.2 262.2L791.3 268.4L787.9 271L794.8 273.1L800.1 282.9L806.6 288.4L808.7 296.3L816.3 302.3L829.3 317.1L827.8 325.2L830.9 340.8L830.6 344.2L851 346.9L857.6 346L864 351.5L901.4 330.3L963.9 299.8ZM827.3 444L851.3 440.5L860.8 441.3L923.2 432.4L926.8 430.4L933.5 430.3L941.3 425.2L995.1 400.2L989.4 376.5L983.4 367.2L977.4 352.5L972.6 345.8L881.1 391.6L881.8 396.5L880.8 402.6L875.7 410.9L871.8 413.2L868.9 412.6L864.6 414.2L861.1 416.1L853.4 420.2L845.4 421.2L843.3 422.9L835.6 422.8L829.6 430.4L825.4 441.1L825.7 443.9ZM750.9 438.5L758.8 448.2L755 456.3L757.2 454.7L761.1 454.9L762.6 453.1L765.3 451.7L772.6 447.8L775.1 446.5L778.1 443.4L775.5 439.7L782.1 438.4L787.9 439L792.7 437L799.9 439.7L802.9 442.8L810.2 441.6L819.1 444L825 440.9L829.6 430.4L835.6 422.8L843.3 422.9L845.4 421.2L853.4 420.2L861.1 416.1L855.6 409.8L832.3 392.7L818.2 391.9L814.1 397.6L806.6 395.5L802.1 397.7L800.7 401.3L801.1 405.6L799.2 406.9L791.9 407.7L782.6 406.4L779.1 410.4L773.6 411.8L763.7 418.9L758.7 420.5L757.7 424.5L760.3 428.9L765.1 434.4L765.9 438.2L762.1 441.1L755.1 438.9L750.9 438.5ZM818.2 391.9L832.3 392.7L855.6 409.8L861.1 416.1L864.6 414.2L868.9 412.6L871.8 413.2L875.7 410.9L880.8 402.6L881.8 396.5L881.1 391.6L877.6 381.4L868.9 365.2L864 351.5L859.3 345.8L851 346.9L830.5 344.9L827.7 347.6L819.8 343.1L817.9 349.2L818.5 353.1L813.8 362.7L811 365.4L809.8 371.6L812.9 378.1L814.5 380.3L818.6 382.1L820 383.9L821.7 389.2L818.2 391.9ZM848.8 523.2L851 526.2L859.5 527.1L874.5 541.5L892.1 553.4L899.5 562.2L903.6 565.4L912 577.3L915.7 577.4L917.5 574.2L923.3 564.3L927.8 559.1L939.8 555.6L945.5 552.7L947.7 547.8L946.3 544.1L947.4 539.2L950.5 536.6L951.4 534.1L952.6 530.9L952.5 522.7L954.4 519.3L954.8 512.7L960.2 508.6L961.5 504.4L962.1 493L966.8 490.5L971.9 480L983.7 472.4L986.4 465.4L996.8 420.1L1000 412.4L995.1 400.2L941.3 425.2L933.5 430.3L926.8 430.4L923.2 432.4L860.8 441.3L851.3 440.5L827.3 443.9L830.7 473.9L848.8 523.2Z"/>
+                    <path class="map-d5" d="M708 519.9L694.7 513.1L689.1 509.3L685.1 505.5L688.4 500.8L697 494.4L686.6 497.4L665.8 504.9L630.9 515.1L635.4 541L634.1 542.6L702.2 542.4L708 519.9ZM634.1 542.6L628.6 542.7L630.5 548.4L628.4 552L622.8 556.6L620.6 556.3L618.4 550.2L616.3 549.5L610.9 552.7L610.6 556.8L612.9 561.5L613.3 570.1L630 571.3L666 606.3L680.8 597L682.6 595L684.7 587.5L699 555.4L702.2 542.4L634.1 542.6ZM686.8 320L688.4 323.6L695.9 348.7L700.6 376.1L701 379.6L720.3 380.8L735.8 368.6L750.3 360.3L752.1 356.2L752.7 330.6L758 313.3L756.4 307.5L757.8 302.8L754.8 292.8L754.9 285.1L750.2 283.3L707.6 291.9L701.8 299.3L686.6 319.5ZM686.6 319.5L685 318.3L676.5 319.8L672.2 317.8L666.7 320.6L664.3 321L661.1 331.8L656.5 335.7L650.8 334.4L649.3 339.1L651.9 344.3L642.5 347.7L641 351.1L640.9 356.6L644.4 357L644.4 361.7L646.6 364L645.4 368.9L649.7 369L651.3 366.2L655.6 366.2L659.1 364.3L669.5 365.8L669.3 378.6L675.1 382.2L671.8 384L686.5 388.6L701 379.6L700.6 376.1L695.9 348.7L688.4 323.6L686.8 320ZM701.8 299.3L703.2 293.9L698.2 288.5L695 274.9L687.5 266.1L683.3 258.2L683.2 251.9L618.2 262.4L616 263.9L609.7 264.8L608.8 280.8L621.9 302.3L632.1 312.5L634.2 314.2L632 316.5L655.4 320.9L664.3 321L666.7 320.6L672.2 317.8L676.5 319.8L685 318.3L686.6 319.5L701.8 299.3ZM708 519.9L714.8 492.5L713.4 490.5L708.2 495.9L705.7 496.6L703.1 497.1L700.1 496L697 494.4L688.4 500.8L685.1 505.5L689.1 509.3L694.7 513.1L708 519.9ZM750.3 282.4L751.7 279.7L752.3 276.7L753 272.9L753.5 270.3L753.1 259.8L754.8 254.3L746.2 241.1L740.9 236.2L740.5 231.6L744.4 227.3L744.2 222.4L742.5 219.3L734.7 212.2L680.3 197.1L650.6 183.5L645.3 190.5L637.8 195.9L640.9 200.2L639.5 206.2L619.3 204.2L594.7 205.7L597.7 216.2L602.7 221.1L606.5 232.4L614.8 248.3L614.9 252.2L619 259.6L618.2 262.2L683.2 251.9L683.3 258.2L687.5 266.1L695 274.9L698.2 288.5L703.2 293.9L701.8 299.3L707.6 291.9L750.3 282.4ZM701 379.6L686.5 388.6L672.7 385.7L664.8 386.9L652.2 384.5L640.5 385.1L637.2 386L634.8 391L627.4 397.9L620 395.2L627.4 402.4L633.7 411.5L638.6 424.2L640.1 445.4L646.7 459.9L670.1 448L680.4 443.6L722.5 435.9L750.6 433.8L751.9 419.6L750.9 412.4L751.2 388.9L750.2 385L747.4 382.6L720.3 380.8L701 379.6ZM697 494.4L700.1 496L701.9 496.9L705.7 496.6L707.9 496.3L713.2 490.7L720.1 485.2L722.7 484L732.3 481.7L735.4 479.8L740.4 476.6L744 472.8L741.5 463.6L743.8 460.5L747.6 460.2L752.2 460.3L753.9 458.3L756.3 455.7L758.8 448.2L750.9 438.5L750.6 433.8L722.5 435.9L680.4 443.6L670.1 448L646.7 459.9L657.8 484L665.5 504.1L686.6 497.4L696.7 494.2Z"/>
+                </svg>
+                <figcaption>
+                    <span class="map-key map-key-5">District 5</span>
+                    <span class="map-key map-key-6">District 6</span>
+                </figcaption>
+            </figure>
         </div>
     </header>
 
+
     <section class="landing-section" id="about">
-        <div class="landing-container">
-            <div class="landing-section-head">
-                <span class="landing-eyebrow">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
-                    About the Platform
+        <div class="landing-shell">
+            <div class="landing-about">
+                <div class="landing-plates landing-reveal landing-from-left">
+                    <figure class="landing-plate landing-plate-main">
+                        <img src="{{ url_for('static', filename='images/landing/reforestation-site.jpg') }}" alt="Volunteers planting seedlings by hand across an open hillside" width="8000" height="4000" loading="lazy" decoding="async">
+                    </figure>
+                    <!-- <div class="landing-badge">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.77 4.78 4 4 0 0 1-6.75 0 4 4 0 0 1-4.78-4.77 4 4 0 0 1 0-6.76Z"/><path d="m9 12 2 2 4-4"/></svg>
+                        <span>In partnership with<br>DENR-CENRO</span>
+                    </div> -->
+                    <figure class="landing-plate landing-plate-second">
+                        <img src="{{ url_for('static', filename='images/landing/field-monitoring.jpg') }}" alt="Aerial view of a planting site being worked, seen from directly above" width="1800" height="1350" loading="lazy" decoding="async">
+                    </figure>
+                </div>
+
+                <div class="landing-reveal" style="--reveal-delay: 120ms">
+                    <span class="landing-tag">Get to know us</span>
+                    <h2>One platform for smarter reforestation</h2>
+                    <p class="landing-lead">
+                        PuNoObservation is a web-based decision support platform that helps
+                        DENR, CENRO, environmental organizations, and community leaders manage
+                        reforestation projects across Eastern Pangasinan.
+                    </p>
+                    <p class="landing-lead">
+                        It centralizes planting site records, geospatial mapping, tree
+                        inventories, species recommendations, and progress monitoring into one
+                        shared system, making environmental data more accessible and
+                        decision-making more efficient.
+                    </p>
+                    <p class="landing-credit">
+                        A Web-Based Decision Support Platform for Tree Species Recommendation and
+                        Reforestation Management with Geospatial Visualization in Eastern Pangasinan.
+                    </p>
+                </div>
+            </div>
+
+        </div>
+    </section>
+
+    <section class="landing-section landing-section-alt" id="coverage">
+        <div class="landing-shell">
+            <div class="landing-carousel-head landing-reveal">
+                <span class="landing-tag">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/></svg>
+                    Coverage
                 </span>
-                <h2>One shared source of truth for reforestation data</h2>
-                <p>
-                    PuNoObservation is a centralized platform built to help DENR, CENRO,
-                    environmental organizations, and community leaders monitor reforestation
-                    progress across Eastern Pangasinan. It replaces scattered, disconnected
-                    records with one shared system, making site data easier to access and
-                    decisions easier to make.
-                </p>
+                <h2>The ground the platform covers</h2>
+            </div>
+
+            <div class="landing-marquee landing-reveal" data-marquee>
+                <div class="landing-track" role="group" aria-label="Landscapes across the surveyed area">
+                    <article class="landing-slide">
+                        <img src="{{ url_for('static', filename='images/landing/tropical-foliage.jpg') }}" alt="Dense tropical palm and broadleaf foliage in lowland forest" width="1600" height="1067" loading="lazy" decoding="async">
+                        <div class="landing-slide-body">
+                            <h3>Lowland growth</h3>
+                            <p>Elevation is a model input, so a lowland site and an upland site never rank the same.</p>
+                        </div>
+                    </article>
+
+                    <article class="landing-slide">
+                        <img src="{{ url_for('static', filename='images/landing/aerial-road.jpg') }}" alt="Aerial view of an unbroken forest canopy split by a single road" width="1600" height="1067" loading="lazy" decoding="async">
+                        <div class="landing-slide-body">
+                            <h3>Canopy from above</h3>
+                            <p>The heatmap shows where planting activity concentrates, by barangay and by municipality.</p>
+                        </div>
+                    </article>
+
+                    <article class="landing-slide">
+                        <img src="{{ url_for('static', filename='images/landing/planting-rows.jpg') }}" alt="Aerial view of established planting rows at low sun" width="1600" height="1067" loading="lazy" decoding="async">
+                        <div class="landing-slide-body">
+                            <h3>Existing plantations</h3>
+                            <p>Imported DENR NGP records show what has already been planted, and where.</p>
+                        </div>
+                    </article>
+
+                    <article class="landing-slide">
+                        <img src="{{ url_for('static', filename='images/landing/nursery-grid.jpg') }}" alt="Rows of potted seedlings viewed from directly above" width="1600" height="1067" loading="lazy" decoding="async">
+                        <div class="landing-slide-body">
+                            <h3>Nursery stock</h3>
+                            <p>Every species the platform recommends is native to the region.</p>
+                        </div>
+                    </article>
+
+                    <article class="landing-slide">
+                        <img src="{{ url_for('static', filename='images/landing/aerial-water.jpg') }}" alt="Aerial view of forest meeting open water along a shoreline" width="1600" height="1067" loading="lazy" decoding="async">
+                        <div class="landing-slide-body">
+                            <h3>Changing ground</h3>
+                            <p>Soil type shifts the ranking most where conditions change over a short distance.</p>
+                        </div>
+                    </article>
+                </div>
             </div>
         </div>
     </section>
 
     <section class="landing-section" id="features">
-        <div class="landing-container">
-            <div class="landing-section-head">
-                <span class="landing-eyebrow">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z"/><path d="M20 2v4"/><path d="M22 4h-4"/><circle cx="4" cy="20" r="2"/></svg>
-                    Features
-                </span>
-                <h2>Everything a reforestation team needs</h2>
-                <p>Built around the three tools field teams and DENR reviewers reach for most.</p>
-                <p class="landing-role-note">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
-                    Available features depend on your account role -- field officers, requesters, and admins each see a tailored set of tools.
+        <div class="landing-shell">
+            <div class="landing-reveal landing-head-center">
+                <h2>Integrated features for reforestation management</h2>
+                <p class="landing-note" style="text-align: center;">
+                    <!-- <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg> -->
+                    Available features depend on your account role. Administrators, Field Officers, and Normal Users each see a tailored set of tools.
                 </p>
             </div>
 
-            <div class="landing-feature-big">
-                <div>
-                    <h3>Interactive GIS Map &amp; Heatmap</h3>
-                    <p>
-                        See every planting site across Eastern Pangasinan on one live map,
-                        with a density heatmap showing where reforestation activity is
-                        concentrated by barangay and municipality.
+            <div class="landing-features">
+                <article class="landing-feature">
+                    <div class="landing-feature-media landing-reveal landing-from-right">
+                        <div class="landing-shot">
+                            <img src="{{ url_for('static', filename='images/landing/map.png') }}" width="2219" height="1350" loading="lazy" decoding="async" alt="The GIS map on a laptop, with districts 5 and 6 shaded over Eastern Pangasinan and planting sites marked">
+                            <span class="landing-glint" aria-hidden="true" style="--shot-src: url('{{ url_for('static', filename='images/landing/map.png') }}')"></span>
+                        </div>
+                    </div>
+                    <div class="landing-feature-copy landing-reveal" style="--reveal-delay: 130ms">
+                        <span class="landing-tag">Mapping</span>
+                        <h3>Interactive GIS map and heatmap</h3>
+                        <p>Every planting site across Eastern Pangasinan on one live map, with a density heatmap showing where reforestation activity is concentrated by barangay and municipality.</p>
+                    <p class="landing-feature-cta">
+                        <a href="{{ url_for('dashboard.gis_map') }}" class="landing-link">
+                            Open the map
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        </a>
                     </p>
-                    <a href="{{ url_for('dashboard.gis_map') }}" class="landing-btn landing-btn-primary landing-btn-sm">Explore the map</a>
-                </div>
-                <div class="landing-feature-screenshot">
-                    <img src="{{ url_for('static', filename='images/gismap.png') }}" width="1831" height="901" loading="lazy" decoding="async" alt="Interactive GIS map of Eastern Pangasinan with reforestation site heatmap">
-                </div>
+                    </div>
+                </article>
+
+                <article class="landing-feature">
+                    <div class="landing-feature-media landing-reveal landing-from-left">
+                        <div class="landing-shot">
+                            <img src="{{ url_for('static', filename='images/landing/speciesreco2.png') }}" width="2500" height="2444" loading="lazy" decoding="async" alt="The species recommendation screen on a laptop, listing native species ranked by suitability for a barangay">
+                            <span class="landing-glint" aria-hidden="true" style="--shot-src: url('{{ url_for('static', filename='images/landing/speciesreco2.png') }}')"></span>
+                        </div>
+                    </div>
+                    <div class="landing-feature-copy landing-reveal" style="--reveal-delay: 130ms">
+                        <span class="landing-tag">Species matching</span>
+                        <h3>Species recommendation</h3>
+                        <p>Ranks native species by how well they suit a site's soil, elevation, and climate, so a planting plan starts from what the ground can actually support.</p>
+                    </div>
+                </article>
+
+                <article class="landing-feature">
+                    <div class="landing-feature-media landing-reveal landing-from-right">
+                        <div class="landing-shot">
+                            <img src="{{ url_for('static', filename='images/landing/requestsite2.png') }}" width="1597" height="1350" loading="lazy" decoding="async" alt="The site request screen on a laptop, with the new request form open">
+                            <span class="landing-glint" aria-hidden="true" style="--shot-src: url('{{ url_for('static', filename='images/landing/requestsite2.png') }}')"></span>
+                        </div>
+                    </div>
+                    <div class="landing-feature-copy landing-reveal" style="--reveal-delay: 130ms">
+                        <span class="landing-tag">Site requests</span>
+                        <h3>Reforestation site requests</h3>
+                        <p>Anyone can propose a planting site. Administrators review it, and every decision is tracked against the record so nothing is decided off the books.</p>
+                    </div>
+                </article>
+
+                <article class="landing-feature">
+                    <div class="landing-feature-media landing-reveal landing-from-left">
+                        <div class="landing-shot">
+                            <img src="{{ url_for('static', filename='images/landing/dashboard.png') }}" width="2406" height="2384" loading="lazy" decoding="async" alt="The overview dashboard on a laptop, showing reforestation totals and charts of area contracted per year">
+                            <span class="landing-glint" aria-hidden="true" style="--shot-src: url('{{ url_for('static', filename='images/landing/dashboard.png') }}')"></span>
+                        </div>
+                    </div>
+                    <div class="landing-feature-copy landing-reveal" style="--reveal-delay: 130ms">
+                        <span class="landing-tag">Overview</span>
+                        <h3>Dashboard</h3>
+                        <p>Sites, area under contract, seedlings planted, and delivery rate for Districts 5 and 6 on one screen, with charts showing what was contracted each year and which municipalities hold most of the area.</p>
+                    </div>
+                </article>
             </div>
 
-            <div class="landing-feature-row">
-                <div class="landing-feature-card">
-                    <h3>Species Recommendation</h3>
-                    <p>Ranks native species by suitability for a site's soil, elevation, and climate.</p>
-                    <div class="landing-feature-screenshot">
-                        <img src="{{ url_for('static', filename='images/speciesrecommendation.png') }}" width="1831" height="857" loading="lazy" decoding="async" alt="Species recommendation results ranked by similarity">
-                    </div>
-                </div>
-
-                <div class="landing-feature-card">
-                    <h3>Reforestation Site Requests</h3>
-                    <p>Anyone can propose a planting site; admins review and track every decision.</p>
-                    <div class="landing-feature-screenshot">
-                        <img src="{{ url_for('static', filename='images/requestsite.png') }}" width="1911" height="917" loading="lazy" decoding="async" alt="Reforestation site request form">
-                    </div>
-                </div>
+            <div class="landing-carousel-head landing-reveal" style="margin-top: var(--sp-14)">
+                <h2>More features</h2>
             </div>
 
-            <div class="landing-more">
-                <p class="landing-more-label">+ More in the platform</p>
-                <div class="landing-chip-row">
-                    <span>User Management</span>
-                    <span>DENR NGP Data Import</span>
-                    <span>Notifications</span>
-                    <span>Reforestation Sites Registry</span>
-                    <span>Overview Dashboard</span>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <section class="landing-section" id="users">
-        <div class="landing-container">
-            <div class="landing-section-head">
-                <span class="landing-eyebrow">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 21a8 8 0 0 0-16 0"/><circle cx="10" cy="8" r="5"/><path d="M22 20c0-3.37-2-6.5-4-8a5 5 0 0 0-.45-8.3"/></svg>
-                    Who It's For
-                </span>
-                <h2>Built for your role</h2>
-                <p>Every account is scoped to what that role actually needs to do.</p>
-            </div>
-
-            <div class="landing-feature-row landing-role-row">
-                <div class="landing-feature-card">
-                    <h3>Administrator</h3>
-                    <p>
-                        Full control over system operations -- manages site locations and
-                        user accounts, reviews reforestation site requests, and configures
-                        the reference dataset that powers the recommendation engine.
-                    </p>
-                </div>
-                <div class="landing-feature-card">
-                    <h3>Field Officer</h3>
-                    <p>
-                        Focused on field-related work -- exploring the GIS map, checking
-                        registered reforestation sites, and pulling species recommendations
-                        for the barangays they're assigned to.
-                    </p>
-                </div>
-                <div class="landing-feature-card">
-                    <h3>Normal User</h3>
-                    <p>
-                        For community members and partner organizations -- browses the GIS
-                        map and registered sites, then submits reforestation site requests
-                        for an administrator to review.
-                    </p>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <section class="landing-section" id="data">
-        <div class="landing-container">
-            <div class="landing-data-band">
-                <span class="landing-eyebrow">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/></svg>
-                    Powered by real field data
-                </span>
-                <h2>Recommendations grounded in real conditions</h2>
-                <p>The species matching model weighs the same characteristics a forester would check on the ground, for every barangay in Eastern Pangasinan.</p>
-                <div class="landing-data-grid">
-                    <div class="landing-data-item">
-                        <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242"/><path d="M16 14v6"/><path d="M8 14v6"/><path d="M12 16v6"/></svg></span>
-                        <span>Climate Data</span>
+            <div class="landing-marquee landing-reveal" data-marquee>
+                <div class="landing-track" role="group" aria-label="More features">
+                    <div class="landing-mini">
+                        <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 21a8 8 0 0 0-16 0"/><circle cx="10" cy="8" r="5"/><path d="M22 20c0-3.37-2-6.5-4-8a5 5 0 0 0-.45-8.3"/></svg></span>
+                        User management
                     </div>
-                    <div class="landing-data-item">
-                        <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m8 3 4 8 5-5 5 15H2L8 3z"/></svg></span>
-                        <span>Elevation</span>
+                    <div class="landing-mini">
+                        <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span>
+                        Role-based access
                     </div>
-                    <div class="landing-data-item">
-                        <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83z"/><path d="M2 12a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 12"/><path d="M2 17a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 17"/></svg></span>
-                        <span>Soil Type</span>
+                    <div class="landing-mini">
+                        <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5V19A9 3 0 0 0 21 19V5"/><path d="M3 12A9 3 0 0 0 21 12"/></svg></span>
+                        DENR NGP data import
                     </div>
-                    <div class="landing-data-item">
-                        <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/></svg></span>
-                        <span>GPS Coordinates</span>
+                    <div class="landing-mini">
+                        <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/></svg></span>
+                        Reforestation sites registry
                     </div>
-                    <div class="landing-data-item">
-                        <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.106 5.553a2 2 0 0 0 1.788 0l3.659-1.83A1 1 0 0 1 21 4.619v12.764a1 1 0 0 1-.553.894l-4.553 2.277a2 2 0 0 1-1.788 0l-4.212-2.106a2 2 0 0 0-1.788 0l-3.659 1.83A1 1 0 0 1 3 19.381V6.618a1 1 0 0 1 .553-.894l4.553-2.277a2 2 0 0 1 1.788 0z"/><path d="M15 5.764v15"/><path d="M9 3.236v15"/></svg></span>
-                        <span>DENR NGP Records</span>
+                    <div class="landing-mini">
+                        <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83z"/><path d="M2 12a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 12"/><path d="M2 17a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 17"/></svg></span>
+                        Reference dataset
                     </div>
-                    <div class="landing-data-item">
-                        <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/></svg></span>
-                        <span>Species Database</span>
+                    <div class="landing-mini">
+                        <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></svg></span>
+                        Monitoring reports
+                    </div>
+                    <div class="landing-mini">
+                        <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="m9 14 2 2 4-4"/></svg></span>
+                        Report review
+                    </div>
+                    <div class="landing-mini">
+                        <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" x2="12" y1="20" y2="10"/><line x1="18" x2="18" y1="20" y2="4"/><line x1="6" x2="6" y1="20" y2="16"/></svg></span>
+                        Data visualization
+                    </div>
+                    <div class="landing-mini">
+                        <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.268 21a2 2 0 0 0 3.464 0"/><path d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326"/></svg></span>
+                        Notifications
                     </div>
                 </div>
             </div>
         </div>
     </section>
 
-    <section class="landing-section">
-        <div class="landing-container">
-            <div class="landing-final-cta">
-                <h2>Discover the full scale of <span class="accent">PuNoObservation</span> capabilities</h2>
-                <div class="landing-final-cta-buttons">
-                    <a href="{{ url_for('dashboard.gis_map') }}" class="landing-btn landing-btn-outline-dark">Explore the Map</a>
-                    <a href="{{ url_for('auth.register') }}" class="landing-btn landing-btn-lime">Start for Free</a>
+
+
+    <section class="landing-section landing-section-alt">
+        <div class="landing-shell">
+            <div class="landing-close landing-reveal">
+                <div class="landing-close-media">
+                    <img src="{{ url_for('static', filename='images/landing/forest-path.jpg') }}" alt="" width="1600" height="1067" loading="lazy" decoding="async">
+                </div>
+                <h2>See what is already on the map</h2>
+                <p>
+                    Create an account to submit a reforestation site, or open the map and look
+                    at the sites that are already recorded.
+                </p>
+                <div class="landing-close-buttons">
+                    <a href="{{ url_for('auth.register') }}" class="landing-btn landing-btn-primary">Create account</a>
+                    <a href="{{ url_for('dashboard.gis_map') }}" class="landing-btn landing-btn-ghost">Open the map</a>
                 </div>
             </div>
         </div>
     </section>
 
     <footer class="landing-footer">
-        <div class="landing-container landing-footer-grid">
-            <div>
-                <div class="landing-footer-brand">
-                    <img src="{{ url_for('static', filename='images/finallogo.png') }}" alt="" width="251" height="310">
-                    <span>PuNoObservation</span>
+        <div class="landing-shell">
+            <div class="landing-footer-grid">
+                <div>
+                    <div class="landing-footer-brand">
+                        <img src="{{ url_for('static', filename='images/finallogo.png') }}" alt="" width="251" height="310">
+                        <span>PuNoObservation</span>
+                    </div>
+                    <p class="tagline">
+                        Decision support for tree species recommendation and reforestation
+                        management across Eastern Pangasinan.
+                    </p>
                 </div>
-                <p class="tagline">Decision support for tree species recommendation and reforestation management across Eastern Pangasinan.</p>
+                <div>
+                    <h4>Product</h4>
+                    <ul>
+                        <li><a href="{{ url_for('dashboard.gis_map') }}">Map view</a></li>
+                        <li><a href="#features">Species matching</a></li>
+                        <li><a href="#features">Site requests</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4>On this page</h4>
+                    <ul>
+                        <li><a href="#about">About</a></li>
+                        <li><a href="#coverage">Coverage</a></li>
+                        <li><a href="#features">Features</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4>Account</h4>
+                    <ul>
+                        <li><a href="{{ url_for('auth.login') }}">Log in</a></li>
+                        <li><a href="{{ url_for('auth.register') }}">Create account</a></li>
+                    </ul>
+                </div>
             </div>
-            <div>
-                <h5>Product</h5>
-                <ul>
-                    <li><a href="{{ url_for('dashboard.gis_map') }}">Map view</a></li>
-                    <li><a href="{{ url_for('auth.login') }}">Dashboard</a></li>
-                    <li><a href="#features">Species matching</a></li>
-                    <li><a href="#features">Site requests</a></li>
-                </ul>
+
+            <div class="landing-footer-academic">
+                <p>A capstone project developed at <strong>Pangasinan State University, Urdaneta City Campus</strong>, in partnership with <strong>DENR-CENRO</strong>.</p>
+                <p>Adviser: Michael E. Acosta, MIT</p>
             </div>
-            <div>
-                <h5>Organization</h5>
-                <ul>
-                    <li><a href="#">About</a></li>
-                    <li><a href="#">For DENR</a></li>
-                    <li><a href="#">For NGOs</a></li>
-                    <li><a href="#">Contact</a></li>
-                </ul>
+
+            <div class="landing-footer-bottom">
+                <span>&copy; 2026 PuNoObservation</span>
+                <span>Photography via Unsplash</span>
             </div>
-            <div>
-                <h5>Resources</h5>
-                <ul>
-                    <li><a href="#">Guides</a></li>
-                    <li><a href="#data">Data sources</a></li>
-                    <li><a href="#">API</a></li>
-                    <li><a href="#">Support</a></li>
-                </ul>
-            </div>
-        </div>
-        <div class="landing-footer-academic">
-            <p>A capstone project developed at <strong>Pangasinan State University &ndash; Urdaneta City Campus</strong>, in partnership with <strong>DENR-CENRO</strong>.</p>
-            <p>Adviser: Michael E. Acosta, MIT</p>
-        </div>
-        <div class="landing-footer-bottom">
-            &copy; 2026 PuNoObservation &middot; Growing greener decisions &#127793;
         </div>
     </footer>
 
+    <script src="{{ url_for('static', filename='javascript/landing.js') }}" defer></script>
 </body>
 </html>
