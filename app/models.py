@@ -52,7 +52,30 @@ class User(db.Model):
     password_hash = db.Column(db.String(200), nullable=False)
     role = db.Column(db.String(20), nullable=False, default='normal_user')  # 'normal_user', 'field_officer', 'admin'
     cenro = db.Column(db.String(100), nullable=True)
-    
+
+    # Accounts are deactivated, never deleted.
+    #
+    # Eight foreign keys point at users.user_id - the audit log, who
+    # approved a report, who published a boundary, who submitted a
+    # request. Deleting a row out from under those either destroys the
+    # audit trail or orphans an official record. Deactivating keeps every
+    # reference intact and simply stops the account logging in.
+    is_active = db.Column(
+        db.Boolean, nullable=False,
+        default=True, server_default=db.true(),
+    )
+
+    # Set when an administrator creates the account or resets the
+    # password. Cleared once the holder chooses their own.
+    #
+    # server_default is required: the table already has rows, and a NOT
+    # NULL column added without one fails on an existing database.
+    must_change_password = db.Column(
+        db.Boolean, nullable=False, default=False,
+        server_default=db.false()
+    )
+    password_changed_at = db.Column(db.DateTime, nullable=True)
+
     # Relationships
     # reports = db.relationship('MonitoringReport', backref='officer', lazy=True)
     notifications = db.relationship('Notification', backref='user', lazy=True)

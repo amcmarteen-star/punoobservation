@@ -5,7 +5,7 @@ from app.utils.decorators import login_required
 from app.models import (
     Site, ReforestationRecord, MonitoringReport, MonitoringPlot,
     MonitoringPhoto, Location, Notification, Request, RequestAttachment,
-    User, TreeSpecie,
+    User, TreeSpecie, AuditLog,
 )
 from app.utils.audit import log_action
 from sqlalchemy import func
@@ -1917,3 +1917,75 @@ def api_site_history(site_id):
         "trend": trend,
         "history": history,
     })
+
+@dashboard_bp.route('/account', methods=['GET', 'POST'])
+@login_required
+def my_account():
+    """
+    The account holder's own page: their details, a password form, and
+    their recent activity.
+
+    Requiring the current password is the point of the form. Without it
+    anyone at an unlocked machine could set a new password and lock the
+    owner out of their own account.
+    """
+    user = User.query.get_or_404(session.get('user_id'))
+
+    if request.method == 'POST':
+        current_password = request.form.get('current_password') or ''
+        new_password = request.form.get('new_password') or ''
+        confirm_password = request.form.get('confirm_password') or ''
+
+        # Checked in order, first failure wins. Nothing below ever puts a
+        # password value into a flash message or the audit log.
+        if not current_password or not new_password or not confirm_password:
+            flash("Fill in all three password fields.", "danger")
+            return redirect(url_for('dashboard.my_account'))
+
+        if not user.check_password(current_password):
+            flash("Your current password is incorrect.", "danger")
+            return redirect(url_for('dashboard.my_account'))
+
+        if len(new_password) < 8:
+            flash("Use at least 8 characters.", "danger")
+            return redirect(url_for('dashboard.my_account'))
+
+        if new_password != confirm_password:
+            flash("The two new passwords do not match.", "danger")
+            return redirect(url_for('dashboard.my_account'))
+
+        if new_password == current_password:
+            flash("Choose a password different from your current one.",
+                  "danger")
+            return redirect(url_for('dashboard.my_account'))
+
+        user.set_password(new_password)
+        user.must_change_password = False
+        user.password_changed_at = datetime.now(MANILA)
+
+        # The before_request hook reads the session, so clearing the
+        # column alone would keep the user trapped until they log out.
+        session.pop('must_change_password', None)
+
+        log_action('change_password', 'users', user.user_id,
+                   'Password changed by the account holder')
+        db.session.commit()
+
+        flash("Your password has been changed.", "success")
+        return redirect(url_for('dashboard.my_account'))
+
+    recent_activity = (
+        AuditLog.query
+        .filter_by(user_id=user.user_id)
+        .order_by(AuditLog.created_at.desc())
+        .limit(10)
+        .all()
+    )
+
+    return render_template(
+        'Myaccount.html',
+        active_page='account',
+        user=user,
+        recent_activity=recent_activity,
+        must_change=bool(session.get('must_change_password')),
+    )

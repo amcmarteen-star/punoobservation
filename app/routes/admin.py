@@ -21,7 +21,7 @@ from app.utils.decorators import superadmin_required
 admin_bp = Blueprint('admin', __name__, url_prefix='/admin')
 
 @admin_bp.route('/users/create', methods=['POST'])
-@admin_required
+@superadmin_required
 def create_field_officer():
     """
     Create a user account.
@@ -71,11 +71,39 @@ def create_field_officer():
     if role == 'superadmin':
         cenro = None
 
+    # The jurisdiction must be a real CENRO.
+    #
+    # Nothing checked this before, so any string the form carried went
+    # straight into users.cenro. That fails silently and permanently:
+    # scope_locations() reads CENRO_MUNICIPALITIES.get(cenro, []), gets an
+    # empty list, and returns query.filter(False). The account then sees
+    # zero sites and zero barangays with no error message anywhere, and
+    # nothing on screen explains why.
+    #
+    # The select only offers CENRO_LIST, so this can only be reached by a
+    # hand-posted form or a renamed CENRO. Both should be refused loudly
+    # rather than stored.
+    if cenro is not None and cenro not in CENRO_LIST:
+        flash(f"Unknown jurisdiction '{cenro}'. Choose one of: "
+              + ", ".join(CENRO_LIST) + ".", "danger")
+        return redirect(url_for('admin.user_management'))
+
+    # A field officer with no jurisdiction is province-wide, which is
+    # almost never intended - they are assigned to one office. This warns
+    # rather than blocks, because the account is still usable and the
+    # jurisdiction can be corrected later.
+    if role == 'field_officer' and cenro is None:
+        flash("Field officer created with no jurisdiction, so they can see "
+              "every site in the province. Assign a CENRO if that is not "
+              "what you wanted.", "warning")
+
     new_user = User(
         username=username,
         email_address=email,
         role=role,
         cenro=cenro,
+        # the administrator's password is temporary and works once
+        must_change_password=True,
     )
     new_user.set_password(password)
 
@@ -86,8 +114,8 @@ def create_field_officer():
                + (f" for CENRO {cenro}" if cenro else " (province-wide)"))
     db.session.commit()
 
-    where = f" for CENRO {cenro}" if cenro else ""
-    flash(f"Created {username} as {role}{where}.", "success")
+    scope = f"CENRO {cenro}" if cenro else "province-wide (PENRO)"
+    flash(f"Created {role} account '{username}' — {scope}.", "success")
     return redirect(url_for('admin.user_management'))
 # ============================================================
 # DENR NGP EXCEL IMPORT -- "Reference Dataset" page
@@ -204,7 +232,7 @@ def _is_denr_contract_sheet(df_columns):
     """Row-3 header must contain all required columns to count as a valid sheet."""
     return REQUIRED_DENR_COLUMNS.issubset(set(df_columns))
 @admin_bp.route('/user-management')
-@admin_required
+@superadmin_required
 def user_management():
     q = request.args.get('q', '').strip()
     """
@@ -236,40 +264,147 @@ def user_management():
         scope=scope_label(),
     )
 
-@admin_bp.route('/users/<int:user_id>/delete', methods=['POST'])
-@admin_required
-def delete_user(user_id):
+# ======================================================================
+# Accounts are deactivated, never deleted.
+#
+# WHY THERE IS NO DELETE ROUTE
+#
+# Eight foreign keys point at users.user_id: audit_log.user_id,
+# notification.user_id, monitoring_report.user_id / reviewed_by /
+# published_by, request.user_id / reviewed_by, and
+# site.boundary_published_by. Every one is ON DELETE NO ACTION.
+#
+# 10 of 11 existing accounts could not be deleted at all - Postgres
+# raised ForeignKeyViolation and Flask returned a 500 with no message.
+# The only deletable account was one that had never done anything.
+#
+# The three ways out of that were all worse than deactivating:
+#
+#   cascade    destroys the audit trail, and deleting a user is exactly
+#              the event an audit log exists to record
+#   set null   loses who approved a report, and cannot work at all for
+#              the NOT NULL columns without a further migration
+#   delete     orphans official records whose survival rates are already
+#              written into the planting record
+#
+# Deactivating keeps every reference intact and simply stops the account
+# signing in. See the is_active check in app/routes/auth.py.
+# ======================================================================
+
+
+def _set_user_active(user_id, active):
+    """Shared body for deactivate and reactivate."""
+    action = "reactivate" if active else "deactivate"
+
+    # Deactivating yourself would lock you out of the page that undoes it.
     if user_id == session.get('user_id'):
-        flash("You cannot delete your own account.", "danger")
+        flash(f"You cannot {action} your own account.", "danger")
         return redirect(url_for('admin.user_management'))
 
     user = User.query.get_or_404(user_id)
 
-    if user.role == 'superadmin' and not is_superadmin():
-        flash("You cannot delete a provincial administrator.", "danger")
+    # The last active system administrator must stay active, or nobody
+    # can reach user management, the reference dataset or the audit log
+    # again. The self-check above already prevents most of this; this
+    # covers the rest.
+    if not active and user.role == 'superadmin':
+        remaining = User.query.filter(
+            User.role == 'superadmin',
+            User.is_active.is_(True),
+            User.user_id != user.user_id,
+        ).count()
+        if remaining == 0:
+            flash("That is the last active system administrator. "
+                  "Create another one before deactivating this account.",
+                  "danger")
+            return redirect(url_for('admin.user_management'))
+
+    if user.is_active == active:
+        flash(f"'{user.username}' is already "
+              + ("active" if active else "deactivated") + ".", "warning")
         return redirect(url_for('admin.user_management'))
 
-    cenro = current_cenro()
-    if cenro is not None and user.cenro and user.cenro != cenro:
-        flash("That user is outside your CENRO jurisdiction.", "danger")
-        return redirect(url_for('admin.user_management'))
+    user.is_active = active
 
-    log_action('delete_user', 'users', user.user_id,
-               f"Deleted {user.role} '{user.username}'"
+    log_action(f'{action}_user', 'users', user.user_id,
+               f"{action.capitalize()}d {user.role} '{user.username}'"
                + (f" ({user.cenro})" if user.cenro else ""))
-    db.session.delete(user)
     db.session.commit()
-    flash("User deleted.", "success")
+
+    if active:
+        flash(f"'{user.username}' can sign in again.", "success")
+    else:
+        flash(f"'{user.username}' can no longer sign in. "
+              "Their records are unchanged.", "success")
+
+    return redirect(url_for('admin.user_management'))
+
+
+@admin_bp.route('/users/<int:user_id>/deactivate', methods=['POST'])
+@superadmin_required
+def deactivate_user(user_id):
+    """Stop an account signing in. Keeps every record it is attached to."""
+    return _set_user_active(user_id, False)
+
+
+@admin_bp.route('/users/<int:user_id>/reactivate', methods=['POST'])
+@superadmin_required
+def reactivate_user(user_id):
+    """Let a deactivated account sign in again."""
+    return _set_user_active(user_id, True)
+
+
+@admin_bp.route('/users/<int:user_id>/reset-password', methods=['POST'])
+@superadmin_required
+def reset_password(user_id):
+    """
+    Give a user a new temporary password after they forget theirs.
+
+    must_change_password is set to True, so the password the
+    administrator types here works exactly once - the holder is forced to
+    choose their own on the next request. Without that flag this route
+    would hand a working permanent password to whoever asked for it.
+
+    password_changed_at is cleared so My Account reports the account as
+    back on an administrator-set password.
+    """
+    # A superadmin resetting themselves would skip the current-password
+    # check that protects an unlocked machine. My Account is the right
+    # place for that.
+    if user_id == session.get('user_id'):
+        flash("Change your own password from My Account, where your "
+              "current password is required.", "danger")
+        return redirect(url_for('admin.user_management'))
+
+    user = User.query.get_or_404(user_id)
+
+    new_password = request.form.get('new_password') or ''
+    if len(new_password) < 8:
+        flash("A temporary password needs at least 8 characters.", "danger")
+        return redirect(url_for('admin.user_management'))
+
+    user.set_password(new_password)
+    user.must_change_password = True
+    user.password_changed_at = None
+
+    # The password value is never written to the log, only the fact.
+    log_action('reset_password', 'users', user_id,
+               f"Password reset for '{user.username}'")
+    db.session.commit()
+
+    flash(f"Temporary password for '{user.username}' is: {new_password} "
+          "- give it to them directly. They must choose their own the "
+          "next time they sign in.", "success")
     return redirect(url_for('admin.user_management'))
 # Upload excel file
 @admin_bp.route('/reference-dataset', methods=['GET'])
-@admin_required
+@superadmin_required
 def reference_dataset():
     return render_template('Referencedataset.html')
 
 
 @admin_bp.route('/reference-dataset/import', methods=['POST'])
-@admin_required
+@superadmin_required
 def import_denr_data():
     uploaded_file = request.files.get('excel_file')
 
@@ -458,6 +593,10 @@ def review_requests():
     superadmin sees all of them. Request has a location_id, so the scope
     is applied through a join on Location.municipality.
     """
+    # approval is a CENRO function; the province observes outcomes
+    if current_cenro() is None:
+        flash("Request and report review is a CENRO function.", "warning")
+        return redirect(url_for('admin.provincial_overview'))
     status_filter = request.args.get('status', 'Pending')
     munis = allowed_municipalities()
 
@@ -503,6 +642,10 @@ def review_requests():
 @admin_bp.route('/requests/<int:request_id>/review', methods=['POST'])
 @admin_required
 def review_request(request_id):
+    # approval is a CENRO function; the province observes outcomes
+    if current_cenro() is None:
+        flash("Request and report review is a CENRO function.", "warning")
+        return redirect(url_for('admin.provincial_overview'))
     req = Request.query.get_or_404(request_id)
 
     # a direct POST must respect jurisdiction too. Without this an admin
@@ -598,7 +741,7 @@ def _norm_name(s):
 
 
 @admin_bp.route('/reference-dataset/preview', methods=['POST'])
-@admin_required
+@superadmin_required
 def preview_denr_data():
     """
     Dry run. Reports what an import would do. Writes nothing.
@@ -795,6 +938,10 @@ def review_reports():
     Reports carry a site_id, and Site carries the CENRO the DENR
     importer recorded, so the scope is applied directly on Site.cenro.
     """
+    # approval is a CENRO function; the province observes outcomes
+    if current_cenro() is None:
+        flash("Request and report review is a CENRO function.", "warning")
+        return redirect(url_for('admin.provincial_overview'))
     status_filter = request.args.get('status', 'Pending')
     cenro = current_cenro()
 
@@ -836,6 +983,10 @@ def review_reports():
 @admin_required
 def review_report_detail(report_id):
     """Full preview of one report before deciding on it."""
+    # approval is a CENRO function; the province observes outcomes
+    if current_cenro() is None:
+        flash("Request and report review is a CENRO function.", "warning")
+        return redirect(url_for('admin.provincial_overview'))
     report = MonitoringReport.query.get_or_404(report_id)
 
     cenro = current_cenro()
@@ -860,6 +1011,10 @@ def review_report_detail(report_id):
 @admin_bp.route('/reports/<int:report_id>/review', methods=['POST'])
 @admin_required
 def review_report(report_id):
+    # approval is a CENRO function; the province observes outcomes
+    if current_cenro() is None:
+        flash("Request and report review is a CENRO function.", "warning")
+        return redirect(url_for('admin.provincial_overview'))
     report = MonitoringReport.query.get_or_404(report_id)
 
     cenro = current_cenro()
@@ -950,7 +1105,7 @@ def review_report(report_id):
     return redirect(url_for('admin.review_reports'))
  
 @admin_bp.route('/publications')
-@superadmin_required
+@admin_required
 def publications():
     """
     Boundaries validated by a CENRO and awaiting provincial publication.
@@ -958,6 +1113,17 @@ def publications():
     Publishing makes a boundary visible on the map to every user, so it
     is deliberately a separate decision from approving the field work.
     """
+    # superadmin is MIS, not PENRO. current_cenro() returns None for
+    # both, so the province-wide check below cannot tell them apart -
+    # this has to come first.
+    if session.get('role') == 'superadmin':
+        flash("That is an operational function, not a system one.", "warning")
+        return redirect(url_for('admin.user_management'))
+
+    # publishing a boundary changes the official record province-wide
+    if current_cenro() is not None:
+        flash("Boundary publication is a provincial function.", "danger")
+        return redirect(url_for('admin.provincial_overview'))
     status_filter = request.args.get('status', 'Pending Publication')
 
     query = MonitoringReport.query.filter(
@@ -998,7 +1164,7 @@ def publications():
 
 
 @admin_bp.route('/publications/<int:report_id>/publish', methods=['POST'])
-@superadmin_required
+@admin_required
 def publish_boundary(report_id):
     """
     Publish or decline a captured boundary.
@@ -1007,6 +1173,17 @@ def publish_boundary(report_id):
     Declining leaves the report intact but keeps the boundary off the
     map.
     """
+    # superadmin is MIS, not PENRO. current_cenro() returns None for
+    # both, so the province-wide check below cannot tell them apart -
+    # this has to come first.
+    if session.get('role') == 'superadmin':
+        flash("That is an operational function, not a system one.", "warning")
+        return redirect(url_for('admin.user_management'))
+
+    # publishing a boundary changes the official record province-wide
+    if current_cenro() is not None:
+        flash("Boundary publication is a provincial function.", "danger")
+        return redirect(url_for('admin.provincial_overview'))
     report = MonitoringReport.query.get_or_404(report_id)
 
     action = (request.form.get('action') or '').strip()
@@ -1101,6 +1278,10 @@ def review_request_detail(request_id):
     The jurisdiction check is repeated here because a list filter does
     not prevent someone typing the URL directly.
     """
+    # approval is a CENRO function; the province observes outcomes
+    if current_cenro() is None:
+        flash("Request and report review is a CENRO function.", "warning")
+        return redirect(url_for('admin.provincial_overview'))
     req = Request.query.get_or_404(request_id)
 
     munis = allowed_municipalities()
@@ -1196,4 +1377,258 @@ def audit_log():
         days=days,
         failed_logins=failed_logins,
         total=AuditLog.query.count(),
+    )
+
+
+# ======================================================================
+# provincial oversight (PENRO)
+#
+# Read-only. The province observes; the CENRO that made a decision keeps
+# it. Nothing on this page approves, rejects or edits anything.
+# ======================================================================
+
+# Municipality -> CENRO, inverted from CENRO_MUNICIPALITIES once.
+#
+# Request has no cenro column, so a request's CENRO has to be derived
+# from its barangay's municipality. Building the reverse map at import
+# time keeps that a dict lookup instead of a scan per row.
+#
+# Site DOES have a cenro column, filled by the DENR importer from the
+# IMPLEMENTING CENRO field. For reports we trust that column first and
+# fall back to the municipality lookup only when it is NULL. Deriving
+# both from municipality would also have been reasonable and would give
+# one consistent rule, but it would silently overwrite what DENR
+# actually recorded, so the recorded value wins.
+_MUNICIPALITY_TO_CENRO = {
+    municipality: cenro
+    for cenro, municipalities in CENRO_MUNICIPALITIES.items()
+    for municipality in municipalities
+}
+
+# DENR reference threshold for a passing survival rate.
+SURVIVAL_THRESHOLD = 85.0
+
+# A municipality no CENRO claims, or a site with no CENRO recorded.
+# Bucketed rather than dropped: a province-wide view that silently hides
+# rows is worse than one that shows them as unassigned.
+UNASSIGNED_CENRO = "Unassigned"
+
+# The tables are for reading, not for bulk export, so they are capped.
+# The summary figures are computed from EVERY approved row, not from
+# this slice, so the cards and the per-CENRO table stay correct even when
+# the tables below them are truncated.
+OVERVIEW_ROW_LIMIT = 100
+
+
+def _cenro_for_municipality(municipality):
+    """CENRO that covers a municipality, or the unassigned bucket."""
+    if not municipality:
+        return UNASSIGNED_CENRO
+    return _MUNICIPALITY_TO_CENRO.get(municipality, UNASSIGNED_CENRO)
+
+
+def _cenro_for_report(report):
+    """
+    CENRO for a monitoring report.
+
+    Site.cenro first, municipality lookup second. See the note on
+    _MUNICIPALITY_TO_CENRO for why the recorded value wins.
+    """
+    site = report.site
+    if site is None:
+        return UNASSIGNED_CENRO
+    if site.cenro:
+        return site.cenro
+    location = site.location
+    return _cenro_for_municipality(location.municipality if location else None)
+
+
+@admin_bp.route('/provincial-overview')
+@admin_required
+def provincial_overview():
+    """
+    PENRO oversight: approved work across every CENRO, in one place.
+
+    Read-only by design. Boundary publication has its own page, so this
+    one only reports whether a boundary is published, never changes it.
+    """
+
+    # superadmin is MIS, not PENRO. current_cenro() returns None for
+    # both, so the province-wide check below cannot tell them apart -
+    # this has to come first.
+    if session.get('role') == 'superadmin':
+        flash("That is an operational function, not a system one.", "warning")
+        return redirect(url_for('admin.user_management'))
+
+    # ------------------------------------------------------------------
+    # Approved monitoring reports
+    # ------------------------------------------------------------------
+    #
+    # Ordered by review date. An approved report should always have one,
+    # but coalescing to submitted_at means a row with a missing review
+    # date still sorts sensibly instead of landing wherever Postgres puts
+    # NULLs in a DESC sort, which is first.
+    approved_reports = (
+        MonitoringReport.query
+        .filter(MonitoringReport.approval_status == 'Approved')
+        .order_by(
+            func.coalesce(
+                MonitoringReport.date_reviewed,
+                MonitoringReport.submitted_at,
+            ).desc()
+        )
+        .all()
+    )
+
+    # ------------------------------------------------------------------
+    # Approved requests
+    # ------------------------------------------------------------------
+    approved_requests = (
+        Request.query
+        .filter(Request.status == 'Approved')
+        .order_by(
+            func.coalesce(
+                Request.date_reviewed,
+                Request.date_submitted,
+            ).desc()
+        )
+        .all()
+    )
+
+    # ------------------------------------------------------------------
+    # Rows for the template
+    # ------------------------------------------------------------------
+    #
+    # The CENRO is resolved here rather than in Jinja. The template should
+    # not be doing dictionary lookups against a jurisdiction map.
+    report_rows = []
+    for r in approved_reports:
+        site = r.site
+        location = site.location if site else None
+        report_rows.append({
+            "report": r,
+            "cenro": _cenro_for_report(r),
+            "site_name": site.site_name if site else None,
+            "barangay": location.barangay if location else None,
+            "municipality": location.municipality if location else None,
+            # Publication is a property of the SITE, not the report: the
+            # province publishes a site boundary once, however many
+            # reports captured it.
+            "boundary_published": bool(site.boundary_published) if site else False,
+            "has_boundary": bool(r.boundary_geojson),
+        })
+
+    request_rows = []
+    for q in approved_requests:
+        location = q.location
+        municipality = location.municipality if location else None
+        request_rows.append({
+            "request": q,
+            "cenro": _cenro_for_municipality(municipality),
+            "barangay": location.barangay if location else None,
+            "municipality": municipality,
+        })
+
+    # ------------------------------------------------------------------
+    # Per-CENRO summary
+    # ------------------------------------------------------------------
+    #
+    # Seeded with every CENRO in CENRO_LIST so an office with no approved
+    # work still appears as a zero row. A CENRO missing from the table
+    # reads as an oversight; a zero row reads as a finding.
+    def empty_cell(name):
+        return {
+            "cenro": name,
+            "reports": 0,
+            "requests": 0,
+            "survival_sum": 0.0,
+            "survival_n": 0,
+            "below_threshold": 0,
+        }
+
+    summary = {name: empty_cell(name) for name in CENRO_LIST}
+
+    def bucket(name):
+        """Summary row for a CENRO, creating the unassigned one on demand."""
+        if name not in summary:
+            summary[name] = empty_cell(name)
+        return summary[name]
+
+    for row in report_rows:
+        cell = bucket(row["cenro"])
+        cell["reports"] += 1
+        rate = row["report"].survival_rate
+        if rate is not None:
+            cell["survival_sum"] += rate
+            cell["survival_n"] += 1
+            if rate < SURVIVAL_THRESHOLD:
+                cell["below_threshold"] += 1
+
+    for row in request_rows:
+        bucket(row["cenro"])["requests"] += 1
+
+    cenro_summary = []
+    for cell in summary.values():
+        # None, not 0.0, when a CENRO has no survival figures. Zero would
+        # render as a failing 0% and read as though every site had died.
+        mean_survival = (
+            cell["survival_sum"] / cell["survival_n"]
+            if cell["survival_n"] else None
+        )
+        cenro_summary.append({
+            "cenro": cell["cenro"],
+            "reports": cell["reports"],
+            "requests": cell["requests"],
+            "mean_survival": (round(mean_survival, 1)
+                              if mean_survival is not None else None),
+            "below_threshold": cell["below_threshold"],
+            "municipalities": len(CENRO_MUNICIPALITIES.get(cell["cenro"], [])),
+        })
+
+    # Busiest office first. The unassigned bucket sinks to the bottom on
+    # its own because it is normally empty.
+    cenro_summary.sort(
+        key=lambda c: (-c["reports"], -c["requests"], c["cenro"])
+    )
+
+    # ------------------------------------------------------------------
+    # Headline figures
+    # ------------------------------------------------------------------
+    survival_values = [
+        r.survival_rate for r in approved_reports
+        if r.survival_rate is not None
+    ]
+    province_survival = (
+        sum(survival_values) / len(survival_values)
+        if survival_values else None
+    )
+
+    headline = {
+        "approved_reports": len(approved_reports),
+        "approved_requests": len(approved_requests),
+        "mean_survival": (round(province_survival, 1)
+                          if province_survival is not None else None),
+        "survival_n": len(survival_values),
+        "below_threshold": sum(1 for v in survival_values
+                               if v < SURVIVAL_THRESHOLD),
+        # Counted straight from Site, not from the reports above. A
+        # published boundary stays published whether or not the report
+        # that captured it is still in this list.
+        "published_boundaries": Site.query.filter(
+            Site.boundary_published.is_(True)
+        ).count(),
+        "cenros": len(CENRO_LIST),
+    }
+
+    return render_template(
+        'Provincialoverview.html',
+        active_page='provincial_overview',
+        headline=headline,
+        cenro_summary=cenro_summary,
+        report_rows=report_rows[:OVERVIEW_ROW_LIMIT],
+        request_rows=request_rows[:OVERVIEW_ROW_LIMIT],
+        report_total=len(report_rows),
+        request_total=len(request_rows),
+        row_limit=OVERVIEW_ROW_LIMIT,
+        threshold=SURVIVAL_THRESHOLD,
     )

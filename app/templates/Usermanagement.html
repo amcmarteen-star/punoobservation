@@ -1,6 +1,23 @@
 {% extends "Base.html" %} {% block title %}User Management - PuNoObservation{%
 endblock %} {% block content_class %}page-content-wide{% endblock %} {% set
-active_page = 'users' %} {% block content %}
+active_page = 'users' %} {% block extra_head %}
+<style>
+  /* Status column, and the reactivate dialog which is not a warning */
+  .um-table col.col-status { width: 12%; }
+
+  .um-warn.um-warn-soft {
+    background-color: #f0fdf4;
+    border-color: #bbf7d0;
+    color: #14532d;
+  }
+
+  .um-warn.um-warn-soft svg {
+    color: #16a34a;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
 
 <div class="um-header">
   <div>
@@ -97,9 +114,9 @@ active_page = 'users' %} {% block content %}
       </button>
       <button
         type="button"
-        onclick="umFilterRole('superadmin', 'Provincial Admin')"
+        onclick="umFilterRole('superadmin', 'System Administrator')"
       >
-        Provincial Admin
+        System Administrator
       </button>
       <button type="button" onclick="umFilterRole('admin', 'Administrator')">
         Administrator
@@ -119,66 +136,6 @@ active_page = 'users' %} {% block content %}
     </div>
   </div>
 </div>
-<!-- <div
-  class="req-form-card mb-4"
-  style="
-    background: #fff;
-    border: 1px solid #e2e8f0;
-    border-radius: 10px;
-    padding: 1.25rem;
-  "
->
-  <h5 class="fw-bold text-success mb-3">Create User</h5>
-
-  <form
-    method="POST"
-    action="{{ url_for('admin.create_field_officer') }}"
-    class="row g-3"
-  >
-    <div class="col-md-3">
-      <label class="form-label fw-semibold">Username</label>
-      <input type="text" name="username" class="form-control" required />
-    </div>
-
-    <div class="col-md-3">
-      <label class="form-label fw-semibold">Email</label>
-      <input type="email" name="email_address" class="form-control" required />
-    </div>
-
-    <div class="col-md-2">
-      <label class="form-label fw-semibold">Password</label>
-      <input type="password" name="password" class="form-control" required />
-    </div>
-
-    <div class="col-md-2">
-      <label class="form-label fw-semibold">Role</label>
-      <select name="role" class="form-select" required>
-        <option value="field_officer">Field Officer</option>
-        <option value="normal_user">Normal User</option>
-        {% if is_super %}
-        <option value="admin">CENRO Admin</option>
-        <option value="superadmin">Provincial Admin</option>
-        {% endif %}
-      </select>
-    </div>
-
-    {% if is_super %}
-    <div class="col-md-2">
-      <label class="form-label fw-semibold">CENRO</label>
-      <select name="cenro" class="form-select">
-        <option value="">Unassigned</option>
-        {% for c in cenro_list %}
-        <option value="{{ c }}">{{ c }}</option>
-        {% endfor %}
-      </select>
-    </div>
-    {% endif %}
-
-    <div class="col-12">
-      <button type="submit" class="btn btn-success">Create User</button>
-    </div>
-  </form>
-</div> -->
 <div class="um-table-card">
   {% if users %}
   <table class="um-table" id="um-table">
@@ -187,6 +144,7 @@ active_page = 'users' %} {% block content %}
       <col class="col-email" />
       <col class="col-role" />
       <col class="col-cenro" />
+      <col class="col-status" />
       <col class="col-actions" />
     </colgroup>
     <thead>
@@ -254,9 +212,10 @@ active_page = 'users' %} {% block content %}
                 d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"
               />
             </svg>
-            CENRO
+            Jurisdiction
           </span>
         </th>
+        <th>Status</th>
         <th class="um-actions-cell">Actions</th>
       </tr>
     </thead>
@@ -295,9 +254,11 @@ class="um-avatar {% if u.role in ['admin', 'superadmin'] %}av-admin{% elif u.rol
         </td>
         <td>
           {% if u.role == 'superadmin' %}
-          <span class="um-role role-admin">Provincial Admin</span>
+          <span class="um-role role-admin">System Administrator</span>
+          {% elif u.role == 'admin' and u.cenro %}
+          <span class="um-role role-admin">CENRO Administrator</span>
           {% elif u.role == 'admin' %}
-          <span class="um-role role-admin">CENRO Admin</span>
+          <span class="um-role role-admin">Provincial Administrator</span>
           {% elif u.role == 'field_officer' %}
           <span class="um-role role-officer">Field Officer</span>
           {% else %}
@@ -306,57 +267,67 @@ class="um-avatar {% if u.role in ['admin', 'superadmin'] %}av-admin{% elif u.rol
         </td>
         <td>
           {% if u.cenro %}
-          <span class="um-role role-user">{{ u.cenro }}</span>
+          <span class="um-role role-user">CENRO {{ u.cenro }}</span>
+          {% elif u.role == 'admin' %}
+          <span class="um-role role-admin">PENRO — Province-wide</span>
           {% else %}
-          <span class="text-secondary small">Province-wide</span>
+          <span class="text-secondary small">&mdash;</span>
+          {% endif %}
+        </td>
+        <td>
+          {% if u.is_active %}
+          <span class="um-role role-user">Active</span>
+          {% else %}
+          <span class="um-role role-admin">Deactivated</span>
           {% endif %}
         </td>
         <td class="um-actions-cell">
           {% if u.user_id == session.user_id %}
           <button
             type="button"
-            class="um-btn-icon-danger"
+            class="um-btn-row"
             disabled
-            aria-label="You cannot delete your own account"
-            title="You cannot delete your own account"
+            title="You cannot deactivate your own account"
           >
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            >
-              <path d="M10 11v6" />
-              <path d="M14 11v6" />
-              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
-              <path d="M3 6h18" />
-              <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-            </svg>
+            This is you
+          </button>
+          {% elif u.is_active %}
+          <button
+            type="button"
+            class="um-btn-row"
+            title="Stop this account signing in"
+            onclick="umConfirmToggle('{{ u.username|e }}', '{{ u.role|replace('_', ' ')|title }}', '{{ url_for('admin.deactivate_user', user_id=u.user_id) }}', false)"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m4.9 4.9 14.2 14.2"/></svg>
+            Deactivate
+          </button>
+          <button
+            type="button"
+            class="um-btn-row"
+            title="Give this account a new temporary password"
+            onclick="umOpenReset('{{ u.username|e }}', '{{ url_for('admin.reset_password', user_id=u.user_id) }}')"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/></svg>
+            Reset password
           </button>
           {% else %}
           <button
             type="button"
-            class="um-btn-icon-danger"
-            aria-label="Delete user"
-            title="Delete user"
-            onclick="umConfirmDelete('{{ u.username|e }}', '{{ u.role|replace('_', ' ')|title }}', '{{ url_for('admin.delete_user', user_id=u.user_id) }}')"
+            class="um-btn-row"
+            title="Let this account sign in again"
+            onclick="umConfirmToggle('{{ u.username|e }}', '{{ u.role|replace('_', ' ')|title }}', '{{ url_for('admin.reactivate_user', user_id=u.user_id) }}', true)"
           >
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            >
-              <path d="M10 11v6" />
-              <path d="M14 11v6" />
-              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
-              <path d="M3 6h18" />
-              <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-            </svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+            Reactivate
+          </button>
+          <button
+            type="button"
+            class="um-btn-row"
+            title="Give this account a new temporary password"
+            onclick="umOpenReset('{{ u.username|e }}', '{{ url_for('admin.reset_password', user_id=u.user_id) }}')"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/></svg>
+            Reset password
           </button>
           {% endif %}
         </td>
@@ -390,11 +361,11 @@ class="um-avatar {% if u.role in ['admin', 'superadmin'] %}av-admin{% elif u.rol
   {% endif %}
 </div>
 
-<!-- Delete confirmation modal -->
+<!-- Deactivate / reactivate confirmation modal -->
 <div class="um-modal-overlay" id="um-delete-modal">
   <div class="um-modal">
     <div class="um-modal-head">
-      <h3>Delete User Account</h3>
+      <h3 id="um-del-title">Deactivate Account</h3>
       <button
         type="button"
         class="um-modal-close"
@@ -415,7 +386,7 @@ class="um-avatar {% if u.role in ['admin', 'superadmin'] %}av-admin{% elif u.rol
       </button>
     </div>
     <div class="um-modal-body">
-      <div class="um-warn">
+      <div class="um-warn" id="um-del-warn">
         <svg
           viewBox="0 0 24 24"
           fill="none"
@@ -430,11 +401,7 @@ class="um-avatar {% if u.role in ['admin', 'superadmin'] %}av-admin{% elif u.rol
           <path d="M12 9v4" />
           <path d="M12 17h.01" />
         </svg>
-        <span>
-          Permanently delete the account of
-          <strong id="um-del-name"></strong> (<span id="um-del-role"></span>)?
-          This also removes their related records and cannot be undone.
-        </span>
+        <span id="um-del-text"></span>
       </div>
     </div>
     <form method="POST" id="um-delete-form" class="um-modal-foot">
@@ -445,7 +412,90 @@ class="um-avatar {% if u.role in ['admin', 'superadmin'] %}av-admin{% elif u.rol
       >
         Cancel
       </button>
-      <button type="submit" class="um-btn-confirm-danger">Yes, Delete</button>
+      <button type="submit" class="um-btn-confirm-danger" id="um-del-confirm">
+        Yes, Deactivate
+      </button>
+    </form>
+  </div>
+</div>
+
+<!-- Reset password modal -->
+<div class="um-modal-overlay" id="um-reset-modal">
+  <div class="um-modal">
+    <div class="um-modal-head">
+      <h3>Reset Password</h3>
+      <button
+        type="button"
+        class="um-modal-close"
+        aria-label="Close dialog"
+        onclick="umClose('um-reset-modal')"
+      >
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <path d="M18 6 6 18" />
+          <path d="m6 6 12 12" />
+        </svg>
+      </button>
+    </div>
+    <form method="POST" id="um-reset-form" autocomplete="off">
+      <div class="um-modal-body">
+        <div class="um-warn">
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path
+              d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"
+            />
+            <path d="M12 9v4" />
+            <path d="M12 17h.01" />
+          </svg>
+          <span>
+            Set a temporary password for
+            <strong id="um-reset-name"></strong>. It works once &mdash; they
+            must choose their own the next time they sign in.
+          </span>
+        </div>
+
+        <div class="um-field">
+          <label for="um-reset-pw">Temporary password</label>
+          <input
+            type="text"
+            name="new_password"
+            id="um-reset-pw"
+            minlength="8"
+            placeholder="At least 8 characters"
+            autocomplete="off"
+            required
+          />
+          <div class="form-text">
+            Shown as plain text so you can read it out. Give it to them
+            directly, never by email.
+          </div>
+        </div>
+      </div>
+      <div class="um-modal-foot">
+        <button
+          type="button"
+          class="um-btn-cancel"
+          onclick="umClose('um-reset-modal')"
+        >
+          Cancel
+        </button>
+        <button type="submit" class="um-btn-confirm-danger">
+          Reset Password
+        </button>
+      </div>
     </form>
   </div>
 </div>
@@ -512,21 +562,35 @@ class="um-avatar {% if u.role in ['admin', 'superadmin'] %}av-admin{% elif u.rol
             <option value="field_officer">Field Officer</option>
             <option value="normal_user">Normal User</option>
             {% if is_super %}
-            <option value="admin">CENRO Administrator</option>
-            <option value="superadmin">Provincial Administrator</option>
+            <option value="admin">Administrator</option>
+            <option value="superadmin">System Administrator</option>
             {% endif %}
           </select>
         </div>
 
         {% if is_super %}
-        <div class="um-field">
-          <label for="um-cenro">CENRO</label>
+        <div class="um-field" id="um-cenro-field">
+          <label for="um-cenro">Jurisdiction</label>
           <select id="um-cenro" name="cenro">
-            <option value="">Unassigned (province-wide)</option>
+            <option value="">PENRO — Province-wide</option>
             {% for c in cenro_list %}
-            <option value="{{ c }}">{{ c }}</option>
+            <option value="{{ c }}">CENRO {{ c }}</option>
             {% endfor %}
           </select>
+          <div class="form-text">
+            An administrator with a CENRO reviews only that office's
+            requests and reports. One set to province-wide has PENRO
+            oversight and publishes site boundaries.
+          </div>
+        </div>
+
+        <div class="um-field" id="um-cenro-na" hidden>
+          <label>Jurisdiction</label>
+          <p class="form-text mb-0">
+            A system administrator has no jurisdiction. The role covers user
+            accounts, the reference dataset and the audit log across the whole
+            system, and never reviews or publishes anything for one office.
+          </p>
         </div>
         {% endif %}
       </div>
@@ -553,10 +617,70 @@ class="um-avatar {% if u.role in ['admin', 'superadmin'] %}av-admin{% elif u.rol
     document.getElementById(id).classList.remove("open");
   }
 
-  function umConfirmDelete(name, role, action) {
-    document.getElementById("um-del-name").textContent = name;
-    document.getElementById("um-del-role").textContent = role;
-    document.getElementById("um-delete-form").setAttribute("action", action);
+  // Jurisdiction applies to every role except superadmin.
+  //
+  // create_field_officer() already forces cenro = None when the role is
+  // superadmin, so this only stops the form asking for something it will
+  // throw away. Field officers and normal users keep the field: their
+  // cenro is what scope_sites() and scope_locations() read to decide
+  // which sites and barangays they can see.
+  (function () {
+    const role = document.getElementById("um-role");
+    const field = document.getElementById("um-cenro-field");
+    const note = document.getElementById("um-cenro-na");
+    const select = document.getElementById("um-cenro");
+    if (!role || !field || !note || !select) return;
+
+    function sync() {
+      const isSystemAdmin = role.value === "superadmin";
+      field.hidden = isSystemAdmin;
+      note.hidden = !isSystemAdmin;
+      // disabled fields are not submitted, so nothing stale is posted
+      select.disabled = isSystemAdmin;
+      if (isSystemAdmin) select.value = "";
+    }
+
+    role.addEventListener("change", sync);
+    sync();
+  })();
+
+  function umOpenReset(name, action) {
+    document.getElementById("um-reset-form").action = action;
+    document.getElementById("um-reset-name").textContent = name;
+    document.getElementById("um-reset-pw").value = "";
+    umOpen("um-reset-modal");
+  }
+
+  // One dialog for both directions.
+  //
+  // Nothing here deletes anything. Deactivating leaves every record the
+  // account is attached to exactly as it was - the audit log, reports
+  // they submitted, approvals they made - and only stops them signing in.
+  function umConfirmToggle(name, role, action, reactivating) {
+    document.getElementById("um-delete-form").action = action;
+
+    const title = document.getElementById("um-del-title");
+    const text = document.getElementById("um-del-text");
+    const confirm = document.getElementById("um-del-confirm");
+    const warn = document.getElementById("um-del-warn");
+
+    if (reactivating) {
+      title.textContent = "Reactivate Account";
+      text.innerHTML =
+        "Let <strong>" + name + "</strong> (" + role +
+        ") sign in again?";
+      confirm.textContent = "Yes, Reactivate";
+      warn.classList.add("um-warn-soft");
+    } else {
+      title.textContent = "Deactivate Account";
+      text.innerHTML =
+        "Stop <strong>" + name + "</strong> (" + role +
+        ") from signing in? Their records stay exactly as they are, and " +
+        "you can reactivate the account at any time.";
+      confirm.textContent = "Yes, Deactivate";
+      warn.classList.remove("um-warn-soft");
+    }
+
     umOpen("um-delete-modal");
   }
 

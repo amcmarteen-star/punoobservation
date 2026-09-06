@@ -52,11 +52,27 @@ def login():
         password = request.form.get('password', '')
 
         user = User.query.filter_by(username=username).first()
+
+        # A deactivated account keeps every record it is attached to but
+        # can no longer sign in. Checked after the password so a wrong
+        # password on a deactivated account does not reveal that the
+        # account exists.
+        if user and user.check_password(password) and not user.is_active:
+            log_login(username, False)
+            return render_template(
+                'Log_in.html',
+                error="That account has been deactivated. "
+                      "Contact a system administrator."
+            )
+
         if user and user.check_password(password):
             session['user_id'] = user.user_id
             session['username'] = user.username
             session['role'] = user.role
             session['cenro'] = user.cenro
+            # read once at login; the before_request hook checks the
+            # session rather than hitting the database on every request
+            session['must_change_password'] = user.must_change_password
             log_login(user.username, True, user.role, user.user_id)             
             return redirect(url_for('dashboard.index'))
         else:

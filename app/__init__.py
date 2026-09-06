@@ -1,5 +1,7 @@
 import click
-from flask import Flask
+from flask import (
+    Flask, session, request, flash, redirect, url_for,
+)
 from app.config import Config
 from app.extensions import db
 from flask_migrate import Migrate
@@ -25,6 +27,20 @@ def create_app():
 
     with app.app_context():
         from app import models
+
+    @app.before_request
+    def _enforce_password_change():
+        # A temporary password that is never changed is a permanent one.
+        # Everything is blocked except the account page itself, logout,
+        # and static files - otherwise the user cannot reach the form
+        # that clears the flag.
+        if not session.get('must_change_password'):
+            return
+        allowed = {'dashboard.my_account', 'auth.logout', 'static'}
+        if request.endpoint in allowed:
+            return
+        flash("Set your own password before continuing.", "warning")
+        return redirect(url_for('dashboard.my_account'))
 
     # CLI Command to create privileged users
     @app.cli.command("create-user")

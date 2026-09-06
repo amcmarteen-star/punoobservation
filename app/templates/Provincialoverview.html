@@ -1,0 +1,559 @@
+{% extends "Base.html" %}
+{% block title %}Provincial Overview - PuNoObservation{% endblock %}
+{% block content_class %}page-content-wide{% endblock %}
+
+{#
+  PENRO oversight. Read-only.
+
+  Approved work from every CENRO in one place. The province observes;
+  the CENRO that approved something keeps that decision. There is
+  deliberately no approve, reject or edit control on this page, and
+  boundary publication has its own page.
+#}
+
+{% block extra_head %}
+<style>
+  /* ---------- headline cards ---------- */
+  .po-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+    gap: 0.75rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .po-card {
+    background: #ffffff;
+    border: 1px solid #e2eae5;
+    border-radius: 10px;
+    padding: 0.9rem 1.1rem;
+  }
+
+  .po-card .po-label {
+    display: block;
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    color: #5f6f66;
+  }
+
+  .po-card .po-value {
+    display: block;
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: #12211a;
+    margin-top: 2px;
+    line-height: 1.2;
+  }
+
+  .po-card .po-note {
+    display: block;
+    font-size: 0.75rem;
+    color: #6b7a72;
+    margin-top: 2px;
+  }
+
+  .po-card.accent {
+    background: #16a34a;
+    border-color: #16a34a;
+  }
+
+  .po-card.accent .po-label,
+  .po-card.accent .po-note {
+    color: #dcfce7;
+  }
+
+  .po-card.accent .po-value {
+    color: #ffffff;
+  }
+
+  .po-card.warn {
+    background: #fffbeb;
+    border-color: #fde68a;
+  }
+
+  .po-card.warn .po-value {
+    color: #92400e;
+  }
+
+  /* ---------- survival against the DENR threshold ---------- */
+  .po-pass {
+    color: #15803d;
+    font-weight: 700;
+  }
+
+  .po-fail {
+    color: #b91c1c;
+    font-weight: 700;
+  }
+
+  .po-none {
+    color: #8d9c94;
+  }
+
+  /* ---------- small pills ---------- */
+  .po-pill {
+    display: inline-block;
+    padding: 3px 8px;
+    border-radius: 999px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  .po-pill-cenro {
+    background: #eef4f0;
+    color: #2f4239;
+  }
+
+  .po-pill-published {
+    background: #dcfce7;
+    color: #15803d;
+  }
+
+  .po-pill-queued {
+    background: #fef3c7;
+    color: #92400e;
+  }
+
+  .po-pill-nogeom {
+    background: #f1f5f9;
+    color: #64748b;
+  }
+
+  /* ---------- section spacing ---------- */
+  .po-section {
+    margin-top: 1.75rem;
+  }
+
+  .po-readonly {
+    display: flex;
+    gap: 0.6rem;
+    align-items: flex-start;
+    background: #f7faf8;
+    border: 1px solid #e2eae5;
+    border-left: 3px solid #16a34a;
+    border-radius: 0 8px 8px 0;
+    padding: 0.7rem 0.95rem;
+    font-size: 0.82rem;
+    line-height: 1.6;
+    color: #2f4239;
+    margin-bottom: 1.25rem;
+  }
+
+  .po-readonly svg {
+    width: 1rem;
+    height: 1rem;
+    flex-shrink: 0;
+    margin-top: 0.2rem;
+    color: #16a34a;
+  }
+
+  .po-truncated {
+    font-size: 0.78rem;
+    color: #6b7a72;
+    padding: 0.6rem 0.9rem 0;
+    margin: 0;
+  }
+
+  .po-sub {
+    display: block;
+    font-size: 0.78rem;
+    color: #6b7a72;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="um-header">
+  <div>
+    <div class="um-title-row">
+      <h2>Provincial Overview</h2>
+      <span class="um-count-pill">{{ headline.cenros }} CENRO</span>
+    </div>
+    <p class="um-subtitle">
+      Approved reforestation requests and approved monitoring reports across
+      every CENRO in Pangasinan.
+    </p>
+  </div>
+</div>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    {% for category, message in messages %}
+      <div class="um-alert um-alert-{{ category }}">{{ message }}</div>
+    {% endfor %}
+  {% endif %}
+{% endwith %}
+
+<div class="po-readonly">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"/><circle cx="12" cy="12" r="3"/></svg>
+  <div>
+    <strong>This page is read-only.</strong>
+    It shows decisions the CENRO offices have already made. Approving,
+    rejecting and editing stay with the CENRO that owns the record, and
+    boundary publication has its own page.
+  </div>
+</div>
+
+<!-- ============ HEADLINE ============ -->
+<div class="po-cards">
+  <div class="po-card accent">
+    <span class="po-label">Approved reports</span>
+    <span class="po-value">{{ headline.approved_reports }}</span>
+    <span class="po-note">province-wide</span>
+  </div>
+
+  <div class="po-card">
+    <span class="po-label">Approved requests</span>
+    <span class="po-value">{{ headline.approved_requests }}</span>
+    <span class="po-note">province-wide</span>
+  </div>
+
+  <div class="po-card">
+    <span class="po-label">Mean survival</span>
+    <span class="po-value">
+      {% if headline.mean_survival is not none %}
+        <span class="{% if headline.mean_survival >= threshold %}po-pass{% else %}po-fail{% endif %}">
+          {{ headline.mean_survival }}%
+        </span>
+      {% else %}
+        <span class="po-none">&mdash;</span>
+      {% endif %}
+    </span>
+    <span class="po-note">
+      {% if headline.survival_n %}
+        from {{ headline.survival_n }} report(s)
+      {% else %}
+        no survival figures yet
+      {% endif %}
+    </span>
+  </div>
+
+  <div class="po-card {% if headline.below_threshold %}warn{% endif %}">
+    <span class="po-label">Below {{ threshold | int }}%</span>
+    <span class="po-value">{{ headline.below_threshold }}</span>
+    <span class="po-note">DENR reference threshold</span>
+  </div>
+
+  <div class="po-card">
+    <span class="po-label">Published boundaries</span>
+    <span class="po-value">{{ headline.published_boundaries }}</span>
+    <span class="po-note">live on the public map</span>
+  </div>
+</div>
+
+<!-- ============ PER-CENRO SUMMARY ============ -->
+<div class="po-section">
+  <div class="um-header">
+    <div>
+      <div class="um-title-row">
+        <h2>By CENRO</h2>
+      </div>
+      <p class="um-subtitle">
+        Every CENRO is listed, including offices with no approved work yet.
+      </p>
+    </div>
+  </div>
+
+  <div class="um-table-card">
+    <table class="um-table">
+      <thead>
+        <tr>
+          <th>CENRO</th>
+          <th class="text-end">Municipalities</th>
+          <th class="text-end">Approved reports</th>
+          <th class="text-end">Approved requests</th>
+          <th class="text-end">Mean survival</th>
+          <th class="text-end">Below {{ threshold | int }}%</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for c in cenro_summary %}
+        <tr>
+          <td>
+            <div class="sites-name-cell">{{ c.cenro }}</div>
+          </td>
+          <td class="num-cell">
+            {% if c.municipalities %}
+              {{ c.municipalities }}
+            {% else %}
+              <span class="po-none">&mdash;</span>
+            {% endif %}
+          </td>
+          <td class="num-cell">{{ c.reports }}</td>
+          <td class="num-cell">{{ c.requests }}</td>
+          <td class="num-cell">
+            {% if c.mean_survival is not none %}
+              <span class="{% if c.mean_survival >= threshold %}po-pass{% else %}po-fail{% endif %}">
+                {{ c.mean_survival }}%
+              </span>
+            {% else %}
+              <span class="po-none">no data</span>
+            {% endif %}
+          </td>
+          <td class="num-cell">
+            {% if c.below_threshold %}
+              <span class="po-fail">{{ c.below_threshold }}</span>
+            {% else %}
+              {{ c.below_threshold }}
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ============ APPROVED MONITORING REPORTS ============ -->
+<div class="po-section">
+  <div class="um-header">
+    <div>
+      <div class="um-title-row">
+        <h2>Approved Monitoring Reports</h2>
+        <span class="um-count-pill">{{ report_total }}</span>
+      </div>
+      <p class="um-subtitle">
+        Newest decision first. Survival is shown against the DENR
+        {{ threshold | int }}% reference threshold.
+      </p>
+    </div>
+  </div>
+
+  <div class="um-table-card">
+    {% if report_rows %}
+    <div class="um-scroll-wrap" id="po-reports-scroll">
+      <table class="um-table um-scroll-table">
+        <thead>
+          <tr>
+            <th>Site</th>
+            <th>Barangay</th>
+            <th>Municipality</th>
+            <th>CENRO</th>
+            <th>Monitored</th>
+            <th class="text-end">Survival</th>
+            <th>Approved by</th>
+            <th>Boundary</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in report_rows %}
+          {% set r = row.report %}
+          <tr>
+            <td>
+              <div class="sites-name-cell">{{ row.site_name or '—' }}</div>
+              {% if r.site and r.site.site_code %}
+                <span class="po-sub">{{ r.site.site_code }}</span>
+              {% endif %}
+            </td>
+            <td>{{ row.barangay or '—' }}</td>
+            <td>{{ row.municipality or '—' }}</td>
+            <td><span class="po-pill po-pill-cenro">{{ row.cenro }}</span></td>
+            <td>{{ r.monitoring_date.strftime('%Y-%m-%d') if r.monitoring_date else '—' }}</td>
+            <td class="num-cell">
+              {% if r.survival_rate is not none %}
+                <span class="{% if r.survival_rate >= threshold %}po-pass{% else %}po-fail{% endif %}">
+                  {{ r.survival_rate }}%
+                </span>
+              {% else %}
+                <span class="po-none">&mdash;</span>
+              {% endif %}
+            </td>
+            <td>
+              {{ r.reviewer.username if r.reviewer else 'unrecorded' }}
+              <span class="po-sub">
+                {{ r.date_reviewed.strftime('%Y-%m-%d') if r.date_reviewed else 'date not recorded' }}
+              </span>
+            </td>
+            <td>
+              {% if row.boundary_published %}
+                <span class="po-pill po-pill-published">Published</span>
+              {% elif row.has_boundary %}
+                <span class="po-pill po-pill-queued">Not published</span>
+              {% else %}
+                <span class="po-pill po-pill-nogeom">No boundary</span>
+              {% endif %}
+            </td>
+            <td>
+              <a href="{{ url_for('admin.review_report_detail', report_id=r.report_id) }}"
+                 class="um-btn-row">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"/><circle cx="12" cy="12" r="3"/></svg>
+                View
+              </a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    {% if report_total > row_limit %}
+      <p class="po-truncated">
+        Showing the {{ row_limit }} most recently approved of
+        {{ report_total }}. The figures above count all {{ report_total }}.
+      </p>
+    {% endif %}
+
+    <div class="um-scroll-controls">
+      <button type="button" class="um-scroll-btn" id="po-reports-scroll-left"
+              onclick="poScroll('po-reports-scroll', -1)"
+              aria-label="Scroll table left">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+      </button>
+      <span class="um-scroll-hint">Scroll to see more columns</span>
+      <button type="button" class="um-scroll-btn" id="po-reports-scroll-right"
+              onclick="poScroll('po-reports-scroll', 1)"
+              aria-label="Scroll table right">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+      </button>
+    </div>
+
+    {% else %}
+    <div class="um-empty">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="m9 14 2 2 4-4"/></svg>
+      <strong>No approved monitoring reports yet</strong>
+      <p>
+        A report reaches this page in two steps. A field officer submits it
+        from Monitoring Report, then a CENRO administrator approves it on
+        Review Reports. Reports still marked Pending or Rejected do not
+        appear here.
+      </p>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- ============ APPROVED REQUESTS ============ -->
+<div class="po-section">
+  <div class="um-header">
+    <div>
+      <div class="um-title-row">
+        <h2>Approved Requests</h2>
+        <span class="um-count-pill">{{ request_total }}</span>
+      </div>
+      <p class="um-subtitle">
+        Reforestation site requests a CENRO has approved. Newest decision
+        first.
+      </p>
+    </div>
+  </div>
+
+  <div class="um-table-card">
+    {% if request_rows %}
+    <div class="um-scroll-wrap" id="po-requests-scroll">
+      <table class="um-table um-scroll-table">
+        <thead>
+          <tr>
+            <th>Requester</th>
+            <th>Barangay</th>
+            <th>Municipality</th>
+            <th>CENRO</th>
+            <th>Type</th>
+            <th class="text-end">Proposed area</th>
+            <th>Approved by</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in request_rows %}
+          {% set q = row.request %}
+          <tr>
+            <td>
+              <div class="sites-name-cell">
+                {{ q.requester.username if q.requester else 'unknown' }}
+              </div>
+              {% if q.contact_number %}
+                <span class="po-sub">{{ q.contact_number }}</span>
+              {% endif %}
+            </td>
+            <td>{{ row.barangay or '—' }}</td>
+            <td>{{ row.municipality or '—' }}</td>
+            <td><span class="po-pill po-pill-cenro">{{ row.cenro }}</span></td>
+            <td>{{ q.request_type or '—' }}</td>
+            <td class="num-cell">
+              {% if q.proposed_area_ha is not none %}
+                {{ q.proposed_area_ha }} ha
+              {% else %}
+                <span class="po-none">&mdash;</span>
+              {% endif %}
+            </td>
+            <td>
+              {{ q.reviewer.username if q.reviewer else 'unrecorded' }}
+              <span class="po-sub">
+                {{ q.date_reviewed.strftime('%Y-%m-%d') if q.date_reviewed else 'date not recorded' }}
+              </span>
+            </td>
+            <td>
+              <a href="{{ url_for('admin.review_request_detail', request_id=q.request_id) }}"
+                 class="um-btn-row">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"/><circle cx="12" cy="12" r="3"/></svg>
+                View
+              </a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    {% if request_total > row_limit %}
+      <p class="po-truncated">
+        Showing the {{ row_limit }} most recently approved of
+        {{ request_total }}. The figures above count all {{ request_total }}.
+      </p>
+    {% endif %}
+
+    <div class="um-scroll-controls">
+      <button type="button" class="um-scroll-btn" id="po-requests-scroll-left"
+              onclick="poScroll('po-requests-scroll', -1)"
+              aria-label="Scroll table left">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+      </button>
+      <span class="um-scroll-hint">Scroll to see more columns</span>
+      <button type="button" class="um-scroll-btn" id="po-requests-scroll-right"
+              onclick="poScroll('po-requests-scroll', 1)"
+              aria-label="Scroll table right">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+      </button>
+    </div>
+
+    {% else %}
+    <div class="um-empty">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/></svg>
+      <strong>No approved requests yet</strong>
+      <p>
+        A request reaches this page in two steps. A resident or organisation
+        submits it from Request Reforestation Site, then a CENRO
+        administrator approves it on Review Requests. Requests still marked
+        Submitted, Under Review or Rejected do not appear here.
+      </p>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<script>
+  function poScroll(id, direction) {
+    const el = document.getElementById(id);
+    if (el) el.scrollBy({ left: direction * 320, behavior: "smooth" });
+  }
+
+  ["po-reports-scroll", "po-requests-scroll"].forEach(function (id) {
+    const el = document.getElementById(id);
+    const left = document.getElementById(id + "-left");
+    const right = document.getElementById(id + "-right");
+    if (!el || !left || !right) return;
+
+    function updateButtons() {
+      left.disabled = el.scrollLeft <= 4;
+      right.disabled = el.scrollLeft >= el.scrollWidth - el.clientWidth - 4;
+    }
+    el.addEventListener("scroll", updateButtons);
+    window.addEventListener("resize", updateButtons);
+    updateButtons();
+  });
+</script>
+
+{% endblock %}

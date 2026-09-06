@@ -1,0 +1,285 @@
+{% extends "Base.html" %}
+{% block title %}My Account - PuNoObservation{% endblock %}
+{% set active_page = 'account' %}
+
+{#
+  The account holder's own page.
+
+  The password form asks for the CURRENT password on purpose. Without it
+  anyone at an unlocked machine could set a new one and lock the owner
+  out of their own account.
+
+  No password value is ever rendered here, only whether one has been
+  changed and when.
+#}
+
+{% block extra_head %}
+<style>
+  .acct-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 0.9rem;
+  }
+
+  .acct-fact .lbl {
+    display: block;
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    color: #5f6f66;
+  }
+
+  .acct-fact .val {
+    display: block;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #12211a;
+    margin-top: 2px;
+    word-break: break-word;
+  }
+
+  .acct-fact .val.muted {
+    font-weight: 500;
+    color: #6b7a72;
+  }
+
+  .acct-form {
+    max-width: 26rem;
+  }
+
+  .acct-hint {
+    font-size: 0.78rem;
+    color: #6b7a72;
+    margin: 0.35rem 0 0;
+  }
+
+  .acct-activity {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+  }
+
+  .acct-activity th,
+  .acct-activity td {
+    padding: 0.55rem 0.6rem;
+    border-bottom: 1px solid #eef4f0;
+    text-align: left;
+    vertical-align: top;
+  }
+
+  .acct-activity th {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    color: #41544a;
+    font-weight: 600;
+  }
+
+  .acct-activity tbody tr:last-child td {
+    border-bottom: none;
+  }
+
+  .acct-when {
+    white-space: nowrap;
+    color: #5f6f66;
+  }
+
+  .acct-action {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: #eef4f0;
+    color: #2f4239;
+    font-size: 0.72rem;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="um-header">
+  <div>
+    <div class="um-title-row">
+      <h2>My Account</h2>
+    </div>
+    <p class="um-subtitle">
+      Your account details, your password, and what you have done recently.
+    </p>
+  </div>
+</div>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    {% for category, message in messages %}
+      <div class="um-alert um-alert-{{ category }}">{{ message }}</div>
+    {% endfor %}
+  {% endif %}
+{% endwith %}
+
+{% if must_change %}
+<div class="alert alert-warning">
+  <strong>Set your own password.</strong>
+  This account was created with a temporary password. Choose your own
+  before using the system.
+</div>
+{% endif %}
+
+<!-- ============ ACCOUNT DETAILS ============ -->
+<div class="um-panel">
+  <div class="um-panel-head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+    <h3>Account details</h3>
+  </div>
+
+  <div class="acct-grid">
+    <div class="acct-fact">
+      <span class="lbl">Username</span>
+      <span class="val">{{ user.username }}</span>
+    </div>
+
+    <div class="acct-fact">
+      <span class="lbl">Email</span>
+      <span class="val">{{ user.email_address }}</span>
+    </div>
+
+    <div class="acct-fact">
+      <span class="lbl">Role</span>
+      <span class="val">
+        {% if user.role == 'superadmin' %}System Administrator
+        {% elif user.role == 'admin' and user.cenro %}CENRO Administrator
+        {% elif user.role == 'admin' %}Provincial Administrator
+        {% elif user.role == 'field_officer' %}Field Officer
+        {% else %}Normal User{% endif %}
+      </span>
+    </div>
+
+    <div class="acct-fact">
+      <span class="lbl">Jurisdiction</span>
+      <span class="val">
+        {% if user.cenro %}CENRO {{ user.cenro }}
+        {% elif user.role == 'admin' %}PENRO &mdash; Province-wide
+        {% else %}&mdash;{% endif %}
+      </span>
+    </div>
+
+    <div class="acct-fact">
+      <span class="lbl">Last password change</span>
+      {% if user.password_changed_at %}
+      <span class="val">
+        {{ user.password_changed_at.strftime('%d %b %Y, %I:%M %p') }}
+      </span>
+      {% else %}
+      <span class="val muted">
+        Never &mdash; still using the password set by an administrator.
+      </span>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<!-- ============ CHANGE PASSWORD ============ -->
+<div class="um-panel">
+  <div class="um-panel-head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+    <h3>Change password</h3>
+  </div>
+
+  <form method="POST" action="{{ url_for('dashboard.my_account') }}"
+        class="acct-form" autocomplete="off">
+    <div class="um-field">
+      <label for="current_password">Current password</label>
+      <input
+        type="password"
+        name="current_password"
+        id="current_password"
+        autocomplete="current-password"
+        required
+      />
+      <p class="acct-hint">
+        Asked for so that nobody at an unlocked machine can change your
+        password.
+      </p>
+    </div>
+
+    <div class="um-field">
+      <label for="new_password">New password</label>
+      <input
+        type="password"
+        name="new_password"
+        id="new_password"
+        minlength="8"
+        autocomplete="new-password"
+        required
+      />
+      <p class="acct-hint">At least 8 characters.</p>
+    </div>
+
+    <div class="um-field">
+      <label for="confirm_password">Confirm new password</label>
+      <input
+        type="password"
+        name="confirm_password"
+        id="confirm_password"
+        minlength="8"
+        autocomplete="new-password"
+        required
+      />
+    </div>
+
+    <button type="submit" class="um-btn-add mt-3">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+      Change password
+    </button>
+  </form>
+</div>
+
+<!-- ============ RECENT ACTIVITY ============ -->
+<div class="um-panel">
+  <div class="um-panel-head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+    <h3>Recent activity</h3>
+    {% if recent_activity %}
+    <span class="um-count-pill">{{ recent_activity|length }}</span>
+    {% endif %}
+  </div>
+
+  {% if recent_activity %}
+  <table class="acct-activity">
+    <thead>
+      <tr>
+        <th style="width: 170px;">When</th>
+        <th style="width: 170px;">Action</th>
+        <th>Detail</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for entry in recent_activity %}
+      <tr>
+        <td class="acct-when">
+          {{ entry.created_at.strftime('%d %b %Y, %I:%M %p') if entry.created_at else '&mdash;' }}
+        </td>
+        <td>
+          <span class="acct-action">
+            {{ entry.action|replace('_', ' ') }}
+          </span>
+        </td>
+        <td>{{ entry.detail or '&mdash;' }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div class="um-empty">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+    <strong>Nothing recorded yet</strong>
+    <p>
+      Signing in, submitting reports and reviewing work all appear here as
+      you use the system.
+    </p>
+  </div>
+  {% endif %}
+</div>
+
+{% endblock %}

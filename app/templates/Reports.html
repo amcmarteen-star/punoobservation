@@ -114,7 +114,7 @@ endblock %} {% set active_page = 'reports' %} {% block content %}
       per plot below. <br /><br />
       DENR uses a <strong>5% sampling intensity</strong>, meaning the plots
       together cover 5% of the site area. With 400 m&sup2; plots on a 25 ha site
-      that is about 31 plots. The calculation below tells you the intensity you
+      that is 32 plots. The calculation below tells you the intensity you
       have reached as you type. <br /><br />
       You do not type the survival rate. It is calculated from your counts.
     </div>
@@ -145,7 +145,10 @@ endblock %} {% set active_page = 'reports' %} {% block content %}
           value="400"
           required
         />
-        <p class="um-field-hint">400 m&sup2; is a 20 m &times; 20 m plot.</p>
+        <p class="um-field-hint" id="plotHint">
+          400 m&sup2; is a 20 m &times; 20 m plot. Choose a site to see how many
+          plots reach 5% intensity.
+        </p>
       </div>
     </div>
 
@@ -385,6 +388,7 @@ endblock %} {% set active_page = 'reports' %} {% block content %}
   function hideFacts() {
     currentSite = null;
     document.getElementById("siteFacts").classList.remove("show");
+    updatePlotHint();
   }
 
   function showFacts(s) {
@@ -401,6 +405,34 @@ endblock %} {% set active_page = 'reports' %} {% block content %}
       ? s.boundary_area_ha + " ha"
       : "not captured";
     document.getElementById("siteFacts").classList.add("show");
+    updatePlotHint();
+  }
+
+  // The officer chooses the plot size before going out and lays out that
+  // same square at every sampling point. Telling them the plot count up
+  // front turns the 5% rule into an instruction rather than a warning
+  // they receive after the field work.
+  function updatePlotHint() {
+    const hint = document.getElementById('plotHint');
+    if (!hint) return;
+
+    const size = parseFloat(document.getElementById('plot_size_sqm').value);
+
+    if (!currentSite || !size || size <= 0) {
+      hint.textContent =
+        '400 m\u00B2 is a 20 m \u00D7 20 m plot. Choose a site to see how many ' +
+        'plots reach 5% intensity.';
+      return;
+    }
+
+    const area = currentSite.area_size_ha;
+    const needed = Math.ceil((area * 0.05) / (size / 10000));
+    const side = Math.round(Math.sqrt(size));
+
+    hint.textContent =
+      `${size} m\u00B2 plots (about ${side} m \u00D7 ${side} m). ` +
+      `On ${area} ha, roughly ${needed} plots reach the 5% DENR ` +
+      `sampling intensity.`;
   }
 
   // ---------- plot rows ----------
@@ -440,7 +472,10 @@ endblock %} {% set active_page = 'reports' %} {% block content %}
   // ---------- live calculation ----------
   let calcTimer = null;
 
-  document.getElementById("plot_size_sqm").addEventListener("input", recalc);
+  document.getElementById("plot_size_sqm").addEventListener("input", () => {
+    recalc();
+    updatePlotHint();
+  });
 
   function recalc() {
     clearTimeout(calcTimer);
