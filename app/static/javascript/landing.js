@@ -289,11 +289,120 @@
         restart();
     }
 
+    /* ---------- Hero map ----------
+       Each municipality in the two surveyed districts is its own path.
+       Pointing at one asks /api/municipality/<name> - a public route, so
+       the landing page needs no session - for its site count.
+
+       The map is fully readable without any of this; the tip is an extra. */
+    function initMapHover() {
+        var figure = document.querySelector(".landing-hero-map");
+        var tip = document.getElementById("mapTip");
+        if (!figure || !tip) return;
+
+        var name = tip.querySelector(".map-tip-name");
+        var stats = tip.querySelector(".map-tip-stats");
+        var cache = {};
+        var active = null;
+
+        /* Site count only. The API's tree_total is the CONTRACTED target, not
+           what survived or was even planted, so showing it beside a site count
+           read as an achievement it is not. */
+        function describe(data) {
+            if (!data || !data.found) return "No recorded sites";
+            var sites = data.site_count || 0;
+            if (!sites) return "No recorded sites";
+            return sites + " " + (sites === 1 ? "site" : "sites");
+        }
+
+        function place(path) {
+            var box = path.getBoundingClientRect();
+            var frame = figure.getBoundingClientRect();
+            var x = box.left + box.width / 2 - frame.left;
+            var y = box.top - frame.top;
+
+            /* Near the top of the map there is no room above the shape, so
+               the tip flips underneath it rather than escaping the figure. */
+            var below = y < tip.offsetHeight + 12;
+            tip.classList.toggle("is-below", below);
+            tip.style.top = (below ? box.bottom - frame.top + 8 : y - 8) + "px";
+            tip.style.left = Math.max(
+                tip.offsetWidth / 2,
+                Math.min(x, frame.width - tip.offsetWidth / 2)
+            ) + "px";
+        }
+
+        function show(path) {
+            var muni = path.getAttribute("data-municipality");
+            if (!muni) return;
+            active = muni;
+
+            name.textContent = muni;
+            stats.textContent = cache[muni] ? describe(cache[muni]) : "Loading…";
+            tip.hidden = false;
+            place(path);
+
+            if (cache[muni]) return;
+
+            /* Two spellings are in play. GADM writes "UrdanetaCity", the DENR
+               spreadsheet writes "Urdaneta City", and scripts/fixnames.py
+               rewrites the database from the first to the second. A checkout
+               that has not run it still holds the run-together form, and
+               /api/municipality matches case-insensitively but not
+               space-insensitively - so ask for both rather than reporting no
+               sites on a database that has them. */
+            var candidates = [muni];
+            var squashed = muni.replace(/\s+/g, "");
+            if (squashed !== muni) candidates.push(squashed);
+
+            (function attempt(i) {
+                if (i >= candidates.length) {
+                    cache[muni] = null;
+                    if (active === muni) { stats.textContent = describe(null); }
+                    return;
+                }
+                fetch("/api/municipality/" + encodeURIComponent(candidates[i]))
+                    .then(function (r) { return r.ok ? r.json() : null; })
+                    .catch(function () { return null; })
+                    .then(function (data) {
+                        if (!data || !data.found) return attempt(i + 1);
+                        cache[muni] = data;
+                        /* The pointer may have moved on while this was in
+                           flight - only the shape still under it may write. */
+                        if (active !== muni) return;
+                        stats.textContent = describe(data);
+                        place(path);
+                    });
+            })(0);
+        }
+
+        function hide() {
+            active = null;
+            tip.hidden = true;
+        }
+
+        figure.addEventListener("mouseover", function (e) {
+            var path = e.target.closest(".map-muni");
+            if (path) show(path);
+        });
+        figure.addEventListener("mouseout", function (e) {
+            var path = e.target.closest(".map-muni");
+            if (path && !path.contains(e.relatedTarget)) hide();
+        });
+        figure.addEventListener("focusin", function (e) {
+            var path = e.target.closest(".map-muni");
+            if (path) show(path);
+        });
+        figure.addEventListener("focusout", hide);
+        window.addEventListener("blur", hide);
+    }
+
     function init() {
         initNav();
         initReveals();
         initMarquee();
         initPlates();
+        initMapHover();
     }
 
     if (document.readyState === "loading") {

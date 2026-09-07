@@ -300,14 +300,19 @@
 }
 
 /* Two scrims: one across so the copy column stays readable, one down so the
-   section below meets the photograph instead of cutting against it. */
+   section below meets the photograph instead of cutting against it.
+
+   Weighted for a bright photograph. The previous hero was a dark conifer
+   stand that carried the white type on its own; this one has a pale sky and
+   lit foliage, so the right-hand stops - where the district map sits - are
+   deepened enough for the outline and the legend to hold their contrast. */
 .landing-hero-scrim {
     position: absolute;
     inset: 0;
     z-index: -1;
     background:
-        linear-gradient(100deg, rgba(6, 20, 13, 0.88) 4%, rgba(6, 20, 13, 0.68) 36%, rgba(6, 20, 13, 0.22) 72%, rgba(6, 20, 13, 0.42) 100%),
-        linear-gradient(to bottom, rgba(6, 20, 13, 0.45) 0%, transparent 26%, transparent 60%, rgba(6, 20, 13, 0.6) 100%);
+        linear-gradient(100deg, rgba(6, 20, 13, 0.9) 4%, rgba(6, 20, 13, 0.74) 36%, rgba(6, 20, 13, 0.4) 72%, rgba(6, 20, 13, 0.52) 100%),
+        linear-gradient(to bottom, rgba(6, 20, 13, 0.5) 0%, rgba(6, 20, 13, 0.12) 26%, rgba(6, 20, 13, 0.12) 60%, rgba(6, 20, 13, 0.62) 100%);
 }
 
 /* Copy on the left, the province on the right. */
@@ -352,9 +357,12 @@
     stroke-width: 1.2;
 }
 
+/* Sits to the right, under the filled districts it labels, rather than out
+   under the empty western half of the province. */
 .landing-hero-map figcaption {
     display: flex;
     flex-wrap: wrap;
+    justify-content: flex-end;
     gap: var(--sp-2);
     margin-top: var(--sp-3);
     font-family: "JetBrains Mono", monospace;
@@ -372,6 +380,64 @@
 }
 .map-key-5::before { background: rgba(190, 242, 100, 0.88); }
 .map-key-6::before { background: rgba(190, 242, 100, 0.36); box-shadow: inset 0 0 0 1px rgba(190, 242, 100, 0.85); }
+
+/* ---------- Municipality hover ----------
+   Each municipality is now its own path so it can be pointed at. Fill and
+   stroke still come from .map-d5 / .map-d6 above, so the districts look
+   exactly as they did when each was one merged shape - only now the strokes
+   fall between the towns as well, which is what makes them legible. */
+.map-muni {
+    cursor: pointer;
+    transition: fill 0.18s var(--ease), filter 0.18s var(--ease);
+}
+
+.map-muni:hover,
+.map-muni:focus-visible {
+    fill: #eaffc2;
+    filter: drop-shadow(0 0 6px rgba(190, 242, 100, 0.65));
+    outline: none;
+}
+
+/* The figure is the positioning context; the tip is placed against it in px
+   by the handler, so it can follow the shape the pointer is actually over. */
+.landing-hero-map { position: relative; }
+
+.map-tip {
+    position: absolute;
+    z-index: 3;
+    min-width: 9.5rem;
+    padding: 0.6rem 0.75rem;
+    border: 1px solid rgba(190, 242, 100, 0.35);
+    border-radius: 10px;
+    background: rgba(6, 20, 13, 0.94);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+    /* Pointer events off so moving onto the tip never counts as leaving the
+       shape underneath, which would flicker it open and shut. */
+    pointer-events: none;
+    transform: translate(-50%, -100%);
+}
+
+/* Flipped under the shape when it sits too near the top of the figure. */
+.map-tip.is-below {
+    transform: translate(-50%, 0);
+}
+
+.map-tip p { margin: 0; }
+
+.map-tip-name {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--bone);
+}
+
+.map-tip-stats {
+    margin-top: 0.15rem;
+    font-family: "JetBrains Mono", monospace;
+    font-size: 0.625rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #bef264;
+}
 .landing-hero h1 {
     margin-bottom: var(--sp-4);
     font-size: clamp(2.5rem, 1.1rem + 4.6vw, 4.75rem);
@@ -993,19 +1059,16 @@
 }
 .landing-footer li a:hover { color: var(--on-lime); text-decoration: underline; }
 
-.landing-footer-academic {
-    margin-top: var(--sp-8);
-    padding-top: var(--sp-4);
-    border-top: 1px solid rgba(8, 23, 15, 0.16);
-    color: rgba(8, 23, 15, 0.78);
-}
-.landing-footer-academic strong { color: var(--on-lime); font-weight: 700; }
+/* The rule that used to sit above the academic note now separates the link
+   columns from the copyright, which is all that is left down here. */
 .landing-footer-bottom {
     display: flex;
     flex-wrap: wrap;
     gap: var(--sp-2) var(--sp-4);
-    justify-content: space-between;
-    margin-top: var(--sp-4);
+    justify-content: center;
+    margin-top: var(--sp-8);
+    padding-top: var(--sp-4);
+    border-top: 1px solid rgba(8, 23, 15, 0.16);
     color: rgba(8, 23, 15, 0.72);
     font-size: var(--fs-sm);
 }

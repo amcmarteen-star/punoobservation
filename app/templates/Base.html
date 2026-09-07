@@ -20,14 +20,42 @@
     <div class="app-shell">
       <!-- SIDEBAR -->
       <aside class="sidebar">
-        <a href="{{ url_for('dashboard.index') }}" class="sidebar-logo">
-          <img
-            src="{{ url_for('static', filename='images/finallogo.png') }}"
-            alt="PuNoObservation Logo"
-            class="logo-icon"
-          />
-          <span class="logo-text">PuNoObservation</span>
-        </a>
+        <div class="sidebar-header">
+          <a href="{{ url_for('dashboard.index') }}" class="sidebar-logo">
+            <img
+              src="{{ url_for('static', filename='images/finallogo.png') }}"
+              alt="PuNoObservation Logo"
+              class="logo-icon"
+            />
+            <span class="logo-text">PuNoObservation</span>
+          </a>
+
+          <!-- One-click version of the drag handle on the right edge. The
+               handle still works; this is here so narrowing the rail does not
+               require aiming at a 6px target. -->
+          <button
+            type="button"
+            class="sidebar-toggle"
+            id="sidebarToggle"
+            aria-label="Collapse sidebar"
+            aria-expanded="true"
+            title="Collapse sidebar"
+          >
+            <svg
+              class="sidebar-toggle-icon"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <rect width="18" height="18" x="3" y="3" rx="2" />
+              <path d="M9 3v18" />
+              <path id="sidebarToggleChevron" d="m16 15-3-3 3-3" />
+            </svg>
+          </button>
+        </div>
 
         <div class="role-pill">
           {% if session.username %}
@@ -239,29 +267,103 @@
           <a
             href="{{ url_for('admin.review_requests') }}"
             class="nav-link {% if active_page == 'review_requests' %}active{% endif %}"
-            >Review Requests</a
           >
+            <svg
+              class="nav-icon"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <polyline points="22 12 16 12 14 15 10 15 8 12 2 12" />
+              <path
+                d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"
+              />
+            </svg>
+            <span class="nav-link-text">Review Requests</span>
+          </a>
           <a
             href="{{ url_for('admin.review_reports') }}"
             class="nav-link {% if active_page == 'review_reports' %}active{% endif %}"
-            >Review Reports</a
           >
+            <svg
+              class="nav-icon"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="m8 11 2 2 4-4" />
+              <circle cx="11" cy="11" r="8" />
+              <path d="m21 21-4.3-4.3" />
+            </svg>
+            <span class="nav-link-text">Review Reports</span>
+          </a>
           <a
             href="{{ url_for('admin.provincial_overview') }}"
             class="nav-link {% if active_page == 'provincial_overview' %}active{% endif %}"
-            >CENRO Overview</a
           >
+            <svg
+              class="nav-icon"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M3 3v16a2 2 0 0 0 2 2h16" />
+              <path d="M18 17V9" />
+              <path d="M13 17V5" />
+              <path d="M8 17v-3" />
+            </svg>
+            <span class="nav-link-text">CENRO Overview</span>
+          </a>
           {% else %}
           <a
             href="{{ url_for('admin.provincial_overview') }}"
             class="nav-link {% if active_page == 'provincial_overview' %}active{% endif %}"
-            >Provincial Overview</a
           >
+            <svg
+              class="nav-icon"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M3 3v16a2 2 0 0 0 2 2h16" />
+              <path d="M18 17V9" />
+              <path d="M13 17V5" />
+              <path d="M8 17v-3" />
+            </svg>
+            <span class="nav-link-text">Provincial Overview</span>
+          </a>
           <a
             href="{{ url_for('admin.publications') }}"
             class="nav-link {% if active_page == 'publications' %}active{% endif %}"
-            >Boundary Publications</a
           >
+            <svg
+              class="nav-icon"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path
+                d="M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.77 4.78 4 4 0 0 1-6.75 0 4 4 0 0 1-4.78-4.77 4 4 0 0 1 0-6.76Z"
+              />
+              <path d="m9 12 2 2 4-4" />
+            </svg>
+            <span class="nav-link-text">Boundary Publications</span>
+          </a>
           {% endif %} {% endif %}
 
           {% if session.role == 'superadmin' %}
@@ -269,18 +371,64 @@
           <a
             href="{{ url_for('admin.user_management') }}"
             class="nav-link {% if active_page == 'users' %}active{% endif %}"
-            >User Management</a
           >
+            <svg
+              class="nav-icon"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+              <circle cx="9" cy="7" r="4" />
+              <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+              <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+            </svg>
+            <span class="nav-link-text">User Management</span>
+          </a>
           <a
             href="{{ url_for('admin.reference_dataset') }}"
             class="nav-link {% if active_page == 'reference' %}active{% endif %}"
-            >Reference Dataset</a
           >
+            <svg
+              class="nav-icon"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <ellipse cx="12" cy="5" rx="9" ry="3" />
+              <path d="M3 5V19A9 3 0 0 0 21 19V5" />
+              <path d="M3 12A9 3 0 0 0 21 12" />
+            </svg>
+            <span class="nav-link-text">Reference Dataset</span>
+          </a>
           <a
             href="{{ url_for('admin.audit_log') }}"
             class="nav-link {% if active_page == 'audit_log' %}active{% endif %}"
-            >Audit Log</a
           >
+            <svg
+              class="nav-icon"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M15 12h-5" />
+              <path d="M15 8h-5" />
+              <path d="M19 17V5a2 2 0 0 0-2-2H4" />
+              <path
+                d="M8 21h12a2 2 0 0 0 2-2v-1a1 1 0 0 0-1-1H11a1 1 0 0 0-1 1v1a2 2 0 1 1-4 0V5a2 2 0 1 0-4 0v2a1 1 0 0 0 1 1h3"
+              />
+            </svg>
+            <span class="nav-link-text">Audit Log</span>
+          </a>
           {% endif %}
         </nav>
 
@@ -415,12 +563,16 @@
       // so it still runs even on pages (like GIS_map) that override extra_scripts
       // with their own script.
 
-      // Drag-to-resize sidebar. Below COLLAPSE_THRESHOLD the nav labels hide
-      // and only icons show (links keep working, they're still real <a> tags) --
-      // replaces the old click-to-hide toggle button.
+      // Sidebar width. Two ways in: drag the right edge, or click the toggle
+      // in the header. Below COLLAPSE_THRESHOLD the nav labels hide and only
+      // icons show (links keep working, they're still real <a> tags).
       (function () {
         const sidebar = document.querySelector(".sidebar");
         const handle = document.getElementById("sidebarResizeHandle");
+        const toggleBtn = document.getElementById("sidebarToggle");
+        const chevron = document.getElementById("sidebarToggleChevron");
+        const CHEVRON_COLLAPSE = "m16 15-3-3 3-3";
+        const CHEVRON_EXPAND = "m14 9 3 3-3 3";
         const MIN_WIDTH = 64;
         const MAX_WIDTH = 320;
         const DEFAULT_WIDTH = 240;
@@ -430,10 +582,28 @@
           const clamped = Math.max(MIN_WIDTH, Math.min(px, MAX_WIDTH));
           sidebar.style.width = clamped + "px";
           sidebar.classList.toggle("collapsed", clamped < COLLAPSE_THRESHOLD);
+          syncToggle();
         }
 
+        // The button points the way it will move the rail, so it has to be
+        // redrawn after a drag too, not only after a click.
+        function syncToggle() {
+          const collapsed = sidebar.classList.contains("collapsed");
+          const label = collapsed ? "Expand sidebar" : "Collapse sidebar";
+          chevron.setAttribute("d", collapsed ? CHEVRON_EXPAND : CHEVRON_COLLAPSE);
+          toggleBtn.setAttribute("aria-expanded", collapsed ? "false" : "true");
+          toggleBtn.setAttribute("aria-label", label);
+          toggleBtn.setAttribute("title", label);
+        }
+
+        // Restoring a saved width is not a user action, so it should not
+        // animate -- .resizing switches the width transition off, and reading
+        // offsetWidth forces the new width to land before it comes back on.
         const saved = parseInt(localStorage.getItem("sidebarWidth"), 10);
+        sidebar.classList.add("resizing");
         applyWidth(saved || DEFAULT_WIDTH);
+        void sidebar.offsetWidth;
+        sidebar.classList.remove("resizing");
 
         let dragging = false;
 
@@ -454,10 +624,33 @@
           dragging = false;
           sidebar.classList.remove("resizing");
           document.body.style.userSelect = "";
-          localStorage.setItem(
-            "sidebarWidth",
-            parseInt(sidebar.style.width, 10),
-          );
+          rememberWidth();
+        });
+
+        // Expanding restores the last width the user actually chose rather
+        // than snapping back to the default, so a deliberately wide or narrow
+        // rail survives a collapse.
+        function rememberWidth() {
+          const px = parseInt(sidebar.style.width, 10);
+          localStorage.setItem("sidebarWidth", px);
+          if (!sidebar.classList.contains("collapsed")) {
+            localStorage.setItem("sidebarExpandedWidth", px);
+          }
+        }
+
+        toggleBtn.addEventListener("click", function () {
+          if (sidebar.classList.contains("collapsed")) {
+            const restore = parseInt(
+              localStorage.getItem("sidebarExpandedWidth"),
+              10,
+            );
+            applyWidth(
+              restore >= COLLAPSE_THRESHOLD ? restore : DEFAULT_WIDTH,
+            );
+          } else {
+            applyWidth(MIN_WIDTH);
+          }
+          rememberWidth();
         });
       })();
 

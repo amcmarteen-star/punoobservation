@@ -112,6 +112,7 @@ html {
 .sidebar {
     width: 240px;
     flex-shrink: 0;
+    transition: width 0.18s ease;
     background-color: #10241a;
     color: #d7e4dc;
     display: flex;
@@ -157,6 +158,73 @@ html {
 .sidebar.collapsed .nav-link,
 .sidebar.collapsed .sign-out {
     justify-content: center;
+}
+
+/* Logo and the collapse button share the top row, which at the default 240px
+   rail is tight -- hence the trimmed gaps and the slightly smaller wordmark
+   below. */
+.sidebar-header {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.5rem 0.15rem 1rem 0.4rem;
+}
+
+/* The logo keeps its own padding when it stands alone, so it is cleared here
+   and owned by the header instead. */
+.sidebar-header .sidebar-logo {
+    flex: 1;
+    min-width: 0;
+    padding: 0;
+    gap: 0.5rem;
+    font-size: 0.95rem;
+    letter-spacing: -0.01em;
+}
+
+.sidebar-header .logo-icon {
+    width: 1.55rem;
+    height: 1.55rem;
+}
+
+/* Without this the wordmark refuses to shrink, shoves the button past the
+   rail's edge, and the sidebar's overflow:hidden clips it out of reach. */
+.sidebar-header .logo-text {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.sidebar-toggle {
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.7rem;
+    height: 1.7rem;
+    padding: 0;
+    border: 0;
+    border-radius: 8px;
+    background-color: transparent;
+    color: #9fb6a9;
+    cursor: pointer;
+    transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.sidebar-toggle:hover {
+    background-color: rgba(255, 255, 255, 0.08);
+    color: #ffffff;
+}
+
+.sidebar-toggle-icon {
+    width: 1.05rem;
+    height: 1.05rem;
+}
+
+/* On the narrow rail there is no room beside the logo mark, so the button
+   drops underneath it and both centre. */
+.sidebar.collapsed .sidebar-header {
+    flex-direction: column;
+    gap: 0.55rem;
 }
 
 .sidebar-logo {
@@ -240,6 +308,30 @@ html {
     flex: 1;
     overflow-y: auto;
     overflow-x: hidden;
+}
+
+/* Group heading above the role-specific links. Set in small caps so it reads
+   as a label for the links under it rather than as another link. */
+.nav-section-title {
+    margin: 1.1rem 0 0.4rem;
+    padding: 0 0.7rem;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #7f9a8b;
+}
+
+/* No room for the label on the narrow rail, so it becomes the divider it was
+   already acting as. Height and margins are kept so the icons above and below
+   stay grouped instead of running together. */
+.sidebar.collapsed .nav-section-title {
+    height: 1px;
+    margin: 0.7rem 0.5rem;
+    padding: 0;
+    overflow: hidden;
+    text-indent: -999em;
+    background-color: rgba(255, 255, 255, 0.1);
 }
 
 .nav-link {
@@ -1815,7 +1907,9 @@ body.login-page :focus-visible {
 }
 
 .um-btn-ghost {
-    display: inline-block;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
     padding: 0.5rem 0.9rem;
     border: 1px solid #e2eae5;
     border-radius: 8px;
@@ -1823,8 +1917,25 @@ body.login-page :focus-visible {
     color: #41544a;
     font-size: 0.875rem;
     font-weight: 600;
+    line-height: 1.2;
+    white-space: nowrap;
     text-decoration: none;
     cursor: pointer;
+}
+
+/* An inline SVG with no width or height falls back to the replaced-element
+   default of 300x150, which is what turned this button into a tile with its
+   label underneath. Matches the icon size .um-btn-add uses. */
+.um-btn-ghost svg {
+    width: 0.95rem;
+    height: 0.95rem;
+    flex-shrink: 0;
+}
+
+/* An author `display` beats the browser's own [hidden] rule, so the two
+   "Clear" buttons that ship with the hidden attribute need it restored. */
+.um-btn-ghost[hidden] {
+    display: none;
 }
 
 .um-btn-ghost:hover {
@@ -3046,6 +3157,16 @@ body.login-page :focus-visible {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 1.25rem;
+}
+
+/* A grid item's automatic minimum size is its content, so a Chart.js canvas
+   that has already been laid out wide refuses to shrink when the rail
+   expands. The column then grows past the row, and .main-area's overflow-x
+   clips whatever spills - which is why only the right-hand card looked cut
+   off. min-width:0 lets the column shrink, and Chart.js resizes the canvas
+   to match. */
+.chart-row > * {
+    min-width: 0;
 }
 
 @media (max-width: 992px) {
