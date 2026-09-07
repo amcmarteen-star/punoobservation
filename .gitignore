@@ -7,3 +7,12 @@ app/static/uploads/monitoring/*
 !app/static/uploads/monitoring/.gitkeep
 app/static/uploads/requests/*
 !app/static/uploads/requests/.gitkeep
+
+# Personal photographs. These belong to one account holder, not to the
+# project, so they stay on the machine that owns them.
+app/static/images/superdanny_avatar.jpg
+app/static/images/395027085_*
+
+# The full-size hero original, kept locally in case a different crop is
+# ever wanted. The page loads hero-palms.jpg, which is committed.
+app/static/images/landing/pexels-*
