@@ -1,16 +1,19 @@
 {% extends "Base.html" %}
 {% block title %}Request #{{ req.request_id }} - PuNoObservation{% endblock %}
 {% set active_page = 'review_requests' %}
+{# The panels run the width of the main area rather than stopping at the
+   1200px column, which left a third of a wide screen empty beside them. #}
+{% block content_class %}page-content-wide{% endblock %}
 
 {% block extra_head %}
 <style>
   .rq-panel {
     background:var(--surface-1); border:1px solid var(--line); border-radius:10px;
-    box-shadow:0 2px 8px rgba(0,0,0,.04);
+    box-shadow:var(--sh-sm);
     padding:1.15rem 1.25rem; margin-bottom:1.25rem;
   }
   .rq-panel h5 {
-    margin:0 0 .9rem; font-weight:700; color:#14532d; font-size:1rem;
+    margin:0 0 .9rem; font-weight:700; color:var(--brand-deep-text); font-size:1rem;
     padding-bottom:.5rem; border-bottom:1px solid var(--line);
   }
 

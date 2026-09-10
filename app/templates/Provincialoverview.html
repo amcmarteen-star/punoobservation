@@ -464,11 +464,21 @@
               {% endif %}
             </td>
             <td>
+              {# Both detail routes turn away anyone whose current_cenro() is
+                 None: review is a CENRO function, and this page is the
+                 province observing outcomes. Superadmins count as None too.
+                 So the link is only offered to someone it will let in --
+                 everyone else gets a dash instead of a button that always
+                 lands back here with a warning. #}
+              {% if session.role != 'superadmin' and session.cenro %}
               <a href="{{ url_for('admin.review_report_detail', report_id=r.report_id) }}"
                  class="um-btn-row">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"/><circle cx="12" cy="12" r="3"/></svg>
                 View
               </a>
+              {% else %}
+              <span class="um-muted">&mdash;</span>
+              {% endif %}
             </td>
           </tr>
           {% endfor %}
@@ -559,11 +569,21 @@
               </span>
             </td>
             <td>
+              {# Both detail routes turn away anyone whose current_cenro() is
+                 None: review is a CENRO function, and this page is the
+                 province observing outcomes. Superadmins count as None too.
+                 So the link is only offered to someone it will let in --
+                 everyone else gets a dash instead of a button that always
+                 lands back here with a warning. #}
+              {% if session.role != 'superadmin' and session.cenro %}
               <a href="{{ url_for('admin.review_request_detail', request_id=q.request_id) }}"
                  class="um-btn-row">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"/><circle cx="12" cy="12" r="3"/></svg>
                 View
               </a>
+              {% else %}
+              <span class="um-muted">&mdash;</span>
+              {% endif %}
             </td>
           </tr>
           {% endfor %}

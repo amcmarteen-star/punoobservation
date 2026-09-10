@@ -654,22 +654,70 @@ html {
     flex-direction: column;
     align-items: flex-end;
     background-color: var(--surface-1);
-    padding: 0.7rem 1.1rem;
+    /* A hairline as well as the shadow: a shadow alone carries nothing on a
+       dark ground, so the chip had no edge there at all. */
+    border: 1px solid var(--line);
+    padding: 0.65rem 1rem;
     border-radius: 10px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    box-shadow: var(--sh-sm);
 }
 
 .clock-time {
-    font-size: 1.25rem;
-    font-weight: 700;
-    color: var(--text-strong);
+    display: flex;
+    align-items: baseline;
+    gap: 0.15rem;
+    /* Every digit the same width, so a ticking clock never nudges what
+       sits beside it. */
     font-variant-numeric: tabular-nums;
+    font-size: 1.5rem;
+    font-weight: 700;
+    line-height: 1.1;
+    letter-spacing: -0.01em;
+    color: var(--text-heading);
+}
+
+/* The seconds change every tick, so they sit a size down and a shade back:
+   the hour and minute are the reading, the seconds only say it is live. */
+.clock-sec {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text-2);
+}
+
+.clock-meridiem {
+    margin-left: 0.2rem;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    color: var(--text-2);
+}
+
+/* The clock is pinned to Manila whatever the machine is set to, so it says
+   which zone it is showing. */
+.clock-zone {
+    padding: 0.05rem 0.3rem;
+    border-radius: 4px;
+    background-color: var(--surface-3);
+    font-size: 0.625rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    color: var(--text-3);
+    cursor: help;
 }
 
 .clock-date {
-    font-size: 0.875rem;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin-top: 0.2rem;
+    font-size: 0.8125rem;
     color: var(--text-2);
-    margin-top: 0.15rem;
+}
+
+@media (max-width: 560px) {
+    .dashboard-clock {
+        align-items: flex-start;
+    }
 }
 
 /* ============================================
@@ -2938,6 +2986,30 @@ body.login-page :focus-visible {
 .um-scroll-wrap {
     overflow-x: auto;
     scroll-behavior: smooth;
+}
+
+/* The same treatment for every table built on this wrapper -- the audit
+   log, my reports, the provincial lists, the review queues. The ceiling is
+   what makes a sticky header possible: the wrapper already sets overflow-x,
+   which quietly makes it a scroll container, but without a height it never
+   scrolls and a sticky header has nothing to stick to. A short table never
+   reaches the ceiling, so nothing about it changes. */
+.um-scroll-wrap {
+    max-height: max(24rem, calc(100vh - 22rem));
+    overflow-y: auto;
+    /* Reserved either way, so filtering the rows cannot shift the columns
+       sideways. */
+    scrollbar-gutter: stable;
+}
+
+.um-scroll-wrap thead th {
+    position: sticky;
+    top: 0;
+    z-index: 3;
+    /* .um-table th already carries an opaque ground; the rule beneath it is
+       redrawn as an inset shadow because a collapsed-border table drops
+       borders on sticky cells. */
+    box-shadow: inset 0 -1px 0 var(--line);
 }
 
 /* A ceiling rather than a fixed height: a short page of rows still ends

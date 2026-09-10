@@ -12,8 +12,15 @@
     </p>
   </div>
   <div id="dashboard-clock" class="dashboard-clock">
-    <span id="clock-time" class="clock-time">--:--:--</span>
-    <span id="clock-date" class="clock-date">Loading date...</span>
+    <span class="clock-time">
+      <span id="clock-hm">--:--</span><span
+        id="clock-sec" class="clock-sec">--</span><span
+        id="clock-meridiem" class="clock-meridiem">--</span>
+    </span>
+    <span class="clock-date">
+      <span id="clock-date">Loading date&hellip;</span>
+      <span class="clock-zone" title="Philippine Standard Time">PHT</span>
+    </span>
   </div>
 </div>
 
@@ -802,27 +809,43 @@
 </script>
 {% block extra_scripts %}
 <script>
+  /* The clock is always Manila time, whatever the machine is set to, so
+     the parts are read out of a formatter pinned to that zone rather than
+     off the local Date. Splitting them lets the hour and minute carry the
+     reading while the seconds tick quietly underneath. */
+  const CLOCK_PARTS = new Intl.DateTimeFormat("en-PH", {
+    timeZone: "Asia/Manila",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: true,
+  });
+
+  const CLOCK_DATE = new Intl.DateTimeFormat("en-PH", {
+    timeZone: "Asia/Manila",
+    weekday: "long",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+
   function updateDashboardClock() {
     const now = new Date();
-
-    const timeStr = now.toLocaleTimeString("en-PH", {
-      timeZone: "Asia/Manila",
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit",
-      hour12: true,
+    const part = {};
+    CLOCK_PARTS.formatToParts(now).forEach(function (p) {
+      part[p.type] = p.value;
     });
 
-    const dateStr = now.toLocaleDateString("en-PH", {
-      timeZone: "Asia/Manila",
-      weekday: "long",
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    });
+    document.getElementById("clock-hm").textContent =
+      part.hour + ":" + part.minute;
+    document.getElementById("clock-sec").textContent = ":" + part.second;
+    document.getElementById("clock-meridiem").textContent =
+      (part.dayPeriod || "").toUpperCase();
 
-    document.getElementById("clock-time").textContent = timeStr;
-    document.getElementById("clock-date").textContent = dateStr;
+    const dateEl = document.getElementById("clock-date");
+    const dateStr = CLOCK_DATE.format(now);
+    /* Only touch the DOM when the day actually turns over. */
+    if (dateEl.textContent !== dateStr) dateEl.textContent = dateStr;
   }
 
   updateDashboardClock();

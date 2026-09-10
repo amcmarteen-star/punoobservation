@@ -1444,6 +1444,22 @@
         }
       }
 
+      /* Districts are made of whole municipalities, so their own polygons
+         say which town sits in which district. That is enough to filter the
+         site markers, which carry a municipality but no district of their
+         own. */
+      function municipalitySet(geojson) {
+        const set = new Set();
+        ((geojson && geojson.features) || []).forEach(function (f) {
+          const name = f.properties && f.properties.NAME_2;
+          if (name) set.add(normalizeName(name));
+        });
+        return set;
+      }
+
+      const district5Munis = municipalitySet(district5Data);
+      const district6Munis = municipalitySet(district6Data);
+
       district5Layer = L.geoJSON(district5Data, {
         style: {
           color: "#FF7800",
@@ -1492,6 +1508,8 @@
       // ==============================================================
 
       let siteLayer = null;
+      let allSiteMarkers = [];
+      let currentDistrict = "all";
 
       function buildTreeIcon(b, zoom) {
         const detailed = zoom >= 12;
@@ -1574,12 +1592,9 @@
             });
           });
 
-          siteLayer = L.layerGroup(markers);
-
-          const toggle = document.getElementById("siteToggle");
-          if (!toggle || toggle.checked) {
-            siteLayer.addTo(map);
-          }
+          allSiteMarkers = markers;
+          siteLayer = L.layerGroup([]);
+          applySiteFilter();
         } catch (err) {
           console.error("Site marker load failed:", err);
         }
@@ -1866,13 +1881,50 @@
         return String(n);
       }
 
-      window.toggleSiteMarkers = function (show) {
+      /* A marker belongs to the district its municipality sits in. */
+      function siteInCurrentDistrict(b) {
+        if (currentDistrict === "all") return true;
+        if (currentDistrict === "none") return false;
+        const set = currentDistrict === "5" ? district5Munis : district6Munis;
+        return set.has(normalizeName(b.municipality));
+      }
+
+      /* The single place that decides which markers are on the map. Both
+         the district radios and the "Show sites" checkbox come through
+         here, so the two can never disagree about what is showing. */
+      function applySiteFilter() {
         if (!siteLayer) return;
-        if (show) {
+
+        const wanted = allSiteMarkers.filter(function (m) {
+          return siteInCurrentDistrict(m._brgyData);
+        });
+
+        siteLayer.clearLayers();
+        wanted.forEach(function (m) {
+          siteLayer.addLayer(m);
+        });
+
+        const toggle = document.getElementById("siteToggle");
+        const show = !toggle || toggle.checked;
+        if (show && !map.hasLayer(siteLayer)) {
           siteLayer.addTo(map);
-        } else {
+        } else if (!show && map.hasLayer(siteLayer)) {
           map.removeLayer(siteLayer);
         }
+
+        /* The count beside the checkbox reports what is actually drawn,
+           not the province-wide total. */
+        const note = document.getElementById("siteCountNote");
+        if (note) {
+          const total = wanted.reduce(function (n, m) {
+            return n + (m._brgyData.site_count || 0);
+          }, 0);
+          note.textContent = "(" + total + ")";
+        }
+      }
+
+      window.toggleSiteMarkers = function () {
+        applySiteFilter();
       };
 
       function showBarangaySites(b) {
@@ -1964,6 +2016,8 @@
       // expose for the district filter radios
       window.filterDistricts = function (value) {
         let targetBounds;
+        currentDistrict = value;
+        applySiteFilter();
 
         if (value === "none") {
           if (map.hasLayer(district5Layer)) map.removeLayer(district5Layer);

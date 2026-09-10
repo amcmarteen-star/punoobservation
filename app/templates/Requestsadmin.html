@@ -27,11 +27,96 @@ active_page = 'review_requests' %} {% block extra_head %}
     color: var(--danger-strong);
   }
 
+  /* One line, whatever the description says. The full text is in the
+     summary below, and in the cell's own title attribute. */
+  .req-desc {
+    max-width: 22rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .req-row {
+    cursor: pointer;
+  }
+
+  .req-toggle-cell {
+    text-align: right;
+  }
+
+  .req-toggle svg {
+    width: 1rem;
+    height: 1rem;
+    color: var(--text-2);
+    transition: transform 180ms var(--ease);
+  }
+
+  .req-row[aria-expanded="true"] .req-toggle svg {
+    transform: rotate(180deg);
+  }
+
+  /* The open row and its summary read as one block. */
+  .req-row[aria-expanded="true"] > td {
+    background-color: var(--surface-2);
+    border-bottom-color: transparent;
+  }
+
+  .req-summary > td {
+    padding: 0;
+    background-color: var(--surface-2);
+  }
+
+  .req-summary-inner {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1.5rem;
+    padding: 0.25rem 1.1rem 1.1rem;
+  }
+
+  .req-summary-block {
+    flex: 1 1 24rem;
+    min-width: 0;
+  }
+
+  .req-summary-block h6 {
+    margin: 0 0 0.25rem;
+    font-size: 0.6875rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-2);
+  }
+
+  .req-summary-block p {
+    margin: 0 0 0.9rem;
+    font-size: 0.875rem;
+    line-height: 1.6;
+    color: var(--text-body);
+    /* The description is free text, so it has to be able to wrap. */
+    white-space: normal;
+    max-width: 70ch;
+  }
+
+  .req-summary-block p:last-child {
+    margin-bottom: 0;
+  }
+
+  .req-summary-label {
+    font-size: 0.6875rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-2);
+  }
+
   .review-form {
     display: flex;
     flex-direction: column;
     gap: 0.35rem;
     min-width: 200px;
+    flex: 0 0 auto;
   }
 
   .review-form select,
@@ -199,7 +284,14 @@ active_page = 'review_requests' %} {% block extra_head %}
       </thead>
       <tbody>
         {% for r in all_requests %}
+        {# The list stays one line per request. Everything long -- the full
+           description, the reviewer's note, and the status form -- moves
+           into the summary row below, which opens on click. #}
         <tr
+          class="req-row"
+          data-request="{{ r.request_id }}"
+          aria-expanded="false"
+          tabindex="0"
           data-search="{{ ((r.requester.username if r.requester else '') ~ ' ' ~ (r.location.barangay if r.location else '') ~ ' ' ~ (r.location.municipality if r.location else '') ~ ' ' ~ (r.description or '') ~ ' ' ~ (r.request_type or ''))|lower|e }}"
         >
           <td class="num-cell">{{ r.request_id }}</td>
@@ -217,7 +309,9 @@ active_page = 'review_requests' %} {% block extra_head %}
           </td>
           <td>{{ r.request_type }}</td>
           <td class="num-cell">{{ r.proposed_area_ha or '—' }}</td>
-          <td>{{ r.description or '—' }}</td>
+          <td class="req-desc" title="{{ r.description or '' }}">
+            {{ r.description or '—' }}
+          </td>
           <td>{{ r.contact_number or '—' }}</td>
           <td>{{ r.date_submitted.strftime('%Y-%m-%d') }}</td>
           <td>
@@ -226,11 +320,6 @@ active_page = 'review_requests' %} {% block extra_head %}
             >
               {{ r.status }}
             </span>
-            {% if r.reviewed_by and r.reviewer %}
-            <div class="req-cell-secondary">by {{ r.reviewer.username }}</div>
-            {% endif %} {% if r.review_note %}
-            <div class="req-cell-secondary fst-italic">{{ r.review_note }}</div>
-            {% endif %}
           </td>
           <td>
             <a
@@ -239,26 +328,49 @@ active_page = 'review_requests' %} {% block extra_head %}
               >View</a
             >
           </td>
-          <td>
-            <form
-              method="POST"
-              action="{{ url_for('admin.review_request', request_id=r.request_id) }}"
-              class="review-form"
-            >
-              <select name="status" required aria-label="Set request status">
-                <option value="">Set status</option>
-                <option value="Under Review">Under Review</option>
-                <option value="Approved">Approved</option>
-                <option value="Rejected">Rejected</option>
-              </select>
-              <input
-                type="text"
-                name="review_note"
-                placeholder="Note (required to reject)"
-                aria-label="Review note"
-              />
-              <button type="submit" class="um-btn-confirm">Save</button>
-            </form>
+          <td class="req-toggle-cell">
+            <span class="req-toggle" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+            </span>
+          </td>
+        </tr>
+
+        <tr class="req-summary" data-summary="{{ r.request_id }}" hidden>
+          <td colspan="11">
+            <div class="req-summary-inner">
+              <div class="req-summary-block">
+                <h6>Description</h6>
+                <p>{{ r.description or 'No description was given.' }}</p>
+
+                {% if r.reviewed_by and r.reviewer %}
+                <h6>Review</h6>
+                <p>
+                  {{ r.status }} by {{ r.reviewer.username }}{% if r.review_note %} &mdash; {{ r.review_note }}{% endif %}
+                </p>
+                {% endif %}
+              </div>
+
+              <form
+                method="POST"
+                action="{{ url_for('admin.review_request', request_id=r.request_id) }}"
+                class="review-form"
+              >
+                <label class="req-summary-label" for="status-{{ r.request_id }}">Set status</label>
+                <select id="status-{{ r.request_id }}" name="status" required>
+                  <option value="">Choose&hellip;</option>
+                  <option value="Under Review">Under Review</option>
+                  <option value="Approved">Approved</option>
+                  <option value="Rejected">Rejected</option>
+                </select>
+                <input
+                  type="text"
+                  name="review_note"
+                  placeholder="Note (required to reject)"
+                  aria-label="Review note"
+                />
+                <button type="submit" class="um-btn-confirm">Save</button>
+              </form>
+            </div>
           </td>
         </tr>
         {% endfor %}
@@ -332,16 +444,58 @@ active_page = 'review_requests' %} {% block extra_head %}
     if (e.key === "Escape") reqCloseFilterMenu();
   });
 
+  function summaryFor(row) {
+    return document.querySelector(
+      '#req-table tr.req-summary[data-summary="' + row.dataset.request + '"]'
+    );
+  }
+
+  /* Clicking a row opens its summary. Clicks on the controls inside the row
+     -- the View link -- are left alone, or opening the request would also
+     toggle the panel behind it. */
+  function reqToggleRow(row) {
+    const summary = summaryFor(row);
+    if (!summary) return;
+    const open = row.getAttribute("aria-expanded") === "true";
+    row.setAttribute("aria-expanded", String(!open));
+    summary.hidden = open;
+  }
+
+  document.addEventListener("click", function (e) {
+    const row = e.target.closest("#req-table tr.req-row");
+    if (!row) return;
+    if (e.target.closest("a, button, input, select, label, form")) return;
+    reqToggleRow(row);
+  });
+
+  document.addEventListener("keydown", function (e) {
+    if (e.key !== "Enter" && e.key !== " ") return;
+    const row = e.target.closest("#req-table tr.req-row");
+    if (!row || row !== e.target) return;
+    e.preventDefault();
+    reqToggleRow(row);
+  });
+
   function reqApplyFilters() {
     var q = (document.getElementById("req-search-input").value || "")
       .trim()
       .toLowerCase();
-    var rows = document.querySelectorAll("#req-table tbody tr");
+    /* Only the request rows are searched; each one drags its own summary
+       row with it so the two can never be shown apart. */
+    var rows = document.querySelectorAll("#req-table tbody tr.req-row");
     var visible = 0;
 
     rows.forEach(function (row) {
       var show = !q || row.dataset.search.indexOf(q) !== -1;
       row.style.display = show ? "" : "none";
+
+      var summary = summaryFor(row);
+      if (summary && (!show || row.getAttribute("aria-expanded") !== "true")) {
+        summary.hidden = true;
+        if (!show) row.setAttribute("aria-expanded", "false");
+      }
+      if (summary) summary.style.display = show ? "" : "none";
+
       if (show) visible++;
     });
 
