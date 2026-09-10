@@ -13,8 +13,8 @@ extra_head %}
     margin-bottom: 1.5rem;
   }
   .pub-chip {
-    background: #fff;
-    border: 1px solid #e2e8f0;
+    background: var(--surface-1);
+    border: 1px solid var(--line);
     border-radius: 8px;
     padding: 0.7rem 1.1rem;
     min-width: 150px;
@@ -37,12 +37,12 @@ extra_head %}
     font-size: 0.7rem;
     text-transform: uppercase;
     letter-spacing: 0.5px;
-    color: #64748b;
+    color: var(--text-2);
   }
 
   .pub-card {
-    background: #fff;
-    border: 1px solid #e2e8f0;
+    background: var(--surface-1);
+    border: 1px solid var(--line);
     border-radius: 10px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
     padding: 1.15rem 1.25rem;
@@ -67,21 +67,21 @@ extra_head %}
   .pub-map {
     height: 250px;
     border-radius: 8px;
-    border: 1px solid #e2e8f0;
+    border: 1px solid var(--line);
   }
 
   .pub-line {
     display: flex;
     justify-content: space-between;
     padding: 0.35rem 0;
-    border-bottom: 1px solid #f1f5f9;
+    border-bottom: 1px solid var(--surface-3);
     font-size: 0.87rem;
   }
   .pub-line:last-child {
     border-bottom: none;
   }
   .pub-line .lbl {
-    color: #64748b;
+    color: var(--text-2);
   }
   .pub-line .val {
     font-weight: 600;
@@ -92,7 +92,7 @@ extra_head %}
     font-weight: 700;
   }
   .diff-bad {
-    color: #b91c1c;
+    color: var(--danger-strong);
     font-weight: 700;
   }
 
@@ -104,22 +104,22 @@ extra_head %}
     font-weight: 600;
   }
   .st-pending {
-    background: #fef3c7;
-    color: #92400e;
+    background: var(--warn-bg);
+    color: var(--warn-strong);
   }
   .st-published {
-    background: #dcfce7;
+    background: var(--ok-bg);
     color: #15803d;
   }
   .st-declined {
-    background: #fee2e2;
-    color: #991b1b;
+    background: var(--danger-bg);
+    color: var(--danger-strong);
   }
 
   .pub-empty {
     text-align: center;
     padding: 2.5rem 1rem;
-    color: #64748b;
+    color: var(--text-2);
   }
 </style>
 {% endblock %} {% block content %}
@@ -132,11 +132,6 @@ extra_head %}
     <strong>{{ published_sites }}</strong> site(s) currently published.
   </p>
 </div>
-
-{% with messages = get_flashed_messages(with_categories=true) %} {% if messages
-%}{% for category, message in messages %}
-<div class="alert alert-{{ category }}">{{ message }}</div>
-{% endfor %}{% endif %} {% endwith %}
 
 <div class="pub-strip">
   {% for label, n in counts.items() %}

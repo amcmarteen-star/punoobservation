@@ -1,0 +1,13 @@
+{# Avatar for the signed-in person.
+
+   Include it with `avatar_class` set to whatever the surrounding component
+   calls its avatar, e.g.
+
+     {% set avatar_class = 'role-avatar' %}
+     {% include 'partials/_avatar.html' %}
+
+   Both the sidebar role pill and the topbar account link render through
+   here, so a face is drawn the same way everywhere it appears. The account
+   has no photo field yet, so the initial stands in for one; when that field
+   exists, this is the only file that needs to change. #}
+<span class="{{ avatar_class }}">{{ session.username[0]|upper }}</span>

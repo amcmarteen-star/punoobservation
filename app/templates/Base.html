@@ -14,6 +14,20 @@
       rel="stylesheet"
       href="{{ url_for('static', filename='css/style.css') }}"
     />
+    <script>
+      /* Runs before the body renders: setting the attribute afterwards
+         would show one frame of the light theme first. Light stays the
+         default -- dark applies only once someone has chosen it. */
+      (function () {
+        try {
+          if (localStorage.getItem("pno-theme") === "dark") {
+            document.documentElement.setAttribute("data-theme", "dark");
+          }
+        } catch (e) {
+          /* storage blocked; light theme it is */
+        }
+      })();
+    </script>
     {% block extra_head %}{% endblock %}
   </head>
   <body class="app-body">
@@ -59,7 +73,8 @@
 
         <div class="role-pill">
           {% if session.username %}
-          <span class="role-avatar">{{ session.username[0]|upper }}</span>
+          {% set avatar_class = 'role-avatar' %}
+          {% include 'partials/_avatar.html' %}
           <div class="role-pill-text">
             <span class="role-pill-username">{{ session.username }}</span>
             <span class="role-pill-role">{{ session.role|capitalize }}</span>
@@ -433,25 +448,6 @@
         </nav>
 
         {% if session.username %}
-        <a
-          href="{{ url_for('dashboard.my_account') }}"
-          class="nav-link {% if active_page == 'account' %}active{% endif %}"
-        >
-          <svg
-            class="nav-icon"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          >
-            <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
-            <circle cx="12" cy="7" r="4" />
-          </svg>
-          <span class="nav-link-text">My Account</span>
-        </a>
-
         <a href="{{ url_for('auth.logout') }}" class="sign-out">
           <svg
             viewBox="0 0 24 24"
@@ -496,6 +492,18 @@
       <div class="main-area">
         {% block global_topbar %}
         <div class="global-topbar">
+          <button
+            type="button"
+            class="theme-toggle"
+            id="theme-toggle"
+            onclick="toggleTheme()"
+            aria-pressed="false"
+            aria-label="Switch to dark theme"
+            title="Switch to dark theme"
+          >
+            <svg class="theme-icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
+            <svg class="theme-icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9"/></svg>
+          </button>
           <div class="notif-bell-wrap">
             <button
               class="notif-bell-btn"
@@ -542,15 +550,30 @@
               </a>
             </div>
           </div>
+
+          {% if session.username %}
+          <a
+            href="{{ url_for('dashboard.my_account') }}"
+            class="topbar-account {% if active_page == 'account' %}active{% endif %}"
+            aria-label="My Account"
+            title="My Account"
+          >
+            {% set avatar_class = 'topbar-avatar' %}
+            {% include 'partials/_avatar.html' %}
+          </a>
+          {% endif %}
         </div>
         {% endblock %} {% block topbar %}{% endblock %}
 
         <main class="page-content {% block content_class %}{% endblock %}">
-          {% with messages = get_flashed_messages(with_categories=true) %} {% if
-          messages %}
+          {# The one place flashes are rendered. Pages must not repeat this:
+             get_flashed_messages returns the same list every time it is
+             called within a request, so a second call prints them twice. #}
+          {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
           <div class="flash-messages">
             {% for category, message in messages %}
-            <div class="alert alert-{{ category }}">{{ message }}</div>
+            <div class="um-alert um-alert-{{ category }}">{{ message }}</div>
             {% endfor %}
           </div>
           {% endif %} {% endwith %} {% block content %}{% endblock %}
@@ -653,6 +676,38 @@
           rememberWidth();
         });
       })();
+
+      function updateThemeToggle() {
+        var dark =
+          document.documentElement.getAttribute("data-theme") === "dark";
+        var btn = document.getElementById("theme-toggle");
+        if (!btn) return;
+        var label = dark ? "Switch to light theme" : "Switch to dark theme";
+        btn.setAttribute("aria-pressed", String(dark));
+        btn.setAttribute("aria-label", label);
+        btn.setAttribute("title", label);
+      }
+
+      function toggleTheme() {
+        var root = document.documentElement;
+        var goingDark = root.getAttribute("data-theme") !== "dark";
+        if (goingDark) {
+          root.setAttribute("data-theme", "dark");
+        } else {
+          root.removeAttribute("data-theme");
+        }
+        try {
+          localStorage.setItem("pno-theme", goingDark ? "dark" : "light");
+        } catch (e) {
+          /* the theme still applies for this page view */
+        }
+        updateThemeToggle();
+        /* Canvas does not inherit CSS, so anything drawn (the dashboard
+           charts) has to be told the theme changed and redraw itself. */
+        window.dispatchEvent(new Event("pno-theme-change"));
+      }
+
+      updateThemeToggle();
 
       function toggleNotifDropdown() {
         document.getElementById("notif-dropdown").classList.toggle("active");

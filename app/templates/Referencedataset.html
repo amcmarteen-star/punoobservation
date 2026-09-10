@@ -7,8 +7,8 @@
 {% block extra_head %}
 <style>
   .preview-panel {
-    background: #ffffff;
-    border: 1px solid #e2eae5;
+    background: var(--surface-1);
+    border: 1px solid var(--line);
     border-radius: 10px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
     padding: 1.25rem;
@@ -23,7 +23,7 @@
   }
 
   .sum-chip {
-    border: 1px solid #e2eae5;
+    border: 1px solid var(--line);
     border-radius: 8px;
     padding: 0.6rem 1rem;
     min-width: 110px;
@@ -41,61 +41,61 @@
     font-size: 0.75rem;
     text-transform: uppercase;
     letter-spacing: 0.5px;
-    color: #5f6f66;
+    color: var(--text-2);
   }
 
-  .sum-chip.bad .num { color: #b91c1c; }
+  .sum-chip.bad .num { color: var(--danger-strong); }
 
   .warn-box {
-    border-left: 4px solid #8d9c94;
-    background: #f7faf8;
+    border-left: 4px solid var(--text-3);
+    background: var(--surface-2);
     border-radius: 6px;
     padding: 0.8rem 1rem;
     margin-bottom: 0.8rem;
   }
 
-  .warn-box.danger  { border-left-color: #dc2626; background: #fef2f2; }
-  .warn-box.warning { border-left-color: #f59e0b; background: #fffbeb; }
-  .warn-box.info    { border-left-color: #0ea5e9; background: #f0f9ff; }
+  .warn-box.danger  { border-left-color: var(--danger-text); background: var(--danger-bg); }
+  .warn-box.warning { border-left-color: #f59e0b; background: var(--warn-bg); }
+  .warn-box.info    { border-left-color: var(--info-solid); background: var(--info-bg); }
 
   .warn-box h6 {
     margin: 0 0 0.3rem 0;
     font-weight: 700;
     font-size: 0.875rem;
-    color: #1c2f26;
+    color: var(--text-strong);
   }
 
   .warn-box p {
     margin: 0 0 0.4rem 0;
     font-size: 0.875rem;
-    color: #41544a;
+    color: var(--text-body);
   }
 
   .warn-box ul {
     margin: 0;
     padding-left: 1.1rem;
     font-size: 0.875rem;
-    color: #2f4239;
+    color: var(--text-strong);
   }
 
   .sheet-row {
     display: flex;
     justify-content: space-between;
     padding: 0.35rem 0;
-    border-bottom: 1px solid #eef4f0;
+    border-bottom: 1px solid var(--surface-3);
     font-size: 0.875rem;
   }
 
-  .sheet-row .skipped { color: #8d9c94; font-style: italic; }
+  .sheet-row .skipped { color: var(--text-3); font-style: italic; }
 
-  .row-bad { background: #fef2f2; }
+  .row-bad { background: var(--danger-bg); }
 
   .preview-actions {
     display: flex;
     gap: 0.6rem;
     margin-top: 1.2rem;
     padding-top: 1rem;
-    border-top: 1px solid #e2eae5;
+    border-top: 1px solid var(--line);
   }
 </style>
 {% endblock %}

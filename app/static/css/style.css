@@ -7,31 +7,193 @@
    rhythm -- reach for a token rather than inventing a value.
    ============================================ */
 
-.app-body {
-    /* neutrals (green-cast) */
-    --n-0: #ffffff;
-    --n-50: #f7faf8;
-    --n-100: #eef4f0;
-    --n-200: #e2eae5;
-    --n-300: #c9d6ce;
-    --n-400: #5f6f66;
-    --n-500: #5f6f66;
-    --n-600: #41544a;
-    --n-700: #2f4239;
-    --n-800: #1c2f26;
-    --n-900: #12211a;
+/* ============================================================
+   THEME TOKENS
+
+   Every colour in this file resolves through the semantic tokens below,
+   so a theme is a palette swap and nothing else. Light is the default;
+   dark only applies when <html data-theme="dark"> is set.
+
+   The dark palette follows a few rules worth stating, because breaking
+   them is what makes a dark theme feel like a terminal:
+
+     - The ground is near-black, never #000. Pure black is the floor, and
+       a floor leaves nothing for a surface to sit below. Starting at
+       #0e1512 gives every layer above it somewhere to go.
+     - Elevation is lightness, not shadow. A black shadow on a dark ground
+       is invisible, so each surface that sits higher is a step lighter:
+       ground, card, band, fill.
+     - Text never runs at full white. Pure white on a dark surface
+       vibrates and burns after a paragraph. Primary sits at 87%,
+       secondary at 60%, disabled at 38%.
+     - Brand and status colours are lightened and desaturated. A saturated
+       hue on a dark surface glows past its own edge and outshouts the
+       content it is supposed to label.
+     - Edges are white at low alpha rather than a fixed grey, so a hairline
+       still reads as the surface underneath it gets lighter.
+   ============================================================ */
+
+:root {
+    /* surfaces, ground upward */
+    --surface-0: #f7faf8;
+    --surface-1: #ffffff;
+    --surface-2: #f7faf8;
+    --surface-3: #eef4f0;
+
+    /* edges */
+    --line: #e2eae5;
+    --line-strong: #c9d6ce;
+
+    /* text, strongest to faintest */
+    --text-heading: #12211a;
+    --text-strong: #2f4239;
+    --text-body: #41544a;
+    --text-2: #5f6f66;
+    --text-3: #8d9c94;
 
     /* brand */
-    --brand-900: #10241a;
-    --brand-700: #14532d;
-    --brand-600: #15803d;
-    --brand-500: #16a34a;
+    --brand-solid: #15803d;
+    --brand-text: #15803d;
+    --brand-deep: #14532d;
+    --brand-deep-text: #14532d;
+    --brand-deepest: #10241a;
+
+    /* status: solid = a filled control, text = a label, bg/line = a tint */
+    --ok-solid: #16a34a;
+    --ok-text: #166534;
+    --ok-bg: #f0fdf4;
+    --ok-line: #cfe7d8;
+
+    --danger-solid: #dc2626;
+    --danger-text: #dc2626;
+    --danger-strong: #b91c1c;
+    --danger-bg: #fef2f2;
+    --danger-line: #fecaca;
+
+    --warn-solid: #f59e0b;
+    --warn-text: #b45309;
+    --warn-strong: #92400e;
+    --warn-bg: #fffbeb;
+    --warn-line: #fef3c7;
+
+    --info-solid: #0ea5e9;
+    --info-text: #0369a1;
+    --info-strong: #075985;
+    --info-bg: #f0f9ff;
+
+    --violet-solid: #7c3aed;
+    --violet-text: #6d28d9;
+    --violet-bg: #ede9fe;
+
+    --blue-solid: #2563eb;
+    --blue-text: #1d4ed8;
+    --blue-bg: #eff6ff;
+    --blue-line: #d4e0f6;
+
+    /* the sticky topbar sits over scrolling content */
+    --surface-glass: rgba(255, 255, 255, 0.85);
+
+    /* cast by the frozen table columns over what scrolls under them */
+    --pin-shade: rgba(18, 33, 26, 0.16);
+
+    /* photographs need no help on a light ground */
+    --photo-dim: none;
+
+    color-scheme: light;
+}
+
+:root[data-theme="dark"] {
+    --surface-0: #0e1512;
+    --surface-1: #161f1b;
+    --surface-2: #1c2723;
+    --surface-3: #24312c;
+
+    --line: rgba(255, 255, 255, 0.09);
+    --line-strong: rgba(255, 255, 255, 0.18);
+
+    --text-heading: rgba(255, 255, 255, 0.92);
+    --text-strong: rgba(255, 255, 255, 0.87);
+    --text-body: rgba(255, 255, 255, 0.78);
+    --text-2: rgba(255, 255, 255, 0.6);
+    --text-3: rgba(255, 255, 255, 0.38);
+
+    --brand-solid: #1f8a4c;
+    --brand-text: #74d69b;
+    --brand-deep: #17402a;
+    --brand-deep-text: #9fe0ba;
+    --brand-deepest: #0f2019;
+
+    --ok-solid: #2f9e5c;
+    --ok-text: #7ddba2;
+    --ok-bg: rgba(45, 167, 94, 0.15);
+    --ok-line: rgba(125, 219, 162, 0.28);
+
+    --danger-solid: #c34a44;
+    --danger-text: #f0a49e;
+    --danger-strong: #f6bbb6;
+    --danger-bg: rgba(220, 70, 60, 0.16);
+    --danger-line: rgba(240, 164, 158, 0.3);
+
+    --warn-solid: #c48a33;
+    --warn-text: #e9bd77;
+    --warn-strong: #f2d3a0;
+    --warn-bg: rgba(226, 159, 54, 0.15);
+    --warn-line: rgba(233, 189, 119, 0.28);
+
+    --info-solid: #2b87b8;
+    --info-text: #8ecbe8;
+    --info-strong: #b3ddf2;
+    --info-bg: rgba(43, 135, 184, 0.16);
+
+    --violet-solid: #7a5cc4;
+    --violet-text: #c0a9f0;
+    --violet-bg: rgba(140, 110, 220, 0.18);
+
+    --blue-solid: #3b6fd4;
+    --blue-text: #9dbdf5;
+    --blue-bg: rgba(60, 110, 210, 0.18);
+    --blue-line: rgba(157, 189, 245, 0.28);
+
+    --surface-glass: rgba(22, 31, 27, 0.85);
+
+    /* A shadow tinted like the light theme's is invisible here -- it is
+       nearly the colour of the surface it falls on. On a dark ground the
+       shade has to be much closer to black, and much stronger, before it
+       reads as depth at all. */
+    --pin-shade: rgba(0, 0, 0, 0.55);
+
+    /* a bright photograph on a dim page pulls every eye */
+    --photo-dim: brightness(0.9);
+
+    color-scheme: dark;
+}
+
+.app-body {
+    /* The neutral ramp is kept as an alias of the semantic tokens, because
+       rules written before the theme work still reach for --n-*. */
+    --n-0: var(--surface-1);
+    --n-50: var(--surface-2);
+    --n-100: var(--surface-3);
+    --n-200: var(--line);
+    --n-300: var(--line-strong);
+    --n-400: var(--text-3);
+    --n-500: var(--text-2);
+    --n-600: var(--text-body);
+    --n-700: var(--text-strong);
+    --n-800: var(--text-strong);
+    --n-900: var(--text-heading);
+
+    /* brand */
+    --brand-900: var(--brand-deepest);
+    --brand-700: var(--brand-deep);
+    --brand-600: var(--brand-solid);
+    --brand-500: var(--ok-solid);
 
     /* status */
-    --ok: #15803d;
-    --warn: #b45309;
-    --danger: #dc2626;
-    --info: #0369a1;
+    --ok: var(--ok-text);
+    --warn: var(--warn-text);
+    --danger: var(--danger-text);
+    --info: var(--info-text);
 
     /* type scale */
     --fs-xs: 0.75rem;
@@ -59,10 +221,32 @@
     --sh-lg: 0 2px 4px rgba(18, 33, 26, 0.04), 0 12px 32px rgba(18, 33, 26, 0.09);
 
     --ease: cubic-bezier(0.4, 0, 0.2, 1);
+
+    /* Fixed rather than derived from padding, because the map sizes itself
+       against it and anything sticky sits below it. */
+    --topbar-h: 64px;
+
+    background-color: var(--surface-0);
+    color: var(--text-body);
+}
+
+/* Shadows carry almost nothing on a dark ground, so they deepen only
+   enough to separate a floating panel from what is behind it -- the
+   surface lightness is what actually says "this is raised". */
+:root[data-theme="dark"] .app-body {
+    --sh-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+    --sh-md: 0 2px 6px rgba(0, 0, 0, 0.42), 0 8px 20px rgba(0, 0, 0, 0.34);
+    --sh-lg: 0 4px 10px rgba(0, 0, 0, 0.45), 0 16px 40px rgba(0, 0, 0, 0.42);
+}
+
+/* Photographs and screenshots, dimmed rather than filtered into mush. The
+   sidebar logo is a flat mark and reads better left alone. */
+:root[data-theme="dark"] .app-body img:not(.logo-icon) {
+    filter: var(--photo-dim);
 }
 
 .card {
-    background: white;
+    background: var(--surface-1);
     padding: 1.5rem;
     border-radius: 10px;
     box-shadow: 0 2px 8px rgba(0,0,0,0.06);
@@ -71,7 +255,7 @@
 .btn-primary {
     display: inline-block;
     padding: 0.6rem 1.2rem;
-    background-color: #059669;
+    background-color: var(--brand-solid);
     color: white;
     border-radius: 6px;
     text-decoration: none;
@@ -103,18 +287,30 @@ html {
     font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
 }
 
+/* The shell fills the window and the main column does the scrolling, so
+   the sidebar stays put and anything sticky inside the content has a real
+   scrollport to stick to. */
 .app-shell {
     display: flex;
-    min-height: 100vh;
+    height: 100vh;
 }
 
 /* Sidebar */
 .sidebar {
+    /* Its own text scale, deliberately not the page's. The sidebar ground
+       is the same near-black green in light and dark, so its foreground
+       must be too -- reading --line or --text-3 here made the labels almost
+       vanish the moment the page went dark. */
+    --side-text: rgba(255, 255, 255, 0.8);
+    --side-text-strong: #ffffff;
+    --side-text-dim: rgba(255, 255, 255, 0.52);
+    --side-accent: #7fd8a8;
+
     width: 240px;
     flex-shrink: 0;
     transition: width 0.18s ease;
-    background-color: #10241a;
-    color: #d7e4dc;
+    background-color: var(--brand-deepest);
+    color: var(--side-text);
     display: flex;
     flex-direction: column;
     padding: 1.2rem 1rem;
@@ -205,7 +401,7 @@ html {
     border: 0;
     border-radius: 8px;
     background-color: transparent;
-    color: #9fb6a9;
+    color: var(--side-text-dim);
     cursor: pointer;
     transition: background-color 0.15s ease, color 0.15s ease;
 }
@@ -253,7 +449,7 @@ html {
     padding: 0.5rem 0.8rem;
     border-radius: 8px;
     font-size: 0.875rem;
-    color: #7fd8a8;
+    color: var(--side-accent);
     margin-bottom: 1.4rem;
 }
 
@@ -261,7 +457,7 @@ html {
     width: 8px;
     height: 8px;
     border-radius: 50%;
-    background-color: #22c55e;
+    background-color: var(--ok-solid);
     display: inline-block;
     flex-shrink: 0;
 }
@@ -270,7 +466,7 @@ html {
     width: 2rem;
     height: 2rem;
     border-radius: 50%;
-    background-color: #22c55e;
+    background-color: var(--ok-solid);
     color: #ffffff;
     display: flex;
     align-items: center;
@@ -280,7 +476,10 @@ html {
     flex-shrink: 0;
 }
 
-.role-avatar-img {
+/* Photographs fill their circle instead of stretching. Applies wherever
+   partials/_avatar.html renders an image. */
+.role-avatar-img,
+.avatar-img {
     object-fit: cover;
 }
 
@@ -297,7 +496,7 @@ html {
 }
 
 .role-pill-role {
-    color: #7fd8a8;
+    color: var(--side-accent);
     font-size: 0.75rem;
 }
 
@@ -319,7 +518,7 @@ html {
     font-weight: 600;
     letter-spacing: 0.08em;
     text-transform: uppercase;
-    color: #7f9a8b;
+    color: var(--side-text-dim);
 }
 
 /* No room for the label on the narrow rail, so it becomes the divider it was
@@ -341,7 +540,7 @@ html {
     padding: 0.55rem 0.7rem;
     margin-bottom: 0.2rem;
     border-radius: 8px;
-    color: #d7e4dc;
+    color: var(--side-text);
     text-decoration: none;
     font-size: 0.875rem;
     transition: background-color 0.15s ease, color 0.15s ease;
@@ -368,7 +567,7 @@ html {
 .nav-link.active,
 .nav-link.active:hover {
     background-color: rgba(255, 255, 255, 0.06);
-    color: #16a34a;
+    color: var(--brand-text);
     font-weight: 600;
 }
 
@@ -382,7 +581,7 @@ html {
     align-items: center;
     gap: 0.5rem;
     padding: 0.6rem 0.7rem;
-    color: #d7e4dc;
+    color: var(--side-text);
     text-decoration: none;
     font-size: 0.875rem;
     border-top: 1px solid rgba(255,255,255,0.08);
@@ -399,14 +598,24 @@ html {
 }
 
 .sign-out:hover {
-    color: #f87171;
+    color: var(--danger-text);
 }
 
 /* Main content area next to sidebar */
 .main-area {
     flex: 1;
     min-width: 0;
-    background-color: #f4f7f4;
+    height: 100vh;
+    overflow-y: auto;
+    /* The scrollbar's track is reserved whether or not a scrollbar is
+       showing, so a short page and a long one put the content in exactly
+       the same place. Without it every page that grows past the window
+       shifts its whole layout left the moment the bar appears. */
+    scrollbar-gutter: stable;
+    /* This is the page ground, the surface everything else sits above. In
+       light it is the same value as --surface-2; in dark it must be the
+       darkest layer or the cards have nothing to rise from. */
+    background-color: var(--surface-0);
     overflow-x: hidden;
 }
 
@@ -425,7 +634,6 @@ html {
 .page-header {
     margin-bottom: 1.5rem;
 }
-
 /* Browsers give h2 its own default top/bottom margin -- without resetting it,
    headers using .page-header sit noticeably lower than the .um-header pages
    (User Management, Sites, Recommendation, Requests), which already zero it. */
@@ -445,7 +653,7 @@ html {
     display: flex;
     flex-direction: column;
     align-items: flex-end;
-    background-color: #ffffff;
+    background-color: var(--surface-1);
     padding: 0.7rem 1.1rem;
     border-radius: 10px;
     box-shadow: 0 2px 8px rgba(0,0,0,0.06);
@@ -454,13 +662,13 @@ html {
 .clock-time {
     font-size: 1.25rem;
     font-weight: 700;
-    color: #1c2f26;
+    color: var(--text-strong);
     font-variant-numeric: tabular-nums;
 }
 
 .clock-date {
     font-size: 0.875rem;
-    color: #5f6f66;
+    color: var(--text-2);
     margin-top: 0.15rem;
 }
 
@@ -472,14 +680,86 @@ html {
     display: flex;
     justify-content: flex-end;
     align-items: center;
-    padding: 0.6rem 1.5rem;
-    background-color: #ffffff;
-    border-bottom: 1px solid #e2eae5;
+    gap: 0.35rem;
+    height: var(--topbar-h);
+    padding: 0 1.5rem;
+    background-color: var(--surface-1);
+    border-bottom: 1px solid var(--line);
 }
 
 .notif-bell-wrap {
     position: relative;
 }
+
+/* --- Account link ------------------------------------------------------
+   Moved out of the sidebar: it belongs with the other personal controls,
+   and the sidebar is for places in the product rather than for the person
+   using it. */
+.topbar-account {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2px;
+    border-radius: 50%;
+    /* A ring rather than a fill, so the control reads as a target without
+       putting a second shape around the face. */
+    border: 2px solid transparent;
+    text-decoration: none;
+    transition: border-color 160ms var(--ease);
+}
+
+.topbar-avatar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    flex: none;
+    border-radius: 50%;
+    background-color: var(--ok-solid);
+    color: #ffffff;
+    font-weight: 700;
+    font-size: 0.875rem;
+}
+
+.topbar-account:hover {
+    border-color: var(--line-strong);
+}
+
+.topbar-account.active {
+    border-color: var(--brand-text);
+}
+
+/* --- Theme toggle -------------------------------------------------------
+   One button, two icons: the sun shows in dark (press it for light) and
+   the moon shows in light. Only one is ever in the layout, so the button
+   never changes width as it swaps. */
+.theme-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.5rem;
+    border: none;
+    border-radius: 8px;
+    background: none;
+    color: var(--text-body);
+    cursor: pointer;
+    transition: background-color 160ms var(--ease), color 160ms var(--ease);
+}
+
+.theme-toggle svg {
+    width: 1.2rem;
+    height: 1.2rem;
+}
+
+.theme-toggle:hover {
+    background-color: var(--surface-3);
+    color: var(--text-heading);
+}
+
+.theme-toggle .theme-icon-sun { display: none; }
+:root[data-theme="dark"] .theme-toggle .theme-icon-sun { display: block; }
+:root[data-theme="dark"] .theme-toggle .theme-icon-moon { display: none; }
 
 .notif-bell-btn {
     position: relative;
@@ -488,7 +768,7 @@ html {
     justify-content: center;
     background: none;
     border: none;
-    color: #41544a;
+    color: var(--text-body);
     cursor: pointer;
     padding: 0.5rem;
     border-radius: 8px;
@@ -500,14 +780,14 @@ html {
 }
 
 .notif-bell-btn:hover {
-    background-color: #eef4f0;
+    background-color: var(--surface-3);
 }
 
 .notif-badge {
     position: absolute;
     top: -2px;
     right: -2px;
-    background-color: #ef4444;
+    background-color: var(--danger-solid);
     color: #ffffff;
     font-size: 0.75rem;
     font-weight: 700;
@@ -525,8 +805,8 @@ html {
     right: 0;
     width: 340px;
     max-height: 420px;
-    background-color: #ffffff;
-    border: 1px solid #e2eae5;
+    background-color: var(--surface-1);
+    border: 1px solid var(--line);
     border-radius: 12px;
     box-shadow: 0 12px 32px rgba(15, 23, 42, 0.12);
     overflow: hidden;
@@ -544,13 +824,13 @@ html {
     justify-content: space-between;
     gap: 0.5rem;
     padding: 0.9rem 1rem;
-    border-bottom: 1px solid #eef4f0;
+    border-bottom: 1px solid var(--surface-3);
 }
 
 .notif-dropdown-header-title {
     font-weight: 700;
     font-size: 1rem;
-    color: #12211a;
+    color: var(--text-heading);
 }
 
 .notif-mark-all {
@@ -559,12 +839,12 @@ html {
     padding: 0;
     font-size: 0.75rem;
     font-weight: 600;
-    color: #15803d;
+    color: var(--brand-text);
     cursor: pointer;
 }
 
 .notif-mark-all:hover {
-    color: #15803d;
+    color: var(--brand-text);
     text-decoration: underline;
 }
 
@@ -586,7 +866,7 @@ html {
     align-items: flex-start;
     gap: 0.7rem;
     padding: 0.75rem 1rem;
-    border-bottom: 1px solid #f7faf8;
+    border-bottom: 1px solid var(--surface-2);
     cursor: pointer;
     transition: background-color 0.12s ease;
 }
@@ -598,7 +878,7 @@ html {
 
 .notif-item:hover,
 .notif-page-item:hover {
-    background-color: #f7faf8;
+    background-color: var(--surface-2);
 }
 
 .notif-icon {
@@ -609,8 +889,8 @@ html {
     display: flex;
     align-items: center;
     justify-content: center;
-    background-color: #eef4f0;
-    color: #5f6f66;
+    background-color: var(--surface-3);
+    color: var(--text-2);
 }
 
 .notif-icon svg {
@@ -618,14 +898,14 @@ html {
     height: 1.05rem;
 }
 
-.notif-icon.type-update  { background-color: #dbeafe; color: #2563eb; }
-.notif-icon.type-report  { background-color: #fef3c7; color: #b45309; }
+.notif-icon.type-update  { background-color: var(--blue-bg); color: var(--blue-text); }
+.notif-icon.type-report  { background-color: var(--warn-bg); color: var(--warn-text); }
 
 /* Notifications that name a specific person (e.g. "X requested...") get
    that person's initial instead of a generic icon, same avatar language
    as the sidebar and User Management. */
 .notif-icon.avatar {
-    background-color: #15803d;
+    background-color: var(--brand-solid);
     color: #ffffff;
     font-weight: 700;
     font-size: 0.875rem;
@@ -640,19 +920,19 @@ html {
     margin: 0;
     font-size: 0.875rem;
     line-height: 1.45;
-    color: #41544a;
+    color: var(--text-body);
 }
 
 .notif-item.unread .notif-message,
 .notif-page-item.unread .notif-message {
-    color: #12211a;
+    color: var(--text-heading);
     font-weight: 600;
 }
 
 .notif-time {
     display: block;
     font-size: 0.75rem;
-    color: #5f6f66;
+    color: var(--text-2);
     margin-top: 0.2rem;
 }
 
@@ -661,7 +941,7 @@ html {
     width: 0.5rem;
     height: 0.5rem;
     border-radius: 50%;
-    background-color: #15803d;
+    background-color: var(--brand-solid);
     margin-top: 0.4rem;
     visibility: hidden;
 }
@@ -677,13 +957,13 @@ html {
     padding: 0.85rem;
     font-size: 0.875rem;
     font-weight: 600;
-    color: #15803d;
+    color: var(--brand-text);
     text-decoration: none;
-    border-top: 1px solid #eef4f0;
+    border-top: 1px solid var(--surface-3);
 }
 
 .notif-view-all:hover {
-    background-color: #f7faf8;
+    background-color: var(--surface-2);
 }
 
 /* Full notifications page */
@@ -719,9 +999,9 @@ html {
     display: inline-flex;
     align-items: center;
     gap: 0.45rem;
-    background-color: #ffffff;
-    color: #dc2626;
-    border: 1px solid #fecaca;
+    background-color: var(--surface-1);
+    color: var(--danger-text);
+    border: 1px solid var(--danger-line);
     border-radius: 8px;
     padding: 0.5rem 0.9rem;
     min-height: 40px;
@@ -732,17 +1012,17 @@ html {
 }
 
 .notif-delete-btn:hover:not(:disabled) {
-    background-color: #dc2626;
-    border-color: #dc2626;
+    background-color: var(--danger-solid);
+    border-color: var(--danger-text);
     color: #ffffff;
 }
 
 /* Nothing selected yet -- the button is visible so users know where it is,
    but greyed out until a checkbox is ticked. */
 .notif-delete-btn:disabled {
-    background-color: #f7faf8;
-    border-color: #e2eae5;
-    color: #5f6f66;
+    background-color: var(--surface-2);
+    border-color: var(--line);
+    color: var(--text-2);
     cursor: not-allowed;
 }
 
@@ -752,7 +1032,7 @@ html {
 }
 
 .notif-delete-count {
-    background-color: #dc2626;
+    background-color: var(--danger-solid);
     color: #ffffff;
     border-radius: 999px;
     min-width: 1.25rem;
@@ -764,21 +1044,21 @@ html {
 }
 
 .notif-delete-btn:hover:not(:disabled) .notif-delete-count {
-    background-color: #ffffff;
-    color: #dc2626;
+    background-color: var(--surface-1);
+    color: var(--danger-text);
 }
 
 .notif-filter-select {
     appearance: none;
-    background-color: #ffffff;
-    border: 1px solid #e2eae5;
+    background-color: var(--surface-1);
+    border: 1px solid var(--line);
     border-radius: 8px;
     padding: 0.5rem 2rem 0.5rem 0.9rem;
     font-size: 0.875rem;
     font-weight: 600;
-    color: #2f4239;
+    color: var(--text-strong);
     cursor: pointer;
-    background-image: linear-gradient(45deg, transparent 50%, #5f6f66 50%), linear-gradient(135deg, #5f6f66 50%, transparent 50%);
+    background-image: linear-gradient(45deg, transparent 50%, var(--text-2) 50%), linear-gradient(135deg, var(--text-2) 50%, transparent 50%);
     background-position: calc(100% - 14px) center, calc(100% - 9px) center;
     background-size: 5px 5px, 5px 5px;
     background-repeat: no-repeat;
@@ -796,7 +1076,7 @@ html {
 .notif-day-heading {
     font-size: 0.875rem;
     font-weight: 700;
-    color: #5f6f66;
+    color: var(--text-2);
     margin: 0 0 0.6rem;
 }
 
@@ -805,7 +1085,7 @@ html {
     align-items: center;
     gap: 0.85rem;
     padding: 0.85rem 1rem;
-    border-bottom: 1px solid #eef4f0;
+    border-bottom: 1px solid var(--surface-3);
 }
 
 .notif-row:last-child {
@@ -813,18 +1093,18 @@ html {
 }
 
 .notif-row:hover {
-    background-color: #f7faf8;
+    background-color: var(--surface-2);
 }
 
 .notif-row.selected {
-    background-color: #fef2f2;
+    background-color: var(--danger-bg);
 }
 
 .notif-row-checkbox {
     flex-shrink: 0;
     width: 1rem;
     height: 1rem;
-    accent-color: #15803d;
+    accent-color: var(--brand-text);
     cursor: pointer;
 }
 
@@ -840,19 +1120,19 @@ html {
 .notif-row-body p {
     margin: 0;
     font-size: 0.875rem;
-    color: #41544a;
+    color: var(--text-body);
     line-height: 1.4;
 }
 
 .notif-row.unread .notif-row-body p {
-    color: #12211a;
+    color: var(--text-heading);
     font-weight: 600;
 }
 
 .notif-row-time {
     display: block;
     font-size: 0.75rem;
-    color: #5f6f66;
+    color: var(--text-2);
     margin-top: 0.15rem;
 }
 
@@ -862,11 +1142,11 @@ html {
     text-align: center;
     font-size: 0.75rem;
     font-weight: 600;
-    color: #5f6f66;
+    color: var(--text-2);
 }
 
 .notif-row.unread .notif-row-status {
-    color: #15803d;
+    color: var(--brand-text);
 }
 
 .notif-row-details {
@@ -875,7 +1155,7 @@ html {
     align-items: center;
     background-color: #12211a;
     color: #ffffff;
-    border: none;
+    border: 1px solid transparent;
     border-radius: 6px;
     padding: 0.45rem 1rem;
     font-size: 0.875rem;
@@ -885,7 +1165,19 @@ html {
 }
 
 .notif-row-details:hover {
-    background-color: #1c2f26;
+    background-color: #2f4239;
+}
+
+/* Inverting a near-black button means going light, not going white: a
+   raised surface with a hairline reads as a control without glaring. */
+:root[data-theme="dark"] .notif-row-details {
+    background-color: var(--surface-3);
+    border-color: var(--line);
+    color: var(--text-heading);
+}
+
+:root[data-theme="dark"] .notif-row-details:hover {
+    background-color: var(--line-strong);
 }
 
 @media (max-width: 720px) {
@@ -911,7 +1203,7 @@ body.login-page {
 
     margin: 0;
     min-height: 100vh;
-    background: #f4f5f4;
+    background: var(--surface-2);
     /* Scoped to .login-page, so the rest of the app keeps its system font. */
     font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
     color: var(--auth-body);
@@ -929,7 +1221,7 @@ body.login-page :focus-visible {
     display: flex;
     min-height: 100vh;
     width: 100%;
-    background: #f2f2f2;
+    background: var(--surface-2);
 }
 
 /* ---------- Brand panel (left) ---------- */
@@ -944,7 +1236,7 @@ body.login-page :focus-visible {
     padding: 2.5rem 3.25rem;
     /* Base tone the mesh blobs sit on. */
     background: #0b2b23;
-    color: #f4f7f5;
+    color: var(--surface-2);
     overflow: hidden;
     isolation: isolate;
     display: flex;
@@ -1078,7 +1370,7 @@ body.login-page :focus-visible {
     font-weight: 700;
     line-height: 1;
     letter-spacing: -0.04em;
-    color: #edf7f3;
+    color: var(--surface-3);
 }
 
 .brand-title {
@@ -1130,7 +1422,7 @@ body.login-page :focus-visible {
     border-radius: 999px;
     border: 1px solid rgba(192, 224, 204, 0.28);
     background: rgba(255, 255, 255, 0.04);
-    color: #edf6f1;
+    color: var(--surface-3);
     font-size: 0.875rem;
     line-height: 1.2;
 }
@@ -1144,7 +1436,7 @@ body.login-page :focus-visible {
 /* ---------- Auth panel (right) ---------- */
 .auth-panel {
     flex: 0.9;
-    background: #f2f2f2;
+    background: var(--surface-2);
     position: relative;
     display: flex;
     justify-content: center;
@@ -1154,8 +1446,8 @@ body.login-page :focus-visible {
 
 .auth-wrapper {
     width: min(100%, 30rem);
-    background: #ffffff;
-    border: 1px solid #e6e9e7;
+    background: var(--surface-1);
+    border: 1px solid var(--line);
     border-radius: 1rem;
     padding: 2.5rem;
     box-shadow: 0 1px 2px rgba(15, 42, 32, 0.04), 0 12px 32px rgba(15, 42, 32, 0.07);
@@ -1191,9 +1483,9 @@ body.login-page :focus-visible {
     border-radius: 0.625rem;
     font-size: 0.875rem;
     line-height: 1.5;
-    background: #fef3f2;
+    background: var(--danger-bg);
     color: var(--auth-danger);
-    border: 1px solid #fecdca;
+    border: 1px solid var(--danger-line);
 }
 
 .form-alert svg,
@@ -1205,9 +1497,9 @@ body.login-page :focus-visible {
 }
 
 .flash-message.success {
-    background: #ecfdf3;
+    background: var(--ok-bg);
     color: var(--auth-ok);
-    border-color: #abefc6;
+    border-color: var(--ok-line);
 }
 
 /* ---------- Form ---------- */
@@ -1250,7 +1542,7 @@ body.login-page :focus-visible {
     box-sizing: border-box;
     border: 1px solid var(--auth-line);
     border-radius: 0.625rem;
-    background: #ffffff;
+    background: var(--surface-1);
     padding: 0.75rem 0.875rem;
     min-height: 44px;
     font-family: inherit;
@@ -1267,12 +1559,12 @@ body.login-page :focus-visible {
 }
 
 .login-form input::placeholder {
-    color: #6b7a72;
+    color: var(--text-2);
 }
 
 .login-form input:hover,
 .login-form select:hover {
-    border-color: #bcc9c4;
+    border-color: var(--line-strong);
 }
 
 .login-form input:focus,
@@ -1320,7 +1612,7 @@ body.login-page :focus-visible {
 
 .field-toggle:hover {
     color: var(--auth-ink);
-    background: #f1f4f3;
+    background: var(--surface-2);
 }
 
 .field-toggle svg {
@@ -1379,7 +1671,8 @@ body.login-page :focus-visible {
 }
 
 .primary-btn:disabled {
-    background: #9db5ad;
+    background: var(--surface-3);
+    color: var(--text-3);
     cursor: not-allowed;
     box-shadow: none;
 }
@@ -1481,7 +1774,7 @@ body.login-page :focus-visible {
 /* generic muted placeholder text -- used across Notifications, ReferenceDataset,
    and anywhere showing an empty-state or hint message */
 .placeholder-text {
-    color: #5f6f66;
+    color: var(--text-2);
     font-size: 0.875rem;
 }
 
@@ -1494,9 +1787,9 @@ body.login-page :focus-visible {
 .justify-content-between { justify-content: space-between; }
 .gap-2 { gap: 0.5rem; }
 .text-end { text-align: right; }
-.text-secondary { color: #5f6f66; }
-.text-success { color: #15803d; }
-.text-danger { color: #dc2626; }
+.text-secondary { color: var(--text-2); }
+.text-success { color: var(--brand-text); }
+.text-danger { color: var(--danger-text); }
 .fw-semibold { font-weight: 600; }
 .fw-bold { font-weight: 700; }
 .fst-italic { font-style: italic; }
@@ -1527,7 +1820,7 @@ body.login-page :focus-visible {
 .ref-card h3 {
     margin: 0 0 0.4rem;
     font-size: 1.125rem;
-    color: #12211a;
+    color: var(--text-heading);
 }
 
 .upload-form {
@@ -1539,18 +1832,18 @@ body.login-page :focus-visible {
 }
 
 .upload-file-input {
-    border: 1px dashed #c9d6ce;
+    border: 1px dashed var(--line-strong);
     border-radius: 8px;
     padding: 0.6rem 0.9rem;
     font-size: 0.875rem;
-    background-color: #f7faf8;
+    background-color: var(--surface-2);
 }
 
 .import-info-list {
     margin: 0.6rem 0 0 1.1rem;
     padding: 0;
     font-size: 0.875rem;
-    color: #2f4239;
+    color: var(--text-strong);
     line-height: 1.7;
 }
 
@@ -1573,10 +1866,10 @@ body.login-page :focus-visible {
 }
 /* Table Card Wrapper */
 .table-card {
-    background: #ffffff;
+    background: var(--surface-1);
     border-radius: 10px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-    border: 1px solid #e2eae5;
+    border: 1px solid var(--line);
     overflow: hidden;
     margin-bottom: 2rem;
 }
@@ -1614,35 +1907,35 @@ body.login-page :focus-visible {
 .custom-table th, 
 .custom-table td {
     padding: 0.75rem 1rem;
-    border-bottom: 1px solid #edf2f7;
-    border-right: 1px solid #eef4f0;
+    border-bottom: 1px solid var(--surface-2);
+    border-right: 1px solid var(--surface-3);
 }
 
 /* Sticky Header */
 .custom-table thead th {
     position: sticky;
     top: 0;
-    background-color: #f7faf8;
-    color: #41544a;
+    background-color: var(--surface-2);
+    color: var(--text-body);
     font-weight: 600;
     text-transform: uppercase;
     font-size: 0.75rem;
     letter-spacing: 0.5px;
     z-index: 2;
-    border-bottom: 2px solid #c9d6ce;
+    border-bottom: 2px solid var(--line-strong);
 }
 
 /* Site Card */
 .site-card {
-  background: #f7faf8;
-  border: 1px solid #e2eae5;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
   border-radius: 8px;
   padding: 0.7rem 0.8rem;
   margin-bottom: 0.6rem;
 }
 .site-card-title {
   font-weight: 700;
-  color: #14532d;
+  color: var(--brand-deep-text);
   margin-bottom: 0.3rem;
 }
 /* Pin First Column (Site Name) on Horizontal Scroll */
@@ -1650,24 +1943,24 @@ body.login-page :focus-visible {
 .custom-table td:first-child {
     position: sticky;
     left: 0;
-    background-color: #ffffff;
+    background-color: var(--surface-1);
     z-index: 1;
     font-weight: 600;
-    color: #1c2f26;
+    color: var(--text-strong);
     box-shadow: 2px 0 5px rgba(0, 0, 0, 0.04);
 }
 
 .custom-table thead th:first-child {
     z-index: 3; /* Keeps top-left corner above both sticky row & sticky column */
-    background-color: #f7faf8;
+    background-color: var(--surface-2);
 }
 
 /* Hover States */
 .custom-table tbody tr:hover td {
-    background-color: #eef4f0;
+    background-color: var(--surface-3);
 }
 .custom-table tbody tr:hover td:first-child {
-    background-color: #eef4f0;
+    background-color: var(--surface-3);
 }
 
 /* Typography & Badges */
@@ -1675,21 +1968,43 @@ body.login-page :focus-visible {
     text-align: right;
     font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
 }
+/* Status reads faster as a pill with a leading dot than as coloured text:
+   the dot carries the state at a glance, the tinted ground gives the label
+   an edge so it stops floating in the row. */
 .badge-zone-production,
 .badge-zone-protection {
-    background-color: transparent;
-    padding: 3px 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.2rem 0.6rem;
+    border-radius: 999px;
+    border: 1px solid transparent;
     font-weight: 600;
     font-size: 0.75rem;
-    display: inline-block;
+    line-height: 1.3;
+    white-space: nowrap;
+}
+
+.badge-zone-production::before,
+.badge-zone-protection::before {
+    content: "";
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background-color: currentColor;
+    flex: none;
 }
 
 .badge-zone-production {
-    color: #15803d;
+    color: var(--brand-text);
+    background-color: var(--ok-bg);
+    border-color: var(--ok-line);
 }
 
 .badge-zone-protection {
-    color: #1e40af;
+    color: var(--blue-text);
+    background-color: var(--blue-bg);
+    border-color: var(--blue-line);
 }
 
 /* ============================================
@@ -1714,12 +2029,12 @@ body.login-page :focus-visible {
 .um-title-row h2 {
     margin: 0;
     font-size: 1.5rem;
-    color: #12211a;
+    color: var(--text-heading);
 }
 
 .um-count-pill {
-    background-color: #eef4f0;
-    color: #41544a;
+    background-color: var(--surface-3);
+    color: var(--text-body);
     font-size: 0.75rem;
     font-weight: 700;
     padding: 0.2rem 0.6rem;
@@ -1728,7 +2043,7 @@ body.login-page :focus-visible {
 
 .um-subtitle {
     margin: 0.3rem 0 1.4rem;
-    color: #5f6f66;
+    color: var(--text-2);
     font-size: 0.875rem;
 }
 
@@ -1736,7 +2051,7 @@ body.login-page :focus-visible {
     display: inline-flex;
     align-items: center;
     gap: 0.4rem;
-    background-color: #15803d;
+    background-color: var(--brand-solid);
     color: #ffffff;
     border: none;
     border-radius: 8px;
@@ -1748,7 +2063,7 @@ body.login-page :focus-visible {
 }
 
 .um-btn-add:hover {
-    background-color: #166534;
+    background-color: var(--ok-solid);
 }
 
 .um-btn-add svg {
@@ -1786,18 +2101,18 @@ body.login-page :focus-visible {
     justify-content: space-between;
     gap: 0.4rem;
     min-width: 10.5rem;
-    background-color: #ffffff;
-    border: 1px solid #e2eae5;
+    background-color: var(--surface-1);
+    border: 1px solid var(--line);
     border-radius: 8px;
     padding: 0.5rem 0.85rem;
     font-size: 0.875rem;
     font-weight: 600;
-    color: #2f4239;
+    color: var(--text-strong);
     cursor: pointer;
 }
 
 .um-filter-btn:hover {
-    border-color: #c9d6ce;
+    border-color: var(--line-strong);
 }
 
 .um-filter-btn-label {
@@ -1809,13 +2124,13 @@ body.login-page :focus-visible {
 .um-filter-btn svg:first-child {
     width: 0.95rem;
     height: 0.95rem;
-    color: #5f6f66;
+    color: var(--text-2);
 }
 
 .um-filter-btn svg:last-child {
     width: 0.75rem;
     height: 0.75rem;
-    color: #5f6f66;
+    color: var(--text-2);
 }
 
 .um-filter-menu {
@@ -1826,8 +2141,8 @@ body.login-page :focus-visible {
     min-width: 11rem;
     max-height: 18rem;
     overflow-y: auto;
-    background-color: #ffffff;
-    border: 1px solid #e2eae5;
+    background-color: var(--surface-1);
+    border: 1px solid var(--line);
     border-radius: 8px;
     box-shadow: 0 10px 28px rgba(15, 23, 42, 0.1);
     padding: 0.35rem;
@@ -1849,7 +2164,7 @@ body.login-page :focus-visible {
     border: none;
     padding: 0.5rem 0.6rem;
     font-size: 0.875rem;
-    color: #2f4239;
+    color: var(--text-strong);
     text-decoration: none;
     border-radius: 6px;
     cursor: pointer;
@@ -1858,12 +2173,12 @@ body.login-page :focus-visible {
 
 .um-filter-menu button:hover,
 .um-filter-menu a:hover {
-    background-color: #eef4f0;
+    background-color: var(--surface-3);
 }
 
 .um-filter-menu button.active,
 .um-filter-menu a.active {
-    color: #15803d;
+    color: var(--brand-text);
     font-weight: 700;
 }
 
@@ -1881,28 +2196,28 @@ body.login-page :focus-visible {
     transform: translateY(-50%);
     width: 0.9rem;
     height: 0.9rem;
-    color: #5f6f66;
+    color: var(--text-2);
     pointer-events: none;
 }
 
 .um-search-input {
     width: 100%;
     padding: 0.5rem 0.85rem 0.5rem 2.2rem;
-    border: 1px solid #e2eae5;
+    border: 1px solid var(--line);
     border-radius: 8px;
     font-size: 0.875rem;
-    color: #1c2f26;
-    background-color: #ffffff;
+    color: var(--text-strong);
+    background-color: var(--surface-1);
     outline: none;
     transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .um-search-input::placeholder {
-    color: #6b7a72;
+    color: var(--text-2);
 }
 
 .um-search-input:focus {
-    border-color: #15803d;
+    border-color: var(--brand-text);
     box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.12);
 }
 
@@ -1911,10 +2226,10 @@ body.login-page :focus-visible {
     align-items: center;
     gap: 0.4rem;
     padding: 0.5rem 0.9rem;
-    border: 1px solid #e2eae5;
+    border: 1px solid var(--line);
     border-radius: 8px;
-    background-color: #ffffff;
-    color: #41544a;
+    background-color: var(--surface-1);
+    color: var(--text-body);
     font-size: 0.875rem;
     font-weight: 600;
     line-height: 1.2;
@@ -1939,14 +2254,14 @@ body.login-page :focus-visible {
 }
 
 .um-btn-ghost:hover {
-    border-color: #c9d6ce;
-    color: #12211a;
+    border-color: var(--line-strong);
+    color: var(--text-heading);
 }
 
 /* --- table --- */
 .um-table-card {
-    background-color: #ffffff;
-    border: 1px solid #e2eae5;
+    background-color: var(--surface-1);
+    border: 1px solid var(--line);
     border-radius: 12px;
     overflow: hidden;
 }
@@ -1979,9 +2294,9 @@ body.login-page :focus-visible {
     padding: 0.75rem 1.1rem;
     font-size: 0.75rem;
     font-weight: 700;
-    color: #5f6f66;
-    background-color: #f7faf8;
-    border-bottom: 1px solid #e2eae5;
+    color: var(--text-2);
+    background-color: var(--surface-2);
+    border-bottom: 1px solid var(--line);
     white-space: nowrap;
 }
 
@@ -1994,13 +2309,13 @@ body.login-page :focus-visible {
 .um-th-flex svg {
     width: 0.85rem;
     height: 0.85rem;
-    color: #5f6f66;
+    color: var(--text-2);
 }
 
 .um-table td {
     padding: 0.7rem 1.1rem;
-    border-bottom: 1px solid #eef4f0;
-    color: #41544a;
+    border-bottom: 1px solid var(--surface-3);
+    color: var(--text-body);
     vertical-align: middle;
 }
 
@@ -2009,7 +2324,7 @@ body.login-page :focus-visible {
 }
 
 .um-table tbody tr:hover {
-    background-color: #f7faf8;
+    background-color: var(--surface-2);
 }
 
 .um-name-cell {
@@ -2030,15 +2345,15 @@ body.login-page :focus-visible {
     font-weight: 700;
     font-size: 0.75rem;
     flex-shrink: 0;
-    background-color: #15803d;
+    background-color: var(--brand-solid);
 }
 
-.um-avatar.av-admin { background-color: #7c3aed; }
-.um-avatar.av-officer { background-color: #2563eb; }
+.um-avatar.av-admin { background-color: var(--violet-solid); }
+.um-avatar.av-officer { background-color: var(--blue-solid); }
 
 .um-name {
     font-weight: 600;
-    color: #12211a;
+    color: var(--text-heading);
     overflow: hidden;
     text-overflow: ellipsis;
 }
@@ -2048,8 +2363,8 @@ body.login-page :focus-visible {
     font-size: 0.75rem;
     font-weight: 700;
     text-transform: uppercase;
-    color: #15803d;
-    background-color: #dcfce7;
+    color: var(--brand-text);
+    background-color: var(--ok-bg);
     padding: 0.1rem 0.35rem;
     border-radius: 4px;
 }
@@ -2069,7 +2384,7 @@ body.login-page :focus-visible {
 .um-email-cell svg {
     width: 0.9rem;
     height: 0.9rem;
-    color: #5f6f66;
+    color: var(--text-2);
     flex-shrink: 0;
 }
 
@@ -2079,16 +2394,148 @@ body.login-page :focus-visible {
     border-radius: 6px;
     font-size: 0.75rem;
     font-weight: 600;
-    background-color: #eef4f0;
-    color: #41544a;
+    background-color: var(--surface-3);
+    color: var(--text-body);
 }
 
-.um-role.role-admin { background-color: #ede9fe; color: #6d28d9; }
-.um-role.role-officer { background-color: #eff6ff; color: #1d4ed8; }
-.um-role.role-user { background-color: #f0fdf4; color: #15803d; }
+.um-role.role-admin { background-color: var(--violet-bg); color: var(--violet-text); }
+.um-role.role-officer { background-color: var(--blue-bg); color: var(--blue-text); }
+.um-role.role-user { background-color: var(--ok-bg); color: var(--brand-text); }
 
 .um-actions-cell {
     text-align: right;
+}
+
+/* --- Identity cell -----------------------------------------------------
+   Name and email are one fact about one person, so they share a cell: the
+   name reads first, the address sits under it as the quieter line. That
+   buys back a whole column and stops the eye crossing the table twice to
+   tie a person to their address. */
+#um-table .um-identity {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-width: 0;
+    line-height: 1.35;
+}
+
+#um-table .um-identity-sub {
+    font-size: 0.8125rem;
+    color: var(--n-500);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+#um-table th {
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+/* --- Status --- */
+.um-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.2rem 0.6rem;
+    border-radius: 999px;
+    border: 1px solid transparent;
+    font-size: 0.75rem;
+    font-weight: 600;
+    line-height: 1.3;
+    white-space: nowrap;
+}
+.um-status svg { width: 0.875rem; height: 0.875rem; flex: none; }
+
+.um-status-active {
+    color: var(--brand-text);
+    background-color: var(--ok-bg);
+    border-color: var(--ok-line);
+}
+.um-status-off {
+    color: var(--n-500);
+    background-color: var(--n-100);
+    border-color: var(--n-200);
+}
+
+/* --- Row actions: one button, one menu ---------------------------------
+   Two labelled buttons per row put the same two words on every line and
+   made the table shout. The actions live behind a single control now, and
+   the row goes quiet. */
+.um-menu-wrap {
+    position: relative;
+    display: inline-flex;
+}
+
+.um-kebab {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    background: none;
+    color: var(--n-500);
+    cursor: pointer;
+    transition: background-color 140ms var(--ease), color 140ms var(--ease),
+                border-color 140ms var(--ease), box-shadow 140ms var(--ease);
+}
+.um-kebab svg { width: 1.05rem; height: 1.05rem; }
+.um-kebab:hover { background-color: var(--n-100); color: var(--n-800); }
+.um-kebab[aria-expanded="true"] {
+    background-color: var(--surface-1);
+    border-color: var(--n-200);
+    color: var(--n-800);
+    box-shadow: var(--sh-sm);
+}
+
+/* Fixed, and positioned by the script: .um-table-card clips its children,
+   so a menu laid out inside the row would be cut off at the card edge. */
+.um-row-menu {
+    position: fixed;
+    display: none;
+    z-index: 2100;
+    min-width: 13rem;
+    padding: 0.3rem;
+    background-color: var(--surface-1);
+    border: 1px solid var(--n-200);
+    border-radius: 10px;
+    box-shadow: var(--sh-lg);
+}
+.um-row-menu.open { display: block; }
+
+.um-row-menu button {
+    display: block;
+    width: 100%;
+    padding: 0.5rem 0.65rem;
+    border: none;
+    border-radius: 7px;
+    background: none;
+    font-family: inherit;
+    font-size: 0.875rem;
+    font-weight: 500;
+    text-align: left;
+    color: var(--n-700);
+    cursor: pointer;
+    transition: background-color 120ms var(--ease), color 120ms var(--ease);
+}
+.um-row-menu button:hover { background-color: var(--n-100); color: var(--n-900); }
+
+.um-row-menu button.is-danger { color: var(--danger); }
+.um-row-menu button.is-danger:hover { background-color: var(--danger-bg); color: var(--danger-strong); }
+
+.um-row-menu-sep {
+    height: 1px;
+    margin: 0.3rem 0.15rem;
+    background-color: var(--n-200);
+}
+
+.um-row-menu-note {
+    display: block;
+    padding: 0.5rem 0.65rem;
+    font-size: 0.8125rem;
+    color: var(--n-400);
 }
 
 .um-btn-icon-danger {
@@ -2100,7 +2547,7 @@ body.login-page :focus-visible {
     background: none;
     border: none;
     border-radius: 6px;
-    color: #5f6f66;
+    color: var(--text-2);
     cursor: pointer;
 }
 
@@ -2110,37 +2557,37 @@ body.login-page :focus-visible {
 }
 
 .um-btn-icon-danger:hover {
-    background-color: #fef2f2;
-    color: #dc2626;
+    background-color: var(--danger-bg);
+    color: var(--danger-text);
 }
 
 .um-btn-icon-danger:disabled {
-    color: #e2eae5;
+    color: var(--line);
     cursor: not-allowed;
 }
 
 .um-btn-icon-danger:disabled:hover {
     background-color: transparent;
-    color: #e2eae5;
+    color: var(--line);
 }
 
 /* --- empty state --- */
 .um-empty {
     padding: 3rem 1.5rem;
     text-align: center;
-    color: #5f6f66;
+    color: var(--text-2);
 }
 
 .um-empty svg {
     width: 2rem;
     height: 2rem;
-    color: #8d9c94;
+    color: var(--text-3);
     margin-bottom: 0.6rem;
 }
 
 .um-empty strong {
     display: block;
-    color: #12211a;
+    color: var(--text-heading);
     margin-bottom: 0.25rem;
 }
 
@@ -2166,7 +2613,7 @@ body.login-page :focus-visible {
 }
 
 .um-modal {
-    background-color: #ffffff;
+    background-color: var(--surface-1);
     border-radius: 12px;
     width: min(100%, 26rem);
     box-shadow: 0 24px 50px rgba(15, 23, 42, 0.25);
@@ -2184,7 +2631,7 @@ body.login-page :focus-visible {
 .um-modal-head h3 {
     margin: 0;
     font-size: 1.125rem;
-    color: #12211a;
+    color: var(--text-heading);
 }
 
 .um-modal-close {
@@ -2195,7 +2642,7 @@ body.login-page :focus-visible {
     height: 1.75rem;
     background: none;
     border: none;
-    color: #5f6f66;
+    color: var(--text-2);
     cursor: pointer;
     border-radius: 4px;
 }
@@ -2206,8 +2653,8 @@ body.login-page :focus-visible {
 }
 
 .um-modal-close:hover {
-    color: #12211a;
-    background-color: #eef4f0;
+    color: var(--text-heading);
+    background-color: var(--surface-3);
 }
 
 .um-modal-body {
@@ -2217,12 +2664,12 @@ body.login-page :focus-visible {
 .um-warn {
     display: flex;
     gap: 0.7rem;
-    background-color: #fef2f2;
-    border: 1px solid #fecaca;
+    background-color: var(--danger-bg);
+    border: 1px solid var(--danger-line);
     border-radius: 8px;
     padding: 0.9rem 1rem;
     font-size: 0.875rem;
-    color: #7f1d1d;
+    color: var(--danger-strong);
     line-height: 1.55;
 }
 
@@ -2231,7 +2678,72 @@ body.login-page :focus-visible {
     height: 1.05rem;
     flex-shrink: 0;
     margin-top: 0.1rem;
-    color: #dc2626;
+    color: var(--danger-text);
+}
+
+/* --- Bootstrap-named form classes ---------------------------------------
+   Several forms arrived written against Bootstrap, which this project does
+   not load. Without these, .form-text rendered at full body size and read
+   louder than the field it was explaining, and .form-control fell back to
+   the browser's own control. Matched to .um-field so a form does not change
+   character halfway down. */
+.form-label {
+    display: block;
+    margin-bottom: 0.35rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--text-strong);
+}
+
+.form-text {
+    margin-top: 0.4rem;
+    font-size: 0.8125rem;
+    line-height: 1.5;
+    color: var(--text-2);
+}
+
+.form-control {
+    width: 100%;
+    padding: 0.6rem 0.8rem;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    font-size: 0.875rem;
+    font-family: inherit;
+    color: var(--text-strong);
+    background-color: var(--surface-1);
+    outline: none;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.form-control:focus {
+    border-color: var(--brand-text);
+    box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.12);
+}
+
+/* The file input's own button is drawn by the browser, so it has to be
+   styled through its pseudo-element or it stays a grey system control. */
+.form-control[type="file"] {
+    padding: 0.45rem 0.6rem;
+    color: var(--text-2);
+}
+
+.form-control[type="file"]::file-selector-button {
+    margin-right: 0.75rem;
+    padding: 0.35rem 0.75rem;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    background-color: var(--surface-2);
+    color: var(--text-strong);
+    font-family: inherit;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.form-control[type="file"]::file-selector-button:hover {
+    background-color: var(--surface-3);
+    border-color: var(--line-strong);
 }
 
 .um-field {
@@ -2242,7 +2754,7 @@ body.login-page :focus-visible {
     display: block;
     font-size: 0.875rem;
     font-weight: 600;
-    color: #2f4239;
+    color: var(--text-strong);
     margin-bottom: 0.35rem;
 }
 
@@ -2251,11 +2763,11 @@ body.login-page :focus-visible {
 .um-field textarea {
     width: 100%;
     padding: 0.6rem 0.8rem;
-    border: 1px solid #e2eae5;
+    border: 1px solid var(--line);
     border-radius: 8px;
     font-size: 0.875rem;
-    color: #1c2f26;
-    background-color: #ffffff;
+    color: var(--text-strong);
+    background-color: var(--surface-1);
     outline: none;
     font-family: inherit;
     transition: border-color 0.15s ease, box-shadow 0.15s ease;
@@ -2267,19 +2779,19 @@ body.login-page :focus-visible {
 
 .um-field input::placeholder,
 .um-field textarea::placeholder {
-    color: #6b7a72;
+    color: var(--text-2);
 }
 
 .um-field input:focus,
 .um-field select:focus,
 .um-field textarea:focus {
-    border-color: #15803d;
+    border-color: var(--brand-text);
     box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.12);
 }
 
 .um-field select:disabled {
-    background-color: #f7faf8;
-    color: #5f6f66;
+    background-color: var(--surface-2);
+    color: var(--text-2);
     cursor: not-allowed;
 }
 
@@ -2296,25 +2808,25 @@ body.login-page :focus-visible {
 
 .um-btn-cancel {
     padding: 0.65rem 1rem;
-    border: 1px solid #e2eae5;
+    border: 1px solid var(--line);
     border-radius: 8px;
-    background-color: #ffffff;
-    color: #41544a;
+    background-color: var(--surface-1);
+    color: var(--text-body);
     font-size: 0.875rem;
     font-weight: 600;
     cursor: pointer;
 }
 
 .um-btn-cancel:hover {
-    border-color: #c9d6ce;
-    color: #12211a;
+    border-color: var(--line-strong);
+    color: var(--text-heading);
 }
 
 .um-btn-confirm-danger {
     padding: 0.65rem 1rem;
     border: none;
     border-radius: 8px;
-    background-color: #dc2626;
+    background-color: var(--danger-solid);
     color: #ffffff;
     font-size: 0.875rem;
     font-weight: 600;
@@ -2322,14 +2834,14 @@ body.login-page :focus-visible {
 }
 
 .um-btn-confirm-danger:hover {
-    background-color: #b91c1c;
+    background-color: var(--danger-solid);
 }
 
 .um-btn-confirm {
     padding: 0.65rem 1rem;
     border: none;
     border-radius: 8px;
-    background-color: #15803d;
+    background-color: var(--brand-solid);
     color: #ffffff;
     font-size: 0.875rem;
     font-weight: 600;
@@ -2337,7 +2849,7 @@ body.login-page :focus-visible {
 }
 
 .um-btn-confirm:hover {
-    background-color: #166534;
+    background-color: var(--ok-solid);
 }
 
 @media (max-width: 640px) {
@@ -2391,6 +2903,31 @@ body.login-page :focus-visible {
     white-space: normal;
 }
 
+/* --- Species table: a scrollport of its own -----------------------------
+   58 rows is well past a screen, and the column headings are the only
+   thing that says what each figure is. The wrapper already sets
+   overflow-x, which quietly makes it a scroll container; giving it a
+   ceiling makes it actually scroll, and that is what a sticky header needs
+   to stick to. Short result sets (the default top 5) never reach the
+   ceiling, so no inner scrollbar appears for them. */
+#rec-scroll {
+    max-height: max(24rem, calc(100vh - 22rem));
+    overflow-y: auto;
+    /* The gutter is reserved either way, so switching between "top 5" and
+       "all 58" does not shift the columns sideways. */
+    scrollbar-gutter: stable;
+}
+
+#rec-scroll thead th {
+    position: sticky;
+    top: 0;
+    z-index: 3;
+    /* .um-table th already carries an opaque ground; the border below it is
+       redrawn as an inset shadow because a collapsed-border table drops
+       borders on sticky cells. */
+    box-shadow: inset 0 -1px 0 var(--line);
+}
+
 /* ============================================
    REFORESTATION SITES (flat table + horizontal scroll)
    ============================================ */
@@ -2401,6 +2938,18 @@ body.login-page :focus-visible {
 .um-scroll-wrap {
     overflow-x: auto;
     scroll-behavior: smooth;
+}
+
+/* A ceiling rather than a fixed height: a short page of rows still ends
+   where it ends and shows no inner scrollbar, while a long one scrolls
+   inside the card so the header can stay pinned to the top of it. The
+   floor keeps the table usable on a short laptop screen. */
+#sites-scroll {
+    max-height: max(24rem, calc(100vh - 16rem));
+    overflow-y: auto;
+    /* Same reason as .main-area: changing row density or page size must not
+       move the columns sideways. */
+    scrollbar-gutter: stable;
 }
 
 .sites-table,
@@ -2415,7 +2964,7 @@ body.login-page :focus-visible {
 
 .sites-name-cell {
     font-weight: 600;
-    color: #12211a;
+    color: var(--text-heading);
 }
 
 .sites-fw-semibold {
@@ -2423,56 +2972,164 @@ body.login-page :focus-visible {
 }
 
 .sites-actual {
-    color: #15803d;
+    color: var(--brand-text);
 }
 
-.sites-scroll-controls,
-.um-scroll-controls {
+/* --- Data-table treatment ---------------------------------------------
+   The sites card carries its own toolbar and footer rather than floating
+   loose controls above and below it, so the whole thing reads as one
+   object. Headers are small caps that sort on click, the name column
+   leads with an initial chip, and rows are paged. Light ground: this
+   product has no dark surfaces. */
+
+.dt-card {
+    display: flex;
+    flex-direction: column;
+    /* .um-table-card clips its children, which would cut off the
+       municipality dropdown now that the filter lives inside the card. The
+       toolbar and footer round their own outer corners instead. */
+    overflow: visible;
+}
+
+.dt-toolbar {
     display: flex;
     align-items: center;
-    justify-content: center;
-    gap: 0.75rem;
-    padding: 0.7rem 1rem;
-    border-top: 1px solid #e2eae5;
-    background-color: #f7faf8;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+    padding: 0.85rem 1.1rem;
+    border-bottom: 1px solid var(--n-200);
+    background-color: var(--n-50);
+    border-radius: 12px 12px 0 0;
 }
 
-.sites-scroll-btn,
-.um-scroll-btn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 2rem;
-    height: 2rem;
-    border-radius: 50%;
-    border: 1px solid #e2eae5;
-    background-color: #ffffff;
-    color: #2f4239;
-    cursor: pointer;
+/* Pushes the row count to the far edge whatever the filter label says. */
+.dt-toolbar .um-search-group { margin-left: auto; }
+
+.dt-count {
+    font-size: 0.8125rem;
+    color: var(--n-500);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+.dt-count strong { color: var(--n-800); font-weight: 600; }
+
+/* Headers are labels, not controls: small caps, tracked out, quiet. They
+   carry no hover state and no chevron, so nothing in the header row reads
+   as a button. */
+#sites-table th {
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
 }
 
-.sites-scroll-btn svg,
-.um-scroll-btn svg {
-    width: 0.9rem;
-    height: 0.9rem;
+/* The header row stays at the top of the scrollport, so the reader never
+   has to scroll back up to remember which column they are reading.
+   border-collapse drops borders on sticky cells, so the rule under the
+   header is an inset shadow. */
+#sites-table thead th {
+    position: sticky;
+    top: 0;
+    z-index: 4;
 }
 
-.sites-scroll-btn:hover:not(:disabled),
-.um-scroll-btn:hover:not(:disabled) {
-    border-color: #15803d;
-    color: #15803d;
-}
-
-.sites-scroll-btn:disabled,
-.um-scroll-btn:disabled {
-    color: #c9d6ce;
-    cursor: not-allowed;
-}
-
-.sites-scroll-hint,
-.um-scroll-hint {
+/* Codes are identifiers, not prose -- mono, tracked out, quiet. */
+#sites-table td code,
+.dt-code {
+    font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
     font-size: 0.75rem;
-    color: #5f6f66;
+    letter-spacing: 0.02em;
+    color: var(--n-500);
+    background: none;
+    padding: 0;
+}
+
+/* --- Row height --------------------------------------------------------
+   One height, set in one place. This was briefly a three-way switch
+   (40/48/56); the choice was not worth the toolbar space, so the roomiest
+   setting became the only one. */
+/* .um-table collapses its borders, and a browser will not paint an outer
+   box-shadow on a cell of a collapsed-border table -- which is what kept
+   the frozen-column shade invisible. Separate borders with zero spacing
+   look identical (the cells only ever draw a bottom border) and let the
+   shadow through. */
+#sites-table {
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+#sites-table { --dt-row-h: 56px; }
+
+/* Height owns the row outright, so the cells give up their vertical
+   padding -- otherwise padding plus line-height would overshoot 40px and
+   compact would not actually be compact. */
+#sites-table tbody tr {
+    height: var(--dt-row-h);
+    transition: background-color 140ms var(--ease);
+}
+#sites-table tbody td {
+    padding-top: 0;
+    padding-bottom: 0;
+}
+
+/* --- Pinned (frozen) first columns -------------------------------------
+   Twenty-odd columns means the reader loses track of which row they are on
+   as soon as they scroll sideways, so the two identifying columns stay put
+   and the rest slide underneath them. The left offsets are measured in JS
+   because the table is auto-layout -- the code column is only as wide as
+   its content.
+
+   The edge shade is a box-shadow rather than a pseudo-element: a shadow
+   paints outside the cell without needing overflow:visible, so the cells
+   keep the ellipsis they get from .um-table. */
+#sites-table .dt-pin {
+    position: sticky;
+    left: 0;                      /* replaced per column by the script */
+    z-index: 2;
+    background-color: var(--surface-1);
+    transition: box-shadow 160ms var(--ease), background-color 140ms var(--ease);
+}
+
+#sites-table thead .dt-pin {
+    z-index: 5;
+    background-color: var(--n-50);
+}
+
+#sites-table tbody tr:hover .dt-pin { background-color: var(--n-50); }
+
+/* Long site names would otherwise let the frozen pair eat half the screen. */
+#sites-table .sites-name-cell { max-width: 20rem; }
+
+/* Nothing marks the edge while the table sits at its left-most position --
+   the frozen columns should look like ordinary columns until something is
+   actually passing underneath them. Scrolled sideways, a soft shade fades
+   in and that is the only edge treatment there is.
+
+   The spread is only -4px: pulled in any further the shade lands inside
+   the cell's own edge and disappears. */
+#sites-scroll.is-scrolled .dt-pin-last {
+    box-shadow: 10px 0 12px -4px var(--pin-shade);
+}
+
+/* --- Footer: range on the left, pager on the right -------------------- */
+.dt-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    padding: 0.7rem 1.1rem;
+    border-top: 1px solid var(--n-200);
+    background-color: var(--n-50);
+    border-radius: 0 0 12px 12px;
+}
+
+.dt-range {
+    font-size: 0.75rem;
+    color: var(--n-500);
+    font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 640px) {
+    .dt-footer { justify-content: center; }
 }
 
 /* ============================================
@@ -2486,39 +3143,39 @@ body.login-page :focus-visible {
 
 /* --- flash messages --- */
 .um-alert {
-    border: 1px solid #e2eae5;
-    border-left: 3px solid #5f6f66;
+    border: 1px solid var(--line);
+    border-left: 3px solid var(--text-2);
     border-radius: 8px;
     padding: 0.8rem 1rem;
     margin-bottom: 1.1rem;
     font-size: 0.875rem;
-    color: #2f4239;
-    background-color: #f7faf8;
+    color: var(--text-strong);
+    background-color: var(--surface-2);
 }
 
 .um-alert-success {
-    border-left-color: #15803d;
-    background-color: #f0fdf4;
-    color: #15803d;
+    border-left-color: var(--brand-text);
+    background-color: var(--ok-bg);
+    color: var(--brand-text);
 }
 
 .um-alert-danger,
 .um-alert-error {
-    border-left-color: #dc2626;
-    background-color: #fef2f2;
-    color: #991b1b;
+    border-left-color: var(--danger-text);
+    background-color: var(--danger-bg);
+    color: var(--danger-strong);
 }
 
 .um-alert-warning {
-    border-left-color: #f59e0b;
-    background-color: #fffbeb;
-    color: #78350f;
+    border-left-color: var(--warn-text);
+    background-color: var(--warn-bg);
+    color: var(--warn-strong);
 }
 
 .um-alert-info {
-    border-left-color: #0ea5e9;
-    background-color: #f0f9ff;
-    color: #075985;
+    border-left-color: var(--info-text);
+    background-color: var(--info-bg);
+    color: var(--info-strong);
 }
 
 /* --- approval status pill --- */
@@ -2531,15 +3188,15 @@ body.login-page :focus-visible {
     white-space: nowrap;
 }
 
-.um-status.st-pending { background-color: #fef3c7; color: #92400e; }
-.um-status.st-approved { background-color: #dcfce7; color: #15803d; }
-.um-status.st-rejected { background-color: #fee2e2; color: #991b1b; }
+.um-status.st-pending { background-color: var(--warn-bg); color: var(--warn-strong); }
+.um-status.st-approved { background-color: var(--ok-bg); color: var(--brand-text); }
+.um-status.st-rejected { background-color: var(--danger-bg); color: var(--danger-strong); }
 
 /* --- panel: a card holding form controls or prose rather than a table,
        so unlike .um-table-card it carries its own padding --- */
 .um-panel {
-    background-color: #ffffff;
-    border: 1px solid #e2eae5;
+    background-color: var(--surface-1);
+    border: 1px solid var(--line);
     border-radius: 12px;
     padding: 1.3rem 1.5rem 1.5rem;
     margin-bottom: 1.4rem;
@@ -2551,20 +3208,20 @@ body.login-page :focus-visible {
     gap: 0.6rem;
     padding-bottom: 0.8rem;
     margin-bottom: 1rem;
-    border-bottom: 1px solid #e2eae5;
+    border-bottom: 1px solid var(--line);
 }
 
 .um-panel-head h3 {
     margin: 0;
     font-size: 1rem;
     font-weight: 700;
-    color: #12211a;
+    color: var(--text-heading);
 }
 
 .um-panel-head svg {
     width: 1.05rem;
     height: 1.05rem;
-    color: #15803d;
+    color: var(--brand-text);
     flex-shrink: 0;
 }
 
@@ -2575,7 +3232,7 @@ body.login-page :focus-visible {
     width: 1.6rem;
     height: 1.6rem;
     border-radius: 50%;
-    background-color: #15803d;
+    background-color: var(--brand-solid);
     color: #ffffff;
     font-size: 0.75rem;
     font-weight: 700;
@@ -2598,42 +3255,42 @@ body.login-page :focus-visible {
 .um-field-hint {
     margin: 0.35rem 0 0;
     font-size: 0.75rem;
-    color: #5f6f66;
+    color: var(--text-2);
 }
 
 .um-req {
-    color: #dc2626;
+    color: var(--danger-text);
 }
 
 /* --- callouts: guidance (blue) and caveats (amber) --- */
 .um-note {
-    background-color: #f0f9ff;
-    border-left: 3px solid #0ea5e9;
+    background-color: var(--info-bg);
+    border-left: 3px solid var(--info-text);
     border-radius: 8px;
     padding: 0.8rem 1rem;
     margin-bottom: 1.1rem;
     font-size: 0.875rem;
     line-height: 1.65;
-    color: #2f4239;
+    color: var(--text-strong);
 }
 
 .um-note strong {
-    color: #075985;
+    color: var(--info-strong);
 }
 
 .um-note-warn {
-    background-color: #fffbeb;
-    border-left: 3px solid #f59e0b;
+    background-color: var(--warn-bg);
+    border-left: 3px solid var(--warn-text);
     border-radius: 8px;
     padding: 0.8rem 1rem;
     margin-top: 1rem;
     font-size: 0.875rem;
     line-height: 1.65;
-    color: #78350f;
+    color: var(--warn-strong);
 }
 
 .um-note-warn strong {
-    color: #78350f;
+    color: var(--warn-strong);
 }
 
 /* Toolbar variant for pages whose only control is the search box, which
@@ -2650,7 +3307,7 @@ body.login-page :focus-visible {
     padding: 0.35rem 0.75rem;
     border: none;
     border-radius: 7px;
-    background-color: #15803d;
+    background-color: var(--brand-solid);
     color: #ffffff;
     font-size: 0.75rem;
     font-weight: 600;
@@ -2660,7 +3317,7 @@ body.login-page :focus-visible {
 }
 
 .um-btn-row:hover {
-    background-color: #166534;
+    background-color: var(--ok-solid);
 }
 
 .um-btn-row svg {
@@ -2674,10 +3331,10 @@ body.login-page :focus-visible {
     align-items: center;
     gap: 0.4rem;
     padding: 0.5rem 0.9rem;
-    border: 1px solid #bbf7d0;
+    border: 1px solid var(--ok-line);
     border-radius: 8px;
-    background-color: #f0fdf4;
-    color: #15803d;
+    background-color: var(--ok-bg);
+    color: var(--brand-text);
     font-size: 0.875rem;
     font-weight: 600;
     font-family: inherit;
@@ -2685,8 +3342,8 @@ body.login-page :focus-visible {
 }
 
 .um-btn-outline:hover {
-    border-color: #15803d;
-    background-color: #dcfce7;
+    border-color: var(--brand-text);
+    background-color: var(--ok-bg);
 }
 
 .um-btn-outline svg {
@@ -2699,14 +3356,14 @@ body.login-page :focus-visible {
     align-items: center;
     gap: 0.35rem;
     margin-bottom: 0.9rem;
-    color: #5f6f66;
+    color: var(--text-2);
     font-size: 0.875rem;
     font-weight: 600;
     text-decoration: none;
 }
 
 .um-back-link:hover {
-    color: #15803d;
+    color: var(--brand-text);
 }
 
 .um-back-link svg {
@@ -2727,7 +3384,7 @@ body.login-page :focus-visible {
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.5px;
-    color: #5f6f66;
+    color: var(--text-2);
 }
 
 .um-fact .val {
@@ -2735,7 +3392,7 @@ body.login-page :focus-visible {
     margin-top: 0.15rem;
     font-size: 1rem;
     font-weight: 700;
-    color: #12211a;
+    color: var(--text-heading);
 }
 
 .um-fact .val-sm {
@@ -2746,7 +3403,7 @@ body.login-page :focus-visible {
    and needs to read as a result panel rather than another input group. */
 .rep-site-facts {
     display: none;
-    background-color: #14532d;
+    background-color: var(--brand-deep);
     border-radius: 10px;
     padding: 1.1rem 1.2rem;
     margin-top: 1.2rem;
@@ -2763,7 +3420,10 @@ body.login-page :focus-visible {
     font-weight: 700;
 }
 
-.rep-site-facts .lbl { color: #86efac; }
+/* This panel is dark green under both themes, so its label takes a fixed
+   light green -- --ok-line is a border tint and drops to low alpha in
+   dark, which would all but erase it here. */
+.rep-site-facts .lbl { color: #9fe0ba; }
 .rep-site-facts .val { color: #ffffff; }
 
 /* --- sampling plot rows --- */
@@ -2781,7 +3441,7 @@ body.login-page :focus-visible {
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.5px;
-    color: #5f6f66;
+    color: var(--text-2);
 }
 
 .rep-plot-row {
@@ -2791,22 +3451,22 @@ body.login-page :focus-visible {
 .rep-plot-row input {
     width: 100%;
     padding: 0.45rem 0.65rem;
-    border: 1px solid #e2eae5;
+    border: 1px solid var(--line);
     border-radius: 8px;
     font-size: 0.875rem;
     font-family: inherit;
-    color: #1c2f26;
+    color: var(--text-strong);
     outline: none;
 }
 
 .rep-plot-row input:focus {
-    border-color: #15803d;
+    border-color: var(--brand-text);
     box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.12);
 }
 
 .rep-plot-num {
     font-weight: 700;
-    color: #5f6f66;
+    color: var(--text-2);
     text-align: center;
     font-size: 0.875rem;
 }
@@ -2817,10 +3477,10 @@ body.login-page :focus-visible {
     justify-content: center;
     width: 1.9rem;
     height: 1.9rem;
-    border: 1px solid #fecaca;
+    border: 1px solid var(--danger-line);
     border-radius: 8px;
-    background-color: #fef2f2;
-    color: #b91c1c;
+    background-color: var(--danger-bg);
+    color: var(--danger-strong);
     font-size: 1rem;
     line-height: 1;
     font-family: inherit;
@@ -2828,14 +3488,14 @@ body.login-page :focus-visible {
 }
 
 .rep-plot-remove:hover {
-    border-color: #dc2626;
-    background-color: #fee2e2;
+    border-color: var(--danger-text);
+    background-color: var(--danger-bg);
 }
 
 /* --- live survival calculation --- */
 .rep-calc {
-    background-color: #f7faf8;
-    border: 1px solid #e2eae5;
+    background-color: var(--surface-2);
+    border: 1px solid var(--line);
     border-radius: 10px;
     padding: 1rem 1.1rem;
     margin-top: 1.1rem;
@@ -2848,22 +3508,22 @@ body.login-page :focus-visible {
     justify-content: space-between;
     gap: 1rem;
     padding: 0.32rem 0;
-    border-bottom: 1px solid #eef2f7;
+    border-bottom: 1px solid var(--surface-2);
 }
 
 .rep-calc-line:last-child {
     border-bottom: none;
 }
 
-.rep-calc-line .lbl { color: #5f6f66; }
-.rep-calc-line .val { font-weight: 600; color: #1c2f26; }
+.rep-calc-line .lbl { color: var(--text-2); }
+.rep-calc-line .val { font-weight: 600; color: var(--text-strong); }
 
 .rep-calc-result {
     display: flex;
     align-items: baseline;
     justify-content: space-between;
     gap: 1rem;
-    background-color: #14532d;
+    background-color: var(--brand-deep);
     color: #ffffff;
     border-radius: 10px;
     padding: 0.85rem 1.1rem;
@@ -2872,7 +3532,7 @@ body.login-page :focus-visible {
 }
 
 .rep-calc-result.fail {
-    background-color: #991b1b;
+    background-color: var(--danger-solid);
 }
 
 .rep-calc-result .big {
@@ -2881,70 +3541,88 @@ body.login-page :focus-visible {
 }
 
 .rep-calc-warn {
-    background-color: #fffbeb;
-    border-left: 3px solid #f59e0b;
+    background-color: var(--warn-bg);
+    border-left: 3px solid var(--warn-text);
     border-radius: 6px;
     padding: 0.55rem 0.8rem;
     margin-top: 0.5rem;
     font-size: 0.75rem;
-    color: #78350f;
+    color: var(--warn-strong);
 }
 
 /* --- report detail: headline survival banner --- */
+/* Baseline alignment was pulling the figure up to sit level with the first
+   of the two lines beside it, which left it floating clear of its own
+   block. Centring the row settles the pair against each other. */
 .rep-headline {
     display: flex;
-    align-items: baseline;
+    align-items: center;
     justify-content: space-between;
-    gap: 1rem;
+    gap: 0.5rem 1.5rem;
     flex-wrap: wrap;
-    background-color: #14532d;
+    background-color: var(--brand-deep);
     color: #ffffff;
     border-radius: 12px;
     padding: 1.15rem 1.4rem;
     margin-bottom: 1.4rem;
 }
 
+/* The text column takes the slack, so the figure stays hard right without
+   the two ends drifting apart on a wide screen. */
+.rep-headline > div {
+    flex: 1 1 16rem;
+    min-width: 0;
+}
+
 .rep-headline.fail {
-    background-color: #991b1b;
+    background-color: var(--danger-solid);
 }
 
 .rep-headline .lbl {
     display: block;
     font-size: 0.75rem;
     font-weight: 700;
+    line-height: 1.2;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
+    letter-spacing: 0.06em;
     opacity: 0.75;
 }
 
 .rep-headline .sub {
     display: block;
-    margin-top: 0.2rem;
+    margin-top: 0.25rem;
     font-size: 0.875rem;
+    line-height: 1.4;
     opacity: 0.9;
 }
 
 .rep-headline .big {
-    font-size: 2rem;
+    /* Tight leading and tabular figures: the number is set on its own, and
+       at 2rem a default line-height adds space it does not need. */
+    font-size: clamp(1.75rem, 1.2rem + 1.6vw, 2.25rem);
     font-weight: 700;
+    line-height: 1;
+    letter-spacing: -0.02em;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
 }
 
 /* --- plot count bars --- */
 .rep-bar-track {
     width: 100%;
     height: 0.45rem;
-    background-color: #e2eae5;
+    background-color: var(--surface-3);
     border-radius: 999px;
     overflow: hidden;
 }
 
 .rep-bar-fill {
     height: 100%;
-    background-color: #15803d;
+    background-color: var(--brand-solid);
 }
 
 .rep-bar-fill.low {
-    background-color: #f59e0b;
+    background-color: var(--warn-solid);
 }
 
 /* --- photo evidence --- */
@@ -2955,10 +3633,10 @@ body.login-page :focus-visible {
 }
 
 .rep-photo-card {
-    border: 1px solid #e2eae5;
+    border: 1px solid var(--line);
     border-radius: 10px;
     overflow: hidden;
-    background-color: #f7faf8;
+    background-color: var(--surface-2);
 }
 
 .rep-photo-card img {
@@ -2972,7 +3650,7 @@ body.login-page :focus-visible {
     padding: 0.55rem 0.65rem;
     font-size: 0.75rem;
     line-height: 1.55;
-    color: #41544a;
+    color: var(--text-body);
 }
 
 .rep-badge-ok,
@@ -2985,12 +3663,12 @@ body.login-page :focus-visible {
     font-weight: 700;
 }
 
-.rep-badge-ok { background-color: #dcfce7; color: #15803d; }
-.rep-badge-flag { background-color: #fef3c7; color: #92400e; }
+.rep-badge-ok { background-color: var(--ok-bg); color: var(--brand-text); }
+.rep-badge-flag { background-color: var(--warn-bg); color: var(--warn-strong); }
 
 .rep-map {
     height: 320px;
-    border: 1px solid #e2eae5;
+    border: 1px solid var(--line);
     border-radius: 10px;
 }
 
@@ -3009,13 +3687,13 @@ body.login-page :focus-visible {
     gap: 0.5rem;
     margin-top: 1rem;
     font-size: 0.875rem;
-    color: #2f4239;
+    color: var(--text-strong);
 }
 
 .rep-checkbox input {
     width: 1rem;
     height: 1rem;
-    accent-color: #15803d;
+    accent-color: var(--brand-text);
     cursor: pointer;
 }
 
@@ -3035,7 +3713,7 @@ body.login-page :focus-visible {
 .section-head {
     margin: 2rem 0 1rem;
     padding-bottom: 0.6rem;
-    border-bottom: 1px solid #e2eae5;
+    border-bottom: 1px solid var(--line);
 }
 
 .section-head:first-of-type {
@@ -3068,12 +3746,16 @@ body.login-page :focus-visible {
 
 .kpi-strip {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
     gap: 0.85rem;
     margin-bottom: 1.5rem;
 }
 
 .kpi {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.75rem;
     background-color: var(--n-0);
     border: 1px solid var(--n-200);
     border-radius: var(--r-md);
@@ -3081,13 +3763,46 @@ body.login-page :focus-visible {
     box-shadow: var(--sh-sm);
 }
 
+.kpi-text {
+    min-width: 0;
+}
+
+/* The icon names the measure without competing with it: a tinted square,
+   the figure's own hue, and a size that keeps it clearly second. */
+.kpi-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+    width: 2.85rem;
+    height: 2.85rem;
+    border-radius: var(--r-md);
+    background-color: var(--ok-bg);
+    border: 1px solid var(--ok-line);
+    color: var(--brand-text);
+}
+
+.kpi-icon svg {
+    width: 1.5rem;
+    height: 1.5rem;
+}
+
+.kpi.alert .kpi-icon {
+    background-color: var(--danger-bg);
+    border-color: var(--danger-line);
+    color: var(--danger-text);
+}
+
+/* --brand-700 is a deep forest green: right on paper, and all but invisible
+   on a dark card, which is what it became when the theme flipped.
+   --brand-deep-text is the same role written for both grounds. */
 .kpi .num {
     display: block;
     font-size: var(--fs-2xl);
     font-weight: 700;
     line-height: 1.15;
     letter-spacing: -0.02em;
-    color: var(--brand-700);
+    color: var(--brand-deep-text);
     /* Figures line up across the strip instead of jittering per glyph. */
     font-variant-numeric: tabular-nums;
 }
@@ -3110,7 +3825,7 @@ body.login-page :focus-visible {
 }
 
 .kpi.alert .num {
-    color: #b91c1c;
+    color: var(--danger-strong);
 }
 
 .chart-card {
@@ -3178,34 +3893,34 @@ body.login-page :focus-visible {
 /* Reuses the .um-note look so a dashboard finding reads the same as the
    guidance callouts on the monitoring report pages. */
 .finding {
-    background-color: #f0f9ff;
-    border-left: 3px solid #0ea5e9;
+    background-color: var(--info-bg);
+    border-left: 3px solid var(--info-text);
     border-radius: 8px;
     padding: 0.85rem 1rem;
     margin-top: 0.9rem;
     font-size: 0.875rem;
     line-height: 1.6;
-    color: #2f4239;
+    color: var(--text-strong);
 }
 
 .finding strong {
-    color: #075985;
+    color: var(--info-strong);
 }
 
 .finding.warn {
-    background-color: #fffbeb;
-    border-left-color: #f59e0b;
-    color: #78350f;
+    background-color: var(--warn-bg);
+    border-left-color: var(--warn-text);
+    color: var(--warn-strong);
 }
 
 .finding.warn strong {
-    color: #92400e;
+    color: var(--warn-strong);
 }
 
 .loading {
     text-align: center;
     padding: 3rem 1rem;
-    color: #5f6f66;
+    color: var(--text-2);
 }
 
 
@@ -3241,7 +3956,7 @@ body.login-page :focus-visible {
     position: sticky;
     top: 0;
     z-index: 30;
-    background-color: rgba(255, 255, 255, 0.85);
+    background-color: var(--surface-glass);
     backdrop-filter: blur(8px) saturate(1.4);
     -webkit-backdrop-filter: blur(8px) saturate(1.4);
 }
@@ -3304,6 +4019,10 @@ body.login-page :focus-visible {
     flex-shrink: 0;
 }
 
+/* These swatches are the chart's written key, so they hold the same hex the
+   canvas draws with and do not move between themes -- a legend that changes
+   shade is a legend the reader has to learn twice. Keep them in step with
+   GREEN / AMBER / RED in Dashboard.html. */
 .chart-key .dot-ok { background: #16a34a; }
 .chart-key .dot-warn { background: #b45309; }
 .chart-key .dot-bad { background: #dc2626; }
@@ -3313,7 +4032,7 @@ body.login-page :focus-visible {
    a line of text that the real content then shoves aside. */
 .dash-skeleton .sk-strip {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
     gap: 0.85rem;
     margin-bottom: var(--sp-3);
 }
@@ -3376,8 +4095,8 @@ body.login-page :focus-visible {
     min-width: 1.375rem;
     padding: 0 0.375rem;
     border-radius: 999px;
-    background: #eef4f0;
-    color: #41544a;
+    background: var(--surface-3);
+    color: var(--text-body);
     font-size: 0.75rem;
     font-weight: 700;
     font-variant-numeric: tabular-nums;
@@ -3385,8 +4104,8 @@ body.login-page :focus-visible {
 
 .um-filter-menu a.active .um-filter-count,
 .um-filter-menu button.active .um-filter-count {
-    background: #dcfce7;
-    color: #15803d;
+    background: var(--ok-bg);
+    color: var(--brand-text);
 }
 
 /* ---- Dashboard card hover ----

@@ -5,42 +5,42 @@
 {% block extra_head %}
 <style>
   .rq-panel {
-    background:#fff; border:1px solid #e2e8f0; border-radius:10px;
+    background:var(--surface-1); border:1px solid var(--line); border-radius:10px;
     box-shadow:0 2px 8px rgba(0,0,0,.04);
     padding:1.15rem 1.25rem; margin-bottom:1.25rem;
   }
   .rq-panel h5 {
     margin:0 0 .9rem; font-weight:700; color:#14532d; font-size:1rem;
-    padding-bottom:.5rem; border-bottom:1px solid #e2e8f0;
+    padding-bottom:.5rem; border-bottom:1px solid var(--line);
   }
 
   .rq-line { display:flex; justify-content:space-between;
-             padding:.4rem 0; border-bottom:1px solid #f1f5f9; font-size:.88rem; }
+             padding:.4rem 0; border-bottom:1px solid var(--surface-3); font-size:.88rem; }
   .rq-line:last-child { border-bottom:none; }
-  .rq-line .lbl { color:#64748b; }
+  .rq-line .lbl { color:var(--text-2); }
   .rq-line .val { font-weight:600; text-align:right; }
 
   .rq-status { display:inline-block; padding:3px 10px; border-radius:12px;
                font-size:.75rem; font-weight:600; }
-  .st-submitted    { background:#e0f2fe; color:#075985; }
-  .st-under-review { background:#fef3c7; color:#92400e; }
-  .st-approved     { background:#dcfce7; color:#15803d; }
-  .st-rejected     { background:#fee2e2; color:#991b1b; }
+  .st-submitted    { background:var(--info-bg); color:var(--info-strong); }
+  .st-under-review { background:var(--warn-bg); color:var(--warn-strong); }
+  .st-approved     { background:var(--ok-bg); color:#15803d; }
+  .st-rejected     { background:var(--danger-bg); color:var(--danger-strong); }
 
   .rq-docs { display:grid; grid-template-columns:repeat(auto-fill,minmax(160px,1fr));
              gap:.9rem; }
-  .rq-doc { border:1px solid #e2e8f0; border-radius:8px; overflow:hidden;
-            background:#f8fafc; text-decoration:none; color:inherit; display:block; }
+  .rq-doc { border:1px solid var(--line); border-radius:8px; overflow:hidden;
+            background:var(--surface-2); text-decoration:none; color:inherit; display:block; }
   .rq-doc:hover { border-color:#16a34a; color:inherit; }
   .rq-doc img { width:100%; height:130px; object-fit:cover; display:block; }
   .rq-doc .pdf-tile {
     height:130px; display:flex; align-items:center; justify-content:center;
-    background:#fee2e2; color:#991b1b; font-weight:700; font-size:1.1rem;
+    background:var(--danger-bg); color:var(--danger-strong); font-weight:700; font-size:1.1rem;
   }
-  .rq-doc .doc-meta { padding:.45rem .6rem; font-size:.72rem; color:#475569;
+  .rq-doc .doc-meta { padding:.45rem .6rem; font-size:.72rem; color:var(--text-body);
                       word-break:break-all; }
 
-  .rq-empty { text-align:center; padding:2rem 1rem; color:#94a3b8;
+  .rq-empty { text-align:center; padding:2rem 1rem; color:var(--text-3);
               font-size:.85rem; }
 </style>
 {% endblock %}
@@ -63,12 +63,6 @@
     on {{ req.date_submitted.strftime('%d %b %Y, %I:%M %p') }}
   </p>
 </div>
-
-{% with messages = get_flashed_messages(with_categories=true) %}
-  {% if messages %}{% for category, message in messages %}
-    <div class="alert alert-{{ category }}">{{ message }}</div>
-  {% endfor %}{% endif %}
-{% endwith %}
 
 <!-- ===== REQUEST ===== -->
 <div class="rq-panel">

@@ -185,36 +185,101 @@
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <script>
-  // Categorical pair, validated for colour-vision deficiency:
-  // deutan dE 31.7, tritan 14.4, normal 37.8 -- all clear of the floor.
-  // The old pairing was #16a34a with #14532d, which failed the lightness
-  // band and read as grey rather than as a second hue.
-  const GREEN = "#16a34a";
-  const INDIGO = "#4f46e5";
+  // Only the chrome follows the theme. Gridlines and axis labels read from
+  // the page tokens, so a rule that is a hairline on paper stays a hairline
+  // on a dark ground instead of turning into a white bar. The data colours
+  // themselves are fixed in both themes -- see applyChartTheme.
+  //
+  // The series pair is validated for colour-vision deficiency: deutan dE
+  // 31.7, tritan 14.4, normal 37.8 -- all clear of the floor.
+  let GREEN, INDIGO, OK, AMBER, RED, ABSENT, INK, GRID;
 
-  // Status ramp -- reserved for good/warning/serious, never for a series.
-  const OK = "#16a34a";
-  const AMBER = "#b45309";
-  const RED = "#dc2626";
+  function isDarkTheme() {
+    return document.documentElement.getAttribute("data-theme") === "dark";
+  }
 
-  // "No record" marks. #cbd5e1 sat at 1.45:1 on white and was effectively
-  // invisible; this clears 3:1.
-  const ABSENT = "#8d9c94";
+  function applyChartTheme() {
+    const cs = getComputedStyle(document.body);
+    const token = (name, fallback) =>
+      cs.getPropertyValue(name).trim() || fallback;
+    const dark = isDarkTheme();
 
-  const INK = "#5f6f66";
-  const GRID = "#e2eae5";
+    /* --line is a 9% hairline, which is right for a 1px border but too
+       faint for a gridline read across a whole plot; 14% is the same idea
+       one step up. */
+    GRID = dark ? "rgba(255, 255, 255, 0.14)" : token("--line", "#e2eae5");
+    INK = token("--text-2", "#5f6f66");
+    ABSENT = "#8d9c94";
+
+    /* Data colours do NOT follow the theme. Two of these charts carry a
+       written key -- "Met or exceeded target" is the green, "Below 90% of
+       target" is the red -- and a swatch that means one thing in light and
+       a different shade in dark is a reading someone has to re-learn. The
+       series stay put; only the chrome around them moves. */
+    GREEN = "#16a34a";
+    INDIGO = "#4f46e5";
+    OK = "#16a34a";
+    AMBER = "#b45309";
+    RED = "#dc2626";
+
+    Chart.defaults.color = INK;
+    Chart.defaults.borderColor = GRID;
+    Chart.defaults.plugins.tooltip.backgroundColor = dark
+      ? "#24312c"
+      : "#12211a";
+  }
 
   const fmt = (n) => (n || 0).toLocaleString();
 
   Chart.defaults.font.family =
     "'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif";
   Chart.defaults.font.size = 11;
-  Chart.defaults.color = INK;
-  Chart.defaults.borderColor = GRID;
-  Chart.defaults.plugins.tooltip.backgroundColor = "#12211a";
   Chart.defaults.plugins.tooltip.padding = 10;
   Chart.defaults.plugins.tooltip.cornerRadius = 8;
   Chart.defaults.plugins.tooltip.titleFont = { weight: "600" };
+
+  applyChartTheme();
+
+  /* Chart.js refuses a canvas that already carries a chart, and switching
+     theme rebuilds all of them, so every canvas is cleared first.
+
+     It also lightens whatever you hover by default. Here the fill is not
+     decoration -- green means the target was met, amber means 90-99%, red
+     means below -- so a hover that restyles the bar is showing a colour
+     the key does not list. Every hover colour is pinned to the resting
+     colour instead; the tooltip is the hover feedback. */
+  function pinHoverColours(config) {
+    const datasets = (config.data && config.data.datasets) || [];
+    datasets.forEach((ds) => {
+      if (ds.backgroundColor !== undefined) {
+        ds.hoverBackgroundColor = ds.backgroundColor;
+      }
+      if (ds.borderColor !== undefined) {
+        ds.hoverBorderColor = ds.borderColor;
+      }
+      ds.hoverBorderWidth = ds.borderWidth === undefined ? 0 : ds.borderWidth;
+
+      /* Line and scatter points carry their own hover slots. */
+      const pointFill =
+        ds.pointBackgroundColor !== undefined
+          ? ds.pointBackgroundColor
+          : ds.backgroundColor;
+      if (pointFill !== undefined) ds.pointHoverBackgroundColor = pointFill;
+
+      const pointLine =
+        ds.pointBorderColor !== undefined
+          ? ds.pointBorderColor
+          : ds.borderColor;
+      if (pointLine !== undefined) ds.pointHoverBorderColor = pointLine;
+    });
+    return config;
+  }
+
+  function mkChart(canvas, config) {
+    const existing = Chart.getChart(canvas);
+    if (existing) existing.destroy();
+    return new Chart(canvas, pinHoverColours(config));
+  }
 
   async function loadDashboard() {
     const res = await fetch("/api/dashboard-analytics");
@@ -246,30 +311,65 @@
   }
 
   // ---------------- KPIs ----------------
+  /* Lucide, drawn at 24 and scaled down by the tile. Each one names the
+     thing being counted rather than decorating it. */
+  const KPI_ICONS = {
+    trees:
+      '<path d="M10 10v.2A3 3 0 0 1 8.9 16H5a3 3 0 0 1-1-5.8V10a3 3 0 0 1 6 0Z"/><path d="M7 16v6"/><path d="M13 19v3"/><path d="M12 19h8.3a1 1 0 0 0 .7-1.7L18 14h.3a1 1 0 0 0 .7-1.7L16 9h.2a1 1 0 0 0 .8-1.7L13 3l-1.4 1.5"/>',
+    land:
+      '<path d="m12 8 6-3-6-3v10"/><path d="m8 11.99-5.5 3.14a1 1 0 0 0 0 1.74l8.5 4.86a2 2 0 0 0 2 0l8.5-4.86a1 1 0 0 0 0-1.74L16 12"/><path d="m6.49 12.85 11.02 6.3"/><path d="M17.51 12.85 6.5 19.15"/>',
+    sprout:
+      '<path d="M7 20h10"/><path d="M10 20c5.5-2.5.8-6.4 3-10"/><path d="M9.5 9.4c1.1.8 1.8 2.2 2.3 3.7-2 .4-3.5.4-4.8-.3-1.2-.6-2.3-1.9-3-4.2 2.8-.5 4.4 0 5.5.8z"/><path d="M14.1 6a7 7 0 0 0-1.1 4c1.9-.1 3.3-.6 4.3-1.4 1-1 1.6-2.3 1.7-4.6-2.7.1-4 1-4.9 2z"/>',
+    target:
+      '<circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/>',
+    pin:
+      '<path d="M18 8c0 3.613-3.869 7.429-5.393 8.795a1 1 0 0 1-1.214 0C9.87 15.429 6 11.613 6 8a6 6 0 0 1 12 0"/><circle cx="12" cy="8" r="2"/><path d="M8.714 14h-3.71a1 1 0 0 0-.948.683l-2.004 6A1 1 0 0 0 3 22h18a1 1 0 0 0 .948-1.316l-2-6a1 1 0 0 0-.949-.684h-3.712"/>',
+    coins:
+      '<circle cx="8" cy="8" r="6"/><path d="M18.09 10.37A6 6 0 1 1 10.34 18"/><path d="M7 6h1v4"/><path d="m16.71 13.88.7.71-2.82 2.82"/>',
+  };
+
+  function kpiIcon(name) {
+    return (
+      '<span class="kpi-icon" aria-hidden="true"><svg viewBox="0 0 24 24" ' +
+      'fill="none" stroke="currentColor" stroke-width="2" ' +
+      'stroke-linecap="round" stroke-linejoin="round">' +
+      KPI_ICONS[name] +
+      "</svg></span>"
+    );
+  }
+
   function buildKpis(h) {
     const cards = [
-      { num: fmt(h.sites), lbl: "Reforestation sites" },
-      { num: fmt(h.area_ha) + " ha", lbl: "Area under contract" },
+      { num: fmt(h.sites), lbl: "Reforestation sites", icon: "trees" },
+      {
+        num: fmt(h.area_ha) + " ha",
+        lbl: "Area under contract",
+        icon: "land",
+      },
       {
         num: fmt(h.actual),
         lbl: "Seedlings planted",
         sub: "of " + fmt(h.target) + " targeted",
+        icon: "sprout",
       },
       {
         num: (h.achievement || 0) + "%",
         lbl: "Delivery rate",
         alert: h.achievement !== null && h.achievement < 90,
+        icon: "target",
       },
       {
         num: h.barangays_covered + " / " + h.barangays_total,
         lbl: "Barangays covered",
         sub: h.coverage_pct + "% of the study area",
         alert: h.coverage_pct < 20,
+        icon: "pin",
       },
       {
         num: h.avg_cost_per_ha ? "\u20B1" + fmt(h.avg_cost_per_ha) : "\u2014",
         lbl: "Average cost per ha",
         sub: h.cost_sites + " sites with cost data",
+        icon: "coins",
       },
     ];
 
@@ -277,9 +377,12 @@
       .map(
         (c) => `
       <div class="kpi ${c.alert ? "alert" : ""}">
-        <span class="num">${c.num}</span>
-        <span class="lbl">${c.lbl}</span>
-        ${c.sub ? `<span class="sub">${c.sub}</span>` : ""}
+        <span class="kpi-text">
+          <span class="num">${c.num}</span>
+          <span class="lbl">${c.lbl}</span>
+          ${c.sub ? `<span class="sub">${c.sub}</span>` : ""}
+        </span>
+        ${kpiIcon(c.icon)}
       </div>`,
       )
       .join("");
@@ -297,7 +400,7 @@
       ? `Sites contracted per year. No sites recorded in ${gaps.join(", ")}.`
       : "Sites contracted per year.";
 
-    new Chart(document.getElementById("chartYear"), {
+    mkChart(document.getElementById("chartYear"), {
       type: "bar",
       data: {
         labels: years,
@@ -321,7 +424,7 @@
       },
     });
 
-    new Chart(document.getElementById("chartYearArea"), {
+    mkChart(document.getElementById("chartYearArea"), {
       type: "line",
       data: {
         labels: years,
@@ -363,7 +466,7 @@
     document.getElementById("areaTakeaway").textContent =
       `The three largest municipalities account for ${share}% of all contracted area.`;
 
-    new Chart(document.getElementById("chartArea"), {
+    mkChart(document.getElementById("chartArea"), {
       type: "bar",
       data: {
         labels: top.map((r) => r.municipality),
@@ -400,7 +503,7 @@
        predict delivery &mdash; compare the ranking here against the area
        chart above.`;
 
-    new Chart(document.getElementById("chartAchievement"), {
+    mkChart(document.getElementById("chartAchievement"), {
       type: "bar",
       data: {
         labels: d.map((r) => r.municipality),
@@ -458,7 +561,7 @@
       },
     };
 
-    new Chart(document.getElementById("chartSurvival"), {
+    mkChart(document.getElementById("chartSurvival"), {
       type: "bar",
       data: {
         labels: d.map((r) => r.municipality),
@@ -490,7 +593,7 @@
       .filter((r) => r.cost_per_ha)
       .sort((a, b) => b.cost_per_ha - a.cost_per_ha);
 
-    new Chart(document.getElementById("chartCost"), {
+    mkChart(document.getElementById("chartCost"), {
       type: "bar",
       data: {
         labels: d.map((r) => r.municipality),
@@ -551,7 +654,7 @@
        <br><br>
        <em>n = ${d.scatter_n} planted barangays.</em>`;
 
-    new Chart(document.getElementById("chartScatter"), {
+    mkChart(document.getElementById("chartScatter"), {
       type: "scatter",
       data: {
         datasets: [
@@ -606,7 +709,7 @@
 
   // ---------------- species ----------------
   function buildSpecies(rows) {
-    new Chart(document.getElementById("chartSpecies"), {
+    mkChart(document.getElementById("chartSpecies"), {
       type: "bar",
       data: {
         labels: rows.map((r) => r.species),
@@ -652,6 +755,13 @@
   }
 
   loadDashboard();
+
+  /* Base.html fires this when the theme toggle is used. The datasets carry
+     their own colours, so the charts are rebuilt rather than nudged. */
+  window.addEventListener("pno-theme-change", function () {
+    applyChartTheme();
+    loadDashboard();
+  });
 </script>
 {% block extra_scripts %}
 <script>

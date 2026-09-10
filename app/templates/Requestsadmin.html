@@ -11,20 +11,20 @@ active_page = 'review_requests' %} {% block extra_head %}
   }
 
   .status-submitted {
-    background: #e0f2fe;
-    color: #075985;
+    background: var(--info-bg);
+    color: var(--info-strong);
   }
   .status-under-review {
-    background: #fef3c7;
-    color: #92400e;
+    background: var(--warn-bg);
+    color: var(--warn-strong);
   }
   .status-approved {
-    background: #dcfce7;
+    background: var(--ok-bg);
     color: #15803d;
   }
   .status-rejected {
-    background: #fee2e2;
-    color: #991b1b;
+    background: var(--danger-bg);
+    color: var(--danger-strong);
   }
 
   .review-form {
@@ -38,7 +38,7 @@ active_page = 'review_requests' %} {% block extra_head %}
   .review-form input {
     font-size: 0.875rem;
     padding: 0.35rem 0.5rem;
-    border: 1px solid #e2eae5;
+    border: 1px solid var(--line);
     border-radius: 6px;
   }
 
@@ -54,7 +54,7 @@ active_page = 'review_requests' %} {% block extra_head %}
   }
 
   .req-cell-secondary {
-    color: #5f6f66;
+    color: var(--text-2);
     font-size: 0.75rem;
   }
 </style>
@@ -74,13 +74,6 @@ active_page = 'review_requests' %} {% block extra_head %}
     </p>
   </div>
 </div>
-
-{% with messages = get_flashed_messages(with_categories=true) %} {% if messages
-%} {% for category, message in messages %}
-<div class="alert alert-{{ 'danger' if category == 'danger' else 'success' }}">
-  {{ message }}
-</div>
-{% endfor %} {% endif %} {% endwith %}
 
 <!-- ============ FILTER + SEARCH ============ -->
 <div class="um-toolbar">
@@ -273,46 +266,6 @@ active_page = 'review_requests' %} {% block extra_head %}
     </table>
   </div>
 
-  <div class="sites-scroll-controls">
-    <button
-      type="button"
-      class="sites-scroll-btn"
-      id="req-scroll-left"
-      onclick="reqScroll(-1)"
-      aria-label="Scroll table left"
-    >
-      <svg
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="2.5"
-        stroke-linecap="round"
-        stroke-linejoin="round"
-      >
-        <path d="m15 18-6-6 6-6" />
-      </svg>
-    </button>
-    <span class="sites-scroll-hint">Scroll to see more columns</span>
-    <button
-      type="button"
-      class="sites-scroll-btn"
-      id="req-scroll-right"
-      onclick="reqScroll(1)"
-      aria-label="Scroll table right"
-    >
-      <svg
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="2.5"
-        stroke-linecap="round"
-        stroke-linejoin="round"
-      >
-        <path d="m9 18 6-6-6-6" />
-      </svg>
-    </button>
-  </div>
-
   <div class="um-empty" id="req-empty" style="display: none">
     <svg
       viewBox="0 0 24 24"
@@ -401,12 +354,10 @@ active_page = 'review_requests' %} {% block extra_head %}
 
     var empty = document.getElementById("req-empty");
     var scrollWrap = document.getElementById("req-scroll");
-    var controls = document.querySelector(".sites-scroll-controls");
     if (empty) {
       var noResults = visible === 0 && rows.length > 0;
       empty.style.display = noResults ? "block" : "none";
       if (scrollWrap) scrollWrap.style.display = noResults ? "none" : "";
-      if (controls) controls.style.display = noResults ? "none" : "";
     }
   }
 
@@ -415,25 +366,6 @@ active_page = 'review_requests' %} {% block extra_head %}
     reqApplyFilters();
   }
 
-  function reqScroll(direction) {
-    var el = document.getElementById("req-scroll");
-    if (el) el.scrollBy({ left: direction * 320, behavior: "smooth" });
-  }
-
-  (function () {
-    var el = document.getElementById("req-scroll");
-    var left = document.getElementById("req-scroll-left");
-    var right = document.getElementById("req-scroll-right");
-    if (!el || !left || !right) return;
-
-    function updateButtons() {
-      left.disabled = el.scrollLeft <= 4;
-      right.disabled = el.scrollLeft >= el.scrollWidth - el.clientWidth - 4;
-    }
-    el.addEventListener("scroll", updateButtons);
-    window.addEventListener("resize", updateButtons);
-    updateButtons();
-  })();
 </script>
 
 {% endblock %}

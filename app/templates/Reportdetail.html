@@ -44,14 +44,6 @@
   </div>
 </div>
 
-{% with messages = get_flashed_messages(with_categories=true) %}
-  {% if messages %}
-    {% for category, message in messages %}
-      <div class="um-alert um-alert-{{ category }}">{{ message }}</div>
-    {% endfor %}
-  {% endif %}
-{% endwith %}
-
 <!-- ============ HEADLINE ============ -->
 <div class="rep-headline {% if report.survival_rate < 85 %}fail{% endif %}">
   <div>

@@ -61,21 +61,21 @@
     font-size: 0.72rem;
     text-transform: uppercase;
     letter-spacing: 0.6px;
-    color: #5f6f66;
+    color: var(--text-2);
   }
 
   .acct-fact .val {
     display: block;
     font-size: 1rem;
     font-weight: 600;
-    color: #12211a;
+    color: var(--text-heading);
     margin-top: 2px;
     word-break: break-word;
   }
 
   .acct-fact .val.muted {
     font-weight: 500;
-    color: #6b7a72;
+    color: var(--text-2);
   }
 
   .acct-form {
@@ -84,7 +84,7 @@
 
   .acct-hint {
     font-size: 0.78rem;
-    color: #6b7a72;
+    color: var(--text-2);
     margin: 0.35rem 0 0;
   }
 
@@ -97,7 +97,7 @@
   .acct-activity th,
   .acct-activity td {
     padding: 0.55rem 0.6rem;
-    border-bottom: 1px solid #eef4f0;
+    border-bottom: 1px solid var(--surface-3);
     text-align: left;
     vertical-align: top;
   }
@@ -106,7 +106,7 @@
     font-size: 0.72rem;
     text-transform: uppercase;
     letter-spacing: 0.4px;
-    color: #41544a;
+    color: var(--text-body);
     font-weight: 600;
   }
 
@@ -116,15 +116,15 @@
 
   .acct-when {
     white-space: nowrap;
-    color: #5f6f66;
+    color: var(--text-2);
   }
 
   .acct-action {
     display: inline-block;
     padding: 2px 8px;
     border-radius: 999px;
-    background: #eef4f0;
-    color: #2f4239;
+    background: var(--surface-3);
+    color: var(--text-strong);
     font-size: 0.72rem;
     font-weight: 600;
     white-space: nowrap;
@@ -144,14 +144,6 @@
     </p>
   </div>
 </div>
-
-{% with messages = get_flashed_messages(with_categories=true) %}
-  {% if messages %}
-    {% for category, message in messages %}
-      <div class="um-alert um-alert-{{ category }}">{{ message }}</div>
-    {% endfor %}
-  {% endif %}
-{% endwith %}
 
 {% if must_change %}
 <div class="alert alert-warning">

@@ -7,6 +7,8 @@
 <style>
   /* map page need full space, kill page-content padding */
   .page-content.map-page {
+    /* Declared here, on the ancestor both the bar and the map can read. */
+    --map-topbar-h: 52px;
     padding: 0;
     max-width: none;
   }
@@ -20,11 +22,12 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
+    min-height: var(--map-topbar-h);
     padding: 0.8rem 1.5rem;
-    background-color: #ffffff;
-    border-bottom: 1px solid #e2e8f0;
+    background-color: var(--surface-1);
+    border-bottom: 1px solid var(--line);
     font-size: 0.9rem;
-    color: #334155;
+    color: var(--text-body);
   }
 
   .map-topbar .filter-group {
@@ -39,13 +42,16 @@
     gap: 0.3rem;
     cursor: pointer;
     font-weight: 500;
-    color: #475569;
+    color: var(--text-body);
   }
 
   /* map-wrap now FLEX row: map on left, panel takes real space on right (no more float-over) */
   .map-wrap {
     position: relative;
-    height: calc(100vh - 64px);
+    /* Two bars sit above the map: the app's global topbar and this page's
+       own filter bar. Both are tokens so the map can never be sized against
+       a guess. */
+    height: calc(100vh - var(--topbar-h) - var(--map-topbar-h));
     width: 100%;
     display: flex;
   }
@@ -62,11 +68,11 @@
     width: 0;
     height: 100%;
     overflow: hidden;
-    background-color: #ffffff;
+    background-color: var(--surface-1);
     box-shadow: -4px 0 18px rgba(0, 0, 0, 0.12);
     transition: width 0.3s ease;
     font-size: 0.9rem;
-    color: #1e293b;
+    color: var(--text-strong);
   }
 
   .muni-panel.active {
@@ -152,7 +158,7 @@
     text-transform: uppercase;
     font-size: 0.7rem;
     letter-spacing: 0.05em;
-    color: #94a3b8;
+    color: var(--text-2);
     margin: 1rem 0 0.4rem 0;
   }
 
@@ -160,7 +166,7 @@
     display: flex;
     justify-content: space-between;
     padding: 0.4rem 0;
-    border-bottom: 1px solid #eef1f5;
+    border-bottom: 1px solid var(--surface-3);
   }
 
   .muni-panel .stat-row:last-child {
@@ -168,18 +174,18 @@
   }
 
   .muni-panel .stat-row .stat-label {
-    color: #64748b;
+    color: var(--text-2);
   }
 
   .muni-panel .placeholder-text {
-    color: #94a3b8;
+    color: var(--text-2);
     padding: 1rem 1.1rem;
   }
 
   .muni-panel .brgy-hint {
-    background: #ecfdf5;
-    border: 1px dashed #16a34a;
-    color: #14532d;
+    background: var(--ok-bg);
+    border: 1px dashed var(--brand-text);
+    color: var(--brand-deep-text);
     border-radius: 6px;
     padding: 0.55rem 0.7rem;
     font-size: 0.78rem;
@@ -189,7 +195,7 @@
   .muni-panel .back-link {
     background: none;
     border: none;
-    color: #14532d;
+    color: var(--brand-text);
     font-size: 0.8rem;
     font-weight: 600;
     cursor: pointer;
@@ -199,8 +205,8 @@
   }
 
   .muni-panel .rec-card {
-    background: #f8fafc;
-    border: 1px solid #e2e8f0;
+    background: var(--surface-2);
+    border: 1px solid var(--line);
     border-left: 4px solid #16a34a;
     border-radius: 8px;
     padding: 0.6rem 0.75rem;
@@ -220,26 +226,26 @@
 
   .muni-panel .rec-name {
     font-weight: 700;
-    color: #14532d;
+    color: var(--brand-deep-text);
     font-size: 0.9rem;
   }
 
   .muni-panel .rec-sci {
     font-style: italic;
-    color: #64748b;
+    color: var(--text-2);
     font-size: 0.72rem;
   }
 
   .muni-panel .rec-score {
     font-weight: 700;
-    color: #16a34a;
+    color: var(--brand-text);
     font-size: 0.85rem;
     white-space: nowrap;
   }
 
   .muni-panel .rec-meta {
     font-size: 0.72rem;
-    color: #475569;
+    color: var(--text-body);
     margin-top: 0.35rem;
     line-height: 1.5;
   }
@@ -254,18 +260,18 @@
   }
 
   .muni-panel .rec-flag.yes {
-    background: #dcfce7;
-    color: #15803d;
+    background: var(--ok-bg);
+    color: var(--ok-text);
   }
 
   .muni-panel .rec-flag.no {
-    background: #fef3c7;
-    color: #92400e;
+    background: var(--warn-bg);
+    color: var(--warn-strong);
   }
     /* --- monitoring history --- */
   .muni-panel .hist-visit {
-    background: #f8fafc;
-    border: 1px solid #e2e8f0;
+    background: var(--surface-2);
+    border: 1px solid var(--line);
     border-left: 4px solid #16a34a;
     border-radius: 8px;
     padding: 0.7rem 0.8rem;
@@ -284,22 +290,22 @@
 
   .muni-panel .hist-date {
     font-weight: 700;
-    color: #14532d;
+    color: var(--text-heading);
     font-size: 0.85rem;
   }
 
   .muni-panel .hist-rate {
     font-weight: 700;
     font-size: 1rem;
-    color: #15803d;
+    color: var(--brand-text);
     white-space: nowrap;
   }
 
-  .muni-panel .hist-rate.below { color: #b91c1c; }
+  .muni-panel .hist-rate.below { color: var(--danger-text); }
 
   .muni-panel .hist-meta {
     font-size: 0.72rem;
-    color: #475569;
+    color: var(--text-body);
     line-height: 1.6;
   }
 
@@ -315,7 +321,7 @@
     height: 56px;
     object-fit: cover;
     border-radius: 4px;
-    border: 1px solid #e2e8f0;
+    border: 1px solid var(--line);
     cursor: pointer;
     display: block;
   }
@@ -324,7 +330,7 @@
 
   .muni-panel .hist-more {
     font-size: 0.7rem;
-    color: #64748b;
+    color: var(--text-2);
     text-align: center;
     padding-top: 4px;
   }
@@ -408,7 +414,11 @@
     cursor: pointer;
     line-height: 1;
   }
-  /* --- reforestation site markers --- */
+  /* --- reforestation site markers ---------------------------------------
+     Markers are drawn on top of the basemap, and the basemap is light in
+     both themes. So they keep fixed light chrome: --surface-1 turned the
+     ring dark and the label into dark-on-dark the moment the page went
+     dark, against tiles that had not changed at all. */
   .site-marker {
     background: #16a34a;
     border: 2px solid #ffffff;
@@ -431,13 +441,13 @@
     align-items: center;
     gap: 0.35rem;
     font-weight: 500;
-    color: #475569;
+    color: var(--text-body);
     padding-left: 1rem;
-    border-left: 1px solid #e2e8f0;
+    border-left: 1px solid var(--line);
   }
 
   .map-topbar .site-count-note {
-    color: #16a34a;
+    color: var(--brand-text);
     font-weight: 600;
   }
   /* --- heatmap selector --- */
@@ -446,34 +456,34 @@
     align-items: center;
     gap: 0.4rem;
     padding-left: 1rem;
-    border-left: 1px solid #e2e8f0;
+    border-left: 1px solid var(--line);
     font-weight: 500;
-    color: #475569;
+    color: var(--text-body);
   }
 
   .map-topbar .heat-select select {
     font-size: 0.85rem;
     padding: 0.2rem 0.4rem;
-    border: 1px solid #cbd5e1;
+    border: 1px solid var(--line-strong);
     border-radius: 4px;
-    color: #1e293b;
+    color: var(--text-strong);
   }
 
   /* --- legend --- */
   .heat-legend {
-    background: rgba(255, 255, 255, 0.95);
+    background: var(--surface-glass);
     padding: 0.7rem 0.85rem;
     border-radius: 8px;
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
     font-size: 0.75rem;
     line-height: 1.6;
-    color: #1e293b;
+    color: var(--text-strong);
   }
 
   .heat-legend h4 {
     margin: 0 0 0.4rem 0;
     font-size: 0.78rem;
-    color: #14532d;
+    color: var(--text-heading);
     text-transform: uppercase;
     letter-spacing: 0.04em;
   }
@@ -489,7 +499,7 @@
 
   .heat-legend .legend-note {
     margin-top: 0.4rem;
-    color: #64748b;
+    color: var(--text-2);
     font-size: 0.68rem;
     max-width: 190px;
   }
@@ -521,7 +531,7 @@
   }
 
   .tree-marker .tree-label {
-    background: rgba(255, 255, 255, 0.9);
+    background: rgba(255, 255, 255, 0.92);
     color: #14532d;
     font-size: 0.62rem;
     font-weight: 600;
@@ -547,8 +557,8 @@
   }
 
   .muni-panel .site-card.active {
-    border-color: #14532d;
-    background: #f0fdf4;
+    border-color: var(--brand-text);
+    background: var(--ok-bg);
   }
 
   .muni-panel .site-card-foot {
@@ -556,7 +566,7 @@
     gap: 0.4rem;
     margin-top: 0.55rem;
     padding-top: 0.5rem;
-    border-top: 1px solid #e2e8f0;
+    border-top: 1px solid var(--line);
   }
 
   .muni-panel .btn-locate,
@@ -574,12 +584,12 @@
   }
 
   .muni-panel .btn-locate {
-    background: #e2e8f0;
-    color: #334155;
+    background: var(--line);
+    color: var(--text-body);
   }
 
   .muni-panel .btn-locate:hover {
-    background: #cbd5e1;
+    background: var(--line-strong);
   }
 
   .muni-panel .btn-report {
@@ -596,9 +606,44 @@
     min-width: 0;
     word-break: break-word;
   }
+
+  /* --- controls that were left to the user agent ------------------------
+     A <select> with no background of its own is painted by the browser,
+     and under color-scheme: dark that is a dark box -- which is why this
+     one turned into dark-on-dark the moment the theme flipped. */
+  .map-topbar .heat-select select {
+    background-color: var(--surface-1);
+    color: var(--text-strong);
+  }
+
+  .map-topbar .heat-select select option {
+    background-color: var(--surface-1);
+    color: var(--text-strong);
+  }
+
+  /* Leaflet ships its own white chrome for the zoom and attribution
+     controls. */
+  .leaflet-bar a,
+  .leaflet-bar a:hover {
+    background-color: var(--surface-1);
+    color: var(--text-strong);
+    border-bottom-color: var(--line);
+  }
+
+  .leaflet-bar a:hover {
+    background-color: var(--surface-3);
+  }
+
+  .leaflet-control-attribution {
+    background: var(--surface-glass) !important;
+    color: var(--text-2) !important;
+  }
+
+  .leaflet-control-attribution a {
+    color: var(--text-body) !important;
+  }
 </style>
-{% endblock %} {% block content_class %}map-page{% endblock %} {% block
-global_topbar %}{% endblock %} {% block topbar%}
+{% endblock %} {% block content_class %}map-page{% endblock %} {% block topbar%}
 <div class="map-topbar">
   <div style="font-weight: 600">Eastern Pangasinan</div>
   <div class="filter-group">
@@ -1408,6 +1453,10 @@ global_topbar %}{% endblock %} {% block topbar%}
           fillOpacity: 0.4,
         },
         onEachFeature: (feature, layer) => {
+          /* Registered here rather than inside onMunicipalityClick, so
+             "Back to <town>" can find the layer even when the panel was
+             opened from a site marker and the town was never clicked. */
+          municipalityLayers[normalizeName(feature.properties.NAME_2)] = layer;
           layer.on("click", onMunicipalityClick);
           layer.on("mouseover", () => layer.setStyle({ fillOpacity: 0.7 }));
           layer.on("mouseout", () => layer.setStyle({ fillOpacity: 0.4 }));
@@ -1423,6 +1472,10 @@ global_topbar %}{% endblock %} {% block topbar%}
           fillOpacity: 0.4,
         },
         onEachFeature: (feature, layer) => {
+          /* Registered here rather than inside onMunicipalityClick, so
+             "Back to <town>" can find the layer even when the panel was
+             opened from a site marker and the town was never clicked. */
+          municipalityLayers[normalizeName(feature.properties.NAME_2)] = layer;
           layer.on("click", onMunicipalityClick);
           layer.on("mouseover", () => layer.setStyle({ fillOpacity: 0.7 }));
           layer.on("mouseout", () => layer.setStyle({ fillOpacity: 0.4 }));

@@ -13,6 +13,12 @@
     {% endfor %}
 {% endfor %}
 
+{# Column header. The second argument is kept so the numeric columns still
+   read as numeric at a glance; end=true right-aligns the label over them. #}
+{% macro th(label, kind='text', end=false, pin='') %}
+<th scope="col" class="{{ 'text-end ' if end else '' }}{{ pin }}">{{ label }}</th>
+{% endmacro %}
+
 <div class="um-header">
     <div>
         <div class="um-title-row">
@@ -24,78 +30,90 @@
     </div>
 </div>
 
-<div class="um-toolbar">
-    <div class="um-filter-wrap">
-        <button type="button" class="um-filter-btn" onclick="siteToggleFilterMenu()">
-            <span class="um-filter-btn-label">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/></svg>
-                <span id="site-filter-label">Municipality</span>
-            </span>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
-        </button>
-        <div id="site-filter-menu" class="um-filter-menu">
-            <button type="button" class="active" onclick="siteFilterMunicipality('all', 'Municipality')">All municipalities</button>
-            {% for municipality in grouped.keys()|sort %}
-                <button type="button" onclick="siteFilterMunicipality('{{ municipality|e }}', '{{ municipality|e }}')">{{ municipality }}</button>
-            {% endfor %}
-        </div>
-    </div>
-
-    <div class="um-search-group">
-        <div class="um-search-wrap">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg>
-            <input type="text" id="site-search-input" class="um-search-input" aria-label="Search sites"
-                   placeholder="Search site, barangay, municipality, or code..."
-                   oninput="siteApplyFilters()">
-        </div>
-        <a href="#" id="site-clear-btn" class="um-btn-ghost" style="display: none;" onclick="siteClearFilters(); return false;">Clear</a>
-    </div>
-</div>
-
-<div class="um-table-card">
+<div class="um-table-card dt-card">
     {% if ns.sites %}
+    <div class="dt-toolbar">
+        <div class="um-filter-wrap">
+            <button type="button" class="um-filter-btn" onclick="siteToggleFilterMenu()">
+                <span class="um-filter-btn-label">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/></svg>
+                    <span id="site-filter-label">Municipality</span>
+                </span>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+            </button>
+            <div id="site-filter-menu" class="um-filter-menu">
+                <button type="button" class="active" onclick="siteFilterMunicipality('all', 'Municipality')">All municipalities</button>
+                {% for municipality in grouped.keys()|sort %}
+                    <button type="button" onclick="siteFilterMunicipality('{{ municipality|e }}', '{{ municipality|e }}')">{{ municipality }}</button>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="um-search-group">
+            <div class="um-search-wrap">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg>
+                <input type="text" id="site-search-input" class="um-search-input" aria-label="Search sites"
+                       placeholder="Search site, barangay, municipality, or code..."
+                       oninput="siteApplyFilters()">
+            </div>
+            <a href="#" id="site-clear-btn" class="um-btn-ghost" style="display: none;" onclick="siteClearFilters(); return false;">Clear</a>
+            <span class="dt-count"><strong id="sites-shown">{{ ns.sites|length }}</strong> of {{ ns.sites|length }} sites</span>
+        </div>
+    </div>
+
     <div class="sites-scroll-wrap" id="sites-scroll">
         <table class="um-table sites-table" id="sites-table">
             <thead>
                 <tr>
-                    <th>Site Name</th>
-                    <th>Barangay</th>
-                    <th>Municipality</th>
-                    <th>Zone</th>
-                    {% if session.role == 'admin' %}
-                        <th>Site Code</th>
-                        <th>LOA/Contract Code</th>
+                    {% if session.role in ['admin', 'superadmin'] %}
+                        {{ th('Site Code', pin='dt-pin') }}
+                        {{ th('Site Name', pin='dt-pin dt-pin-last') }}
+                        {{ th('Barangay') }}
+                    {% else %}
+                        {{ th('Site Name', pin='dt-pin') }}
+                        {{ th('Barangay', pin='dt-pin dt-pin-last') }}
                     {% endif %}
-                    <th>PENRO</th>
-                    <th>CENRO</th>
-                    <th>District</th>
-                    <th>Land Class</th>
-                    <th>Land Use</th>
-                    <th>Contact Person</th>
-                    <th>Component</th>
-                    <th>Commodity</th>
-                    <th>Year</th>
-                    <th class="text-end">Area (ha)</th>
-                    <th class="text-end">Contracted (ha)</th>
-                    <th>Executed Date</th>
-                    <th>Expiry Date</th>
-                    {% if session.role == 'admin' %}
-                        <th class="text-end">Project Cost (3yr)</th>
-                        <th class="text-end">Retention Fee</th>
-                        <th>Retention Paid Date</th>
-                        <th class="text-end">Land Improvement</th>
-                        <th class="text-end">CIP Amount</th>
+                    {{ th('Municipality') }}
+                    {{ th('Zone') }}
+                    {% if session.role in ['admin', 'superadmin'] %}
+                        {{ th('LOA/Contract Code') }}
                     {% endif %}
-                    <th class="text-end">Target Seedlings</th>
-                    <th class="text-end">Actual Planted</th>
+                    {{ th('PENRO') }}
+                    {{ th('CENRO') }}
+                    {{ th('District') }}
+                    {{ th('Land Class') }}
+                    {{ th('Land Use') }}
+                    {{ th('Contact Person') }}
+                    {{ th('Component') }}
+                    {{ th('Commodity') }}
+                    {{ th('Year', 'num') }}
+                    {{ th('Area (ha)', 'num', true) }}
+                    {{ th('Contracted (ha)', 'num', true) }}
+                    {{ th('Executed Date') }}
+                    {{ th('Expiry Date') }}
+                    {% if session.role in ['admin', 'superadmin'] %}
+                        {{ th('Project Cost (3yr)', 'num', true) }}
+                        {{ th('Retention Fee', 'num', true) }}
+                        {{ th('Retention Paid Date') }}
+                        {{ th('Land Improvement', 'num', true) }}
+                        {{ th('CIP Amount', 'num', true) }}
+                    {% endif %}
+                    {{ th('Target Seedlings', 'num', true) }}
+                    {{ th('Actual Planted', 'num', true) }}
                 </tr>
             </thead>
             <tbody>
                 {% for s in ns.sites %}
                 <tr data-municipality="{{ s.location.municipality|e }}"
                     data-search="{{ (s.site_name ~ ' ' ~ s.location.barangay ~ ' ' ~ s.location.municipality ~ ' ' ~ (s.site_code or ''))|lower|e }}">
-                    <td class="sites-name-cell">{{ s.site_name }}</td>
-                    <td>{{ s.location.barangay }}</td>
+                    {% if session.role in ['admin', 'superadmin'] %}
+                        <td class="dt-pin"><code>{{ s.site_code or '—' }}</code></td>
+                        <td class="sites-name-cell dt-pin dt-pin-last">{{ s.site_name }}</td>
+                        <td>{{ s.location.barangay }}</td>
+                    {% else %}
+                        <td class="sites-name-cell dt-pin">{{ s.site_name }}</td>
+                        <td class="dt-pin dt-pin-last">{{ s.location.barangay }}</td>
+                    {% endif %}
                     <td>{{ s.location.municipality }}</td>
                     <td>
                         {% if s.zone_type == 'Production' %}
@@ -106,8 +124,7 @@
                             <span class="um-muted">&mdash;</span>
                         {% endif %}
                     </td>
-                    {% if session.role == 'admin' %}
-                        <td><code>{{ s.site_code or '—' }}</code></td>
+                    {% if session.role in ['admin', 'superadmin'] %}
                         <td><code>{{ s.loa_contract_code or '—' }}</code></td>
                     {% endif %}
                     <td>{{ s.penro or '—' }}</td>
@@ -123,7 +140,7 @@
                     <td class="num-cell">{{ s.area_contracted_ha or '—' }}</td>
                     <td>{{ s.date_contract_executed or '—' }}</td>
                     <td>{{ s.date_contract_expiry or '—' }}</td>
-                    {% if session.role == 'admin' %}
+                    {% if session.role in ['admin', 'superadmin'] %}
                         <td class="num-cell">{% if s.project_cost_3yr %}₱{{ "{:,.2f}".format(s.project_cost_3yr) }}{% else %}—{% endif %}</td>
                         <td class="num-cell">{% if s.retention_fee_amount_paid %}₱{{ "{:,.2f}".format(s.retention_fee_amount_paid) }}{% else %}—{% endif %}</td>
                         <td>{{ s.retention_fee_date_paid or '—' }}</td>
@@ -142,14 +159,8 @@
         </table>
     </div>
 
-    <div class="sites-scroll-controls">
-        <button type="button" class="sites-scroll-btn" id="sites-scroll-left" onclick="sitesScroll(-1)" aria-label="Scroll table left">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
-        </button>
-        <span class="sites-scroll-hint">Scroll to see more columns</span>
-        <button type="button" class="sites-scroll-btn" id="sites-scroll-right" onclick="sitesScroll(1)" aria-label="Scroll table right">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
-        </button>
+    <div class="dt-footer" id="sites-footer">
+        <span class="dt-range" id="sites-range"></span>
     </div>
 
     <div class="um-empty" id="sites-empty" style="display: none;">
@@ -167,83 +178,119 @@
 </div>
 
 <script>
-    var siteCurrentMunicipality = 'all';
+(function () {
+    var table = document.getElementById('sites-table');
+    if (!table) return;
 
-    function siteToggleFilterMenu() {
-        document.getElementById('site-filter-menu').classList.toggle('open');
+    var body = table.tBodies[0];
+    var allRows = Array.prototype.slice.call(body.rows);
+    var totalRows = allRows.length;
+
+    var currentMunicipality = 'all';
+
+    /* ---- one render pass: filter, sort, slice ---- */
+    function render() {
+        var q = (document.getElementById('site-search-input').value || '').trim().toLowerCase();
+
+        var matched = allRows.filter(function (row) {
+            var okMuni = currentMunicipality === 'all' || row.dataset.municipality === currentMunicipality;
+            var okText = !q || row.dataset.search.indexOf(q) !== -1;
+            return okMuni && okText;
+        });
+
+        /* Every match is shown; the table's own scrollport handles the
+           length, and the municipality filter narrows it. */
+        allRows.forEach(function (row) { row.style.display = 'none'; });
+        matched.forEach(function (row) { row.style.display = ''; });
+
+        document.getElementById('sites-count').textContent = matched.length;
+        document.getElementById('sites-shown').textContent = matched.length;
+        document.getElementById('sites-range').textContent = matched.length
+            ? 'Showing ' + matched.length + ' site' + (matched.length === 1 ? '' : 's')
+            : 'No sites to show';
+
+        var hasFilters = q || currentMunicipality !== 'all';
+        document.getElementById('site-clear-btn').style.display = hasFilters ? 'inline-block' : 'none';
+
+        var noResults = matched.length === 0 && totalRows > 0;
+        document.getElementById('sites-empty').style.display = noResults ? 'block' : 'none';
+        document.getElementById('sites-scroll').style.display = noResults ? 'none' : '';
+        document.getElementById('sites-footer').style.display = noResults ? 'none' : '';
+
+        layoutPinnedColumns();
+        updateScrollShade();
     }
 
-    document.addEventListener('click', function (e) {
-        var wrap = document.querySelector('.um-filter-wrap');
-        var menu = document.getElementById('site-filter-menu');
-        if (wrap && menu && !wrap.contains(e.target)) {
-            menu.classList.remove('open');
-        }
-    });
+    /* ---- handlers the inline attributes above call ---- */
+    window.siteToggleFilterMenu = function () {
+        document.getElementById('site-filter-menu').classList.toggle('open');
+    };
 
-    function siteFilterMunicipality(municipality, label) {
-        siteCurrentMunicipality = municipality;
+    window.siteFilterMunicipality = function (municipality, label) {
+        currentMunicipality = municipality;
         document.getElementById('site-filter-label').textContent = label;
         document.querySelectorAll('#site-filter-menu button').forEach(function (btn) {
             btn.classList.toggle('active', btn.textContent === (municipality === 'all' ? 'All municipalities' : label));
         });
         document.getElementById('site-filter-menu').classList.remove('open');
-        siteApplyFilters();
-    }
+        document.getElementById('sites-scroll').scrollTop = 0;
+        render();
+    };
 
-    function siteApplyFilters() {
-        var q = (document.getElementById('site-search-input').value || '').trim().toLowerCase();
-        var rows = document.querySelectorAll('#sites-table tbody tr');
-        var visible = 0;
+    window.siteApplyFilters = function () { render(); };
 
-        rows.forEach(function (row) {
-            var matchesMuni = siteCurrentMunicipality === 'all' || row.dataset.municipality === siteCurrentMunicipality;
-            var matchesSearch = !q || row.dataset.search.indexOf(q) !== -1;
-            var show = matchesMuni && matchesSearch;
-            row.style.display = show ? '' : 'none';
-            if (show) visible++;
-        });
-
-        document.getElementById('sites-count').textContent = visible;
-
-        var hasFilters = q || siteCurrentMunicipality !== 'all';
-        document.getElementById('site-clear-btn').style.display = hasFilters ? 'inline-block' : 'none';
-
-        var empty = document.getElementById('sites-empty');
-        var scrollWrap = document.getElementById('sites-scroll');
-        var controls = document.querySelector('.sites-scroll-controls');
-        if (empty) {
-            var noResults = visible === 0 && rows.length > 0;
-            empty.style.display = noResults ? 'block' : 'none';
-            if (scrollWrap) scrollWrap.style.display = noResults ? 'none' : '';
-            if (controls) controls.style.display = noResults ? 'none' : '';
-        }
-    }
-
-    function siteClearFilters() {
+    window.siteClearFilters = function () {
         document.getElementById('site-search-input').value = '';
-        siteFilterMunicipality('all', 'Municipality');
+        window.siteFilterMunicipality('all', 'Municipality');
+    };
+
+    /* ---- frozen-column shade ----
+       Only shade the edge of the frozen columns once something is actually
+       hidden behind them. */
+    function updateScrollShade() {
+        var el = document.getElementById('sites-scroll');
+        if (!el) return;
+        el.classList.toggle('is-scrolled', el.scrollLeft > 2);
     }
 
-    function sitesScroll(direction) {
-        var el = document.getElementById('sites-scroll');
-        if (el) el.scrollBy({ left: direction * 320, behavior: 'smooth' });
+    /* ---- frozen columns ----
+       The table is auto-layout, so the pinned columns are only as wide as
+       their content and that width changes whenever a different page of
+       rows is shown. Each pinned column's `left` is therefore measured from
+       the header cells after every render rather than hard-coded. */
+    function layoutPinnedColumns() {
+        var headCells = table.tHead.rows[0].cells;
+        var offset = 0;
+
+        Array.prototype.forEach.call(headCells, function (th) {
+            if (!th.classList.contains('dt-pin')) return;
+            var index = th.cellIndex;
+            var left = offset + 'px';
+
+            th.style.left = left;
+            allRows.forEach(function (row) {
+                var cell = row.cells[index];
+                if (cell) cell.style.left = left;
+            });
+
+            offset += th.getBoundingClientRect().width;
+        });
     }
 
-    (function () {
-        var el = document.getElementById('sites-scroll');
-        var left = document.getElementById('sites-scroll-left');
-        var right = document.getElementById('sites-scroll-right');
-        if (!el || !left || !right) return;
+    document.addEventListener('click', function (e) {
+        var wrap = document.querySelector('.um-filter-wrap');
+        var menu = document.getElementById('site-filter-menu');
+        if (wrap && menu && !wrap.contains(e.target)) menu.classList.remove('open');
+    });
 
-        function updateButtons() {
-            left.disabled = el.scrollLeft <= 4;
-            right.disabled = el.scrollLeft >= el.scrollWidth - el.clientWidth - 4;
-        }
-        el.addEventListener('scroll', updateButtons);
-        window.addEventListener('resize', updateButtons);
-        updateButtons();
-    })();
+    document.getElementById('sites-scroll').addEventListener('scroll', updateScrollShade);
+    window.addEventListener('resize', function () {
+        layoutPinnedColumns();
+        updateScrollShade();
+    });
+
+    render();
+})();
 </script>
 
 {% endblock %}
