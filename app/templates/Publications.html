@@ -1,5 +1,10 @@
 {% extends "Base.html" %} {% block title %}Boundary Publications -
-PuNoObservation{% endblock %} {% set active_page = 'publications' %} {% block
+PuNoObservation{% endblock %} {% set active_page = 'publications' %}
+{# The column runs the full width of the main area. Nothing at the top moves
+   -- the heading and the counters are left-aligned either way -- but the
+   empty state below them centres against the whole area rather than against
+   a 1200px column pinned to the left of it. #}
+{% block content_class %}page-content-wide{% endblock %} {% block
 extra_head %}
 <link
   rel="stylesheet"
@@ -13,13 +18,74 @@ extra_head %}
     margin-bottom: 1.5rem;
   }
   .pub-chip {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.75rem;
     background: var(--surface-1);
     border: 1px solid var(--line);
     border-radius: 8px;
     padding: 0.7rem 1.1rem;
-    min-width: 150px;
+    min-width: 190px;
     text-decoration: none;
     color: inherit;
+    /* Same lift as the overview cards; these are links, so the movement
+       also says they can be clicked. */
+    transition: transform 260ms var(--ease), box-shadow 260ms var(--ease),
+                border-color 160ms var(--ease);
+  }
+
+  .pub-chip:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--sh-md);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .pub-chip:hover {
+      transform: none;
+    }
+  }
+
+  .pub-chip-text {
+    min-width: 0;
+  }
+
+  /* The icon takes the colour of the state it counts: amber waiting, green
+     live on the map, red turned down. */
+  .pub-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: 9px;
+    background: var(--surface-3);
+    border: 1px solid var(--line);
+    color: var(--text-2);
+  }
+
+  .pub-icon svg {
+    width: 1.2rem;
+    height: 1.2rem;
+  }
+
+  .pub-chip.is-pending .pub-icon {
+    background: var(--warn-bg);
+    border-color: var(--warn-line);
+    color: var(--warn-text);
+  }
+
+  .pub-chip.is-published .pub-icon {
+    background: var(--ok-bg);
+    border-color: var(--ok-line);
+    color: var(--brand-text);
+  }
+
+  .pub-chip.is-declined .pub-icon {
+    background: var(--danger-bg);
+    border-color: var(--danger-line);
+    color: var(--danger-text);
   }
   .pub-chip:hover,
   .pub-chip.active {
@@ -30,7 +96,7 @@ extra_head %}
     display: block;
     font-size: 1.4rem;
     font-weight: 700;
-    color: #14532d;
+    color: var(--brand-deep-text);
   }
   .pub-chip .lbl {
     display: block;
@@ -116,10 +182,10 @@ extra_head %}
     color: var(--danger-strong);
   }
 
-  .pub-empty {
-    text-align: center;
-    padding: 2.5rem 1rem;
-    color: var(--text-2);
+  .pub-empty p {
+    max-width: 46ch;
+    margin-inline: auto;
+    line-height: 1.6;
   }
 </style>
 {% endblock %} {% block content %}
@@ -133,14 +199,38 @@ extra_head %}
   </p>
 </div>
 
+{# Icon and state class per counter, keyed by the label the route supplies.
+   Anything unexpected falls back to a neutral map pin rather than breaking
+   the strip. #}
+{% set pub_state = {
+     'Pending Publication': 'is-pending',
+     'Published': 'is-published',
+     'Declined': 'is-declined',
+   } %}
+{% set pub_icon = {
+     'Pending Publication': '<circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>',
+     'Published': '<circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/>',
+     'Declined': '<circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/>',
+     '_default': '<path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/>',
+   } %}
+
 <div class="pub-strip">
   {% for label, n in counts.items() %}
   <a
     href="{{ url_for('admin.publications', status=label) }}"
-    class="pub-chip {% if status_filter == label %}active{% endif %}"
+    class="pub-chip {{ pub_state.get(label, '') }}
+           {% if status_filter == label %}active{% endif %}"
   >
-    <span class="num">{{ n }}</span>
-    <span class="lbl">{{ label }}</span>
+    <span class="pub-chip-text">
+      <span class="num">{{ n }}</span>
+      <span class="lbl">{{ label }}</span>
+    </span>
+    <span class="pub-icon" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+           stroke-linecap="round" stroke-linejoin="round">
+        {{ pub_icon.get(label, pub_icon['_default']) | safe }}
+      </svg>
+    </span>
   </a>
   {% endfor %}
 </div>
@@ -280,8 +370,9 @@ extra_head %}
   </form>
 </div>
 {% endfor %} {% else %}
-<div class="pub-empty">
-  <h5>Nothing {{ status_filter|lower }}</h5>
+<div class="um-empty pub-empty">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.106 5.553a2 2 0 0 0 1.788 0l3.659-1.83A1 1 0 0 1 21 4.619v12.764a1 1 0 0 1-.553.894l-4.553 2.277a2 2 0 0 1-1.788 0l-4.212-2.106a2 2 0 0 0-1.788 0l-3.659 1.83A1 1 0 0 1 3 19.381V6.618a1 1 0 0 1 .553-.894l4.553-2.277a2 2 0 0 1 1.788 0z"/><path d="M15 5.764v15"/><path d="M9 3.236v15"/></svg>
+  <strong>Nothing {{ status_filter|lower }}</strong>
   <p>
     Boundaries appear here once a CENRO administrator approves a monitoring
     report containing corner photographs.
