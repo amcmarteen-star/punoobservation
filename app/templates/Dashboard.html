@@ -271,14 +271,51 @@
           ? ds.pointBorderColor
           : ds.borderColor;
       if (pointLine !== undefined) ds.pointHoverBorderColor = pointLine;
+
     });
     return config;
+  }
+
+  /* --- replay the entry animation on hover ---------------------------
+     Pointing at a chart plays it in again: the bars grow up from the axis
+     and the line draws itself, exactly as they do when the page first
+     loads. Nothing is recoloured -- the movement is the whole effect, so
+     the key still describes what the fills mean.
+
+     A run is never restarted while one is playing. Without that, moving
+     across the canvas would keep knocking the bars back to zero under the
+     pointer. */
+  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+  function entryDuration(chart) {
+    const own = chart.options && chart.options.animation;
+    if (own && typeof own.duration === 'number') return own.duration;
+    const base = Chart.defaults.animation && Chart.defaults.animation.duration;
+    return typeof base === 'number' ? base : 1000;
+  }
+
+  function replayOnHover(chart, canvas) {
+    let playing = false;
+    canvas.addEventListener('mouseenter', function () {
+      if (playing || reducedMotion.matches) return;
+      playing = true;
+      /* reset() puts every element back to its start-of-animation state;
+         the update() that follows animates them in from there. */
+      chart.reset();
+      chart.update();
+      window.setTimeout(function () {
+        playing = false;
+      }, entryDuration(chart));
+    });
   }
 
   function mkChart(canvas, config) {
     const existing = Chart.getChart(canvas);
     if (existing) existing.destroy();
-    return new Chart(canvas, pinHoverColours(config));
+
+    const chart = new Chart(canvas, pinHoverColours(config));
+    replayOnHover(chart, canvas);
+    return chart;
   }
 
   async function loadDashboard() {
