@@ -11,25 +11,25 @@ endblock %} {% set active_page = 'requests' %} {% block extra_head %}
   }
 
   .status-submitted {
-    background: #e0f2fe;
-    color: #075985;
+    background: var(--info-bg);
+    color: var(--info-strong);
   }
   .status-under-review {
-    background: #fef3c7;
-    color: #92400e;
+    background: var(--warn-bg);
+    color: var(--warn-strong);
   }
   .status-approved {
-    background: #dcfce7;
+    background: var(--ok-bg);
     color: #15803d;
   }
   .status-rejected {
-    background: #fee2e2;
-    color: #991b1b;
+    background: var(--danger-bg);
+    color: var(--danger-strong);
   }
 
   .review-note {
     font-size: 0.75rem;
-    color: #41544a;
+    color: var(--text-body);
     font-style: italic;
     margin-top: 0.25rem;
   }
@@ -64,13 +64,6 @@ endblock %} {% set active_page = 'requests' %} {% block extra_head %}
 </div>
 
 <!-- ============ FLASH MESSAGES ============ -->
-{% with messages = get_flashed_messages(with_categories=true) %} {% if messages
-%} {% for category, message in messages %}
-<div class="alert alert-{{ 'danger' if category == 'danger' else 'success' }}">
-  {{ message }}
-</div>
-{% endfor %} {% endif %} {% endwith %}
-
 <!-- ============ MY REQUESTS TABLE ============ -->
 <div class="um-table-card">
   {% if my_requests %}
