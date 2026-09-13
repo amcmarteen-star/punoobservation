@@ -21,7 +21,8 @@ from app.services.monitoring import (
 )
 from app.utils.jurisdiction import (
     scope_sites, scope_locations, allowed_municipalities,
-    can_see_municipality, current_cenro, is_superadmin, scope_label,
+    can_see_municipality, canonical_municipality,
+    current_cenro, is_superadmin, scope_label,
     CENRO_LIST, CENRO_MUNICIPALITIES,
 )
 from app.utils.decorators import login_required,field_officer_required
@@ -110,8 +111,12 @@ def municipality_info(name):
             "reason": "Outside your CENRO jurisdiction.",
         })   
     
+    # The map sends the GeoJSON spelling ("UrdanetaCity"), which does not
+    # match the Location rows. Resolve it to the database spelling first.
+    lookup = canonical_municipality(name) or name
+
     locations = Location.query.filter(
-        func.lower(Location.municipality) == name.lower()
+        func.lower(Location.municipality) == lookup.lower()
     ).all()
 
     if not locations:
@@ -1917,6 +1922,48 @@ def api_site_history(site_id):
         "trend": trend,
         "history": history,
     })
+
+
+@dashboard_bp.route('/monitoring-reports/<int:report_id>')
+def public_report_detail(report_id):
+    """
+    Read-only view of one APPROVED monitoring report, opened from the
+    "View full report" link in the map's monitoring history panel.
+
+    Same rules as api_site_history, because this page is the full
+    version of a visit that panel already lists:
+      - open to guests, like the map
+      - approved reports only; pending and rejected ones 404, so an
+        unreviewed figure is never shown as an official record
+      - CENRO jurisdiction still applies
+
+    The officer's view (my_report_detail) and the reviewer's view
+    (admin.review_report_detail) stay separate. This route cannot
+    approve anything, and the page hides the reviewer's note.
+    """
+    report = MonitoringReport.query.filter_by(
+        report_id=report_id, approval_status='Approved'
+    ).first_or_404()
+
+    cenro = current_cenro()
+    if cenro is not None and report.site and report.site.cenro != cenro:
+        flash("That report is outside your CENRO jurisdiction.", "danger")
+        return redirect(url_for('dashboard.gis_map'))
+
+    plot_photos = [p for p in report.photos if p.photo_type == 'plot']
+    boundary_photos = [p for p in report.photos if p.photo_type == 'boundary']
+
+    return render_template(
+        'Reportdetail.html',
+        active_page='gis_map',
+        report=report,
+        plots=sorted(report.plots, key=lambda p: p.plot_number),
+        plot_photos=plot_photos,
+        boundary_photos=boundary_photos,
+        can_review=False,
+        public_view=True,
+    )
+
 
 @dashboard_bp.route('/account', methods=['GET', 'POST'])
 @login_required

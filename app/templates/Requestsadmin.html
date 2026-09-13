@@ -187,8 +187,8 @@ active_page = 'review_requests' %} {% block extra_head %}
 <!-- ============ TABLE ============ -->
 <div class="um-table-card">
   {% if all_requests %}
-  <div class="sites-scroll-wrap" id="req-scroll">
-    <table class="um-table sites-table" id="req-table">
+  <div class="sites-scroll-wrap table-freeze-wrap" id="req-scroll">
+    <table class="um-table sites-table" id="req-table" data-freeze="2">
       <thead>
         <tr>
           <th>#</th>

@@ -3,9 +3,13 @@
 {% block content_class %}page-content-wide{% endblock %}
 
 {#
-  Shared by two routes:
-    admin.review_report_detail   can_review = true   adds the decision form
-    dashboard.my_report_detail   can_review = false  read-only, own report
+  Shared by three routes:
+    admin.review_report_detail     can_review = true   adds the decision form
+    dashboard.my_report_detail     can_review = false  read-only, own report
+    dashboard.public_report_detail public_view = true  read-only, approved
+                                                        report opened from
+                                                        the map; hides the
+                                                        reviewer's note
 
   The officer sees exactly what the reviewer sees, minus the ability to
   decide. Showing them the same photo flags and boundary figures the
@@ -19,7 +23,12 @@
 
 {% block content %}
 
-{% if can_review %}
+{% if public_view %}
+<a href="{{ url_for('dashboard.gis_map', site=report.site_id, view='history') if report.site_id else url_for('dashboard.gis_map') }}" class="um-back-link">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
+  Back to the map
+</a>
+{% elif can_review %}
 <a href="{{ url_for('admin.review_reports') }}" class="um-back-link">
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
   Back to all reports
@@ -166,8 +175,8 @@
   <div class="um-table-card">
     {% if plots %}
     {% set mx = plots | map(attribute='seedlings_alive') | max %}
-    <div class="um-scroll-wrap" style="max-height: 320px;">
-      <table class="um-table">
+    <div class="um-scroll-wrap table-freeze-wrap" style="max-height: 320px;">
+      <table class="um-table" data-freeze="1">
         <thead>
           <tr>
             <th>Plot</th>
@@ -371,7 +380,7 @@
     {% if report.date_reviewed %}on {{ report.date_reviewed.strftime('%d %b %Y') }}{% endif %}.
     The survival rate of {{ report.survival_rate }}% is now recorded against
     the planting record for this site.
-    {% if report.review_note %}<br /><br />Note: {{ report.review_note }}{% endif %}
+    {% if report.review_note and not public_view %}<br /><br />Note: {{ report.review_note }}{% endif %}
   </div>
 
   {% else %}

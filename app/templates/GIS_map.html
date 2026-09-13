@@ -58,6 +58,9 @@
 
   /* panel is now a REAL flex child, width 0 when closed, slides open to push map */
   .muni-panel {
+    /* open width; the drag handle changes this from JS */
+    --panel-width: 320px;
+    position: relative;
     flex: 0 0 auto;
     width: 0;
     height: 100%;
@@ -70,14 +73,66 @@
   }
 
   .muni-panel.active {
-    width: 320px;
+    width: var(--panel-width);
   }
 
-  /* fixed-width inner wrapper so content doesn't reflow/squash while width animates */
+  /* no slide animation while dragging, so the edge follows the mouse */
+  .muni-panel.resizing {
+    transition: none;
+  }
+
+  /* inner wrapper matches the open width so content doesn't squash while width animates */
   .muni-panel-inner {
-    width: 320px;
+    width: var(--panel-width);
     height: 100%;
     overflow-y: auto;
+  }
+
+  /* drag handle on the panel's left edge */
+  .panel-resizer {
+    display: none;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 8px;
+    height: 100%;
+    z-index: 5;
+    cursor: col-resize;
+    touch-action: none;
+  }
+
+  .muni-panel.active .panel-resizer {
+    display: block;
+  }
+
+  /* small grip bar so users can see the edge is draggable */
+  .panel-resizer::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 2px;
+    width: 4px;
+    height: 40px;
+    margin-top: -20px;
+    border-radius: 2px;
+    background-color: #cbd5e1;
+    transition: background-color 0.15s ease;
+  }
+
+  .panel-resizer:hover::after,
+  .panel-resizer:focus-visible::after,
+  .muni-panel.resizing .panel-resizer::after {
+    background-color: #16a34a;
+  }
+
+  .panel-resizer:focus-visible {
+    outline: none;
+  }
+
+  /* stop text getting highlighted while dragging */
+  body.panel-resizing {
+    cursor: col-resize;
+    user-select: none;
   }
 
   .muni-panel .panel-header {
@@ -196,6 +251,12 @@
     padding: 0;
     margin-bottom: 0.4rem;
     text-decoration: underline;
+  }
+
+  /* "View full report" link at the bottom of each history visit */
+  .muni-panel .hist-report-link {
+    display: inline-block;
+    margin: 0.5rem 0 0;
   }
 
   .muni-panel .rec-card {
@@ -696,6 +757,17 @@ global_topbar %}{% endblock %} {% block topbar%}
   <div id="map"></div>
 
   <div id="muni-panel" class="muni-panel">
+    <div
+      class="panel-resizer"
+      id="panel-resizer"
+      role="separator"
+      aria-orientation="vertical"
+      aria-label="Resize side panel"
+      aria-valuemin="260"
+      aria-valuenow="320"
+      tabindex="0"
+      title="Drag to resize. Double-click to reset."
+    ></div>
     <div class="muni-panel-inner" id="muni-panel-inner"></div>
   </div>
 </div>
@@ -954,6 +1026,11 @@ global_topbar %}{% endblock %} {% block topbar%}
                 ? `<div class="hist-more">
                      +${h.photo_count - 6} more photograph(s)
                    </div>` : ''}
+
+              <a class="back-link hist-report-link"
+                 href="/monitoring-reports/${h.report_id}">
+                View full report &rarr;
+              </a>
             </div>`;
         }).join('');
 
@@ -1254,6 +1331,108 @@ global_topbar %}{% endblock %} {% block topbar%}
         );
       }
 
+      // ==============================================================
+      // RESIZABLE SIDE PANEL
+      // Drag the panel's left edge to change its width.
+      // Arrow keys work too when the edge has keyboard focus.
+      // Double-click the edge to go back to the default width.
+      // ==============================================================
+      const PANEL_DEFAULT_WIDTH = 320;
+      const PANEL_MIN_WIDTH = 260;
+      const PANEL_MIN_MAP_WIDTH = 240; // always leave this much map visible
+      const PANEL_WIDTH_KEY = "gisPanelWidth";
+      const panelResizer = document.getElementById("panel-resizer");
+      let muniPanelWidth = PANEL_DEFAULT_WIDTH;
+      let panelResizeFrame = null;
+
+      function clampPanelWidth(px) {
+        const wrapWidth = muniPanel.parentElement.getBoundingClientRect().width;
+        const max = Math.max(PANEL_MIN_WIDTH, wrapWidth - PANEL_MIN_MAP_WIDTH);
+        return Math.round(Math.min(Math.max(px, PANEL_MIN_WIDTH), max));
+      }
+
+      function setPanelWidth(px, save) {
+        muniPanelWidth = clampPanelWidth(px);
+        muniPanel.style.setProperty("--panel-width", muniPanelWidth + "px");
+        panelResizer.setAttribute("aria-valuenow", muniPanelWidth);
+        if (save) {
+          try {
+            localStorage.setItem(PANEL_WIDTH_KEY, String(muniPanelWidth));
+          } catch (err) {}
+        }
+      }
+
+      // Leaflet must re-measure its container after the size changes.
+      // One re-measure per animation frame keeps dragging smooth.
+      function refreshMapSize() {
+        if (panelResizeFrame) return;
+        panelResizeFrame = requestAnimationFrame(function () {
+          panelResizeFrame = null;
+          map.invalidateSize();
+        });
+      }
+
+      // for keys and double-click: jump to the new width with no slide
+      function applyPanelWidthNow(px) {
+        muniPanel.classList.add("resizing");
+        setPanelWidth(px, true);
+        map.invalidateSize();
+        requestAnimationFrame(function () {
+          muniPanel.classList.remove("resizing");
+        });
+      }
+
+      // restore the width from the last visit
+      try {
+        const savedWidth = parseInt(localStorage.getItem(PANEL_WIDTH_KEY), 10);
+        if (savedWidth) setPanelWidth(savedWidth, false);
+      } catch (err) {}
+
+      panelResizer.addEventListener("pointerdown", function (e) {
+        if (!muniPanel.classList.contains("active")) return;
+        e.preventDefault();
+        panelResizer.setPointerCapture(e.pointerId);
+        muniPanel.classList.add("resizing");
+        document.body.classList.add("panel-resizing");
+      });
+
+      panelResizer.addEventListener("pointermove", function (e) {
+        if (!panelResizer.hasPointerCapture(e.pointerId)) return;
+        // the panel sits on the right, so its width is the distance
+        // from the pointer to the right edge of the map area
+        const wrapRight = muniPanel.parentElement.getBoundingClientRect().right;
+        setPanelWidth(wrapRight - e.clientX, false);
+        refreshMapSize();
+      });
+
+      function endPanelResize() {
+        if (!muniPanel.classList.contains("resizing")) return;
+        muniPanel.classList.remove("resizing");
+        document.body.classList.remove("panel-resizing");
+        setPanelWidth(muniPanelWidth, true);
+        map.invalidateSize();
+      }
+      panelResizer.addEventListener("pointerup", endPanelResize);
+      panelResizer.addEventListener("pointercancel", endPanelResize);
+
+      panelResizer.addEventListener("keydown", function (e) {
+        if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
+        e.preventDefault();
+        // the edge is on the left, so ArrowLeft makes the panel wider
+        const step = e.key === "ArrowLeft" ? 20 : -20;
+        applyPanelWidthNow(muniPanelWidth + step);
+      });
+
+      panelResizer.addEventListener("dblclick", function () {
+        applyPanelWidthNow(PANEL_DEFAULT_WIDTH);
+      });
+
+      // a smaller window may no longer fit the saved width
+      window.addEventListener("resize", function () {
+        setPanelWidth(muniPanelWidth, false);
+        refreshMapSize();
+      });
+
       window.closeMuniPanel = function () {
         muniPanel.classList.remove("active");
         clearBarangays();
@@ -1527,10 +1706,62 @@ global_topbar %}{% endblock %} {% block topbar%}
           if (!toggle || toggle.checked) {
             siteLayer.addTo(map);
           }
+
+          focusSiteFromUrl(data.barangays);
         } catch (err) {
           console.error("Site marker load failed:", err);
         }
       }
+      // Opened from the Reforestation Sites page as /gis-map?site=<id>.
+      // Opens that site's barangay panel, then drops the locate pin on it.
+      function focusSiteFromUrl(barangays) {
+        const params = new URLSearchParams(window.location.search);
+        const siteId = parseInt(params.get("site"), 10);
+        // view=history comes from "Back to the map" on a full report
+        const openHistory = params.get("view") === "history";
+        if (!siteId) return;
+
+        let brgy = null;
+        let site = null;
+        barangays.forEach(function (b) {
+          b.sites.forEach(function (s) {
+            if (s.site_id === siteId) {
+              brgy = b;
+              site = s;
+            }
+          });
+        });
+
+        if (!site) {
+          // no map pin, but the history panel still works without one
+          if (openHistory) {
+            showSiteHistory(siteId);
+          } else {
+            alert("This site has no recorded coordinates on the map.");
+          }
+          return;
+        }
+
+        showBarangaySites(brgy);
+
+        // the panel slides open and shrinks the map, so wait for that
+        // resize before zooming, or the pin lands off-centre
+        let done = false;
+        function zoomToSite() {
+          if (done) return;
+          done = true;
+          map.invalidateSize();
+          locateSite(site.site_id, brgy.lat, brgy.lon, site.site_name, brgy.barangay);
+          if (openHistory) showSiteHistory(site.site_id);
+        }
+        muniPanel.addEventListener("transitionend", function handler(ev) {
+          if (ev.propertyName !== "width") return;
+          muniPanel.removeEventListener("transitionend", handler);
+          zoomToSite();
+        });
+        setTimeout(zoomToSite, 700);
+      }
+
       // ==============================================================
       // PUBLISHED SITE BOUNDARIES
       // Captured by field officers from GPS corner photographs,
@@ -1865,7 +2096,7 @@ global_topbar %}{% endblock %} {% block topbar%}
             ${b.sites
               .map(
                 (s) => `
-              <div class="site-card">
+              <div class="site-card" id="site-card-${s.site_id}">
                 <div class="site-card-title">${s.site_name}</div>
                 <div class="stat-row">
                   <span class="stat-label">Site Code</span>

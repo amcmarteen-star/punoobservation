@@ -323,8 +323,8 @@
 
   <div class="um-table-card">
     {% if report_rows %}
-    <div class="um-scroll-wrap" id="po-reports-scroll">
-      <table class="um-table um-scroll-table">
+    <div class="um-scroll-wrap table-freeze-wrap" id="po-reports-scroll">
+      <table class="um-table um-scroll-table" data-freeze="1">
         <thead>
           <tr>
             <th>Site</th>
@@ -442,8 +442,8 @@
 
   <div class="um-table-card">
     {% if request_rows %}
-    <div class="um-scroll-wrap" id="po-requests-scroll">
-      <table class="um-table um-scroll-table">
+    <div class="um-scroll-wrap table-freeze-wrap" id="po-requests-scroll">
+      <table class="um-table um-scroll-table" data-freeze="1">
         <thead>
           <tr>
             <th>Requester</th>

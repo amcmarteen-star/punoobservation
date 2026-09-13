@@ -54,11 +54,12 @@
 
 <div class="um-table-card">
     {% if ns.sites %}
-    <div class="sites-scroll-wrap" id="sites-scroll">
-        <table class="um-table sites-table" id="sites-table">
+    <div class="sites-scroll-wrap table-freeze-wrap" id="sites-scroll">
+        <table class="um-table sites-table" id="sites-table" data-freeze="2">
             <thead>
                 <tr>
                     <th>Site Name</th>
+                    <th>Map</th>
                     <th>Barangay</th>
                     <th>Municipality</th>
                     <th>Zone</th>
@@ -94,7 +95,20 @@
                 {% for s in ns.sites %}
                 <tr data-municipality="{{ s.location.municipality|e }}"
                     data-search="{{ (s.site_name ~ ' ' ~ s.location.barangay ~ ' ' ~ s.location.municipality ~ ' ' ~ (s.site_code or ''))|lower|e }}">
-                    <td class="sites-name-cell">{{ s.site_name }}</td>
+                    <td class="sites-name-cell"><span class="sites-name-text" title="{{ s.site_name }}">{{ s.site_name }}</span></td>
+                    <td>
+                        {% if s.location.latitude is not none %}
+                            <button type="button" class="um-btn-row"
+                                    data-site-id="{{ s.site_id }}"
+                                    data-site-name="{{ s.site_name|e }}"
+                                    onclick="siteOpenMapConfirm(this)">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/></svg>
+                                View
+                            </button>
+                        {% else %}
+                            <span class="um-muted" title="This site has no recorded coordinates.">No coordinates</span>
+                        {% endif %}
+                    </td>
                     <td>{{ s.location.barangay }}</td>
                     <td>{{ s.location.municipality }}</td>
                     <td>
@@ -166,8 +180,55 @@
     {% endif %}
 </div>
 
+<!-- View on map confirmation -->
+<div class="um-modal-overlay" id="site-map-modal">
+    <div class="um-modal" role="dialog" aria-modal="true" aria-labelledby="site-map-title">
+        <div class="um-modal-head">
+            <h3 id="site-map-title">View on Map</h3>
+            <button type="button" class="um-modal-close" aria-label="Close dialog" onclick="siteCloseMapConfirm()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+            </button>
+        </div>
+        <div class="um-modal-body">
+            <p style="margin: 0;">
+                You will be redirected to the map to see where
+                <strong id="site-map-name"></strong> is located.
+            </p>
+        </div>
+        <div class="um-modal-foot">
+            <button type="button" class="um-btn-cancel" onclick="siteCloseMapConfirm()">Cancel</button>
+            <button type="button" class="um-btn-confirm" onclick="siteGoToMap()">Confirm</button>
+        </div>
+    </div>
+</div>
+
 <script>
     var siteCurrentMunicipality = 'all';
+    var siteMapTargetId = null;
+
+    function siteOpenMapConfirm(btn) {
+        siteMapTargetId = btn.dataset.siteId;
+        document.getElementById('site-map-name').textContent = btn.dataset.siteName;
+        document.getElementById('site-map-modal').classList.add('open');
+    }
+
+    function siteCloseMapConfirm() {
+        siteMapTargetId = null;
+        document.getElementById('site-map-modal').classList.remove('open');
+    }
+
+    function siteGoToMap() {
+        if (!siteMapTargetId) return;
+        window.location.href = "{{ url_for('dashboard.gis_map') }}?site=" + encodeURIComponent(siteMapTargetId);
+    }
+
+    // click the dark backdrop or press Escape to cancel
+    document.getElementById('site-map-modal').addEventListener('click', function (e) {
+        if (e.target === this) siteCloseMapConfirm();
+    });
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') siteCloseMapConfirm();
+    });
 
     function siteToggleFilterMenu() {
         document.getElementById('site-filter-menu').classList.toggle('open');
@@ -236,6 +297,7 @@
         var right = document.getElementById('sites-scroll-right');
         if (!el || !left || !right) return;
 
+        // frozen columns are handled by static/js/table-freeze.js
         function updateButtons() {
             left.disabled = el.scrollLeft <= 4;
             right.disabled = el.scrollLeft >= el.scrollWidth - el.clientWidth - 4;

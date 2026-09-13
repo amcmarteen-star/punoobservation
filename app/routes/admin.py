@@ -1054,19 +1054,49 @@ def review_report(report_id):
         if report.boundary_geojson:
             report.publication_status = 'Pending Publication'
 
-        for su in User.query.filter_by(role='superadmin').all():
+        # Tell the account that can actually act on it.
+        #
+        # A boundary waiting for publication is only actionable by a
+        # provincial administrator - role 'admin' with no CENRO.
+        # publications() refuses superadmin, which is MIS rather than
+        # PENRO, so sending the notice there left the publication queue
+        # filling up with nobody told about it.
+        #
+        # An approval with no boundary is oversight information, not a
+        # task, so that one still goes to superadmin.
+        if report.boundary_geojson:
+            recipients = User.query.filter(
+                User.role == 'admin',
+                User.cenro.is_(None),
+                User.is_active.is_(True),
+            ).all()
+
+            # A province with no provincial administrator would get no
+            # notice at all, which is the failure being fixed here.
+            # Fall back to superadmin so it is at least visible.
+            if not recipients:
+                recipients = User.query.filter_by(
+                    role='superadmin', is_active=True
+                ).all()
+
+            message = (
+                f"Boundary awaiting publication: "
+                f"{report.site.site_name if report.site else 'a site'} "
+                f"({report.captured_area_ha} ha captured)."
+            )
+        else:
+            recipients = User.query.filter_by(
+                role='superadmin', is_active=True
+            ).all()
+            message = (
+                f"Monitoring report #{report.report_id} was approved."
+            )
+
+        for u in recipients:
             db.session.add(Notification(
-                user_id=su.user_id,
+                user_id=u.user_id,
                 notification_type='Report',
-                message=(
-                    (
-                        f"Boundary awaiting publication: "
-                        f"{report.site.site_name if report.site else 'a site'} "
-                        f"({report.captured_area_ha} ha captured)."
-                    )
-                    if report.boundary_geojson
-                    else f"Monitoring report #{report.report_id} was approved."
-                ),
+                message=message,
                 report_id=report.report_id,
                 is_read=False,
             ))

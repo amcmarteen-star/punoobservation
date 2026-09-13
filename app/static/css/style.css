@@ -2365,6 +2365,131 @@ body.login-page :focus-visible {
 }
 
 /* ============================================
+   FROZEN TABLE COLUMNS (Excel-style freeze panes)
+   Any wide table can keep its header row and its first one or two
+   columns in place while the rest scrolls. Opt in from the template:
+
+     <div class="um-scroll-wrap table-freeze-wrap">
+       <table class="um-table" data-freeze="2">
+
+   data-freeze="1" freezes the first column, "2" the first two.
+   app/static/js/table-freeze.js (loaded in Base.html) tells column 2
+   where column 1 ends, and adds .is-scrolled-x for the edge shadow.
+
+   Opt-in on purpose: several pages share .sites-table and .um-scroll-*,
+   and freezing "column 2" by class alone pinned the wrong column on
+   pages whose column 2 is something else.
+   ============================================ */
+
+/* The table scrolls inside its own box, so the sideways scrollbar stays
+   on screen instead of at the bottom of a long page. The box shrinks to
+   fit short tables. An inline max-height on the wrap still wins. */
+.table-freeze-wrap {
+    overflow: auto;
+    max-height: max(18rem, calc(100vh - 21rem));
+}
+
+/* collapsed borders do not stick with sticky cells, so separate them */
+table[data-freeze] {
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+/* Plain rows get a solid white for the frozen cells to copy. :where()
+   keeps this weaker than any row highlight (hover, focus, .row-bad). */
+:where(table[data-freeze]) tbody tr {
+    background-color: #ffffff;
+}
+
+table[data-freeze] thead th {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+}
+
+table[data-freeze="1"] td:nth-child(1),
+table[data-freeze="2"] td:nth-child(-n+2) {
+    position: sticky;
+    z-index: 1;
+    /* copy the row's colour: highlights still show, and the columns
+       sliding underneath stay hidden */
+    background-color: inherit;
+}
+
+table[data-freeze] th:nth-child(1),
+table[data-freeze] td:nth-child(1) {
+    left: 0;
+}
+
+table[data-freeze="2"] th:nth-child(2),
+table[data-freeze="2"] td:nth-child(2) {
+    left: var(--freeze-col1-width, 0px);
+}
+
+/* top-left corner sits above both the header row and the frozen columns */
+table[data-freeze="1"] thead th:nth-child(1),
+table[data-freeze="2"] thead th:nth-child(-n+2) {
+    z-index: 3;
+}
+
+/* divider on the last frozen column... */
+table[data-freeze="1"] th:nth-child(1),
+table[data-freeze="1"] td:nth-child(1),
+table[data-freeze="2"] th:nth-child(2),
+table[data-freeze="2"] td:nth-child(2) {
+    box-shadow: inset -1px 0 0 #e2eae5;
+}
+
+/* ...and a soft shadow once columns scroll under it */
+table[data-freeze="1"].is-scrolled-x th:nth-child(1),
+table[data-freeze="1"].is-scrolled-x td:nth-child(1),
+table[data-freeze="2"].is-scrolled-x th:nth-child(2),
+table[data-freeze="2"].is-scrolled-x td:nth-child(2) {
+    box-shadow: inset -1px 0 0 #e2eae5, 6px 0 8px -6px rgba(18, 33, 26, 0.3);
+}
+
+/* fixed width keeps the frozen column steady; full name shows on hover */
+.sites-name-text {
+    display: block;
+    width: 16rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+@media (max-width: 640px) {
+    /* a phone is too narrow for two frozen columns: freeze the first only */
+    table[data-freeze="2"] td:nth-child(2) {
+        position: static;
+    }
+
+    table[data-freeze="2"] th:nth-child(2) {
+        left: auto;
+    }
+
+    table[data-freeze="2"] th:nth-child(2),
+    table[data-freeze="2"] td:nth-child(2),
+    table[data-freeze="2"].is-scrolled-x th:nth-child(2),
+    table[data-freeze="2"].is-scrolled-x td:nth-child(2) {
+        box-shadow: none;
+    }
+
+    /* the divider and shadow move to column 1 */
+    table[data-freeze="2"] th:nth-child(1),
+    table[data-freeze="2"] td:nth-child(1) {
+        box-shadow: inset -1px 0 0 #e2eae5;
+    }
+
+    table[data-freeze="2"].is-scrolled-x th:nth-child(1),
+    table[data-freeze="2"].is-scrolled-x td:nth-child(1) {
+        box-shadow: inset -1px 0 0 #e2eae5, 6px 0 8px -6px rgba(18, 33, 26, 0.3);
+    }
+
+    .sites-name-text {
+        width: 9rem;
+    }
+}
+
+/* ============================================
    MONITORING REPORTS
    Shared by Reports.html (officer), Reportsadmin.html (review list)
    and Reportdetail.html (single report). These pages arrived using

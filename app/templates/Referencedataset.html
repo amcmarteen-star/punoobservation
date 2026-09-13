@@ -214,8 +214,8 @@
           FIRST ${data.samples.length} ROWS
         </p>
         <div class="um-table-card">
-          <div class="sites-scroll-wrap">
-            <table class="um-table sites-table">
+          <div class="sites-scroll-wrap table-freeze-wrap">
+            <table class="um-table sites-table" data-freeze="2">
               <thead>
                 <tr>
                   <th>Sheet</th><th>Row</th><th>Municipality</th>
@@ -240,6 +240,9 @@
         </div>
       </div>
     `;
+
+    // the preview table was just added, so set up its frozen columns
+    if (window.initFrozenTables) window.initFrozenTables();
   }
 
   function confirmImport() {

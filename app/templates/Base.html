@@ -584,6 +584,9 @@
       loadNotifications();
     </script>
 
+    <!-- frozen header row + first columns on wide tables (data-freeze) -->
+    <script src="{{ url_for('static', filename='js/table-freeze.js') }}"></script>
+
     {% block extra_scripts %}{% endblock %}
   </body>
 </html>

@@ -74,8 +74,8 @@ endblock %} {% set active_page = 'requests' %} {% block extra_head %}
 <!-- ============ MY REQUESTS TABLE ============ -->
 <div class="um-table-card">
   {% if my_requests %}
-  <div class="sites-scroll-wrap">
-    <table class="um-table sites-table">
+  <div class="sites-scroll-wrap table-freeze-wrap">
+    <table class="um-table sites-table" data-freeze="2">
       <thead>
         <tr>
           <th>#</th>

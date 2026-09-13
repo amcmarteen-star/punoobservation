@@ -101,12 +101,60 @@ def allowed_municipalities():
     return CENRO_MUNICIPALITIES.get(cenro, [])
 
 
+# The GeoJSON files write municipality names differently from the
+# database. barangay.geojson and district5.geojson drop the space
+# ("UrdanetaCity", "SanNicolas") and district5.geojson spells Pozorrubio
+# as "Pozzorubio". Those names reach can_see_municipality() straight from
+# a map click, so a plain string match rejected towns the user owns.
+MUNICIPALITY_ALIASES = {
+    "pozzorubio": "pozorrubio",
+}
+
+
+def normalize_municipality(name):
+    """Lowercase and strip spaces, dots and dashes, then fold aliases."""
+    if not name:
+        return ""
+    key = name.lower()
+    for ch in (" ", ".", "-", "'"):
+        key = key.replace(ch, "")
+    return MUNICIPALITY_ALIASES.get(key, key)
+
+
+# Every municipality the province knows about, in the spelling the
+# database uses.
+ALL_MUNICIPALITIES = [
+    m for munis in CENRO_MUNICIPALITIES.values() for m in munis
+]
+
+
+def canonical_municipality(name):
+    """
+    The database spelling of a municipality name, or None if unknown.
+
+    Callers pass a name that came off the map ("UrdanetaCity",
+    "Pozzorubio") and get back the name the Location rows actually hold
+    ("Urdaneta City", "Pozorrubio"), so the query can match exactly.
+    """
+    wanted = normalize_municipality(name)
+    for m in ALL_MUNICIPALITIES:
+        if normalize_municipality(m) == wanted:
+            return m
+    return None
+
+
 def can_see_municipality(name):
-    """Used by API routes that receive a municipality name directly."""
+    """
+    Used by API routes that receive a municipality name directly.
+
+    Compared on the normalized form so a map click on "UrdanetaCity"
+    matches the "Urdaneta City" held in CENRO_MUNICIPALITIES.
+    """
     allowed = allowed_municipalities()
     if allowed is None:
         return True
-    return name in allowed
+    wanted = normalize_municipality(name)
+    return any(normalize_municipality(m) == wanted for m in allowed)
 
 
 def scope_label():
