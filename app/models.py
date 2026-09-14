@@ -158,6 +158,14 @@ class TreeSpecie(db.Model):
     # NULL means no photo; the page shows a default image instead.
     photo_url = db.Column(db.String(300), nullable=True)
 
+    # Saved Wikipedia summary for the species info panel. Fetched once,
+    # then served from here. wiki_fetched_at set with wiki_extract NULL
+    # means "Wikipedia was checked and had no article".
+    wiki_title = db.Column(db.String(300), nullable=True)
+    wiki_extract = db.Column(db.Text, nullable=True)
+    wiki_url = db.Column(db.String(500), nullable=True)
+    wiki_fetched_at = db.Column(db.DateTime, nullable=True)
+
     # Relationship
     reforestation_records = db.relationship('ReforestationRecord', backref='species', lazy=True)
 

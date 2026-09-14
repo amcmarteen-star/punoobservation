@@ -493,6 +493,85 @@
     outline: 2px solid #16a34a;
     outline-offset: 2px;
   }
+
+  /* ---------- species info panel (opened from the thumbnail) ---------- */
+  .rec-thumb-btn {
+    display: block;
+    padding: 0;
+    margin: 0;
+    border: 0;
+    border-radius: 8px;
+    background: none;
+    cursor: pointer;
+  }
+
+  .rec-thumb-btn:hover img {
+    border-color: #16a34a;
+  }
+
+  .rec-thumb-btn:focus-visible {
+    outline: 2px solid #16a34a;
+    outline-offset: 2px;
+  }
+
+  .rec-info-list {
+    display: grid;
+    grid-template-columns: max-content 1fr;
+    gap: 0.45rem 1rem;
+    margin: 0;
+    font-size: 0.85rem;
+  }
+
+  .rec-info-list dt {
+    font-weight: 600;
+    color: var(--text-2);
+  }
+
+  .rec-info-list dd {
+    margin: 0;
+    color: var(--text-body);
+  }
+
+  .rec-wiki-text {
+    margin: 0;
+    font-size: 0.9rem;
+    line-height: 1.7;
+    color: var(--text-body);
+  }
+
+  .rec-wiki-credit {
+    margin-top: 0.75rem;
+    padding-top: 0.6rem;
+    border-top: 1px solid var(--line);
+    font-size: 0.75rem;
+    line-height: 1.6;
+    color: var(--text-2);
+  }
+
+  .rec-wiki-credit a {
+    color: var(--brand-text);
+  }
+
+  .rec-wiki-refresh {
+    margin-top: 0.75rem;
+  }
+
+  .rec-wiki-msg {
+    margin-top: 0.5rem;
+    font-size: 0.8rem;
+    color: var(--danger-strong);
+  }
+
+  /* Green outline so the species info panel stands out from the page.
+     The soft outer ring is kept faint so the edge reads as a line, not a
+     glow. The original drop shadow is repeated because box-shadow
+     replaces it rather than adding to it. */
+  #rec-info-modal .um-modal {
+    border: 2px solid #16a34a;
+    box-shadow:
+      0 0 0 4px rgba(22, 163, 74, 0.18),
+      0 24px 50px rgba(15, 23, 42, 0.25);
+  }
 </style>
 {% endblock %}
 
@@ -638,6 +717,10 @@
             <td>
               <div class="rec-species-cell">
                 <div class="rec-thumb">
+                  <button type="button" class="rec-thumb-btn"
+                          data-info-id="{{ r.tree_id }}"
+                          title="Species information"
+                          aria-label="Show species information for {{ r.specie_name }}">
                   {% if r.photo_url %}
                     <img src="{{ url_for('static', filename=r.photo_url) }}"
                          alt="Photo of {{ r.specie_name }}"
@@ -647,6 +730,7 @@
                          alt="" class="is-default"
                          width="48" height="48" loading="lazy">
                   {% endif %}
+                  </button>
 
                   {% if session.role == 'superadmin' %}
                   <form method="POST" enctype="multipart/form-data"
@@ -745,6 +829,23 @@
         </button>
       </div>
       <div class="um-modal-body" id="rec-eval-body">
+        <div class="rec-loading">Loading…</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ SPECIES INFO MODAL (thumbnail click) ============ -->
+  <div class="um-modal-overlay" id="rec-info-modal">
+    <div class="um-modal rec-modal" role="dialog" aria-modal="true"
+         aria-labelledby="rec-info-title">
+      <div class="um-modal-head">
+        <h3 id="rec-info-title">Species information</h3>
+        <button type="button" class="um-modal-close" id="rec-info-close"
+                aria-label="Close dialog">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+        </button>
+      </div>
+      <div class="um-modal-body" id="rec-info-body">
         <div class="rec-loading">Loading…</div>
       </div>
     </div>
@@ -971,6 +1072,177 @@
             }
           });
         }
+      });
+
+      /* ---------- species info panel (thumbnail click) ---------- */
+      const infoOverlay = document.getElementById('rec-info-modal');
+      const infoBody = document.getElementById('rec-info-body');
+      const infoTitle = document.getElementById('rec-info-title');
+      const infoCache = {};
+      let infoLastFocused = null;
+
+      function infoRow(label, value) {
+        return '<dt>' + esc(label) + '</dt><dd>' + esc(value || '—') + '</dd>';
+      }
+
+      function renderInfo(treeId, d) {
+        const sp = d.species;
+        const w = d.wikipedia;
+
+        infoTitle.innerHTML = esc(sp.specie_name)
+          + (sp.scientific_name
+              ? ' <span class="rec-sci">' + esc(sp.scientific_name) + '</span>'
+              : '');
+
+        let html = '<div class="rec-section">'
+          + '<h4>From the reference dataset</h4>'
+          + '<dl class="rec-info-list">'
+          + infoRow('Native to', sp.native_to)
+          + infoRow('Habitat', sp.habitat)
+          + infoRow('Elevation', sp.elevation_range)
+          + infoRow('Temperature', sp.temperature_range)
+          + infoRow('Rainfall', sp.rainfall_range)
+          + infoRow('Preferred soil', sp.preferred_soil)
+          + '</dl>'
+          + (sp.source
+              ? '<div class="rec-meta">Source: ' + esc(sp.source) + '</div>'
+              : '')
+          + '</div>';
+
+        html += '<div class="rec-section"><h4>About this species</h4>';
+
+        if (w) {
+          // Credit required by CC BY-SA: article link and licence link.
+          html += '<p class="rec-wiki-text">' + esc(w.extract) + '</p>'
+            + '<div class="rec-wiki-credit">'
+            + 'Text from the Wikipedia article '
+            + (w.url
+                ? '<a href="' + esc(w.url) + '" target="_blank" rel="noopener noreferrer">'
+                  + esc(w.title) + '</a>'
+                : '<strong>' + esc(w.title) + '</strong>')
+            + ', available under '
+            + '<a href="' + esc(w.license_url) + '" target="_blank" rel="noopener noreferrer">'
+            + esc(w.license) + '</a>. Retrieved ' + esc(w.retrieved) + '.'
+            + ' Wikipedia is a general reference, not a DENR source.'
+            + '</div>';
+        } else if (d.wiki_error) {
+          html += '<p class="rec-meta">' + esc(d.wiki_error)
+            + ' Close this panel and open it again to retry.</p>';
+        } else if (!sp.scientific_name) {
+          html += '<p class="rec-meta">No scientific name is recorded, '
+            + 'so Wikipedia was not searched.</p>';
+        } else {
+          html += '<p class="rec-meta">No Wikipedia article was found for '
+            + esc(sp.scientific_name) + '.</p>';
+        }
+
+        if (d.can_refresh) {
+          html += '<button type="button" class="um-btn-ghost rec-wiki-refresh"'
+            + ' id="rec-wiki-refresh">Refresh from Wikipedia</button>'
+            + '<div class="rec-wiki-msg" id="rec-wiki-msg" hidden></div>';
+        }
+        html += '</div>';
+
+        infoBody.innerHTML = html;
+
+        const refresh = document.getElementById('rec-wiki-refresh');
+        if (refresh) {
+          refresh.addEventListener('click', function () {
+            refreshWiki(treeId, refresh);
+          });
+        }
+      }
+
+      function loadInfo(treeId) {
+        infoBody.innerHTML = '<div class="rec-loading">Loading…</div>';
+        return fetch('/api/species-info/' + treeId)
+          .then(function (res) { return res.json(); })
+          .then(function (data) {
+            if (!data.found) {
+              infoBody.innerHTML = '<div class="rec-error">'
+                + esc(data.reason || 'Could not load species information.')
+                + '</div>';
+              return;
+            }
+            // A failed Wikipedia lookup is not cached, so reopening retries.
+            if (!data.wiki_error) infoCache[treeId] = data;
+            renderInfo(treeId, data);
+          })
+          .catch(function () {
+            infoBody.innerHTML = '<div class="rec-error">'
+              + 'Could not load species information. Check your connection '
+              + 'and try again.</div>';
+          });
+      }
+
+      function refreshWiki(treeId, btn) {
+        const msg = document.getElementById('rec-wiki-msg');
+        btn.disabled = true;
+        btn.textContent = 'Refreshing…';
+
+        fetch('/admin/species/' + treeId + '/wikipedia', { method: 'POST' })
+          .then(function (res) {
+            // superadmin_required answers a lapsed session with a redirect.
+            if (res.redirected) {
+              throw new Error('Your session has ended. Log in again.');
+            }
+            return res.json();
+          })
+          .then(function (data) {
+            if (!data.ok) throw new Error(data.reason || 'Refresh failed.');
+            delete infoCache[treeId];
+            return loadInfo(treeId);
+          })
+          .catch(function (err) {
+            btn.disabled = false;
+            btn.textContent = 'Refresh from Wikipedia';
+            msg.textContent = err.message;
+            msg.hidden = false;
+          });
+      }
+
+      function openInfo(treeId, fallbackName) {
+        infoLastFocused = document.activeElement;
+        infoOverlay.classList.add('open');
+        document.getElementById('rec-info-close').focus();
+
+        if (infoCache[treeId]) {
+          renderInfo(treeId, infoCache[treeId]);
+          return;
+        }
+        infoTitle.textContent = fallbackName;
+        loadInfo(treeId);
+      }
+
+      function closeInfo() {
+        infoOverlay.classList.remove('open');
+        if (infoLastFocused) infoLastFocused.focus();
+      }
+
+      document.querySelectorAll('.rec-thumb-btn').forEach(function (btn) {
+        const treeId = btn.getAttribute('data-info-id');
+        const name = btn.closest('tr').querySelector('.fw-semibold')
+          .textContent.trim();
+
+        // The thumbnail sits inside a row that opens the metrics panel.
+        // Stopping keydown matters too: the row handler cancels Enter and
+        // Space, which would otherwise swallow this button's click.
+        btn.addEventListener('click', function (e) {
+          e.stopPropagation();
+          openInfo(treeId, name);
+        });
+        btn.addEventListener('keydown', function (e) { e.stopPropagation(); });
+      });
+
+      document.getElementById('rec-info-close')
+        .addEventListener('click', closeInfo);
+
+      infoOverlay.addEventListener('click', function (e) {
+        if (e.target === infoOverlay) closeInfo();
+      });
+
+      document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && infoOverlay.classList.contains('open')) closeInfo();
       });
 
       document.querySelectorAll('tr.rec-row').forEach(function (row) {

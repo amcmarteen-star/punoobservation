@@ -12,7 +12,10 @@ from sqlalchemy import func
 from collections import defaultdict
 from datetime import datetime
 from zoneinfo import ZoneInfo
-from app.services.recommender import recommend_for_location
+from app.services.recommender import recommend_for_location, _fmt, SALINITY_LABELS
+from app.services.wikipedia import (
+    refresh_species_summary, WikipediaUnavailable, LICENSE_NAME, LICENSE_URL,
+)
 from app.services.recommender_eval import species_evaluation
 import json, os, re
 from app.services.monitoring import (
@@ -533,6 +536,66 @@ def api_species_evaluation(tree_id):
     payload = species_evaluation(species, location, locations, species_list)
     payload["scope"] = scope_label()
     return jsonify(payload)
+
+
+@dashboard_bp.route('/api/species-info/<int:tree_id>')
+def api_species_info(tree_id):
+    """
+    Species details for the info panel opened from a thumbnail.
+
+    Open to guests, same as the recommendation page.
+
+    Wikipedia is contacted only when this species has never been looked
+    up. After that the saved copy is served, so the panel still works
+    without internet and Wikipedia is not called on every click. A failed
+    lookup is not saved, so the next open simply tries again. A
+    superadmin can refresh the saved copy from the panel.
+    """
+    species = db.session.get(TreeSpecie, tree_id)
+    if species is None:
+        return jsonify({"found": False, "reason": "Species not found."}), 404
+
+    wiki_error = None
+    if species.wiki_fetched_at is None and species.scientific_name:
+        try:
+            refresh_species_summary(species)
+            db.session.commit()
+        except WikipediaUnavailable as exc:
+            db.session.rollback()
+            wiki_error = str(exc)
+
+    wikipedia = None
+    if species.wiki_extract:
+        wikipedia = {
+            "title": species.wiki_title,
+            "extract": species.wiki_extract,
+            "url": species.wiki_url,
+            "retrieved": species.wiki_fetched_at.strftime('%Y-%m-%d'),
+            "license": LICENSE_NAME,
+            "license_url": LICENSE_URL,
+        }
+
+    return jsonify({
+        "found": True,
+        "species": {
+            "tree_id": species.tree_id,
+            "specie_name": species.specie_name,
+            "scientific_name": species.scientific_name,
+            "native_to": species.native_to,
+            "habitat": SALINITY_LABELS.get(species.salinity_requirement),
+            "elevation_range": _fmt(species.min_elevation_m,
+                                    species.max_elevation_m, "m"),
+            "temperature_range": _fmt(species.min_temp_c,
+                                      species.max_temp_c, "C"),
+            "rainfall_range": _fmt(species.min_rainfall_mm,
+                                   species.max_rainfall_mm, "mm"),
+            "preferred_soil": species.preferred_soil,
+            "source": species.source,
+        },
+        "wikipedia": wikipedia,
+        "wiki_error": wiki_error,
+        "can_refresh": is_superadmin(),
+    })
 
 
 """

@@ -18,6 +18,7 @@ from app.utils.jurisdiction import (
 )
 from app.utils.decorators import superadmin_required
 from app.services.monitoring import save_species_photo, delete_species_photo
+from app.services.wikipedia import refresh_species_summary, WikipediaUnavailable
 
 admin_bp = Blueprint('admin', __name__, url_prefix='/admin')
 
@@ -1784,3 +1785,30 @@ def species_photo(tree_id):
 
     flash(f"Photo saved for {specie.specie_name}.", "success")
     return redirect(back)
+
+
+@admin_bp.route('/species/<int:tree_id>/wikipedia', methods=['POST'])
+@superadmin_required
+def species_wikipedia_refresh(tree_id):
+    """
+    Re-fetch the saved Wikipedia summary for one species.
+
+    Called from the species info panel, so it answers in JSON. Useful
+    after a scientific name is corrected, or when Wikipedia was down the
+    first time the panel was opened.
+    """
+    specie = db.session.get(TreeSpecie, tree_id)
+    if specie is None:
+        return jsonify({"ok": False, "reason": "Species not found."}), 404
+
+    try:
+        summary = refresh_species_summary(specie)
+    except WikipediaUnavailable as exc:
+        db.session.rollback()
+        return jsonify({"ok": False, "reason": str(exc)}), 502
+
+    log_action('refresh_species_wikipedia', 'tree_specie', tree_id,
+               f"Refreshed the Wikipedia summary for {specie.specie_name}"
+               + ("" if summary else " (no article found)"))
+    db.session.commit()
+    return jsonify({"ok": True, "found": summary is not None})
