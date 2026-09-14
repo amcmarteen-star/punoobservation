@@ -29,6 +29,10 @@ from app.utils.decorators import login_required,field_officer_required
 
 MANILA = ZoneInfo("Asia/Manila")
 
+# A request is "pending" until a CENRO decides it. Same pair the admin
+# review queue counts as Pending (admin.review_requests).
+PENDING_REQUEST_STATUSES = ('Submitted', 'Under Review')
+
 
 def _time_ago(dt):
     """'3 hours ago' style label.
@@ -947,19 +951,115 @@ def requests_page():
         m[0] for m in q.distinct().order_by(Location.municipality).all()
     ]
 
-    my_requests = (
-        Request.query
-        .filter_by(user_id=user_id)
-        .order_by(Request.date_submitted.desc())
-        .all()
-    )
+    # Pending is the default: what a requester usually wants to know is
+    # what is still waiting. Approved, Rejected and All are one click away.
+    status_filter = request.args.get('status', 'Pending')
+
+    def base():
+        """The caller's own requests. Used for the table and every count,
+        so the filter counts can never disagree with the rows."""
+        return Request.query.filter_by(user_id=user_id)
+
+    query = base()
+    if status_filter == 'Pending':
+        query = query.filter(Request.status.in_(PENDING_REQUEST_STATUSES))
+    elif status_filter in ('Approved', 'Rejected'):
+        query = query.filter(Request.status == status_filter)
+    else:
+        status_filter = 'all'
+
+    my_requests = query.order_by(Request.date_submitted.desc()).all()
+
+    counts = {
+        'Pending': base().filter(
+            Request.status.in_(PENDING_REQUEST_STATUSES)).count(),
+        'Approved': base().filter(Request.status == 'Approved').count(),
+        'Rejected': base().filter(Request.status == 'Rejected').count(),
+    }
 
     return render_template(
         'Requests.html',
         active_page='requests',
         municipalities=municipalities,
         my_requests=my_requests,
+        counts=counts,
+        total_count=base().count(),
+        status_filter=status_filter,
+        pending_statuses=PENDING_REQUEST_STATUSES,
     )
+
+
+@dashboard_bp.route('/requests/<int:request_id>/cancel', methods=['POST'])
+@login_required
+def cancel_request(request_id):
+    """
+    Let a requester withdraw their own request before it is decided.
+
+    Only the person who submitted it may cancel, and only while it is
+    still pending (Submitted or Under Review). Once a CENRO has approved
+    or rejected it, the decision is a record and stays.
+
+    The request and its attachment rows are deleted (attachments
+    cascade), the uploaded files are removed from disk, the admins who
+    were told about the request are told it was withdrawn, and the audit
+    log keeps a line saying it happened.
+    """
+    user_id = session.get('user_id')
+    back = url_for('dashboard.requests_page',
+                   status=request.form.get('status') or 'Pending')
+
+    req = db.session.get(Request, request_id)
+    if req is None:
+        flash("That request no longer exists.", "warning")
+        return redirect(back)
+
+    if req.user_id != user_id:
+        flash("You can only cancel requests you submitted.", "danger")
+        return redirect(back)
+
+    if req.status not in PENDING_REQUEST_STATUSES:
+        flash(
+            f"This request was already {req.status.lower()} and can no "
+            "longer be cancelled.",
+            "warning",
+        )
+        return redirect(back)
+
+    where = (
+        f"{req.location.barangay}, {req.location.municipality}"
+        if req.location else "an unknown location"
+    )
+    label = f"{req.request_type} for {where}"
+    files = [a.file_url for a in req.attachments]
+
+    # the same admins submit_request notified
+    for admin in User.query.filter_by(role='admin').all():
+        db.session.add(Notification(
+            user_id=admin.user_id,
+            notification_type='Request Update',
+            message=f"{session.get('username')} cancelled their request: {label}.",
+            is_read=False,
+        ))
+
+    log_action('cancel_request', 'request', req.request_id, label)
+    db.session.delete(req)
+    db.session.commit()
+
+    # Files go only after the commit, so a failed delete never leaves a
+    # request pointing at documents that are already gone. Paths are kept
+    # inside the static folder.
+    static_root = os.path.abspath(current_app.static_folder)
+    for rel in files:
+        path = os.path.abspath(os.path.join(static_root, rel))
+        if not path.startswith(static_root + os.sep):
+            continue
+        try:
+            os.remove(path)
+        except OSError:
+            pass
+
+    flash(f"Request cancelled: {label}.", "success")
+    return redirect(back)
 
 
 @dashboard_bp.route('/api/barangays/<municipality>')

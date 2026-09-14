@@ -33,6 +33,33 @@ endblock %} {% set active_page = 'requests' %} {% block extra_head %}
     font-style: italic;
     margin-top: 0.25rem;
   }
+
+  /* "Cancel" on a pending request: outlined, so it reads as destructive
+     without shouting on every row */
+  .req-cancel-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.35rem 0.7rem;
+    border: 1px solid var(--danger-line);
+    border-radius: 7px;
+    background: transparent;
+    color: var(--danger-text);
+    font-size: 0.75rem;
+    font-weight: 600;
+    font-family: inherit;
+    white-space: nowrap;
+    cursor: pointer;
+  }
+
+  .req-cancel-btn:hover {
+    background-color: var(--danger-bg);
+  }
+
+  .req-cancel-btn svg {
+    width: 0.8rem;
+    height: 0.8rem;
+  }
 </style>
 {% endblock %} {% block content %}
 
@@ -40,7 +67,7 @@ endblock %} {% set active_page = 'requests' %} {% block extra_head %}
   <div>
     <div class="um-title-row">
       <h2>My Requests</h2>
-      <span class="um-count-pill">{{ my_requests|length }}</span>
+      <span class="um-count-pill">{{ total_count }}</span>
     </div>
     <p class="um-subtitle">
       Propose a site in your barangay for a reforestation project. DENR and
@@ -63,7 +90,38 @@ endblock %} {% set active_page = 'requests' %} {% block extra_head %}
   </button>
 </div>
 
-<!-- ============ FLASH MESSAGES ============ -->
+{% set is_all = status_filter == 'all' %}
+
+<!-- ============ STATUS FILTER ============ -->
+<!-- Pending is the default; the route sends status_filter='Pending' when
+     no ?status= is given. -->
+<div class="um-toolbar">
+  <div class="um-filter-wrap">
+    <button type="button" class="um-filter-btn" id="req-filter-btn"
+            aria-expanded="false" aria-haspopup="true"
+            onclick="reqToggleFilterMenu()">
+      <span class="um-filter-btn-label">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M7 12h10"/><path d="M10 18h4"/></svg>
+        <span>{{ 'All requests' if is_all else status_filter }}</span>
+        <span class="um-filter-count">{{ total_count if is_all else counts.get(status_filter, 0) }}</span>
+      </span>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+    </button>
+    <div id="req-filter-menu" class="um-filter-menu um-filter-menu-end">
+      {% for label, n in counts.items() %}
+        <a href="{{ url_for('dashboard.requests_page', status=label) }}"
+           class="{% if status_filter == label %}active{% endif %}">
+          {{ label }} <span class="um-filter-count">{{ n }}</span>
+        </a>
+      {% endfor %}
+      <a href="{{ url_for('dashboard.requests_page', status='all') }}"
+         class="{% if is_all %}active{% endif %}">
+        All requests <span class="um-filter-count">{{ total_count }}</span>
+      </a>
+    </div>
+  </div>
+</div>
+
 <!-- ============ MY REQUESTS TABLE ============ -->
 <div class="um-table-card">
   {% if my_requests %}
@@ -80,6 +138,7 @@ endblock %} {% set active_page = 'requests' %} {% block extra_head %}
           <th>Reviewed</th>
           <th>Description</th>
           <th>Documents</th>
+          <th>Action</th>
         </tr>
       </thead>
       <tbody>
@@ -127,6 +186,20 @@ endblock %} {% set active_page = 'requests' %} {% block extra_head %}
             <span class="text-secondary small">none</span>
             {% endif %}
           </td>
+          <td>
+            {% if r.status in pending_statuses %}
+            <button type="button" class="req-cancel-btn"
+                    data-action="{{ url_for('dashboard.cancel_request', request_id=r.request_id) }}"
+                    data-label="{{ r.request_type }}{% if r.location %} for {{ r.location.barangay }}, {{ r.location.municipality }}{% endif %}"
+                    onclick="reqOpenCancel(this)">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+              Cancel
+            </button>
+            {% else %}
+            <span class="text-secondary small"
+                  title="Reviewed requests can no longer be cancelled.">&mdash;</span>
+            {% endif %}
+          </td>
         </tr>
         {% endfor %}
       </tbody>
@@ -147,10 +220,58 @@ endblock %} {% set active_page = 'requests' %} {% block extra_head %}
         d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"
       />
     </svg>
-    <strong>No requests yet</strong>
-    <p>Submitted requests will appear here with their review status.</p>
+    <strong>
+      {% if is_all %}No requests yet{% else %}No {{ status_filter|lower }} requests{% endif %}
+    </strong>
+    <p>
+      {% if is_all %}
+        Submitted requests will appear here with their review status.
+      {% elif status_filter == 'Pending' %}
+        Requests waiting for review appear here. Use the filter to see
+        approved or rejected ones.
+      {% else %}
+        Use the filter to see your other requests.
+      {% endif %}
+    </p>
   </div>
   {% endif %}
+</div>
+
+<!-- ============ CANCEL REQUEST CONFIRMATION ============ -->
+<div class="um-modal-overlay" id="req-cancel-modal">
+  <div class="um-modal" role="dialog" aria-modal="true" aria-labelledby="req-cancel-title">
+    <div class="um-modal-head">
+      <h3 id="req-cancel-title">Cancel Request</h3>
+      <button
+        type="button"
+        class="um-modal-close"
+        aria-label="Close dialog"
+        onclick="reqClose('req-cancel-modal')"
+      >
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>
+      </button>
+    </div>
+    <div class="um-modal-body">
+      <div class="um-warn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3" /><path d="M12 9v4" /><path d="M12 17h.01" /></svg>
+        <span>
+          This will permanently delete your request for
+          <strong id="req-cancel-label"></strong>
+          and any documents you attached. This cannot be undone.
+        </span>
+      </div>
+    </div>
+    <!-- action is set by reqOpenCancel() from the clicked row -->
+    <form method="POST" id="req-cancel-form" class="um-modal-foot">
+      <input type="hidden" name="status" value="{{ status_filter }}" />
+      <button type="button" class="um-btn-cancel" onclick="reqClose('req-cancel-modal')">
+        Keep request
+      </button>
+      <button type="submit" class="um-btn-confirm-danger">
+        Yes, cancel request
+      </button>
+    </form>
+  </div>
 </div>
 
 <!-- ============ ADD REQUEST MODAL ============ -->
@@ -280,6 +401,35 @@ endblock %} {% set active_page = 'requests' %} {% block extra_head %}
     document.getElementById(id).classList.remove("open");
   }
 
+  // ---- status filter dropdown ----
+  function reqToggleFilterMenu() {
+    const btn = document.getElementById("req-filter-btn");
+    const menu = document.getElementById("req-filter-menu");
+    const open = menu.classList.toggle("open");
+    btn.setAttribute("aria-expanded", String(open));
+  }
+
+  function reqCloseFilterMenu() {
+    const btn = document.getElementById("req-filter-btn");
+    const menu = document.getElementById("req-filter-menu");
+    if (!btn || !menu) return;
+    menu.classList.remove("open");
+    btn.setAttribute("aria-expanded", "false");
+  }
+
+  document.addEventListener("click", function (e) {
+    const wrap = document.querySelector(".um-filter-wrap");
+    if (wrap && !wrap.contains(e.target)) reqCloseFilterMenu();
+  });
+
+  // ---- cancel confirmation ----
+  // Points the confirmation form at the clicked request, then opens it.
+  function reqOpenCancel(btn) {
+    document.getElementById("req-cancel-form").action = btn.dataset.action;
+    document.getElementById("req-cancel-label").textContent = btn.dataset.label;
+    reqOpen("req-cancel-modal");
+  }
+
   document.querySelectorAll(".um-modal-overlay").forEach(function (overlay) {
     overlay.addEventListener("click", function (e) {
       if (e.target === overlay) overlay.classList.remove("open");
@@ -291,6 +441,7 @@ endblock %} {% set active_page = 'requests' %} {% block extra_head %}
       document.querySelectorAll(".um-modal-overlay.open").forEach(function (o) {
         o.classList.remove("open");
       });
+      reqCloseFilterMenu();
     }
   });
 

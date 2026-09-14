@@ -169,6 +169,31 @@ def _to_int(value):
     return int(value) if value is not None else None
 
 
+def _to_percent(value):
+    """
+    A survival rate as a percentage (0-100).
+
+    The DENR sheet formats this column as an Excel percentage, so pandas
+    hands back the underlying fraction: 86% arrives as 0.86. Monitoring
+    reports store the same measure as 86.0, and the dashboard compares
+    both against the 85% threshold. Anything above 0 and up to 1 is read
+    as a fraction and scaled up so both sources agree. Text such as
+    "86%" is accepted too.
+    """
+    value = _clean(value)
+    if value is None:
+        return None
+    if isinstance(value, str):
+        value = value.rstrip('%').strip()
+    try:
+        number = float(value)
+    except (ValueError, TypeError):
+        return None
+    if 0 < number <= 1:
+        number *= 100
+    return round(number, 2)
+
+
 def _get_or_create_location(barangay, municipality):
     barangay = _clean(barangay)
     municipality = _clean(municipality)
@@ -539,7 +564,7 @@ def import_denr_data():
                             date_planted=date_planted,
                             target_quantity=target_qty,
                             actual_quantity_planted=_to_int(row.get('NO. OF SEEDLINGS PLANTED')),
-                            survival_rate=_to_float(row.get('SURVIVAL RATE ON THE 3RD YEAR')),
+                            survival_rate=_to_percent(row.get('SURVIVAL RATE ON THE 3RD YEAR')),
                             date_validated=_parse_date(
                                 row.get('DATE OF PERFORMANCE VALIDATION REPORT (IAC REPORT)')
                             )
@@ -1490,6 +1515,12 @@ def provincial_overview():
         flash("That is an operational function, not a system one.", "warning")
         return redirect(url_for('admin.user_management'))
 
+    # A CENRO admin sees their own jurisdiction only. None means PENRO,
+    # which sees the province. The scope matches Review Reports (on
+    # Site.cenro) and Review Requests (on the CENRO's municipalities), so
+    # a row here is always one the View link will let the user open.
+    cenro = current_cenro()
+
     # ------------------------------------------------------------------
     # Approved monitoring reports
     # ------------------------------------------------------------------
@@ -1498,8 +1529,16 @@ def provincial_overview():
     # but coalescing to submitted_at means a row with a missing review
     # date still sorts sensibly instead of landing wherever Postgres puts
     # NULLs in a DESC sort, which is first.
+    reports_query = MonitoringReport.query
+    if cenro is not None:
+        reports_query = (
+            reports_query
+            .join(Site, MonitoringReport.site_id == Site.site_id)
+            .filter(Site.cenro == cenro)
+        )
+
     approved_reports = (
-        MonitoringReport.query
+        reports_query
         .filter(MonitoringReport.approval_status == 'Approved')
         .order_by(
             func.coalesce(
@@ -1513,8 +1552,17 @@ def provincial_overview():
     # ------------------------------------------------------------------
     # Approved requests
     # ------------------------------------------------------------------
+    requests_query = Request.query
+    munis = allowed_municipalities()
+    if munis is not None:
+        requests_query = (
+            requests_query
+            .join(Location, Request.location_id == Location.location_id)
+            .filter(Location.municipality.in_(munis))
+        )
+
     approved_requests = (
-        Request.query
+        requests_query
         .filter(Request.status == 'Approved')
         .order_by(
             func.coalesce(
@@ -1576,7 +1624,9 @@ def provincial_overview():
             "below_threshold": 0,
         }
 
-    summary = {name: empty_cell(name) for name in CENRO_LIST}
+    # A CENRO admin gets their own office only, never the other CENROs.
+    summary_cenros = CENRO_LIST if cenro is None else [cenro]
+    summary = {name: empty_cell(name) for name in summary_cenros}
 
     def bucket(name):
         """Summary row for a CENRO, creating the unassigned one on demand."""
@@ -1644,15 +1694,17 @@ def provincial_overview():
         # Counted straight from Site, not from the reports above. A
         # published boundary stays published whether or not the report
         # that captured it is still in this list.
-        "published_boundaries": Site.query.filter(
+        "published_boundaries": scope_sites(Site.query.filter(
             Site.boundary_published.is_(True)
-        ).count(),
-        "cenros": len(CENRO_LIST),
+        )).count(),
+        "cenros": len(summary_cenros),
     }
 
     return render_template(
         'Provincialoverview.html',
         active_page='provincial_overview',
+        scoped_cenro=cenro,
+        scope=scope_label(),
         headline=headline,
         cenro_summary=cenro_summary,
         report_rows=report_rows[:OVERVIEW_ROW_LIMIT],

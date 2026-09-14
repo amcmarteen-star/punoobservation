@@ -424,6 +424,7 @@ class AuditLog(db.Model):
     # 'login' | 'login_failed' | 'logout' | 'create_user' | 'delete_user'
     # | 'import_dataset' | 'review_request' | 'review_report'
     # | 'publish_boundary' | 'submit_report' | 'submit_request'
+    # | 'cancel_request'
     action = db.Column(db.String(50), nullable=False)
 
     # 'users' | 'site' | 'request' | 'monitoring_report' | 'dataset'

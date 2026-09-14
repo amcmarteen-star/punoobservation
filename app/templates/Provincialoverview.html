@@ -1,5 +1,5 @@
 {% extends "Base.html" %}
-{% block title %}Provincial Overview - PuNoObservation{% endblock %}
+{% block title %}{% if scoped_cenro %}CENRO Overview{% else %}Provincial Overview{% endif %} - PuNoObservation{% endblock %}
 {% block content_class %}page-content-wide{% endblock %}
 
 {#
@@ -248,12 +248,22 @@
 <div class="um-header">
   <div>
     <div class="um-title-row">
+      {% if scoped_cenro %}
+      <h2>CENRO Overview</h2>
+      <span class="um-count-pill">{{ scope }}</span>
+      {% else %}
       <h2>Provincial Overview</h2>
       <span class="um-count-pill">{{ headline.cenros }} CENRO</span>
+      {% endif %}
     </div>
     <p class="um-subtitle">
+      {% if scoped_cenro %}
+      Approved reforestation requests and approved monitoring reports inside
+      your CENRO's jurisdiction.
+      {% else %}
       Approved reforestation requests and approved monitoring reports across
       every CENRO in Pangasinan.
+      {% endif %}
     </p>
   </div>
 </div>
@@ -274,7 +284,7 @@
     <span class="po-card-text">
       <span class="po-label">Approved reports</span>
       <span class="po-value">{{ headline.approved_reports }}</span>
-      <span class="po-note">province-wide</span>
+      <span class="po-note">{% if scoped_cenro %}your jurisdiction{% else %}province-wide{% endif %}</span>
     </span>
     <span class="po-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="m9 15 2 2 4-4"/></svg></span>
   </div>
@@ -283,7 +293,7 @@
     <span class="po-card-text">
       <span class="po-label">Approved requests</span>
       <span class="po-value">{{ headline.approved_requests }}</span>
-      <span class="po-note">province-wide</span>
+      <span class="po-note">{% if scoped_cenro %}your jurisdiction{% else %}province-wide{% endif %}</span>
     </span>
     <span class="po-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="m9 14 2 2 4-4"/></svg></span>
   </div>
@@ -338,7 +348,11 @@
         <h2>By CENRO</h2>
       </div>
       <p class="um-subtitle">
+        {% if scoped_cenro %}
+        Your office only. Other CENROs are not shown.
+        {% else %}
         Every CENRO is listed, including offices with no approved work yet.
+        {% endif %}
       </p>
     </div>
   </div>

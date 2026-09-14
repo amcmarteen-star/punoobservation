@@ -20,9 +20,9 @@
 {% endmacro %}
 
 {# "View" button that opens the map on this site, after a confirmation.
-   Sits right after the pinned columns so it is on screen without scrolling. #}
-{% macro map_cell(s) %}
-<td>
+   pin takes the same classes as th() when the column is one of the pinned pair. #}
+{% macro map_cell(s, pin='') %}
+<td class="{{ pin }}">
     {% if s.location.latitude is not none %}
         <button type="button" class="um-btn-row"
                 data-site-id="{{ s.site_id }}"
@@ -86,12 +86,12 @@
                     {% if session.role in ['admin', 'superadmin'] %}
                         {{ th('Site Code', pin='dt-pin') }}
                         {{ th('Site Name', pin='dt-pin dt-pin-last') }}
-                        {{ th('Map') }}
                         {{ th('Barangay') }}
+                        {{ th('Map') }}
                     {% else %}
                         {{ th('Site Name', pin='dt-pin') }}
-                        {{ th('Barangay', pin='dt-pin dt-pin-last') }}
-                        {{ th('Map') }}
+                        {{ th('Map', pin='dt-pin dt-pin-last') }}
+                        {{ th('Barangay') }}
                     {% endif %}
                     {{ th('Municipality') }}
                     {{ th('Zone') }}
@@ -129,12 +129,12 @@
                     {% if session.role in ['admin', 'superadmin'] %}
                         <td class="dt-pin"><code>{{ s.site_code or '—' }}</code></td>
                         <td class="sites-name-cell dt-pin dt-pin-last">{{ s.site_name }}</td>
-                        {{ map_cell(s) }}
                         <td>{{ s.location.barangay }}</td>
+                        {{ map_cell(s) }}
                     {% else %}
                         <td class="sites-name-cell dt-pin">{{ s.site_name }}</td>
-                        <td class="dt-pin dt-pin-last">{{ s.location.barangay }}</td>
-                        {{ map_cell(s) }}
+                        {{ map_cell(s, pin='dt-pin dt-pin-last') }}
+                        <td>{{ s.location.barangay }}</td>
                     {% endif %}
                     <td>{{ s.location.municipality }}</td>
                     <td>

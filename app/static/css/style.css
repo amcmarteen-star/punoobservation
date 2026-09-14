@@ -3759,6 +3759,53 @@ table[data-freeze="2"].is-scrolled-x th:nth-child(2) {
     color: var(--warn-strong);
 }
 
+/* --- plot plan: plots needed for 5% on the chosen site, and progress ---
+   Sits above the plot rows so the target is known before counting starts. */
+.rep-plan {
+    background-color: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 0.9rem 1.1rem;
+    margin-bottom: 1.1rem;
+    font-size: 0.875rem;
+}
+
+/* .um-btn-outline sets display, which would beat the hidden attribute */
+.rep-plan [hidden] {
+    display: none;
+}
+
+.rep-plan-empty {
+    margin: 0;
+    color: var(--text-2);
+}
+
+.rep-plan-head {
+    margin-bottom: 0.35rem;
+    font-weight: 700;
+    color: var(--text-heading);
+}
+
+.rep-plan-status {
+    margin-top: 0.6rem;
+    padding: 0.55rem 0.8rem;
+    border-radius: 8px;
+    background-color: var(--warn-bg);
+    color: var(--warn-strong);
+    font-weight: 600;
+}
+
+.rep-plan-status.done {
+    background-color: var(--ok-bg);
+    color: var(--ok-text);
+}
+
+.rep-plan-tip {
+    margin: 0.5rem 0 0;
+    font-size: 0.8125rem;
+    color: var(--text-2);
+}
+
 /* --- report detail: headline survival banner --- */
 /* Baseline alignment was pulling the figure up to sit level with the first
    of the two lines beside it, which left it floating clear of its own
