@@ -14,6 +14,7 @@ can be tested on its own.
 """
 
 import hashlib
+import io
 import json
 import math
 import os
@@ -593,3 +594,67 @@ def save_request_file(file_storage, static_folder, request_id, index):
     rel = f"{REQUEST_SUBDIR}/{name}".replace("\\", "/")
 
     return rel, digest, mime
+
+
+SPECIES_SUBDIR = "uploads/species"
+SPECIES_PHOTO_MAX_BYTES = 5 * 1024 * 1024
+
+# Formats a browser can display. HEIC is left out on purpose: it is fine
+# as field evidence, but an <img> tag cannot show it.
+SPECIES_PHOTO_FORMATS = {"JPEG": ".jpg", "PNG": ".png", "WEBP": ".webp"}
+
+
+def save_species_photo(file_storage, static_folder, tree_id):
+    """
+    Save a species thumbnail under app/static/uploads/species/.
+
+    Returns (relative_path, None) on success, or (None, reason).
+
+    The file is opened with Pillow, and the extension comes from the
+    format Pillow detects, not from the uploaded filename. A renamed
+    non-image is refused instead of being served from static/.
+    """
+    file_storage.stream.seek(0)
+    raw = file_storage.stream.read()
+    if not raw:
+        return None, "The file is empty."
+    if len(raw) > SPECIES_PHOTO_MAX_BYTES:
+        return None, "The photo is larger than 5 MB."
+
+    try:
+        with Image.open(io.BytesIO(raw)) as img:
+            fmt = img.format
+            img.verify()
+    except Exception:
+        return None, "That file is not a readable image."
+
+    ext = SPECIES_PHOTO_FORMATS.get(fmt)
+    if ext is None:
+        return None, "Use a JPG, PNG or WebP photo."
+
+    folder = os.path.join(static_folder, SPECIES_SUBDIR)
+    os.makedirs(folder, exist_ok=True)
+
+    stamp = datetime.now().strftime("%Y%m%d%H%M%S")
+    name = f"sp{tree_id}_{stamp}{ext}"
+    with open(os.path.join(folder, name), "wb") as fh:
+        fh.write(raw)
+
+    return f"{SPECIES_SUBDIR}/{name}", None
+
+
+def delete_species_photo(static_folder, rel_path):
+    """
+    Remove a replaced species photo from disk.
+
+    Only files inside uploads/species/ are touched, so a bad value in
+    photo_url can never delete anything else under static/. A missing
+    file is not an error.
+    """
+    if not rel_path or not rel_path.startswith(SPECIES_SUBDIR + "/"):
+        return
+    name = os.path.basename(rel_path)
+    try:
+        os.remove(os.path.join(static_folder, SPECIES_SUBDIR, name))
+    except OSError:
+        pass

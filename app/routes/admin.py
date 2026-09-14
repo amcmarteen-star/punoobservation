@@ -1,5 +1,5 @@
 # app/routes/admin.py
-from flask import Blueprint, render_template, request, flash, redirect, url_for, session, jsonify
+from flask import Blueprint, render_template, request, flash, redirect, url_for, session, jsonify, current_app
 from app.extensions import db
 from app.models import User, Location, Organization, Site, TreeSpecie, ReforestationRecord, Request, Notification, MonitoringReport, MonitoringPlot, MonitoringPhoto,ReforestationRecord,Site,AuditLog
 from app.utils.decorators import admin_required, superadmin_required
@@ -17,6 +17,7 @@ from app.utils.jurisdiction import (
     CENRO_LIST, CENRO_MUNICIPALITIES,
 )
 from app.utils.decorators import superadmin_required
+from app.services.monitoring import save_species_photo, delete_species_photo
 
 admin_bp = Blueprint('admin', __name__, url_prefix='/admin')
 
@@ -1714,3 +1715,72 @@ def provincial_overview():
         row_limit=OVERVIEW_ROW_LIMIT,
         threshold=SURVIVAL_THRESHOLD,
     )
+
+
+# ======================================================================
+# species photos
+#
+# Superadmin only. The thumbnail is reference data shared by every CENRO,
+# so it is a provincial function, not an operational one.
+# ======================================================================
+
+def _safe_back_url(target):
+    """
+    Where to return after the upload.
+
+    Only a same-site path is accepted. Anything else, such as
+    "//evil.example" or a full URL, falls back to the recommendations page.
+    """
+    if (target and target.startswith('/')
+            and not target.startswith('//') and '\\' not in target):
+        return target
+    return url_for('dashboard.recommendations')
+
+
+@admin_bp.route('/species/<int:tree_id>/photo', methods=['POST'])
+@superadmin_required
+def species_photo(tree_id):
+    """Upload, replace or remove the thumbnail for one species."""
+    back = _safe_back_url(request.form.get('next'))
+
+    specie = db.session.get(TreeSpecie, tree_id)
+    if specie is None:
+        flash("That species no longer exists.", "danger")
+        return redirect(back)
+
+    old_path = specie.photo_url
+
+    if request.form.get('action') == 'remove':
+        if not old_path:
+            return redirect(back)
+        specie.photo_url = None
+        log_action('remove_species_photo', 'tree_specie', tree_id,
+                   f"Removed the photo for {specie.specie_name}")
+        db.session.commit()
+        delete_species_photo(current_app.static_folder, old_path)
+        flash(f"Photo removed for {specie.specie_name}.", "success")
+        return redirect(back)
+
+    upload = request.files.get('photo')
+    if upload is None or not upload.filename:
+        flash("Choose a photo to upload.", "warning")
+        return redirect(back)
+
+    new_path, error = save_species_photo(
+        upload, current_app.static_folder, tree_id)
+    if error:
+        flash(f"Photo not saved for {specie.specie_name}. {error}", "danger")
+        return redirect(back)
+
+    specie.photo_url = new_path
+    log_action('upload_species_photo', 'tree_specie', tree_id,
+               f"{'Replaced' if old_path else 'Added'} the photo for "
+               f"{specie.specie_name}")
+    db.session.commit()
+
+    # Only after the commit, so a failed commit never leaves the row
+    # pointing at a file that was already deleted.
+    delete_species_photo(current_app.static_folder, old_path)
+
+    flash(f"Photo saved for {specie.specie_name}.", "success")
+    return redirect(back)

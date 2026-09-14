@@ -398,6 +398,101 @@
   }
 
   .rec-error { color: var(--danger-strong); }
+
+  /* ---------- species thumbnails ----------
+     The photo sits inside the Species cell rather than in its own column.
+     table-freeze only supports two frozen columns, and Rank + Species are
+     the two that must stay visible while scrolling sideways. */
+  .rec-species-cell {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .rec-species-text {
+    min-width: 0;
+  }
+
+  .rec-thumb {
+    position: relative;
+    flex: none;
+    width: 48px;
+    height: 48px;
+  }
+
+  .rec-thumb img {
+    display: block;
+    width: 48px;
+    height: 48px;
+    object-fit: cover;
+    border-radius: 8px;
+    border: 1px solid var(--line);
+    background: var(--surface-2);
+  }
+
+  /* The default leaf is a fixed light image; soften it on a dark ground. */
+  :root[data-theme="dark"] .rec-thumb img.is-default {
+    opacity: 0.7;
+  }
+
+  .rec-thumb-preview {
+    display: block;
+    border-radius: 8px;
+    background: var(--surface-3);
+  }
+
+  /* Superadmin controls: camera to upload, x to remove. */
+  .rec-thumb-upload,
+  .rec-thumb-remove {
+    position: absolute;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    padding: 0;
+    margin: 0;
+    cursor: pointer;
+  }
+
+  .rec-thumb-upload {
+    right: -6px;
+    bottom: -6px;
+    width: 24px;
+    height: 24px;
+    background: #16a34a;
+    color: #ffffff;
+    border: 2px solid var(--surface-1);
+  }
+
+  .rec-thumb-remove {
+    top: -6px;
+    right: -6px;
+    width: 20px;
+    height: 20px;
+    background: var(--surface-1);
+    color: var(--text-2);
+    border: 1px solid var(--line-strong);
+  }
+
+  .rec-thumb-upload svg { width: 13px; height: 13px; }
+  .rec-thumb-remove svg { width: 11px; height: 11px; }
+
+  /* The real file input covers the camera button, so it stays reachable
+     by keyboard and screen reader. */
+  .rec-thumb-upload input {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
+  }
+
+  .rec-thumb-upload:focus-within,
+  .rec-thumb-remove:focus-visible {
+    outline: 2px solid #16a34a;
+    outline-offset: 2px;
+  }
 </style>
 {% endblock %}
 
@@ -505,7 +600,7 @@
       <table class="um-table rec-table" data-freeze="2">
         <colgroup>
           <col style="width: 70px;">
-          <col style="width: 220px;">
+          <col style="width: 290px;">
           <col style="width: 150px;">
           <col style="width: 150px;">
           <col style="width: 140px;">
@@ -541,11 +636,49 @@
               </span>
             </td>
             <td>
-              <div class="fw-semibold">{{ r.specie_name }}</div>
-              {% if r.scientific_name %}
-                <div class="sci-name">{{ r.scientific_name }}</div>
-              {% endif %}
-              <span class="rec-open-hint">Click for evaluation metrics</span>
+              <div class="rec-species-cell">
+                <div class="rec-thumb">
+                  {% if r.photo_url %}
+                    <img src="{{ url_for('static', filename=r.photo_url) }}"
+                         alt="Photo of {{ r.specie_name }}"
+                         width="48" height="48" loading="lazy">
+                  {% else %}
+                    <img src="{{ url_for('static', filename='images/species-default.svg') }}"
+                         alt="" class="is-default"
+                         width="48" height="48" loading="lazy">
+                  {% endif %}
+
+                  {% if session.role == 'superadmin' %}
+                  <form method="POST" enctype="multipart/form-data"
+                        action="{{ url_for('admin.species_photo', tree_id=r.tree_id) }}"
+                        class="rec-thumb-form">
+                    <input type="hidden" name="next" value="{{ request.full_path }}">
+                    <label class="rec-thumb-upload"
+                           title="{% if r.photo_url %}Replace photo{% else %}Upload photo{% endif %}">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>
+                      <input type="file" name="photo"
+                             accept="image/jpeg,image/png,image/webp"
+                             aria-label="{% if r.photo_url %}Replace{% else %}Upload{% endif %} photo for {{ r.specie_name }}">
+                    </label>
+                    {% if r.photo_url %}
+                    <button type="submit" name="action" value="remove"
+                            class="rec-thumb-remove" title="Remove photo"
+                            aria-label="Remove photo for {{ r.specie_name }}">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                    </button>
+                    {% endif %}
+                  </form>
+                  {% endif %}
+                </div>
+
+                <div class="rec-species-text">
+                  <div class="fw-semibold">{{ r.specie_name }}</div>
+                  {% if r.scientific_name %}
+                    <div class="sci-name">{{ r.scientific_name }}</div>
+                  {% endif %}
+                  <span class="rec-open-hint">Click for evaluation metrics</span>
+                </div>
+              </div>
             </td>
             <td>
               <div class="d-flex align-items-center gap-2">
@@ -818,6 +951,28 @@
         if (lastFocused) lastFocused.focus();
       }
 
+      // Superadmin photo controls sit inside a clickable row. Stop their
+      // clicks and keys from also opening the evaluation modal.
+      document.querySelectorAll('.rec-thumb-form').forEach(function (form) {
+        ['click', 'keydown'].forEach(function (type) {
+          form.addEventListener(type, function (e) { e.stopPropagation(); });
+        });
+
+        const input = form.querySelector('input[type="file"]');
+        input.addEventListener('change', function () {
+          if (input.files.length) form.submit();
+        });
+
+        const remove = form.querySelector('.rec-thumb-remove');
+        if (remove) {
+          remove.addEventListener('click', function (e) {
+            if (!confirm('Remove this photo? The default image will show instead.')) {
+              e.preventDefault();
+            }
+          });
+        }
+      });
+
       document.querySelectorAll('tr.rec-row').forEach(function (row) {
         const treeId = row.getAttribute('data-tree-id');
         const name = row.querySelector('.fw-semibold').textContent.trim();
@@ -917,7 +1072,7 @@
       <table class="um-table rec-table">
         <colgroup>
           <col style="width: 70px;">
-          <col style="width: 220px;">
+          <col style="width: 290px;">
           <col style="width: 150px;">
           <col style="width: 150px;">
           <col style="width: 140px;">
@@ -943,7 +1098,12 @@
           {% for n in range(1, 6) %}
           <tr class="rec-row rec-row-preview">
             <td><span class="rank-badge muted">{{ n }}</span></td>
-            <td><span class="species-name">&mdash;</span></td>
+            <td>
+              <div class="rec-species-cell">
+                <span class="rec-thumb rec-thumb-preview"></span>
+                <span class="species-name">&mdash;</span>
+              </div>
+            </td>
             <td>
               <div class="d-flex align-items-center gap-2">
                 <div class="score-bar-track"></div>

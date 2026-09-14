@@ -276,6 +276,7 @@ def recommend_for_location(location, top_k=5):
             "tree_id": sp.tree_id,
             "specie_name": sp.specie_name,
             "scientific_name": sp.scientific_name,
+            "photo_url": sp.photo_url,
             "similarity": round(score, 4),
             "features_used": used,
             "within_all_ranges": is_within_ranges(location, sp),

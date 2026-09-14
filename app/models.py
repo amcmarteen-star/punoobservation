@@ -154,7 +154,10 @@ class TreeSpecie(db.Model):
     source = db.Column(db.String(300), nullable=True)
     is_reference = db.Column(db.Boolean, default=False, server_default=db.false(), nullable=False)
     salinity_requirement = db.Column(db.Integer, nullable=True)
-    
+    # Path under static/, e.g. "uploads/species/sp12_20260913101500.jpg".
+    # NULL means no photo; the page shows a default image instead.
+    photo_url = db.Column(db.String(300), nullable=True)
+
     # Relationship
     reforestation_records = db.relationship('ReforestationRecord', backref='species', lazy=True)
 
