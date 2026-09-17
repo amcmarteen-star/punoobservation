@@ -1,6 +1,7 @@
 {% extends "Base.html" %} {% block title %}Request Reforestation Site -
 PuNoObservation{% endblock %} {% block content_class %}page-content-wide{%
 endblock %} {% set active_page = 'requests' %} {% block extra_head %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <style>
   .status-pill {
     display: inline-block;
@@ -60,6 +61,223 @@ endblock %} {% set active_page = 'requests' %} {% block extra_head %}
     width: 0.8rem;
     height: 0.8rem;
   }
+
+  .req-seedlings {
+    display: block;
+    font-size: 0.72rem;
+    color: var(--text-2);
+  }
+
+  /* ---------- new request dialog ----------
+     Wider than the standard 26rem dialog, because it carries a map. The
+     body scrolls and the Submit row stays visible. */
+  .req-add-dialog {
+    width: min(100%, 46rem);
+    max-height: 92vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .req-add-form {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  .req-add-dialog .um-modal-body {
+    overflow-y: auto;
+  }
+
+  .req-add-dialog .um-modal-foot {
+    margin-top: 0;
+    padding-top: 1rem;
+    border-top: 1px solid var(--line);
+  }
+
+  /* Class rules like display:grid would otherwise beat [hidden]. */
+  .req-add-dialog [hidden] {
+    display: none !important;
+  }
+
+  .req-section {
+    margin-top: 1.5rem;
+  }
+
+  .req-section:first-child {
+    margin-top: 0.25rem;
+  }
+
+  .req-section-title {
+    margin: 0;
+    padding-bottom: 0.4rem;
+    border-bottom: 1px solid var(--line);
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+    color: var(--text-2);
+  }
+
+  .req-grid-2 {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+    column-gap: 1rem;
+  }
+
+  .req-required {
+    color: var(--danger-strong);
+  }
+
+  .req-help {
+    margin-top: 0.3rem;
+    font-size: 0.78rem;
+    line-height: 1.5;
+    color: var(--text-2);
+  }
+
+  /* ---------- map ---------- */
+  .req-map-tools {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .req-tool {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.4rem 0.75rem;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    background: var(--surface-1);
+    color: var(--text-body);
+    font: inherit;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .req-tool svg {
+    width: 0.95rem;
+    height: 0.95rem;
+  }
+
+  .req-tool[aria-pressed="true"] {
+    background: #16a34a;
+    border-color: #16a34a;
+    color: #ffffff;
+  }
+
+  .req-tool:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .req-tool-push {
+    margin-left: auto;
+  }
+
+  .req-map {
+    height: 320px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--surface-2);
+    cursor: crosshair;
+  }
+
+  .req-map-status {
+    margin: 0.45rem 0 0;
+    font-size: 0.8rem;
+    line-height: 1.5;
+    color: var(--text-body);
+  }
+
+  .req-map-status.is-error {
+    color: var(--danger-strong);
+    font-weight: 600;
+  }
+
+  .req-map-status.is-ok {
+    color: var(--brand-text);
+    font-weight: 600;
+  }
+
+  /* ---------- seedling estimate ---------- */
+  .req-estimate {
+    margin-top: 0.9rem;
+    padding: 0.75rem 0.9rem;
+    border: 1px solid var(--ok-line);
+    border-radius: 8px;
+    background: var(--ok-bg);
+  }
+
+  .req-estimate.is-empty {
+    border-color: var(--line);
+    background: var(--surface-2);
+  }
+
+  .req-estimate .k {
+    display: block;
+    font-size: 0.72rem;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    color: var(--text-2);
+  }
+
+  .req-estimate .v {
+    display: block;
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: var(--text-heading);
+  }
+
+  .req-estimate .f {
+    display: block;
+    font-size: 0.78rem;
+    color: var(--text-2);
+  }
+
+  /* ---------- suggested species ---------- */
+  .req-species {
+    display: grid;
+    gap: 0.4rem;
+    margin: 0.6rem 0 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .req-species li {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 0.75rem;
+    padding: 0.45rem 0.7rem;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--surface-2);
+    font-size: 0.85rem;
+  }
+
+  .req-species .sci {
+    font-style: italic;
+    font-size: 0.78rem;
+    color: var(--text-2);
+  }
+
+  .req-species .score {
+    font-size: 0.78rem;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    color: var(--text-2);
+  }
+
+  .req-species-link {
+    display: inline-block;
+    margin-top: 0.5rem;
+    font-size: 0.8rem;
+    color: var(--brand-text);
+  }
 </style>
 {% endblock %} {% block content %}
 
@@ -74,7 +292,7 @@ endblock %} {% set active_page = 'requests' %} {% block extra_head %}
       CENRO staff review each request and you will be notified of the outcome.
     </p>
   </div>
-  <button type="button" class="um-btn-add" onclick="reqOpen('req-add-modal')">
+  <button type="button" class="um-btn-add" onclick="reqOpenAdd()">
     <svg
       viewBox="0 0 24 24"
       fill="none"
@@ -154,7 +372,12 @@ endblock %} {% set active_page = 'requests' %} {% block extra_head %}
             {% else %} &mdash; {% endif %}
           </td>
           <td>{{ r.request_type }}</td>
-          <td class="num-cell">{{ r.proposed_area_ha or '—' }}</td>
+          <td class="num-cell">
+            {{ r.proposed_area_ha or '—' }}
+            {% if r.estimated_seedlings %}
+            <span class="req-seedlings">≈ {{ "{:,}".format(r.estimated_seedlings) }} seedlings</span>
+            {% endif %}
+          </td>
           <td>
             <span
               class="status-pill status-{{ r.status|lower|replace(' ', '-') }}"
@@ -165,9 +388,9 @@ endblock %} {% set active_page = 'requests' %} {% block extra_head %}
             <div class="review-note">{{ r.review_note }}</div>
             {% endif %}
           </td>
-          <td>{{ r.date_submitted.strftime('%Y-%m-%d') }}</td>
+          <td>{{ r.date_submitted|datetime_ph }}</td>
           <td>
-            {% if r.date_reviewed %} {{ r.date_reviewed.strftime('%Y-%m-%d') }}
+            {% if r.date_reviewed %} {{ r.date_reviewed|datetime_ph }}
             {% else %}
             <span class="text-secondary">pending</span>
             {% endif %}
@@ -276,9 +499,10 @@ endblock %} {% set active_page = 'requests' %} {% block extra_head %}
 
 <!-- ============ ADD REQUEST MODAL ============ -->
 <div class="um-modal-overlay" id="req-add-modal">
-  <div class="um-modal">
+  <div class="um-modal req-add-dialog" role="dialog" aria-modal="true"
+       aria-labelledby="req-add-title">
     <div class="um-modal-head">
-      <h3>New Request</h3>
+      <h3 id="req-add-title">New Request</h3>
       <button
         type="button"
         class="um-modal-close"
@@ -298,85 +522,223 @@ endblock %} {% set active_page = 'requests' %} {% block extra_head %}
         </svg>
       </button>
     </div>
-    <form method="POST" class="row g-3" enctype="multipart/form-data">
+    <form method="POST" class="req-add-form" id="req-add-form"
+          enctype="multipart/form-data">
       <div class="um-modal-body">
-        <div class="um-field">
-          <label for="municipality">Municipality *</label>
-          <select name="municipality" id="municipality" required>
-            <option value="">Choose a municipality</option>
-            {% for m in municipalities %}
-            <option value="{{ m }}">{{ m }}</option>
-            {% endfor %}
-          </select>
-        </div>
 
-        <div class="um-field">
-          <label for="barangay">Barangay *</label>
-          <select name="barangay" id="barangay" required disabled>
-            <option value="">Pick a municipality first</option>
-          </select>
-        </div>
+        <!-- ---------- 1. where ---------- -->
+        <section class="req-section">
+          <h4 class="req-section-title">Where is the site?</h4>
 
-        <div class="um-field">
-          <label for="request_type">Request Type *</label>
-          <select name="request_type" id="request_type" required>
-            <option value="">Choose a type</option>
-            <option value="New Planting Site">New Planting Site</option>
-            <option value="Site Rehabilitation">Site Rehabilitation</option>
-            <option value="Seedling Supply">Seedling Supply</option>
-            <option value="Technical Assistance">Technical Assistance</option>
-          </select>
-        </div>
+          <div class="req-grid-2">
+            <div class="um-field">
+              <label for="municipality">Municipality <span class="req-required">*</span></label>
+              <select name="municipality" id="municipality" required>
+                <option value="">Choose a municipality</option>
+                {% for m in municipalities %}
+                <option value="{{ m }}">{{ m }}</option>
+                {% endfor %}
+              </select>
+            </div>
 
-        <div class="um-field">
-          <label for="proposed_area_ha">Proposed Area (ha)</label>
-          <input
-            type="number"
-            step="0.01"
-            min="0.01"
-            name="proposed_area_ha"
-            id="proposed_area_ha"
-            placeholder="e.g. 2.5"
-          />
-        </div>
-
-        <div class="um-field">
-          <label for="contact_number">Contact Number</label>
-          <input
-            type="text"
-            name="contact_number"
-            id="contact_number"
-            placeholder="09XXXXXXXXX"
-          />
-        </div>
-
-        <div class="um-field">
-          <label for="description">Description</label>
-          <textarea
-            name="description"
-            id="description"
-            rows="3"
-            placeholder="Describe the site: current land use, access, ownership, why it needs reforesting."
-          ></textarea>
-        </div>
-        <div class="col-12">
-          <label for="attachments" class="form-label fw-semibold">
-            Supporting documents
-          </label>
-          <input
-            type="file"
-            name="attachments"
-            id="attachments"
-            class="form-control"
-            multiple
-            accept="image/*,.pdf"
-          />
-          <div class="form-text">
-            Photograph or scan of your request letter, barangay endorsement, or
-            landowner consent. Images or PDF. Optional, but a request with
-            documentation is reviewed faster.
+            <div class="um-field">
+              <label for="barangay">Barangay <span class="req-required">*</span></label>
+              <select name="barangay" id="barangay" required disabled>
+                <option value="">Pick a municipality first</option>
+              </select>
+            </div>
           </div>
-        </div>
+
+          <div class="um-field">
+            <label id="req-map-label">
+              Mark the site on the map
+              <span class="req-required" id="req-map-star" hidden>*</span>
+            </label>
+            <div class="req-map-tools" role="group" aria-labelledby="req-map-label">
+              <button type="button" class="req-tool" data-mode="pin" aria-pressed="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/></svg>
+                Drop pin
+              </button>
+              <button type="button" class="req-tool" data-mode="draw" aria-pressed="false">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2 2 9l4 12h12l4-12Z"/></svg>
+                Draw area
+              </button>
+              <button type="button" class="req-tool req-tool-push" id="req-undo" disabled>
+                Undo corner
+              </button>
+              <button type="button" class="req-tool" id="req-clear" disabled>
+                Clear map
+              </button>
+            </div>
+            <div id="req-map" class="req-map"></div>
+            <p class="req-map-status" id="req-map-status" aria-live="polite">Click the map where the site is. The municipality and barangay fill in for you.</p>
+            <input type="hidden" name="latitude" id="latitude" />
+            <input type="hidden" name="longitude" id="longitude" />
+            <input type="hidden" name="boundary_geojson" id="boundary_geojson" />
+          </div>
+        </section>
+
+        <!-- ---------- 2. the request ---------- -->
+        <section class="req-section">
+          <h4 class="req-section-title">The request</h4>
+          <div class="req-grid-2">
+            <div class="um-field">
+              <label for="request_type">Request Type <span class="req-required">*</span></label>
+              <select name="request_type" id="request_type" required>
+                <option value="">Choose a type</option>
+                <option value="New Planting Site">New Planting Site</option>
+                <option value="Site Rehabilitation">Site Rehabilitation</option>
+                <option value="Seedling Supply">Seedling Supply</option>
+                <option value="Technical Assistance">Technical Assistance</option>
+              </select>
+            </div>
+
+            <div class="um-field">
+              <label for="proposed_area_ha">Proposed Area (ha)</label>
+              <input
+                type="number"
+                step="0.01"
+                min="0.01"
+                name="proposed_area_ha"
+                id="proposed_area_ha"
+                placeholder="e.g. 2.5"
+              />
+              <div class="req-help" id="req-area-help">Type an estimate, or draw the area on the map to measure it.</div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ---------- 3. about the land ---------- -->
+        <section class="req-section">
+          <h4 class="req-section-title">About the land</h4>
+          <div class="req-grid-2">
+            <div class="um-field">
+              <label for="land_ownership">Land ownership</label>
+              <select name="land_ownership" id="land_ownership">
+                <option value="">Choose (optional)</option>
+                {% for c in land_ownership_choices %}
+                <option value="{{ c }}">{{ c }}</option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <div class="um-field">
+              <label for="land_cover">What is on the land now</label>
+              <select name="land_cover" id="land_cover">
+                <option value="">Choose (optional)</option>
+                {% for c in land_cover_choices %}
+                <option value="{{ c }}">{{ c }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+        </section>
+
+        <!-- ---------- 4. seedlings needed ---------- -->
+        <section class="req-section">
+          <h4 class="req-section-title">Seedlings needed</h4>
+
+          <div class="um-field">
+            <label for="density_choice">Planting density</label>
+            <select name="density_choice" id="density_choice">
+              <option value="">Skip the estimate</option>
+              {% for d in density_presets %}
+              <option value="{{ d.density }}">
+                {{ "{:,}".format(d.density) }} per ha &mdash; {{ "%g"|format(d.sqm_per_seedling) }} m² per seedling (used at {{ d.sites }} recorded sites)
+              </option>
+              {% endfor %}
+              <option value="custom">Custom spacing…</option>
+            </select>
+            <div class="req-help">
+              {% if density_presets %}
+                The listed densities are the ones used most often at
+                reforestation sites already recorded in this system.
+              {% else %}
+                No recorded sites yet to suggest a density from. Choose
+                Custom spacing to enter your own.
+              {% endif %}
+            </div>
+          </div>
+
+          <div class="req-grid-2" id="req-spacing" hidden>
+            <div class="um-field">
+              <label for="spacing_row_m">Space between rows (m)</label>
+              <input type="number" step="0.1" min="0.5" max="20"
+                     name="spacing_row_m" id="spacing_row_m" placeholder="e.g. 3" />
+            </div>
+            <div class="um-field">
+              <label for="spacing_plant_m">Space between seedlings in a row (m)</label>
+              <input type="number" step="0.1" min="0.5" max="20"
+                     name="spacing_plant_m" id="spacing_plant_m" placeholder="e.g. 2" />
+            </div>
+          </div>
+
+          <div class="req-estimate is-empty" id="req-estimate" aria-live="polite">
+            <span class="k">Estimated seedlings</span>
+            <span class="v" id="req-estimate-value">&mdash;</span>
+            <span class="f" id="req-estimate-formula">Choose a planting density to see an estimate.</span>
+          </div>
+          <div class="req-help">
+            A planning estimate only. It does not add extra seedlings for
+            replanting losses.
+          </div>
+        </section>
+
+        <!-- ---------- 5. suggested species ---------- -->
+        <section class="req-section" id="req-species-section" hidden>
+          <h4 class="req-section-title">
+            Suggested species for <span id="req-species-place"></span>
+          </h4>
+          <div class="req-help">
+            Ranked by how closely each species' published growing conditions
+            match this barangay. For guidance only.
+          </div>
+          <div id="req-species-body"></div>
+          <a id="req-species-link" class="req-species-link" href="#"
+             target="_blank" rel="noopener">See the full ranking</a>
+        </section>
+
+        <!-- ---------- 6. contact and documents ---------- -->
+        <section class="req-section">
+          <h4 class="req-section-title">Contact and documents</h4>
+
+          <div class="um-field">
+            <label for="contact_number">Contact Number</label>
+            <input
+              type="text"
+              name="contact_number"
+              id="contact_number"
+              placeholder="09XXXXXXXXX"
+            />
+          </div>
+
+          <div class="um-field">
+            <label for="description">Description</label>
+            <textarea
+              name="description"
+              id="description"
+              rows="3"
+              placeholder="Describe the site: current land use, access, ownership, why it needs reforesting."
+            ></textarea>
+          </div>
+
+          <div class="um-field">
+            <label for="attachments">Supporting documents</label>
+            <input
+              type="file"
+              name="attachments"
+              id="attachments"
+              class="form-control"
+              multiple
+              accept="image/*,.pdf"
+            />
+            <div class="req-help">
+              Photograph or scan of your request letter, barangay endorsement,
+              or landowner consent. Images or PDF. Optional, but a request with
+              documentation is reviewed faster.
+            </div>
+          </div>
+        </section>
       </div>
       <div class="um-modal-foot">
         <button
@@ -392,6 +754,7 @@ endblock %} {% set active_page = 'requests' %} {% block extra_head %}
   </div>
 </div>
 
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
   function reqOpen(id) {
     document.getElementById(id).classList.add("open");
@@ -445,41 +808,545 @@ endblock %} {% set active_page = 'requests' %} {% block extra_head %}
     }
   });
 
-  // Municipality picked -> load that municipality's barangays.
-  // Uses fetch instead of a page reload so the form keeps what the user
-  // has already typed.
-  document
-    .getElementById("municipality")
-    .addEventListener("change", async function () {
-      const barangaySelect = document.getElementById("barangay");
-      const municipality = this.value;
+  // ======================================================================
+  // New request form: map, barangay picking, area, seedlings, species
+  // ======================================================================
+  (function () {
+    const SITE_TYPES = {{ site_request_types | list | tojson }};
+    const GEOJSON_URL = "{{ url_for('static', filename='geojson/barangay.geojson') }}";
+    const RECOMMEND_URL = "{{ url_for('dashboard.api_recommend_by_name') }}";
+    const RECOMMEND_PAGE_URL = "{{ url_for('dashboard.recommendations') }}";
 
-      if (!municipality) {
-        barangaySelect.innerHTML =
-          '<option value="">Pick a municipality first</option>';
-        barangaySelect.disabled = true;
+    const form = document.getElementById("req-add-form");
+    const muniSelect = document.getElementById("municipality");
+    const brgySelect = document.getElementById("barangay");
+    const typeSelect = document.getElementById("request_type");
+    const areaInput = document.getElementById("proposed_area_ha");
+    const areaHelp = document.getElementById("req-area-help");
+    const latInput = document.getElementById("latitude");
+    const lngInput = document.getElementById("longitude");
+    const boundaryInput = document.getElementById("boundary_geojson");
+    const statusEl = document.getElementById("req-map-status");
+    const mapStar = document.getElementById("req-map-star");
+    const undoBtn = document.getElementById("req-undo");
+    const clearBtn = document.getElementById("req-clear");
+    const toolBtns = document.querySelectorAll(".req-tool[data-mode]");
+
+    const densitySelect = document.getElementById("density_choice");
+    const spacingBox = document.getElementById("req-spacing");
+    const rowInput = document.getElementById("spacing_row_m");
+    const plantInput = document.getElementById("spacing_plant_m");
+    const estBox = document.getElementById("req-estimate");
+    const estValue = document.getElementById("req-estimate-value");
+    const estFormula = document.getElementById("req-estimate-formula");
+
+    const speciesSection = document.getElementById("req-species-section");
+    const speciesPlace = document.getElementById("req-species-place");
+    const speciesBody = document.getElementById("req-species-body");
+    const speciesLink = document.getElementById("req-species-link");
+
+    const DEFAULT_STATUS = statusEl.textContent;
+    const AREA_HELP = areaHelp.textContent;
+    const GREEN = "#16a34a";
+
+    let map = null;
+    let features = [];          // barangay features, each with a bbox
+    let highlighted = null;     // the Leaflet layer of the chosen barangay
+    let pinMarker = null;
+    let corners = [];           // [lat, lng] in click order
+    let cornerDots = [];
+    let shape = null;
+    let mode = "pin";
+    let areaWasDrawn = false;
+    let pickToken = 0;
+    let speciesToken = 0;
+
+    function esc(value) {
+      return String(value === null || value === undefined ? "" : value)
+        .replace(/&/g, "&amp;").replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+    }
+
+    // Same folding as normalize_municipality() in app/utils/jurisdiction.py.
+    // barangay.geojson writes "UrdanetaCity" and misspells "Pozzorubio".
+    const ALIASES = { pozzorubio: "pozorrubio" };
+    function norm(name) {
+      const key = String(name || "").toLowerCase().replace(/[\s.\-']/g, "");
+      return ALIASES[key] || key;
+    }
+
+    function setStatus(text, kind) {
+      statusEl.textContent = text;
+      statusEl.classList.toggle("is-error", kind === "error");
+      statusEl.classList.toggle("is-ok", kind === "ok");
+    }
+
+    // ---- geometry ---------------------------------------------------------
+
+    // Ray casting on the outer ring, the same test as point_in_ring() on
+    // the server, so the browser and the server agree about the pin.
+    function ringContains(ring, x, y) {
+      let inside = false;
+      for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+        const xi = ring[i][0], yi = ring[i][1];
+        const xj = ring[j][0], yj = ring[j][1];
+        if ((yi > y) !== (yj > y) &&
+            x < (xj - xi) * (y - yi) / (yj - yi + 1e-300) + xi) {
+          inside = !inside;
+        }
+      }
+      return inside;
+    }
+
+    function polygonsOf(geometry) {
+      if (!geometry) return [];
+      if (geometry.type === "Polygon") return [geometry.coordinates];
+      if (geometry.type === "MultiPolygon") return geometry.coordinates;
+      return [];
+    }
+
+    function featureContains(feature, latlng) {
+      const b = feature.bbox;
+      const x = latlng.lng, y = latlng.lat;
+      if (x < b[0] || x > b[2] || y < b[1] || y > b[3]) return false;
+      return polygonsOf(feature.geometry).some(function (p) {
+        return p[0] && ringContains(p[0], x, y);
+      });
+    }
+
+    function featureAt(latlng) {
+      return features.find(function (f) { return featureContains(f, latlng); }) || null;
+    }
+
+    function featureByName(municipality, barangay) {
+      const m = norm(municipality), b = norm(barangay);
+      return features.find(function (f) {
+        return norm(f.properties.NAME_2) === m && norm(f.properties.NAME_3) === b;
+      }) || null;
+    }
+
+    // polygon_area_ha() from app/services/monitoring.py, ported so the
+    // area shown while drawing matches what the server stores.
+    function areaHa(latlngs) {
+      if (latlngs.length < 3) return 0;
+      const meanLat = latlngs.reduce(function (s, c) { return s + c[0]; }, 0) / latlngs.length;
+      const mLat = 111132.0;
+      const mLon = 111320.0 * Math.cos(meanLat * Math.PI / 180);
+      let total = 0;
+      for (let i = 0; i < latlngs.length; i++) {
+        const a = latlngs[i], b = latlngs[(i + 1) % latlngs.length];
+        total += (a[1] * mLon) * (b[0] * mLat) - (b[1] * mLon) * (a[0] * mLat);
+      }
+      return Math.abs(total) / 2 / 10000;
+    }
+
+    // ---- map --------------------------------------------------------------
+
+    function initMap() {
+      if (map) {
+        map.invalidateSize();
         return;
       }
 
-      barangaySelect.innerHTML = '<option value="">Loading...</option>';
-      barangaySelect.disabled = true;
+      map = L.map("req-map").setView([15.98, 120.57], 10);
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        maxZoom: 19,
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+      }).addTo(map);
+      map.on("click", function (e) { handleMapClick(e.latlng); });
+
+      setStatus("Loading barangay outlines…");
+      fetch(GEOJSON_URL)
+        .then(function (res) { return res.json(); })
+        .then(function (data) {
+          // Outlines are not clickable themselves. Every click goes to the
+          // map, and featureAt() works out which barangay it landed in.
+          const layer = L.geoJSON(data, {
+            interactive: false,
+            style: { color: "#64748b", weight: 0.7, fillOpacity: 0 },
+            onEachFeature: function (feature, lyr) {
+              const b = lyr.getBounds();
+              feature.bbox = [b.getWest(), b.getSouth(), b.getEast(), b.getNorth()];
+              feature.layer = lyr;
+            },
+          }).addTo(map);
+          features = data.features;
+          map.fitBounds(layer.getBounds());
+          setStatus(DEFAULT_STATUS);
+          // A barangay chosen before the outlines loaded still gets drawn.
+          if (brgySelect.value) highlightByName(true);
+        })
+        .catch(function () {
+          setStatus("Barangay outlines could not load. You can still drop a pin and choose the barangay from the list.", "error");
+        });
+    }
+
+    window.reqOpenAdd = function () {
+      reqOpen("req-add-modal");
+      // The map needs its container to be visible before it can measure it.
+      requestAnimationFrame(initMap);
+    };
+
+    function highlight(feature) {
+      if (highlighted) highlighted.setStyle({ color: "#64748b", weight: 0.7, dashArray: null });
+      highlighted = feature ? feature.layer : null;
+      if (highlighted) {
+        highlighted.setStyle({ color: GREEN, weight: 2.5, dashArray: "6 4" });
+        highlighted.bringToFront();
+      }
+    }
+
+    function highlightByName(zoom) {
+      const f = featureByName(muniSelect.value, brgySelect.value);
+      highlight(f);
+      if (f && zoom && map) map.fitBounds(f.layer.getBounds(), { maxZoom: 16 });
+      return f;
+    }
+
+    function handleMapClick(latlng) {
+      const feature = features.length ? featureAt(latlng) : null;
+
+      if (mode === "pin") {
+        placePin(latlng);
+        if (feature) {
+          pickFromFeature(feature, "Pin placed in");
+        } else if (features.length) {
+          setStatus("The pin is outside the barangays this form covers. Move it inside an outlined barangay.", "error");
+        }
+      } else {
+        addCorner(latlng);
+        if (feature && !brgySelect.value) pickFromFeature(feature, null);
+      }
+    }
+
+    function placePin(latlng) {
+      if (!pinMarker) {
+        pinMarker = L.marker(latlng, { draggable: true }).addTo(map);
+        pinMarker.on("dragend", function () {
+          const ll = pinMarker.getLatLng();
+          setPinInputs(ll);
+          const feature = features.length ? featureAt(ll) : null;
+          if (feature) pickFromFeature(feature, "Pin moved to");
+          else if (features.length) setStatus("The pin is outside the barangays this form covers.", "error");
+        });
+      } else {
+        pinMarker.setLatLng(latlng);
+      }
+      setPinInputs(latlng);
+      syncButtons();
+    }
+
+    function setPinInputs(latlng) {
+      latInput.value = latlng.lat.toFixed(6);
+      lngInput.value = latlng.lng.toFixed(6);
+    }
+
+    // Fill the dropdowns from the barangay a click landed in.
+    async function pickFromFeature(feature, verb) {
+      const token = ++pickToken;
+      const p = feature.properties || {};
+      const muniOption = Array.from(muniSelect.options).find(function (o) {
+        return o.value && norm(o.value) === norm(p.NAME_2);
+      });
+
+      highlight(feature);
+
+      if (!muniOption) {
+        setStatus(p.NAME_3 + ", " + p.NAME_2 + " is outside the area this form covers for your account.", "error");
+        return;
+      }
+
+      if (muniSelect.value !== muniOption.value) {
+        muniSelect.value = muniOption.value;
+        await loadBarangays(muniOption.value);
+        if (token !== pickToken) return;   // a newer click took over
+      }
+
+      const brgyOption = Array.from(brgySelect.options).find(function (o) {
+        return o.value && norm(o.value) === norm(p.NAME_3);
+      });
+
+      if (!brgyOption) {
+        brgySelect.value = "";
+        hideSpecies();
+        setStatus('Choose the barangay from the list. "' + p.NAME_3 + '" is not in it.', "error");
+        return;
+      }
+
+      const changed = brgySelect.value !== brgyOption.value;
+      brgySelect.value = brgyOption.value;
+      if (changed) loadSpecies(muniOption.value, brgyOption.value);
+      if (verb) setStatus(verb + " " + brgyOption.value + ", " + muniOption.value + ". Drag the pin to adjust it.", "ok");
+    }
+
+    // ---- drawing ----------------------------------------------------------
+
+    function addCorner(latlng) {
+      corners.push([latlng.lat, latlng.lng]);
+      cornerDots.push(L.circleMarker(latlng, {
+        radius: 4, color: GREEN, weight: 2, fillColor: "#ffffff", fillOpacity: 1,
+        interactive: false,
+      }).addTo(map));
+      redrawShape();
+    }
+
+    function round7(n) {
+      return Math.round(n * 1e7) / 1e7;
+    }
+
+    function redrawShape() {
+      if (shape) {
+        map.removeLayer(shape);
+        shape = null;
+      }
+      // interactive:false so clicks inside the shape still add corners.
+      if (corners.length >= 3) {
+        shape = L.polygon(corners, {
+          color: GREEN, weight: 2, fillColor: GREEN, fillOpacity: 0.2, interactive: false,
+        }).addTo(map);
+      } else if (corners.length === 2) {
+        shape = L.polyline(corners, {
+          color: GREEN, weight: 2, dashArray: "4 4", interactive: false,
+        }).addTo(map);
+      }
+
+      if (corners.length >= 3) {
+        const ring = corners.map(function (c) { return [round7(c[1]), round7(c[0])]; });
+        ring.push(ring[0]);
+        boundaryInput.value = JSON.stringify({ type: "Polygon", coordinates: [ring] });
+      } else {
+        boundaryInput.value = "";
+      }
+
+      if (mode === "draw") {
+        if (corners.length === 0) {
+          setStatus("Click each corner of the site, in order around the edge.");
+        } else if (corners.length < 3) {
+          setStatus(corners.length + " corner(s). An area needs at least 3.");
+        } else {
+          setStatus(corners.length + " corners, " + areaHa(corners).toFixed(2) + " ha. Keep clicking to add corners.", "ok");
+        }
+      }
+
+      syncArea();
+      syncButtons();
+    }
+
+    function syncArea() {
+      if (corners.length >= 3) {
+        areaInput.value = areaHa(corners).toFixed(2);
+        areaInput.readOnly = true;
+        areaHelp.textContent = "Measured from the area drawn on the map.";
+        areaWasDrawn = true;
+      } else if (areaWasDrawn) {
+        areaInput.value = "";
+        areaInput.readOnly = false;
+        areaHelp.textContent = AREA_HELP;
+        areaWasDrawn = false;
+      }
+      updateEstimate();
+    }
+
+    function syncButtons() {
+      undoBtn.disabled = corners.length === 0;
+      clearBtn.disabled = corners.length === 0 && !pinMarker;
+    }
+
+    toolBtns.forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        mode = btn.dataset.mode;
+        toolBtns.forEach(function (b) {
+          b.setAttribute("aria-pressed", String(b === btn));
+        });
+        if (mode === "pin") {
+          setStatus(pinMarker
+            ? "Click the map, or drag the pin, to move it."
+            : "Click the map where the site is. The municipality and barangay fill in for you.");
+        } else {
+          redrawShape();
+        }
+      });
+    });
+
+    undoBtn.addEventListener("click", function () {
+      corners.pop();
+      const dot = cornerDots.pop();
+      if (dot) map.removeLayer(dot);
+      redrawShape();
+    });
+
+    clearBtn.addEventListener("click", function () {
+      if (pinMarker) {
+        map.removeLayer(pinMarker);
+        pinMarker = null;
+      }
+      latInput.value = "";
+      lngInput.value = "";
+      cornerDots.forEach(function (d) { map.removeLayer(d); });
+      cornerDots = [];
+      corners = [];
+      redrawShape();
+      setStatus(DEFAULT_STATUS);
+    });
+
+    // ---- dropdowns --------------------------------------------------------
+
+    // Municipality picked -> load that municipality's barangays.
+    // Uses fetch instead of a page reload so the form keeps what the user
+    // has already typed.
+    async function loadBarangays(municipality) {
+      if (!municipality) {
+        brgySelect.innerHTML = '<option value="">Pick a municipality first</option>';
+        brgySelect.disabled = true;
+        return;
+      }
+
+      brgySelect.innerHTML = '<option value="">Loading...</option>';
+      brgySelect.disabled = true;
 
       try {
-        const res = await fetch(
-          "/api/barangays/" + encodeURIComponent(municipality),
-        );
+        const res = await fetch("/api/barangays/" + encodeURIComponent(municipality));
         const names = await res.json();
-
-        barangaySelect.innerHTML =
+        brgySelect.innerHTML =
           '<option value="">Choose a barangay</option>' +
-          names.map((n) => `<option value="${n}">${n}</option>`).join("");
-        barangaySelect.disabled = false;
+          names.map(function (n) {
+            return '<option value="' + esc(n) + '">' + esc(n) + "</option>";
+          }).join("");
+        brgySelect.disabled = false;
       } catch (err) {
         console.error(err);
-        barangaySelect.innerHTML =
-          '<option value="">Could not load barangays</option>';
+        brgySelect.innerHTML = '<option value="">Could not load barangays</option>';
+      }
+    }
+
+    muniSelect.addEventListener("change", function () {
+      pickToken++;
+      highlight(null);
+      hideSpecies();
+      loadBarangays(this.value);
+    });
+
+    brgySelect.addEventListener("change", function () {
+      pickToken++;
+      if (!brgySelect.value) {
+        highlight(null);
+        hideSpecies();
+        return;
+      }
+      const f = highlightByName(true);
+      if (f && pinMarker && !featureContains(f, pinMarker.getLatLng())) {
+        setStatus("The pin is not inside " + brgySelect.value + ". Click the map to move it.", "error");
+      }
+      loadSpecies(muniSelect.value, brgySelect.value);
+    });
+
+    typeSelect.addEventListener("change", function () {
+      mapStar.hidden = SITE_TYPES.indexOf(typeSelect.value) === -1;
+    });
+
+    // ---- seedling estimate ------------------------------------------------
+
+    function currentDensity() {
+      const choice = densitySelect.value;
+      if (!choice) return null;
+      if (choice === "custom") {
+        const r = parseFloat(rowInput.value);
+        const p = parseFloat(plantInput.value);
+        if (!(r >= 0.5 && r <= 20 && p >= 0.5 && p <= 20)) return null;
+        return Math.floor(10000 / (r * p) + 1e-9);
+      }
+      return parseInt(choice, 10);
+    }
+
+    function updateEstimate() {
+      const custom = densitySelect.value === "custom";
+      spacingBox.hidden = !custom;
+      rowInput.required = custom;
+      plantInput.required = custom;
+
+      const fmt = function (n) { return n.toLocaleString("en-US"); };
+      const density = currentDensity();
+      const area = parseFloat(areaInput.value);
+
+      function empty(text) {
+        estBox.classList.add("is-empty");
+        estValue.textContent = "—";
+        estFormula.textContent = text;
+      }
+
+      if (!densitySelect.value) return empty("Choose a planting density to see an estimate.");
+      if (!density) return empty("Enter both spacings, between 0.5 and 20 metres.");
+      if (!(area > 0)) return empty(fmt(density) + " per ha. Enter or draw the area to finish the estimate.");
+
+      // Math.round first, so 2.4 x 1000 does not become 2401.
+      const seedlings = Math.ceil(Math.round(area * density * 1e6) / 1e6);
+      estBox.classList.remove("is-empty");
+      estValue.textContent = fmt(seedlings);
+      estFormula.textContent = area + " ha × " + fmt(density) + " per ha"
+        + (custom ? " (" + rowInput.value + " m × " + plantInput.value + " m spacing)" : "");
+    }
+
+    [densitySelect, rowInput, plantInput, areaInput].forEach(function (el) {
+      el.addEventListener("input", updateEstimate);
+      el.addEventListener("change", updateEstimate);
+    });
+
+    // ---- suggested species ------------------------------------------------
+
+    function hideSpecies() {
+      speciesToken++;
+      speciesSection.hidden = true;
+    }
+
+    function loadSpecies(municipality, barangay) {
+      const token = ++speciesToken;
+      const query = "?municipality=" + encodeURIComponent(municipality)
+        + "&barangay=" + encodeURIComponent(barangay);
+
+      speciesSection.hidden = false;
+      speciesPlace.textContent = barangay;
+      speciesLink.href = RECOMMEND_PAGE_URL + query;
+      speciesBody.innerHTML = '<p class="req-help">Loading suggestions…</p>';
+
+      fetch(RECOMMEND_URL + query)
+        .then(function (res) { return res.json(); })
+        .then(function (data) {
+          if (token !== speciesToken) return;
+          const recs = data.recommendations || [];
+          if (!data.found || !recs.length) {
+            speciesBody.innerHTML = '<p class="req-help">'
+              + esc(data.reason || "No suggestions are available for this barangay.") + "</p>";
+            return;
+          }
+          speciesBody.innerHTML = '<ol class="req-species">' + recs.map(function (r, i) {
+            return "<li><span><strong>" + (i + 1) + ". " + esc(r.specie_name) + "</strong>"
+              + (r.scientific_name ? ' <span class="sci">' + esc(r.scientific_name) + "</span>" : "")
+              + '</span><span class="score">similarity ' + Number(r.similarity).toFixed(4) + "</span></li>";
+          }).join("") + "</ol>";
+        })
+        .catch(function () {
+          if (token !== speciesToken) return;
+          speciesBody.innerHTML = '<p class="req-help">Suggestions could not load.</p>';
+        });
+    }
+
+    // ---- submit -----------------------------------------------------------
+
+    form.addEventListener("submit", function (e) {
+      let problem = null;
+      if (corners.length > 0 && corners.length < 3) {
+        problem = "An area needs at least 3 corners. Add more corners, or use Clear map.";
+      } else if (SITE_TYPES.indexOf(typeSelect.value) !== -1
+                 && !latInput.value && corners.length < 3) {
+        problem = "Mark the site on the map for this request type. Click the map once to drop a pin.";
+      }
+      if (problem) {
+        e.preventDefault();
+        setStatus(problem, "error");
+        document.getElementById("req-map").scrollIntoView({ behavior: "smooth", block: "center" });
       }
     });
+  })();
 </script>
 
 {% endblock %}

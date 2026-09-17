@@ -739,6 +739,19 @@ html {
     position: relative;
 }
 
+/* Page title on the left of the top bar (block topbar_title). The auto
+   margin pushes the theme, bell and account controls to the right. */
+.topbar-title {
+    margin-right: auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text-heading);
+}
+
 /* --- Account link ------------------------------------------------------
    Moved out of the sidebar: it belongs with the other personal controls,
    and the sidebar is for places in the product rather than for the person

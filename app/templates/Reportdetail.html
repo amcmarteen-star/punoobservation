@@ -303,7 +303,7 @@
   <div class="um-alert um-alert-info">
     Already {{ report.approval_status|lower }}
     {% if report.reviewer %}by {{ report.reviewer.username }}{% endif %}
-    on {{ report.date_reviewed.strftime('%d %b %Y') if report.date_reviewed }}.
+    on {{ report.date_reviewed|datetime_ph }}.
     {% if report.review_note %}<br />Note: {{ report.review_note }}{% endif %}
     <br /><br />
     Setting a new status will overwrite this.
@@ -369,7 +369,7 @@
   <div class="um-alert um-alert-success mb-0">
     <strong>Approved</strong>
     {% if report.reviewer %}by {{ report.reviewer.username }}{% endif %}
-    {% if report.date_reviewed %}on {{ report.date_reviewed.strftime('%d %b %Y') }}{% endif %}.
+    {% if report.date_reviewed %}on {{ report.date_reviewed|datetime_ph }}{% endif %}.
     The survival rate of {{ report.survival_rate }}% is now recorded against
     the planting record for this site.
     {% if report.review_note and not public_view %}<br /><br />Note: {{ report.review_note }}{% endif %}
@@ -379,7 +379,7 @@
   <div class="um-alert um-alert-danger mb-0">
     <strong>Rejected</strong>
     {% if report.reviewer %}by {{ report.reviewer.username }}{% endif %}
-    {% if report.date_reviewed %}on {{ report.date_reviewed.strftime('%d %b %Y') }}{% endif %}.
+    {% if report.date_reviewed %}on {{ report.date_reviewed|datetime_ph }}{% endif %}.
     {% if report.review_note %}
       <br /><br /><strong>Reason:</strong> {{ report.review_note }}
     {% endif %}

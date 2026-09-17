@@ -8,7 +8,8 @@
   /* map page need full space, kill page-content padding */
   .page-content.map-page {
     /* Declared here, on the ancestor both the bar and the map can read. */
-    --map-topbar-h: 52px;
+    /* two toolbar rows; the map's height is the viewport minus this */
+    --map-topbar-h: 88px;
     padding: 0;
     max-width: none;
   }
@@ -18,16 +19,79 @@
     background-color: #121212;
   }
 
+  /* One line, fixed height. .map-wrap sizes the map as the viewport minus
+     exactly --map-topbar-h, so a bar that wrapped its labels onto two
+     lines grew taller and pushed the map past the bottom of the screen.
+     Labels stay on one line; a window too narrow for them scrolls the
+     bar sideways instead. */
+  /* Two rows, three columns:
+       col 1: District (top), Show (bottom)
+       col 2: Barangay outlines (top), District outlines (bottom)
+       col 3: Heat map, pushed to the right end of the top row
+     A fixed height, so the map below is always sized correctly. Only a
+     window too narrow for the grid scrolls it sideways. */
   .map-topbar {
-    display: flex;
+    display: grid;
+    grid-template-columns: auto auto 1fr;
+    grid-template-rows: 2.2rem 2.2rem;
+    align-content: center;
     align-items: center;
-    justify-content: space-between;
-    min-height: var(--map-topbar-h);
-    padding: 0.8rem 1.5rem;
+    column-gap: 1.25rem;
+    row-gap: 0;
+    height: var(--map-topbar-h);
+    padding: 0 1.5rem;
+    overflow-x: auto;
+    overflow-y: hidden;
+    white-space: nowrap;
+    scrollbar-width: thin;
     background-color: var(--surface-1);
     border-bottom: 1px solid var(--line);
     font-size: 0.9rem;
     color: var(--text-body);
+  }
+
+  .map-topbar .tb-district { grid-column: 1; grid-row: 1; }
+  .map-topbar .tb-show { grid-column: 1; grid-row: 2; }
+  .map-topbar .tb-outline-brgy { grid-column: 2; grid-row: 1; }
+  .map-topbar .tb-outline-district { grid-column: 2; grid-row: 2; }
+  .map-topbar .tb-heat { grid-column: 3; grid-row: 1; justify-self: end; }
+
+  .map-topbar .toolbar-group {
+    display: flex;
+    align-items: center;
+    gap: 0.9rem;
+  }
+
+  .map-topbar .toolbar-group label,
+  .map-topbar .toolbar-outline {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-weight: 500;
+    color: var(--text-body);
+    cursor: pointer;
+  }
+
+  /* The two outline checkboxes share one divider on their left. Each
+     fills its whole row, so the two borders meet in a single line. */
+  .map-topbar .toolbar-outline {
+    align-self: stretch;
+    padding-left: 1.25rem;
+    border-left: 1px solid var(--line);
+  }
+
+  /* the heat map label sits alone at the right, so it needs no divider */
+  .map-topbar .toolbar-group .heat-select {
+    padding-left: 0;
+    border-left: 0;
+  }
+
+  .map-topbar .toolbar-label {
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    color: var(--text-2);
   }
 
   .map-topbar .filter-group {
@@ -530,6 +594,31 @@
     color: var(--text-strong);
   }
 
+  /* --- boundary key ---
+     Beside the Site boundaries toggle, staff only. Guests never receive
+     proposed boundaries, so they need no key. The two line samples use
+     the same styles the map draws: solid = official, dashed = proposed. */
+  .boundary-key {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    margin-left: 0.5rem;
+    font-size: 0.72rem;
+    white-space: nowrap;
+    opacity: 0.85;
+  }
+
+  .boundary-key-line {
+    display: inline-block;
+    width: 18px;
+    margin-left: 0.25rem;
+    border-top: 2.5px solid #0ea5e9;
+  }
+
+  .boundary-key-line.is-proposed {
+    border-top: 2px dashed #0ea5e9;
+  }
+
   /* --- legend --- */
   .heat-legend {
     background: var(--surface-glass);
@@ -601,6 +690,65 @@
     margin-top: 2px;
     white-space: nowrap;
   }
+  /* Proposed site: made from a request, boundary not published yet.
+     An emoji cannot be recoloured, so a hue filter turns its green blue,
+     and the count badge and label turn blue to match. Staff only:
+     guests and normal users are never sent proposed sites. */
+  .tree-marker.is-proposed .tree-glyph {
+    filter: hue-rotate(95deg) saturate(1.4);
+  }
+
+  .tree-marker.is-proposed .tree-count {
+    background: #0369a1;
+  }
+
+  .tree-marker.is-proposed .tree-label {
+    color: #0369a1;
+  }
+
+  /* A site's tree gives way to its boundary once the boundary is big
+     enough on screen to show the site by itself. Set on Leaflet's outer
+     marker element, so the hidden tree cannot catch clicks or tooltips
+     meant for the boundary underneath. */
+  .leaflet-marker-icon.tree-hidden {
+    opacity: 0 !important;
+    pointer-events: none !important;
+  }
+
+  /* Sites | Recommended species switch at the top of a barangay panel */
+  .brgy-tabs {
+    display: flex;
+    gap: 0.25rem;
+    margin: 0.25rem 0 0.9rem;
+    padding: 0.25rem;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--surface-2);
+  }
+
+  .brgy-tab {
+    flex: 1;
+    padding: 0.4rem 0.5rem;
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--text-body);
+    font: inherit;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .brgy-tab.active {
+    background: #16a34a;
+    color: #ffffff;
+  }
+
+  .brgy-tab:focus-visible {
+    outline: 2px solid #16a34a;
+    outline-offset: 2px;
+  }
+
   .muni-panel .site-card-title {
     word-break: break-word;
   }
@@ -704,62 +852,80 @@
     color: var(--text-body) !important;
   }
 </style>
-{% endblock %} {% block content_class %}map-page{% endblock %} {% block topbar%}
+{% endblock %} {% block content_class %}map-page{% endblock %} {% block topbar_title %}
+<div class="topbar-title">{{ region_label }}</div>
+{% endblock %} {% block topbar%}
+{# Toolbar laid out as a grid, two rows high:
+
+     DISTRICT radios              | Barangay outlines        HEAT MAP [ ]
+     SHOW sites, site boundaries  | District outlines
+
+     Column 1 holds the district filter above the layer toggles, column 2
+     stacks the two outline checkboxes, and the heat map sits at the right
+     end of the top row. Every id and handler is unchanged, so the map
+     script needs no edits. #}
 <div class="map-topbar">
-  <div style="font-weight: 600">Eastern Pangasinan</div>
-  <div class="filter-group">
-    <span>Filter District:</span>
-    <label
-      ><input
-        type="radio"
-        name="districtFilter"
-        value="all"
-        checked
-        onchange="filterDistricts(this.value)"
-      />
-      All</label
-    >
-    <label
-      ><input
-        type="radio"
-        name="districtFilter"
-        value="5"
-        onchange="filterDistricts(this.value)"
-      />
-      District 5</label
-    >
-    <label
-      ><input
-        type="radio"
-        name="districtFilter"
-        value="6"
-        onchange="filterDistricts(this.value)"
-      />
-      District 6</label
-    >
+  <div class="toolbar-group tb-district" role="radiogroup" aria-label="Filter district">
+    <span class="toolbar-label">District</span>
+    <label>
+      <input type="radio" name="districtFilter" value="all" checked
+             onchange="filterDistricts(this.value)" />
+      All
+    </label>
+    <label>
+      <input type="radio" name="districtFilter" value="5"
+             onchange="filterDistricts(this.value)" />
+      District 5
+    </label>
+    <label>
+      <input type="radio" name="districtFilter" value="6"
+             onchange="filterDistricts(this.value)" />
+      District 6
+    </label>
+    <label>
+      <input type="radio" name="districtFilter" value="none"
+             onchange="filterDistricts(this.value)" />
+      None
+    </label>
+  </div>
 
-    <label
-      ><input
-        type="radio"
-        name="districtFilter"
-        value="none"
-        onchange="filterDistricts(this.value)"
-      />
-      None</label
-    >
-
-    <label class="site-toggle">
-      <input
-        type="checkbox"
-        id="siteToggle"
-        checked
-        onchange="toggleSiteMarkers(this.checked)"
-      />
-      Show sites
+  <div class="toolbar-group tb-show" role="group" aria-label="Map layers">
+    <span class="toolbar-label">Show</span>
+    <label>
+      <input type="checkbox" id="siteToggle" checked
+             onchange="toggleSiteMarkers(this.checked)" />
+      Sites
       <span class="site-count-note" id="siteCountNote"></span>
     </label>
+    <label>
+      <input type="checkbox" id="boundaryToggle" checked
+             onchange="toggleBoundaries(this.checked)" />
+      Site boundaries
+      <span class="site-count-note" id="boundaryCount"></span>
+      {% if can_see_proposed %}
+      <span class="boundary-key" aria-hidden="true">
+        <span class="boundary-key-line"></span>Official
+        <span class="boundary-key-line is-proposed"></span>Proposed
+      </span>
+      {% endif %}
+    </label>
+  </div>
+
+  <label class="toolbar-outline tb-outline-brgy">
+    <input type="checkbox" id="brgyBorderToggle"
+           onchange="toggleBarangayBorders(this.checked)" />
+    Barangay outlines
+  </label>
+
+  <label class="toolbar-outline tb-outline-district">
+    <input type="checkbox" id="districtBorderToggle" checked
+           onchange="toggleDistrictBorders(this.checked)" />
+    District outlines
+  </label>
+
+  <div class="toolbar-group tb-heat">
     <label class="heat-select">
-      Heat Map
+      <span class="toolbar-label">Heat map</span>
       <select id="heatMetric" onchange="setHeatmap(this.value)">
         <option value="">Off</option>
         <option value="sites">Reforestation sites</option>
@@ -767,33 +933,6 @@
         <option value="target">Target seedlings</option>
         <option value="area">Area (hectares)</option>
       </select>
-    </label>
-    <label class="heat-select" style="border-left: none; padding-left: 0.6rem">
-      <input
-        type="checkbox"
-        id="brgyBorderToggle"
-        onchange="toggleBarangayBorders(this.checked)"
-      />
-      Barangay outlines
-    </label>
-    <label class="heat-select" style="border-left: none; padding-left: 0.6rem">
-      <input
-        type="checkbox"
-        id="boundaryToggle"
-        checked
-        onchange="toggleBoundaries(this.checked)"
-      />
-      Site boundaries
-      <span class="site-count-note" id="boundaryCount"></span>
-    </label>
-    <label class="heat-select" style="border-left: none; padding-left: 0.6rem">
-      <input
-        type="checkbox"
-        id="districtBorderToggle"
-        checked
-        onchange="toggleDistrictBorders(this.checked)"
-      />
-      District outlines
     </label>
   </div>
 </div>
@@ -849,6 +988,19 @@
     maxZoom: 19,
     attribution: "© OpenStreetMap contributors",
   }).addTo(map);
+
+  // Site boundaries get their own pane: above the district, barangay and
+  // heat map fills (overlayPane, z-index 400) and below the site markers
+  // (markerPane, 600). Without it, choosing a district in the filter
+  // re-added that district's fill on top of the boundaries, and a click
+  // on a boundary opened the town instead.
+  map.createPane("boundaryPane");
+  map.getPane("boundaryPane").style.zIndex = 450;
+  // A pane draws one see-through SVG across the whole map. Without this,
+  // that SVG sat above the towns and swallowed every click on them. Each
+  // boundary shape turns pointer events back on for itself (Leaflet's
+  // .leaflet-interactive rule), so the boundaries stay clickable.
+  map.getPane("boundaryPane").style.pointerEvents = "none";
 
   let district5Layer, district6Layer, focusGroup;
 
@@ -956,7 +1108,8 @@
               layer.on("click", function (e) {
                 // stop the click reaching the municipality layer underneath
                 L.DomEvent.stopPropagation(e);
-                showBarangayRecommendations(muniName, brgyName);
+                // sites first; the panel's switch flips to species
+                showBarangaySitesPanel(muniName, brgyName);
               });
             },
           },
@@ -1061,6 +1214,7 @@
                 Sampling intensity ${h.sampling_intensity}%<br>
                 Estimated survivors ${h.estimated_survivors.toLocaleString()}<br>
                 ${h.officer ? `Surveyed by ${h.officer}<br>` : ''}
+                ${h.submitted_at ? `Submitted ${h.submitted_at}<br>` : ''}
                 ${h.reviewed_by
                    ? `Approved by ${h.reviewed_by} on ${h.date_reviewed}` : ''}
                 ${h.remarks ? `<br><em>${h.remarks}</em>` : ''}
@@ -1146,11 +1300,175 @@
       // BARANGAY RECOMMENDATIONS
       // Objective 3: the recommendation engine, inside the map.
       // ==============================================================
+      // ==============================================================
+      // BARANGAY PANEL: Sites | Recommended species
+      // Clicking a barangay opens its sites first. A switch at the top
+      // flips to the species recommendations and back. Each view redraws
+      // the whole panel, so the switch is part of both.
+      // ==============================================================
+
+      // Bumped by every barangay view. A slow response for an earlier
+      // click checks it and gives up, so it cannot replace a newer panel.
+      let barangayPanelToken = 0;
+
+      // Sites per municipality, from /api/municipality. Stored when a town
+      // is opened, so a barangay inside it needs no second request.
+      const municipalitySitesCache = {};
+
+      async function loadMunicipalitySites(muniName) {
+        const key = normalizeName(muniName);
+        if (municipalitySitesCache[key]) return municipalitySitesCache[key];
+        const res = await fetch(`/api/municipality/${encodeURIComponent(muniName)}`);
+        const data = await res.json();
+        const sites = data.found ? data.sites : [];
+        municipalitySitesCache[key] = sites;
+        return sites;
+      }
+
+      function barangayTabs(muniName, brgyName, active) {
+        const m = escJs(muniName);
+        const b = escJs(brgyName);
+        return `
+          <div class="brgy-tabs" role="tablist" aria-label="Barangay view">
+            <button type="button" role="tab"
+                    class="brgy-tab ${active === "sites" ? "active" : ""}"
+                    aria-selected="${active === "sites"}"
+                    onclick="showBarangaySitesPanel('${m}', '${b}')">
+              Sites
+            </button>
+            <button type="button" role="tab"
+                    class="brgy-tab ${active === "species" ? "active" : ""}"
+                    aria-selected="${active === "species"}"
+                    onclick="showBarangayRecommendations('${m}', '${b}')">
+              Recommended species
+            </button>
+          </div>
+        `;
+      }
+
+      /* Site cards with Locate, History and, for field officers, Monitoring
+         Report. Shared by the municipality panel and the barangay Sites
+         view, so both always look and behave the same. */
+      function renderSiteCards(sites) {
+        return sites
+          .map(
+            (s) => `
+                  <div class="site-card" id="site-card-${s.site_id}"
+                       onclick="locateSite(${s.site_id}, ${s.lat}, ${s.lon},
+                                '${escJs(s.site_name)}',
+                                '${escJs(s.barangay)}')">
+                    <div class="site-card-title">${escBoundary(s.site_name)}</div>
+                    <div class="stat-row"><span class="stat-label">Barangay</span><span>${escBoundary(s.barangay)}</span></div>
+                    <div class="stat-row"><span class="stat-label">Site Code</span><span>${escBoundary(s.site_code || "—")}</span></div>
+                    <div class="stat-row"><span class="stat-label">Area</span><span>${s.area_size_ha} ha</span></div>
+                    <div class="stat-row"><span class="stat-label">Target Trees</span><span>${s.target_trees}</span></div>
+                    <div class="stat-row"><span class="stat-label">Actual Planted</span><span>${s.actual_trees}</span></div>
+                    <div class="site-card-foot">
+                      <button type="button" class="btn-locate"
+                              onclick="event.stopPropagation();
+                                       locateSite(${s.site_id}, ${s.lat}, ${s.lon},
+                                       '${escJs(s.site_name)}',
+                                       '${escJs(s.barangay)}')">
+                        Locate
+                      </button>
+                      <button type="button" class="btn-locate"
+                              onclick="event.stopPropagation();
+                                       showSiteHistory(${s.site_id})">
+                        History
+                      </button>
+                      {% if session.role == 'field_officer'%}
+                        ${
+                          CAN_REPORT
+                            ? `
+                        <a class="btn-report"
+                          onclick="event.stopPropagation();"
+                          href="/reports?municipality=${encodeURIComponent(s.municipality)}&barangay=${encodeURIComponent(s.barangay)}&site_id=${s.site_id}">
+                          Monitoring Report
+                        </a>`
+                            : ``
+                        }
+                      {% endif %}
+                    </div>
+                  </div>
+                `,
+          )
+          .join("");
+      }
+
+      window.showBarangaySitesPanel = async function (muniName, brgyName) {
+        const token = ++barangayPanelToken;
+        const panel = document.getElementById("muni-panel");
+        const inner = document.getElementById("muni-panel-inner");
+        panel.classList.add("active");
+
+        const header = `
+          <div class="panel-header">
+            <button class="close-btn" onclick="closeMuniPanel()">&#10005;</button>
+            <p class="panel-eyebrow">Barangay</p>
+            <h3>${escBoundary(brgyName)}</h3>
+            <p class="panel-subtext">${escBoundary(muniName)}, Pangasinan</p>
+          </div>
+        `;
+        function body(content) {
+          return `
+            <div class="panel-body">
+              ${backLink()}
+              ${barangayTabs(muniName, brgyName, "sites")}
+              ${content}
+            </div>
+          `;
+        }
+
+        inner.innerHTML = header + body(
+          `<p class="placeholder-text" style="padding:0;">Loading sites...</p>`,
+        );
+
+        let sites;
+        try {
+          const all = await loadMunicipalitySites(muniName);
+          const wanted = normalizeName(brgyName);
+          sites = all.filter((s) => normalizeName(s.barangay) === wanted);
+        } catch (err) {
+          console.error(err);
+          if (token !== barangayPanelToken) return;
+          inner.innerHTML = header + body(
+            `<p class="placeholder-text" style="padding:0;">Could not load sites.</p>`,
+          );
+          return;
+        }
+        if (token !== barangayPanelToken) return;
+
+        const target = sites.reduce((n, s) => n + (s.target_trees || 0), 0);
+
+        inner.innerHTML = header + body(`
+          <div class="stat-grid">
+            <div class="stat-box">
+              <span class="stat-num">${sites.length}</span>
+              <span class="stat-label">Reforestation Sites</span>
+            </div>
+            <div class="stat-box">
+              <span class="stat-num">${target}</span>
+              <span class="stat-label">Target Trees</span>
+            </div>
+          </div>
+          <p class="info-title">Sites in ${escBoundary(brgyName)}</p>
+          ${
+            sites.length
+              ? renderSiteCards(sites)
+              : `<p class="placeholder-text" style="padding:0;">
+                   No reforestation site is recorded in this barangay yet.
+                   Open Recommended species to see what would suit it.
+                 </p>`
+          }
+        `);
+      };
+
       window.showBarangayRecommendations = async function (muniName, brgyName) {
         const panel = document.getElementById("muni-panel");
         const inner = document.getElementById("muni-panel-inner");
 
         panel.classList.add("active");
+        const token = ++barangayPanelToken;
         inner.innerHTML = `<p class="placeholder-text">Loading ${brgyName}...</p>`;
 
         try {
@@ -1159,6 +1477,8 @@
               `&barangay=${encodeURIComponent(brgyName)}`,
           );
           const data = await res.json();
+          // a newer barangay view took over while this was loading
+          if (token !== barangayPanelToken) return;
 
           if (!data.found) {
             inner.innerHTML = `
@@ -1170,6 +1490,7 @@
               </div>
               <div class="panel-body">
                 ${backLink()}
+                ${barangayTabs(muniName, brgyName, "species")}
                 <p class="placeholder-text" style="padding:0;">
                   ${data.reason || "No site data for this barangay."}
                 </p>
@@ -1189,6 +1510,7 @@
             </div>
             <div class="panel-body">
               ${backLink()}
+              ${barangayTabs(muniName, brgyName, "species")}
 
               <p class="info-title">Site Profile</p>
               <div class="stat-row">
@@ -1274,6 +1596,7 @@
             </div>
             <div class="panel-body">
               ${backLink()}
+              ${barangayTabs(muniName, brgyName, "species")}
               <p class="placeholder-text" style="padding:0;">
                 Could not load recommendations. Check the server log.
               </p>
@@ -1289,8 +1612,31 @@
                 </button>`;
       }
 
-      // temporary marker dropped when a site card is clicked
+      // Temporary pin dropped when a site is located. It only shows where
+      // to look: once the map has flown there and the site's tree is in
+      // view, the pin fades out on its own.
       let locateMarker = null;
+      let locateTimer = null;
+      const LOCATE_PIN_LINGER_MS = 1500;
+
+      function removeLocatePin(fade) {
+        if (locateTimer) {
+          clearTimeout(locateTimer);
+          locateTimer = null;
+        }
+        if (!locateMarker) return;
+
+        const pin = locateMarker;
+        locateMarker = null;
+        const el = pin.getElement();
+        if (fade && el) {
+          el.style.transition = "opacity 0.4s ease";
+          el.style.opacity = "0";
+          setTimeout(function () { map.removeLayer(pin); }, 400);
+        } else {
+          map.removeLayer(pin);
+        }
+      }
 
       window.locateSite = function (siteId, lat, lon, siteName, brgy) {
         if (lat === null || lon === null || isNaN(lat)) {
@@ -1304,6 +1650,9 @@
         });
         const card = document.getElementById("site-card-" + siteId);
         if (card) card.classList.add("active");
+
+        // one pin at a time: a new locate replaces the last one
+        removeLocatePin(false);
 
         locateMarker = L.marker([lat, lon], {
           icon: L.divIcon({
@@ -1323,15 +1672,22 @@
         }).addTo(map);
 
         locateMarker
-          .bindPopup(
-            `<strong>${siteName}</strong><br>${brgy}<br>
-           <span style="color:#64748b; font-size:0.75rem;">
-             Positioned at the barangay centroid
-           </span>`,
-          )
+          .bindPopup(`<strong>${escBoundary(siteName)}</strong><br>${escBoundary(brgy)}`)
           .openPopup();
 
-        map.flyTo([lat, lon], 14, { duration: 0.8 });
+        // When the flight ends, give the eye a moment to find the tree,
+        // then fade the pin out. A newer locate replaces this pin first,
+        // so the check stops an old flight removing the new pin.
+        const pin = locateMarker;
+        map.once("moveend", function () {
+          if (locateMarker !== pin) return;
+          locateTimer = setTimeout(function () {
+            removeLocatePin(true);
+          }, LOCATE_PIN_LINGER_MS);
+        });
+
+        // Zoom in to at least 14, but never pull a closer view back out.
+        map.flyTo([lat, lon], Math.max(map.getZoom(), 14), { duration: 0.8 });
       };
 
       // small helper: keeps apostrophes in names from breaking the
@@ -1374,6 +1730,31 @@
           },
           { once: true },
         );
+      }
+
+      /* Run fn once the side panel has finished opening. Opening it
+         shrinks the map, and zooming before that lands off-centre. When
+         the panel was already open the map size does not change, so fn
+         runs straight away. The timer covers a transition that never
+         fires. */
+      function afterPanelOpens(wasOpen, fn) {
+        if (wasOpen) {
+          fn();
+          return;
+        }
+        let done = false;
+        function run() {
+          if (done) return;
+          done = true;
+          map.invalidateSize();
+          fn();
+        }
+        muniPanel.addEventListener("transitionend", function handler(ev) {
+          if (ev.propertyName !== "width") return;
+          muniPanel.removeEventListener("transitionend", handler);
+          run();
+        });
+        setTimeout(run, 700);
       }
 
       // ==============================================================
@@ -1481,10 +1862,7 @@
       window.closeMuniPanel = function () {
         muniPanel.classList.remove("active");
         clearBarangays();
-        if (locateMarker) {
-          map.removeLayer(locateMarker);
-          locateMarker = null;
-        }
+        removeLocatePin(false);
         // panel closing = map gets wider again, zoom back out to full district view
         refitAfterPanelTransition(focusGroup ? focusGroup.getBounds() : null);
       };
@@ -1519,6 +1897,8 @@
           const data = await res.json();
 
           if (data.found) {
+            // remembered, so opening a barangay in this town is instant
+            municipalitySitesCache[normalizeName(townName)] = data.sites;
             muniPanelInner.innerHTML = `
               <div class="panel-header">
                 <button class="close-btn" onclick="closeMuniPanel()">✕</button>
@@ -1548,50 +1928,7 @@
               <p class="info-title"> Sites in ${data.municipality}</p>
                 ${
                   data.sites.length
-                    ? data.sites
-                        .map(
-                          (s, i) => `
-                  <div class="site-card" id="site-card-${s.site_id}"
-                       onclick="locateSite(${s.site_id}, ${s.lat}, ${s.lon},
-                                '${escJs(s.site_name)}',
-                                '${escJs(s.barangay)}')">
-                    <div class="site-card-title">${s.site_name}</div>
-                    <div class="stat-row"><span class="stat-label">Barangay</span><span>${s.barangay}</span></div>
-                    <div class="stat-row"><span class="stat-label">Site Code</span><span>${s.site_code || "—"}</span></div>
-                    <div class="stat-row"><span class="stat-label">Area</span><span>${s.area_size_ha} ha</span></div>
-                    <div class="stat-row"><span class="stat-label">Target Trees</span><span>${s.target_trees}</span></div>
-                    <div class="stat-row"><span class="stat-label">Actual Planted</span><span>${s.actual_trees}</span></div>
-
-                    <div class="site-card-foot">
-                      <button type="button" class="btn-locate"
-                              onclick="event.stopPropagation();
-                                       locateSite(${s.site_id}, ${s.lat}, ${s.lon},
-                                       '${escJs(s.site_name)}',
-                                       '${escJs(s.barangay)}')">
-                        Locate
-                      </button>
-                      <button type="button" class="btn-locate"
-                              onclick="event.stopPropagation();
-                                       showSiteHistory(${s.site_id})">
-                        History
-                      </button>
-                      {% if session.role == 'field_officer'%}
-                        ${
-                          CAN_REPORT
-                            ? `
-                        <a class="btn-report"
-                          onclick="event.stopPropagation();"
-                          href="/reports?municipality=${encodeURIComponent(s.municipality)}&barangay=${encodeURIComponent(s.barangay)}&site_id=${s.site_id}">
-                          Monitoring Report
-                        </a>`
-                            : ``
-                        }
-                      {% endif %}
-                    </div>
-                  </div>
-                `,
-                        )
-                        .join("")
+                    ? renderSiteCards(data.sites)
                     : `<p class="placeholder-text" style="padding:0;">No sites recorded.</p>`
                 }
               </div>
@@ -1636,6 +1973,29 @@
         return set;
       }
 
+      /* How strongly the districts are coloured, decided in one place.
+           - "None" in the district filter: no colour at all. Outlines,
+             clickable towns and site markers all stay.
+           - heat map on: a faint fill, so the shading shows through
+           - otherwise: the normal fill
+         Hover adds to that base, so it never brings colour back while
+         "None" is chosen. */
+      function districtFillOpacity() {
+        if (currentDistrict === "none") return 0;
+        return heatLayer ? 0.08 : 0.4;
+      }
+
+      function districtHoverOpacity() {
+        const base = districtFillOpacity();
+        return base ? base + 0.3 : 0;
+      }
+
+      function applyDistrictFill() {
+        [district5Layer, district6Layer].forEach(function (lyr) {
+          if (lyr) lyr.setStyle({ fillOpacity: districtFillOpacity() });
+        });
+      }
+
       const district5Munis = municipalitySet(district5Data);
       const district6Munis = municipalitySet(district6Data);
 
@@ -1653,8 +2013,8 @@
              opened from a site marker and the town was never clicked. */
           municipalityLayers[normalizeName(feature.properties.NAME_2)] = layer;
           layer.on("click", onMunicipalityClick);
-          layer.on("mouseover", () => layer.setStyle({ fillOpacity: 0.7 }));
-          layer.on("mouseout", () => layer.setStyle({ fillOpacity: 0.4 }));
+          layer.on("mouseover", () => layer.setStyle({ fillOpacity: districtHoverOpacity() }));
+          layer.on("mouseout", () => layer.setStyle({ fillOpacity: districtFillOpacity() }));
         },
       }).addTo(map);
 
@@ -1672,8 +2032,8 @@
              opened from a site marker and the town was never clicked. */
           municipalityLayers[normalizeName(feature.properties.NAME_2)] = layer;
           layer.on("click", onMunicipalityClick);
-          layer.on("mouseover", () => layer.setStyle({ fillOpacity: 0.7 }));
-          layer.on("mouseout", () => layer.setStyle({ fillOpacity: 0.4 }));
+          layer.on("mouseover", () => layer.setStyle({ fillOpacity: districtHoverOpacity() }));
+          layer.on("mouseout", () => layer.setStyle({ fillOpacity: districtFillOpacity() }));
         },
       }).addTo(map);
 
@@ -1699,25 +2059,56 @@
         const trees =
           b.site_count >= 10 ? "🌳🌳🌳" : b.site_count >= 4 ? "🌳🌳" : "🌳";
 
+        const proposed = b.kind === "proposed";
+        // A site at its own position is labelled with its name; a
+        // barangay group with the barangay.
+        const label = b.exact ? b.sites[0].site_name : b.barangay;
+
         const html = `
-          <div class="tree-marker">
+          <div class="tree-marker${proposed ? " is-proposed" : ""}">
             <span class="tree-glyph" style="font-size:${glyphSize}px;">
               ${trees}
             </span>
             <span class="tree-count">${b.site_count}</span>
-            ${detailed ? `<span class="tree-label">${b.barangay}</span>` : ""}
+            ${detailed ? `<span class="tree-label">${escBoundary(label)}</span>` : ""}
           </div>
         `;
 
         const w = detailed ? 110 : 70;
         const h = detailed ? 64 : 48;
 
+        // Official and proposed groups at the same barangay centroid are
+        // two markers on one point. Shift the proposed one aside so both
+        // stay visible.
+        const nudge = proposed && !b.exact ? -w / 2 : 0;
+
         return L.divIcon({
-          className: "",
+          className: treeGivesWayToBoundary(b, zoom) ? "tree-hidden" : "",
           html: html,
           iconSize: [w, h],
-          iconAnchor: [w / 2, h / 2],
+          iconAnchor: [w / 2 + nudge, h / 2],
         });
+      }
+
+      // Once a site's boundary spans more than this on screen, the
+      // boundary shows the site by itself and its tree steps aside.
+      const TREE_HIDE_BOUNDARY_PX = 160;
+
+      /* True when this tree should hide at this zoom. Only a single site
+         with a boundary of its own qualifies; barangay groups and pin-only
+         sites always keep their tree. If Site boundaries is switched off,
+         no tree hides, or the site would vanish from the map. */
+      function treeGivesWayToBoundary(b, zoom) {
+        if (!b.exact || !b.bbox) return false;
+        const toggle = document.getElementById("boundaryToggle");
+        if (toggle && !toggle.checked) return false;
+
+        // project() works for any zoom, not just the current view, so the
+        // answer is the same whether it is asked before or after a zoom.
+        const sw = map.project([b.bbox[0], b.bbox[1]], zoom);
+        const ne = map.project([b.bbox[2], b.bbox[3]], zoom);
+        const span = Math.max(Math.abs(ne.x - sw.x), Math.abs(ne.y - sw.y));
+        return span > TREE_HIDE_BOUNDARY_PX;
       }
 
       async function loadSiteMarkers() {
@@ -1736,28 +2127,51 @@
           }
 
           const markers = data.barangays.map((b) => {
-            // circle grows a little with site count, stays readable
-            // Icon detail depends on zoom. Positions do NOT change:
-            // every site sits at its barangay centroid because the DENR
-            // contract profile records no site coordinates. Scattering
-            // individual trees across the polygon would invent spatial
-            // data we do not have.
+            // Icon detail depends on zoom. Positions come from the API:
+            // a site with a real position (published boundary centre, or
+            // the requester's pin) has its own marker there. Every other
+            // site sits at its barangay centroid, because the DENR
+            // contract profile records no site coordinates and scattering
+            // trees across the polygon would invent data we do not have.
             const marker = L.marker([b.lat, b.lon], {
               icon: buildTreeIcon(b, map.getZoom()),
             });
 
             marker._brgyData = b;
 
+            const title = b.exact
+              ? `<strong>${escBoundary(b.sites[0].site_name)}</strong><br>` +
+                `${escBoundary(b.barangay)}, ${escBoundary(b.municipality)}`
+              : `<strong>${escBoundary(b.barangay)}</strong>, ${escBoundary(b.municipality)}`;
+            const status = b.kind === "proposed"
+              ? `<br><span style="color:#0369a1; font-weight:600;">Proposed site, not yet surveyed</span>`
+              : "";
+            const placed = b.exact
+              ? `<br><span style="color:#64748b; font-size:.72rem;">Placed at the ${escBoundary(b.placed_by)}</span>`
+              : "";
+
             marker.bindTooltip(
-              `<strong>${b.barangay}</strong>, ${b.municipality}<br>
+              `${title}<br>
                ${b.site_count} site${b.site_count > 1 ? "s" : ""},
-               ${b.total_area_ha} ha`,
+               ${b.total_area_ha} ha${status}${placed}`,
               { direction: "top" },
             );
 
             marker.on("click", function (e) {
               L.DomEvent.stopPropagation(e);
+              // Same as Locate: open the sites, fly to the tree, and show
+              // the pin briefly so the eye lands on it before it fades.
+              const wasOpen = muniPanel.classList.contains("active");
               showBarangaySites(b);
+              afterPanelOpens(wasOpen, function () {
+                locateSite(
+                  b.exact ? b.sites[0].site_id : null,
+                  b.lat,
+                  b.lon,
+                  b.exact ? b.sites[0].site_name : b.barangay,
+                  b.exact ? b.barangay : b.municipality,
+                );
+              });
             });
 
             return marker;
@@ -1841,13 +2255,32 @@
 
       let boundaryLayer = null;
 
+      // Staff only. The API checks the role too; this flag only saves a
+      // request that would come back empty.
+      const CAN_SEE_PROPOSED = {{ 'true' if can_see_proposed else 'false' }};
+      const boundaryCounts = { official: 0, proposed: 0 };
+
+      function renderBoundaryCount() {
+        const note = document.getElementById("boundaryCount");
+        if (!note) return;
+        note.textContent = CAN_SEE_PROPOSED
+          ? `(${boundaryCounts.official} official, ${boundaryCounts.proposed} proposed)`
+          : `(${boundaryCounts.official})`;
+      }
+
+      function escBoundary(value) {
+        return String(value === null || value === undefined ? "" : value)
+          .replace(/&/g, "&amp;").replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+      }
+
       async function loadBoundaries() {
         try {
           const res = await fetch("/api/published-boundaries");
           const data = await res.json();
 
-          const note = document.getElementById("boundaryCount");
-          if (note) note.textContent = `(${data.count})`;
+          boundaryCounts.official = data.count;
+          renderBoundaryCount();
 
           if (!data.count) return;
 
@@ -1858,22 +2291,24 @@
               properties: b,
             })),
             {
+              pane: "boundaryPane",
+              // Solid: official. Proposed boundaries are the dashed ones.
               style: {
                 color: "#0ea5e9",
                 weight: 2.5,
                 fillColor: "#0ea5e9",
                 fillOpacity: 0.2,
-                dashArray: "6,3",
               },
               onEachFeature: function (feature, layer) {
                 const p = feature.properties;
                 layer.bindPopup(`
-                  <strong>${p.site_name}</strong><br>
-                  ${p.barangay || ""}, ${p.municipality || ""}<br>
-                  Contracted ${p.contract_area_ha} ha<br>
-                  Captured ${p.captured_area_ha} ha<br>
+                  <strong>${escBoundary(p.site_name)}</strong><br>
+                  ${escBoundary(p.barangay)}, ${escBoundary(p.municipality)}<br>
+                  <span style="color:#0369a1; font-weight:600;">Official boundary</span><br>
+                  Contracted ${escBoundary(p.contract_area_ha)} ha<br>
+                  Captured ${escBoundary(p.captured_area_ha)} ha<br>
                   <span style="color:#64748b; font-size:.72rem;">
-                    Surveyed ${p.captured_at || "date unknown"}
+                    Surveyed ${escBoundary(p.captured_at || "date unknown")}
                   </span>
                 `);
               },
@@ -1887,13 +2322,81 @@
         }
       }
 
+      // One toggle for both: official and proposed boundaries.
       window.toggleBoundaries = function (show) {
-        if (!boundaryLayer) return;
-        if (show) boundaryLayer.addTo(map);
-        else map.removeLayer(boundaryLayer);
+        [boundaryLayer, proposedLayer].forEach(function (layer) {
+          if (!layer) return;
+          if (show) layer.addTo(map);
+          else map.removeLayer(layer);
+        });
+        // Trees only step aside while boundaries are showing, so redraw
+        // them: with boundaries off, every tree comes back.
+        const z = map.getZoom();
+        allSiteMarkers.forEach(function (m) {
+          m.setIcon(buildTreeIcon(m._brgyData, z));
+        });
       };
 
       loadBoundaries();
+
+      // ==============================================================
+      // PROPOSED SITE BOUNDARIES (staff only)
+      // Drawn by the requester, for a site a CENRO created from an
+      // approved request. Dashed with a faint fill, so it never reads
+      // as surveyed. The server drops a site from this list as soon as
+      // the province publishes its GPS boundary, so the official one
+      // always takes its place. Guests and normal users are never sent
+      // any of these.
+      // ==============================================================
+      let proposedLayer = null;
+
+      async function loadProposedBoundaries() {
+        if (!CAN_SEE_PROPOSED) return;
+        try {
+          const res = await fetch("/api/proposed-boundaries");
+          const data = await res.json();
+
+          boundaryCounts.proposed = data.count;
+          renderBoundaryCount();
+          if (!data.count) return;
+
+          const style = {
+            color: "#0ea5e9",
+            weight: 2,
+            dashArray: "6,5",
+            fillColor: "#0ea5e9",
+            fillOpacity: 0.06,
+          };
+
+          proposedLayer = L.layerGroup();
+          data.boundaries.forEach(function (b) {
+            const popup = `
+              <strong>${escBoundary(b.site_name)}</strong><br>
+              ${escBoundary(b.barangay)}, ${escBoundary(b.municipality)}<br>
+              <span style="color:#0369a1; font-weight:600;">Proposed area, not yet surveyed</span><br>
+              ${b.area_ha ? "Drawn " + Number(b.area_ha).toFixed(2) + " ha" : "Pin only, no area drawn"}<br>
+              <span style="color:#64748b; font-size:.72rem;">
+                From request #${escBoundary(b.request_id)}. Replaced when the
+                province publishes a GPS boundary.
+              </span>
+            `;
+            if (b.geometry) {
+              L.geoJSON(b.geometry, { style: style, pane: "boundaryPane" })
+                .bindPopup(popup).addTo(proposedLayer);
+            } else if (b.pin) {
+              L.circleMarker(b.pin, Object.assign({ radius: 9, pane: "boundaryPane" }, style))
+                .bindPopup(popup).addTo(proposedLayer);
+            }
+          });
+
+          const toggle = document.getElementById("boundaryToggle");
+          if (!toggle || toggle.checked) proposedLayer.addTo(map);
+        } catch (err) {
+          console.error("Proposed boundary load failed:", err);
+        }
+      }
+
+      loadProposedBoundaries();
       // ==============================================================
       // HEATMAP LAYER
       // All 478 barangay polygons, shaded by a chosen metric.
@@ -1944,9 +2447,7 @@
         }
 
         if (!metric) {
-          [district5Layer, district6Layer].forEach(function (lyr) {
-            if (lyr) lyr.setStyle({ fillOpacity: 0.4 });
-          });
+          applyDistrictFill();
           return;
         }
 
@@ -2009,7 +2510,8 @@
 
               layer.on("click", function (e) {
                 L.DomEvent.stopPropagation(e);
-                showBarangayRecommendations(muni, brgy);
+                // same as a barangay outline: sites first, species a tab away
+                showBarangaySitesPanel(muni, brgy);
               });
             },
           });
@@ -2017,9 +2519,7 @@
           heatLayer.addTo(map);
           heatLayer.bringToBack();
           // district fills would hide the shading, so thin them out
-          [district5Layer, district6Layer].forEach(function (lyr) {
-            if (lyr) lyr.setStyle({ fillOpacity: 0.08 });
-          });
+          applyDistrictFill();
 
           buildLegend(data);
         } catch (err) {
@@ -2117,8 +2617,8 @@
 
       /* A marker belongs to the district its municipality sits in. */
       function siteInCurrentDistrict(b) {
-        if (currentDistrict === "all") return true;
-        if (currentDistrict === "none") return false;
+        // "None" only clears the district colour; every marker still shows.
+        if (currentDistrict === "all" || currentDistrict === "none") return true;
         const set = currentDistrict === "5" ? district5Munis : district6Munis;
         return set.has(normalizeName(b.municipality));
       }
@@ -2168,9 +2668,15 @@
         muniPanelInner.innerHTML = `
           <div class="panel-header">
             <button class="close-btn" onclick="closeMuniPanel()">&#10005;</button>
-            <p class="panel-eyebrow">Reforestation Sites</p>
-            <h3>${b.barangay}</h3>
-            <p class="panel-subtext">${b.municipality}, Pangasinan</p>
+            <p class="panel-eyebrow">${b.kind === "proposed" ? "Proposed Site" : "Reforestation Sites"}</p>
+            <h3>${escBoundary(b.barangay)}</h3>
+            <p class="panel-subtext">${escBoundary(b.municipality)}, Pangasinan</p>
+            ${b.kind === "proposed"
+              ? `<p class="panel-subtext" style="color:#0369a1;">
+                   Made from an approved request. Not yet surveyed. The
+                   official boundary replaces it once published.
+                 </p>`
+              : ""}
           </div>
           <div class="panel-body">
             <div class="stat-grid">
@@ -2205,7 +2711,7 @@
               .map(
                 (s) => `
               <div class="site-card" id="site-card-${s.site_id}">
-                <div class="site-card-title">${s.site_name}</div>
+                <div class="site-card-title">${escBoundary(s.site_name)}</div>
                 <div class="stat-row">
                   <span class="stat-label">Site Code</span>
                   <span>${s.site_code || "—"}</span>
@@ -2253,14 +2759,12 @@
         currentDistrict = value;
         applySiteFilter();
 
-        if (value === "none") {
-          if (map.hasLayer(district5Layer)) map.removeLayer(district5Layer);
-          if (map.hasLayer(district6Layer)) map.removeLayer(district6Layer);
-          muniPanel.classList.remove("active");
-          clearBarangays();
-          return; // no bounds to fly to
-        }
-        if (value === "all") {
+        // Colour for the chosen option: "None" clears it, the rest restore it.
+        applyDistrictFill();
+
+        if (value === "none" || value === "all") {
+          // "None" is "All" without the colour: both districts stay, with
+          // their outlines and clickable towns, and every marker shows.
           if (!map.hasLayer(district5Layer)) map.addLayer(district5Layer);
           if (!map.hasLayer(district6Layer)) map.addLayer(district6Layer);
           targetBounds = focusGroup.getBounds();

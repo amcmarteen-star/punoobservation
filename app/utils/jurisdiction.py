@@ -16,8 +16,9 @@ Part 1 document for why.
 """
 
 from flask import session
+from sqlalchemy import or_
 
-from app.models import Site, Location
+from app.models import Site, Location, User
 
 
 # Which municipalities belong to which CENRO.
@@ -39,6 +40,13 @@ CENRO_MUNICIPALITIES = {
 
 CENRO_LIST = list(CENRO_MUNICIPALITIES.keys())
 
+# The part of the province each CENRO covers, as the interface names it.
+CENRO_REGIONS = {
+    "Urdaneta City": "Eastern Pangasinan",
+    "Dagupan": "Central Pangasinan",
+    "Alaminos": "Western Pangasinan",
+}
+
 
 def current_cenro():
     """
@@ -58,15 +66,27 @@ def is_superadmin():
 
 def scope_sites(query):
     """
-    Restrict a Site query to the user's CENRO.
+    Restrict a Site query to the sites the user may see.
+
+    Two rules:
+      1. CENRO: an admin or officer sees their own CENRO's sites.
+      2. Official only, for guests and normal users: a site created from
+         a request is hidden until the province publishes its GPS
+         boundary. Staff (STAFF_ROLES) see it from the day it is created.
 
     Matches on site.cenro, which the DENR importer populates from the
     IMPLEMENTING CENRO column.
     """
     cenro = current_cenro()
-    if cenro is None:
-        return query
-    return query.filter(Site.cenro == cenro)
+    if cenro is not None:
+        query = query.filter(Site.cenro == cenro)
+
+    if not can_see_unofficial_sites():
+        query = query.filter(or_(
+            Site.source_request_id.is_(None),
+            Site.boundary_published.is_(True),
+        ))
+    return query
 
 
 def scope_locations(query):
@@ -157,9 +177,93 @@ def can_see_municipality(name):
     return any(normalize_municipality(m) == wanted for m in allowed)
 
 
+def region_label():
+    """
+    The area the current user works in, for page titles.
+
+    A CENRO's staff get their part of the province, e.g. "Eastern
+    Pangasinan". Everyone without a CENRO (PENRO, superadmin, normal
+    users, guests) gets the whole province.
+    """
+    cenro = current_cenro()
+    if cenro is None:
+        return "Pangasinan"
+    return CENRO_REGIONS.get(cenro, "Pangasinan")
+
+
 def scope_label():
     """Short description of the current user's scope, for the interface."""
     cenro = current_cenro()
     if cenro is None:
         return "Province-wide"
     return f"CENRO {cenro}"
+
+
+def cenro_for_municipality(municipality):
+    """
+    The CENRO whose jurisdiction lists this municipality, or None.
+
+    Compared on the normalized form, so "UrdanetaCity" from the map and
+    "Urdaneta City" from the database both resolve.
+    """
+    key = normalize_municipality(municipality)
+    if not key:
+        return None
+    for cenro, municipalities in CENRO_MUNICIPALITIES.items():
+        if any(normalize_municipality(m) == key for m in municipalities):
+            return cenro
+    return None
+
+
+def reviewing_admins(cenro):
+    """
+    Active admins who review requests and reports for one CENRO.
+
+    Review is a CENRO function, so only that office is notified. The
+    provincial (PENRO) admins and the superadmins cannot act on a request
+    or a monitoring report, so sending them the notice only filled their
+    bell with work that belongs to someone else.
+
+    Fallback: when the CENRO is unknown or has no active admin, nobody
+    could act on the notice. It then goes to the provincial admins, so the
+    item is at least seen instead of being lost without a trace.
+    """
+    admins = []
+    if cenro:
+        admins = User.query.filter(
+            User.role == 'admin',
+            User.cenro == cenro,
+            User.is_active.is_(True),
+        ).all()
+
+    if not admins:
+        admins = User.query.filter(
+            User.role == 'admin',
+            User.cenro.is_(None),
+            User.is_active.is_(True),
+        ).all()
+
+    return admins
+
+
+# Roles that plan, survey, review or publish sites. They see sites made
+# from a request, and their proposed boundaries, before anything is
+# official. Guests and normal users see only official records.
+STAFF_ROLES = ('field_officer', 'admin', 'superadmin')
+
+
+def can_see_unofficial_sites():
+    """True for staff. False for guests and normal users."""
+    return session.get('role') in STAFF_ROLES
+
+
+def can_see_site(site):
+    """
+    The official-only rule from scope_sites(), for one site already loaded.
+
+    Imported DENR sites are always official. A site created from a
+    request becomes official when the province publishes its boundary.
+    """
+    if can_see_unofficial_sites():
+        return True
+    return site.source_request_id is None or bool(site.boundary_published)

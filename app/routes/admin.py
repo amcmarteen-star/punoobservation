@@ -1,5 +1,5 @@
 # app/routes/admin.py
-from flask import Blueprint, render_template, request, flash, redirect, url_for, session, jsonify, current_app
+from flask import Blueprint, render_template, request, flash, redirect, url_for, session, jsonify, current_app, send_file
 from app.extensions import db
 from app.models import User, Location, Organization, Site, TreeSpecie, ReforestationRecord, Request, Notification, MonitoringReport, MonitoringPlot, MonitoringPhoto,ReforestationRecord,Site,AuditLog
 from app.utils.decorators import admin_required, superadmin_required
@@ -19,6 +19,11 @@ from app.utils.jurisdiction import (
 from app.utils.decorators import superadmin_required
 from app.services.monitoring import save_species_photo, delete_species_photo
 from app.services.wikipedia import refresh_species_summary, WikipediaUnavailable
+from app.services.request_site import boundary_dict, SITE_REQUEST_TYPES
+from app.services.export_report import build_sites_workbook
+from app.utils.timeutil import manila_now
+from sqlalchemy.exc import IntegrityError
+from app.routes.dashboard import _load_barangay_geometry
 
 admin_bp = Blueprint('admin', __name__, url_prefix='/admin')
 
@@ -424,6 +429,67 @@ def reset_password(user_id):
           "next time they sign in.", "success")
     return redirect(url_for('admin.user_management'))
 # Upload excel file
+@admin_bp.route('/export/sites.xlsx')
+@admin_required
+def export_sites_excel():
+    """
+    Download the user's sites as an Excel file, in the DENR contract
+    profile layout (see app/services/export_report.py).
+
+    Scoped like the rest of the system: a CENRO admin gets their own
+    CENRO, PENRO and superadmin get the province. Reports follow the
+    exported sites; requests follow the CENRO's municipalities, the same
+    rule Review Requests uses.
+    """
+    sites = (
+        scope_sites(Site.query.join(Location, Site.location_id == Location.location_id))
+        .order_by(Site.year_contracted, Location.municipality,
+                  Location.barangay, Site.site_name)
+        .all()
+    )
+    site_ids = [s.site_id for s in sites]
+
+    reports = []
+    if site_ids:
+        reports = (
+            MonitoringReport.query
+            .filter(MonitoringReport.site_id.in_(site_ids),
+                    MonitoringReport.approval_status == 'Approved')
+            .order_by(MonitoringReport.monitoring_date.desc())
+            .all()
+        )
+
+    requests_query = Request.query
+    munis = allowed_municipalities()
+    if munis is not None:
+        requests_query = (
+            requests_query
+            .join(Location, Request.location_id == Location.location_id)
+            .filter(Location.municipality.in_(munis))
+        )
+    requests_list = requests_query.order_by(Request.date_submitted.desc()).all()
+
+    scope = scope_label()
+    workbook = build_sites_workbook(
+        sites, reports, requests_list,
+        exported_by=session.get('username'), scope=scope,
+    )
+
+    log_action('export_sites', 'site', None,
+               f"Exported {len(sites)} site(s), {len(reports)} report(s) and "
+               f"{len(requests_list)} request(s) to Excel ({scope})",
+               commit=True)
+
+    stamp = datetime.now(ZoneInfo("Asia/Manila")).strftime('%Y-%m-%d')
+    return send_file(
+        workbook,
+        as_attachment=True,
+        download_name=f"PuNoObservation Sites - {scope} - {stamp}.xlsx",
+        mimetype=("application/vnd.openxmlformats-officedocument."
+                  "spreadsheetml.sheet"),
+    )
+
+
 @admin_bp.route('/reference-dataset', methods=['GET'])
 @superadmin_required
 def reference_dataset():
@@ -697,10 +763,20 @@ def review_request(request_id):
         flash("Give a reason when rejecting a request.", "danger")
         return redirect(url_for('admin.review_requests'))
 
+    # A site made from this request is an official record. Moving the
+    # request away from Approved would leave that site with no approved
+    # request behind it.
+    if req.created_site is not None and new_status != 'Approved':
+        flash(f"Request #{req.request_id} already has a reforestation site "
+              f"({req.created_site.site_name}), so it must stay Approved.",
+              "danger")
+        return redirect(url_for('admin.review_request_detail',
+                                request_id=req.request_id))
+
     req.status = new_status
     req.review_note = note or None
     req.reviewed_by = session.get('user_id')
-    req.date_reviewed = datetime.now(ZoneInfo("Asia/Manila"))
+    req.date_reviewed = manila_now()
 
     where = "your requested site"
     if req.location:
@@ -1066,7 +1142,7 @@ def review_report(report_id):
     report.approval_status = new_status
     report.review_note = note or None
     report.reviewed_by = session.get('user_id')
-    report.date_reviewed = datetime.now(ZoneInfo("Asia/Manila"))
+    report.date_reviewed = manila_now()
  
     if new_status == 'Approved':
         # survival data is CENRO's call and takes effect immediately
@@ -1262,7 +1338,7 @@ def publish_boundary(report_id):
         flash("Give a reason when declining a boundary.", "danger")
         return redirect(url_for('admin.publications'))
 
-    now = datetime.now(ZoneInfo("Asia/Manila"))
+    now = manila_now()
     site = report.site
 
     if action == 'publish':
@@ -1366,13 +1442,276 @@ def review_request_detail(request_id):
             location_id=req.location_id
         ).all()
 
+    # The requester's pin and drawn area, over the barangay outline.
+    site_boundary = boundary_dict(req.boundary_geojson)
+    barangay_geometry = None
+    if req.location and (req.latitude is not None or site_boundary):
+        barangay_geometry = _load_barangay_geometry(
+            req.location.municipality, req.location.barangay)
+
     return render_template(
         'Requestdetail.html',
         active_page='review_requests',
         req=req,
         related=related,
         existing_sites=existing_sites,
+        site_boundary=site_boundary,
+        barangay_geometry=barangay_geometry,
+        site_request_types=SITE_REQUEST_TYPES,
+        created_site=req.created_site,
     )
+
+
+# ======================================================================
+# creating a reforestation site from an approved request
+# ======================================================================
+
+SITE_ZONE_CHOICES = ('Production', 'Protection')
+
+
+def _request_for_site_creation(request_id):
+    """
+    The request, if the current admin may create a site from it.
+
+    Returns (req, None) when allowed, or (None, redirect) when not. Every
+    refusal is checked on POST as well as GET, because a form can be
+    posted without the page that shows the button.
+    """
+    if current_cenro() is None:
+        flash("Creating a site from a request is a CENRO function.", "warning")
+        return None, redirect(url_for('admin.provincial_overview'))
+
+    req = Request.query.get_or_404(request_id)
+    back = redirect(url_for('admin.review_request_detail',
+                            request_id=request_id))
+
+    munis = allowed_municipalities()
+    if munis is not None and (
+            not req.location or req.location.municipality not in munis):
+        flash("That request is outside your CENRO jurisdiction.", "danger")
+        return None, redirect(url_for('admin.review_requests'))
+
+    if req.status != 'Approved':
+        flash("Approve the request before creating a site from it.",
+              "warning")
+        return None, back
+
+    if req.request_type not in SITE_REQUEST_TYPES:
+        flash(f"A {req.request_type} request does not create a "
+              "reforestation site.", "warning")
+        return None, back
+
+    if req.created_site is not None:
+        flash("A site was already created from this request: "
+              f"{req.created_site.site_name}.", "info")
+        return None, back
+
+    if req.location is None:
+        flash("This request has no barangay, so a site cannot be placed.",
+              "danger")
+        return None, back
+
+    return req, None
+
+
+def _parse_iso_date(value):
+    try:
+        return datetime.strptime(value, '%Y-%m-%d').date()
+    except (TypeError, ValueError):
+        return None
+
+
+@admin_bp.route('/requests/<int:request_id>/create-site',
+                methods=['GET', 'POST'])
+@admin_required
+def create_site_from_request(request_id):
+    """
+    Turn an approved request into a reforestation site.
+
+    A person does this, not the Approve button, because a request does
+    not carry everything a site needs (a name, an organisation, a
+    planting date) and the site becomes an official record.
+
+    Created:
+      - a Site in the request's barangay, under this admin's CENRO,
+        linked back to the request through source_request_id
+      - a ReforestationRecord holding the target seedlings. Monitoring
+        reports are refused for a site without one, so without it the
+        site could never receive a GPS boundary.
+
+    Not copied: the requester's drawn area. It stays on the request and
+    shows on site pages as a proposed area until the province publishes a
+    GPS boundary. Site.boundary_geojson is left empty, so the first GPS
+    capture fills it exactly as it does for any other site.
+    """
+    req, stop = _request_for_site_creation(request_id)
+    if stop is not None:
+        return stop
+
+    requester_org = req.requester.organization if req.requester else None
+    today = datetime.now(ZoneInfo("Asia/Manila")).date()
+
+    defaults = {
+        "site_name": (f"{req.location.barangay}, {req.location.municipality} "
+                      "Reforestation Site"),
+        "site_code": "",
+        "organization_id": (str(requester_org.organization_id)
+                            if requester_org else ""),
+        "new_organization": "",
+        "area_size_ha": (f"{req.proposed_area_ha:g}"
+                         if req.proposed_area_ha else ""),
+        "date_established": today.isoformat(),
+        "zone_type": "",
+        "target_seedlings": (str(req.estimated_seedlings)
+                             if req.estimated_seedlings else ""),
+        "date_planted": today.isoformat(),
+        "contact_person": req.requester.username if req.requester else "",
+    }
+
+    def render(form):
+        return render_template(
+            'Createsite.html',
+            active_page='review_requests',
+            req=req,
+            form=form,
+            organizations=Organization.query
+                .order_by(Organization.organization_name).all(),
+            requester_org=requester_org,
+            zone_choices=SITE_ZONE_CHOICES,
+        )
+
+    if request.method == 'GET':
+        return render(defaults)
+
+    form = {k: (request.form.get(k) or '').strip() for k in defaults}
+    errors = []
+
+    site_name = form['site_name']
+    if not site_name:
+        errors.append("Enter a site name.")
+    elif len(site_name) > 150:
+        errors.append("The site name can be 150 characters at most.")
+
+    site_code = form['site_code'] or None
+    if site_code:
+        if len(site_code) > 50:
+            errors.append("The site code can be 50 characters at most.")
+        elif Site.query.filter_by(site_code=site_code).first():
+            errors.append(f"Site code {site_code} is already used by "
+                          "another site.")
+
+    try:
+        area = float(form['area_size_ha'])
+        if not area > 0:
+            raise ValueError
+    except ValueError:
+        area = None
+        errors.append("Enter the site area in hectares, greater than zero.")
+
+    try:
+        target = int(form['target_seedlings'])
+        if target <= 0:
+            raise ValueError
+    except ValueError:
+        target = None
+        errors.append("Enter the target seedlings as a whole number "
+                      "greater than zero.")
+
+    date_established = _parse_iso_date(form['date_established'])
+    if date_established is None:
+        errors.append("Enter a valid date established.")
+
+    date_planted = _parse_iso_date(form['date_planted'])
+    if date_planted is None:
+        errors.append("Enter a valid planned planting date.")
+
+    zone = form['zone_type'] or None
+    if zone and zone not in SITE_ZONE_CHOICES:
+        errors.append("Choose a zone from the list.")
+
+    new_org_name = form['new_organization']
+    organization = None
+    if new_org_name:
+        if len(new_org_name) > 150:
+            errors.append("The organisation name can be 150 characters "
+                          "at most.")
+    elif form['organization_id'].isdigit():
+        organization = db.session.get(Organization,
+                                      int(form['organization_id']))
+        if organization is None:
+            errors.append("That organisation no longer exists. Choose "
+                          "another.")
+    else:
+        errors.append("Choose an organisation, or type the name of a new "
+                      "one.")
+
+    if len(form['contact_person']) > 120:
+        errors.append("The contact person can be 120 characters at most.")
+
+    if errors:
+        for e in errors:
+            flash(e, "danger")
+        return render(form)
+
+    try:
+        if organization is None:
+            organization = _get_or_create_organization(new_org_name)
+
+        site = Site(
+            location_id=req.location_id,
+            organization_id=organization.organization_id,
+            site_name=site_name,
+            site_code=site_code,
+            area_size_ha=area,
+            date_established=date_established,
+            site_status='Active',
+            zone_type=zone,
+            penro=DEFAULT_PROVINCE,
+            # Sites are scoped by this column everywhere, so it must be
+            # the creating office or its officers would never see it.
+            cenro=current_cenro(),
+            contact_person=form['contact_person'] or None,
+            source_request_id=req.request_id,
+        )
+        db.session.add(site)
+        db.session.flush()
+
+        db.session.add(ReforestationRecord(
+            site_id=site.site_id,
+            tree_id=_get_placeholder_tree_specie().tree_id,
+            date_planted=date_planted,
+            target_quantity=target,
+        ))
+
+        where = f"{req.location.barangay}, {req.location.municipality}"
+        db.session.add(Notification(
+            user_id=req.user_id,
+            notification_type='Request Update',
+            message=(f"Your reforestation request for {where} is now a "
+                     f"reforestation site: {site_name}. It will appear on "
+                     "the public map once its surveyed boundary is "
+                     "published."),
+            is_read=False,
+        ))
+
+        log_action('create_site_from_request', 'site', site.site_id,
+                   f"Created site '{site_name}' from request "
+                   f"#{req.request_id}")
+        db.session.commit()
+    except IntegrityError:
+        # The unique source_request_id or site_code caught a race: another
+        # admin saved first. Nothing from this attempt is kept.
+        db.session.rollback()
+        flash("Nothing was saved. A site was just created from this request "
+              "by someone else, or the site code was taken.", "danger")
+        return redirect(url_for('admin.review_request_detail',
+                                request_id=request_id))
+
+    flash(f"Site created: {site_name}. Field officers in CENRO "
+          f"{current_cenro()} can now submit monitoring reports for it.",
+          "success")
+    return redirect(url_for('admin.review_request_detail',
+                            request_id=request_id))
 
 @admin_bp.route('/audit-log')
 @superadmin_required
@@ -1398,7 +1737,8 @@ def audit_log():
 
     if days and days != 'all':
         try:
-            cutoff = datetime.now(ZoneInfo("Asia/Manila")) - timedelta(
+            # naive, to compare like with like against the stored times
+            cutoff = manila_now() - timedelta(
                 days=int(days)
             )
             query = query.filter(AuditLog.created_at >= cutoff)

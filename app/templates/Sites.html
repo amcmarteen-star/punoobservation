@@ -46,6 +46,15 @@
         <p class="um-subtitle">All registered reforestation sites across Eastern Pangasinan.</p>
         <p class="text-secondary small mb-0">Showing: {{ scope }}</p>
     </div>
+    {% if session.role in ['admin', 'superadmin'] %}
+    {# Downloads every site in this scope, not only the rows the filters
+       below are showing. #}
+    <a href="{{ url_for('admin.export_sites_excel') }}" class="um-btn-add"
+       title="Download the sites in {{ scope }} as an Excel file in the DENR contract profile layout">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V3"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/></svg>
+        Export to Excel
+    </a>
+    {% endif %}
 </div>
 
 <div class="um-table-card dt-card">
@@ -128,11 +137,23 @@
                     data-search="{{ (s.site_name ~ ' ' ~ s.location.barangay ~ ' ' ~ s.location.municipality ~ ' ' ~ (s.site_code or ''))|lower|e }}">
                     {% if session.role in ['admin', 'superadmin'] %}
                         <td class="dt-pin"><code>{{ s.site_code or '—' }}</code></td>
-                        <td class="sites-name-cell dt-pin dt-pin-last">{{ s.site_name }}</td>
+                        <td class="sites-name-cell dt-pin dt-pin-last">
+                            {{ s.site_name }}
+                            {% if s.source_request_id %}
+                                <div class="text-secondary small fw-normal">
+                                    From request #{{ s.source_request_id }}{% if not s.boundary_published %} &middot; proposed area until a boundary is published{% endif %}
+                                </div>
+                            {% endif %}
+                        </td>
                         <td>{{ s.location.barangay }}</td>
                         {{ map_cell(s) }}
                     {% else %}
-                        <td class="sites-name-cell dt-pin">{{ s.site_name }}</td>
+                        <td class="sites-name-cell dt-pin">
+                            {{ s.site_name }}
+                            {% if s.source_request_id %}
+                                <div class="text-secondary small fw-normal">From a public request</div>
+                            {% endif %}
+                        </td>
                         {{ map_cell(s, pin='dt-pin dt-pin-last') }}
                         <td>{{ s.location.barangay }}</td>
                     {% endif %}

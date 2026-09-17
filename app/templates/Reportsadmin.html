@@ -102,7 +102,11 @@
               <span class="text-secondary">&mdash;</span>
             {% endif %}
           </td>
-          <td>{{ r.monitoring_date.strftime('%Y-%m-%d') }}</td>
+          <td>
+            {{ r.monitoring_date.strftime('%Y-%m-%d') }}
+            {# the visit date has no time; this is when the report arrived #}
+            <div class="text-secondary small">Sent {{ r.submitted_at|datetime_ph }}</div>
+          </td>
           <td class="num-cell">{{ r.plots_recorded or '—' }}</td>
           <td class="num-cell sites-fw-semibold {% if r.survival_rate >= 85 %}text-success{% else %}text-danger{% endif %}">
             {{ r.survival_rate }}%

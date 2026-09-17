@@ -492,6 +492,9 @@
       <div class="main-area">
         {% block global_topbar %}
         <div class="global-topbar">
+          {# Optional page title, on the left of the same row as the theme,
+             bell and account controls. Pages fill it or leave it empty. #}
+          {% block topbar_title %}{% endblock %}
           <button
             type="button"
             class="theme-toggle"

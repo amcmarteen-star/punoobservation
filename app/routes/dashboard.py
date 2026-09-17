@@ -16,6 +16,18 @@ from app.services.recommender import recommend_for_location, _fmt, SALINITY_LABE
 from app.services.wikipedia import (
     refresh_species_summary, WikipediaUnavailable, LICENSE_NAME, LICENSE_URL,
 )
+from app.services.request_site import (
+    SITE_REQUEST_TYPES, LAND_OWNERSHIP_CHOICES, LAND_COVER_CHOICES,
+    parse_pin, parse_boundary, boundary_centre, boundary_points,
+    points_outside, parse_spacing, density_from_spacing, estimate_seedlings,
+    common_planting_densities, proposed_area_for_site, site_position,
+    geometry_bbox,
+)
+from app.utils.timeutil import manila_now, format_datetime
+from app.utils.jurisdiction import (
+    normalize_municipality, cenro_for_municipality, reviewing_admins,
+    can_see_unofficial_sites, can_see_site, region_label,
+)
 from app.services.recommender_eval import species_evaluation
 import json, os, re
 from app.services.monitoring import (
@@ -106,7 +118,14 @@ def index():
 @dashboard_bp.route('/gis-map')
 def gis_map():
     """Renders the full interactive GIS Map page. Open to guests."""
-    return render_template('GIS_map.html')
+    return render_template(
+        'GIS_map.html',
+        # Staff get the proposed boundary layer and its key. The API
+        # checks the role again, so this flag only decides what is drawn.
+        can_see_proposed=can_see_unofficial_sites(),
+        # Title in the top bar: the user's part of the province.
+        region_label=region_label(),
+    )
 
 
 @dashboard_bp.route('/api/municipality/<name>')
@@ -132,6 +151,13 @@ def municipality_info(name):
     sites_data = []
     for location in locations:
         for site in location.sites:
+            # guests and normal users see official sites only
+            if not can_see_site(site):
+                continue
+
+            # The site's own position when it has one, so Locate lands on
+            # its tree; otherwise the barangay centroid, as before.
+            position = site_position(site)
             totals = db.session.query(
                 func.sum(ReforestationRecord.target_quantity),
                 func.sum(ReforestationRecord.actual_quantity_planted)
@@ -148,8 +174,8 @@ def municipality_info(name):
                 "date_established": site.date_established.strftime('%Y-%m-%d') if site.date_established else None,
                 "target_trees": totals[0] or 0,
                 "actual_trees": totals[1] or 0,
-                "lat": location.latitude,
-                "lon": location.longitude,
+                "lat": position[0] if position else location.latitude,
+                "lon": position[1] if position else location.longitude,
             })
 
     first = locations[0]
@@ -624,9 +650,24 @@ barangay carrying its site count, which is both accurate and readable.
 @dashboard_bp.route('/api/sites-geo')
 def api_sites_geo():
     """
-    Reforestation sites for the map, one entry per barangay.
+    Reforestation site markers for the map.
 
-    Open to guests, same as the rest of the map.
+    A site with a real position gets its own marker there (see
+    site_position): the centre of its published GPS boundary, or else
+    the requester's pin for a site made from a request.
+
+    Every other site is grouped into one marker at its barangay
+    centroid, as before. The DENR contract profile records no site
+    coordinates, so scattering those across the barangay would invent
+    spatial data we do not have.
+
+    Each marker has a kind: "proposed" for a site made from a request
+    whose boundary is not published yet, otherwise "official". The two
+    kinds are never grouped into one marker. Proposed markers only reach
+    staff, because scope_sites() hides those sites from everyone else.
+
+    Open to guests, same as the rest of the map. The response keeps the
+    "barangays" key the map already reads; each entry is one marker.
     """
     q = (
         db.session.query(Location, Site)
@@ -657,15 +698,41 @@ def api_sites_geo():
     grouped = {}
 
     for loc, site in rows:
-        key = loc.location_id
+        kind = ("proposed"
+                if site.source_request_id and not site.boundary_published
+                else "official")
+        position = site_position(site)
+
+        bbox = None
+        if position is not None:
+            key = ("site", site.site_id)
+            lat, lon, placed_by = position
+            # The boundary this site's tree stands for, so the map can
+            # hide the tree once that boundary is large on screen.
+            if placed_by == "published boundary":
+                bbox = geometry_bbox(site.boundary_geojson)
+            elif site.source_request is not None:
+                bbox = geometry_bbox(site.source_request.boundary_geojson)
+        else:
+            key = ("barangay", loc.location_id, kind)
+            lat, lon, placed_by = loc.latitude, loc.longitude, None
 
         if key not in grouped:
             grouped[key] = {
+                "marker_id": "-".join(str(k) for k in key),
                 "location_id": loc.location_id,
                 "municipality": loc.municipality,
                 "barangay": loc.barangay,
-                "lat": loc.latitude,
-                "lon": loc.longitude,
+                "lat": lat,
+                "lon": lon,
+                "kind": kind,
+                # True: this marker is one site at its own position.
+                # False: sites grouped at the barangay centroid.
+                "exact": position is not None,
+                "placed_by": placed_by,
+                # [south, west, north, east], or None when the tree has
+                # no boundary of its own to give way to
+                "bbox": bbox,
                 "site_count": 0,
                 "total_area_ha": 0.0,
                 "total_target": 0,
@@ -934,6 +1001,83 @@ def requests_page():
             flash("That barangay was not found.", "danger")
             return redirect(url_for('dashboard.requests_page'))
 
+        # --- map: pin and drawn area ---
+        try:
+            pin = parse_pin(request.form.get('latitude'),
+                            request.form.get('longitude'))
+            boundary, boundary_area = parse_boundary(
+                request.form.get('boundary_geojson'))
+        except ValueError as exc:
+            flash(str(exc), "danger")
+            return redirect(url_for('dashboard.requests_page'))
+
+        # An area with no pin still marks the site: its centre stands in.
+        if pin is None and boundary:
+            pin = boundary_centre(boundary)
+
+        if pin is None and request_type in SITE_REQUEST_TYPES:
+            flash(f"Mark the site on the map for a {request_type} request. "
+                  "Click the map once to drop a pin.", "danger")
+            return redirect(url_for('dashboard.requests_page'))
+
+        map_warnings = []
+        if pin is not None:
+            geometry = _load_barangay_geometry(municipality, barangay)
+            # No outline on file means nothing to check against, which is
+            # not the requester's fault, so the pin is accepted as sent.
+            if geometry is not None:
+                if not point_in_geojson(pin[1], pin[0], geometry):
+                    flash(f"The pin is outside {barangay}, {municipality}. "
+                          "Move it inside the outlined barangay, or choose "
+                          "the barangay it is in.", "danger")
+                    return redirect(url_for('dashboard.requests_page'))
+                if boundary:
+                    outside = points_outside(boundary_points(boundary),
+                                             geometry)
+                    if outside:
+                        map_warnings.append(
+                            f"{outside} corner(s) of the drawn area fall "
+                            f"outside the {barangay} outline. Barangay "
+                            "outlines are approximate, so the request was "
+                            "still submitted.")
+
+        # A drawn area is measured, so it replaces a typed estimate.
+        if boundary_area is not None:
+            area = round(boundary_area, 2)
+
+        # --- about the land ---
+        land_ownership = (request.form.get('land_ownership') or '').strip() or None
+        land_cover = (request.form.get('land_cover') or '').strip() or None
+        if land_ownership and land_ownership not in LAND_OWNERSHIP_CHOICES:
+            flash("Choose a land ownership option from the list.", "danger")
+            return redirect(url_for('dashboard.requests_page'))
+        if land_cover and land_cover not in LAND_COVER_CHOICES:
+            flash("Choose a land cover option from the list.", "danger")
+            return redirect(url_for('dashboard.requests_page'))
+
+        # --- seedlings needed ---
+        density = None
+        density_choice = (request.form.get('density_choice') or '').strip()
+        if density_choice == 'custom':
+            try:
+                row_m, plant_m = parse_spacing(
+                    request.form.get('spacing_row_m'),
+                    request.form.get('spacing_plant_m'))
+            except ValueError as exc:
+                flash(str(exc), "danger")
+                return redirect(url_for('dashboard.requests_page'))
+            density = density_from_spacing(row_m, plant_m)
+        elif density_choice:
+            # Presets are recomputed here, so a hand-edited form cannot
+            # submit a density the page never offered.
+            allowed = {d['density'] for d in common_planting_densities()}
+            density = int(density_choice) if density_choice.isdigit() else None
+            if density not in allowed:
+                flash("Choose a planting density from the list.", "danger")
+                return redirect(url_for('dashboard.requests_page'))
+
+        estimated_seedlings = estimate_seedlings(area, density)
+
         new_request = Request(
             user_id=user_id,
             location_id=location.location_id,
@@ -941,6 +1085,14 @@ def requests_page():
             description=description or None,
             proposed_area_ha=area,
             contact_number=contact or None,
+            latitude=pin[0] if pin else None,
+            longitude=pin[1] if pin else None,
+            boundary_geojson=boundary,
+            boundary_area_ha=boundary_area,
+            land_ownership=land_ownership,
+            land_cover=land_cover,
+            planting_density_per_ha=density,
+            estimated_seedlings=estimated_seedlings,
             status='Submitted',
         )
         db.session.add(new_request)
@@ -971,8 +1123,9 @@ def requests_page():
             ))
             saved += 1
 
-        # tell every admin a request came in
-        admins = User.query.filter_by(role='admin').all()
+        # Tell the CENRO that reviews this barangay, and nobody else.
+        # PENRO and superadmin cannot act on a request.
+        admins = reviewing_admins(cenro_for_municipality(municipality))
         for admin in admins:
             db.session.add(Notification(
                 user_id=admin.user_id,
@@ -994,6 +1147,8 @@ def requests_page():
             "You will be notified when it is reviewed.",
             "success",
         )
+        for warning in map_warnings:
+            flash(warning, "warning")
         if saved:
             flash(f"{saved} document(s) attached.", "info")
         if rejected:
@@ -1049,6 +1204,10 @@ def requests_page():
         total_count=base().count(),
         status_filter=status_filter,
         pending_statuses=PENDING_REQUEST_STATUSES,
+        density_presets=common_planting_densities(),
+        land_ownership_choices=LAND_OWNERSHIP_CHOICES,
+        land_cover_choices=LAND_COVER_CHOICES,
+        site_request_types=SITE_REQUEST_TYPES,
     )
 
 
@@ -1095,8 +1254,9 @@ def cancel_request(request_id):
     label = f"{req.request_type} for {where}"
     files = [a.file_url for a in req.attachments]
 
-    # the same admins submit_request notified
-    for admin in User.query.filter_by(role='admin').all():
+    # the same admins submit_request notified: the reviewing CENRO
+    municipality = req.location.municipality if req.location else None
+    for admin in reviewing_admins(cenro_for_municipality(municipality)):
         db.session.add(Notification(
             user_id=admin.user_id,
             notification_type='Request Update',
@@ -1293,6 +1453,9 @@ def api_sites_in_barangay():
  
     out = []
     for site, loc in rows:
+        # This API is open to guests, so the official-only rule applies.
+        if not can_see_site(site):
+            continue
         totals = db.session.query(
             func.sum(ReforestationRecord.target_quantity),
             func.sum(ReforestationRecord.actual_quantity_planted),
@@ -1313,6 +1476,8 @@ def api_sites_in_barangay():
             "actual_planted": int(totals[1] or 0),
             "has_boundary": bool(site.boundary_geojson),
             "boundary_area_ha": site.boundary_area_ha,
+            # The requester's drawn area, only until a boundary is published.
+            "proposed_area": proposed_area_for_site(site),
             "barangay": loc.barangay,
             "municipality": loc.municipality,
         })
@@ -1575,9 +1740,7 @@ def submit_report():
             if not site.boundary_geojson:
                 site.boundary_geojson = b['geojson']
                 site.boundary_area_ha = b['area_ha']
-                site.boundary_captured_at = datetime.now(
-                    ZoneInfo("Asia/Manila")
-                )
+                site.boundary_captured_at = manila_now()
                 boundary_msg = (
                     f"Site boundary captured: {b['area_ha']} ha "
                     f"from {b['points_used']} corners."
@@ -1597,7 +1760,9 @@ def submit_report():
         if site.location else site.site_name
     )
  
-    for admin in User.query.filter_by(role='admin').all():
+    # Only the CENRO that reviews this site. Review Reports scopes on
+    # Site.cenro, so the notice uses the same column.
+    for admin in reviewing_admins(site.cenro):
         db.session.add(Notification(
             user_id=admin.user_id,
             notification_type='Report',
@@ -1653,11 +1818,15 @@ def _load_barangay_geometry(municipality, barangay):
     except Exception:
         return None
  
-    target = (squash(municipality), squash(barangay))
+    # The town goes through normalize_municipality() so the aliases apply
+    # too: barangay.geojson spells Pozorrubio "Pozzorubio", and a plain
+    # squash never matched any of its 34 barangays.
+    target = (normalize_municipality(municipality), squash(barangay))
  
     for feat in data.get('features', []):
         p = feat.get('properties', {})
-        if (squash(p.get('NAME_2')), squash(p.get('NAME_3'))) == target:
+        if (normalize_municipality(p.get('NAME_2')),
+                squash(p.get('NAME_3'))) == target:
             return feat.get('geometry')
  
     return None
@@ -1986,6 +2155,48 @@ def api_published_boundaries():
 
     return jsonify({"count": len(out), "boundaries": out})
 
+@dashboard_bp.route('/api/proposed-boundaries')
+def api_proposed_boundaries():
+    """
+    Temporary boundaries for sites a CENRO created from an approved request.
+
+    Staff only: field officers, CENRO and PENRO admins, superadmins.
+    Guests and normal users get an empty list, because a proposed area
+    was drawn by the requester and has not been surveyed.
+
+    The published boundary always wins. proposed_area_for_site() returns
+    None once the province publishes a GPS boundary for the site, so the
+    site drops out of this list and /api/published-boundaries draws the
+    official one in its place.
+    """
+    if not can_see_unofficial_sites():
+        return jsonify({"count": 0, "boundaries": []})
+
+    q = Site.query.filter(
+        Site.source_request_id.isnot(None),
+        Site.boundary_published.is_(False),
+    )
+
+    out = []
+    for site in scope_sites(q).all():
+        proposed = proposed_area_for_site(site)
+        if proposed is None:
+            continue
+        out.append({
+            "site_id": site.site_id,
+            "site_name": site.site_name,
+            "site_code": site.site_code,
+            "municipality": site.location.municipality if site.location else None,
+            "barangay": site.location.barangay if site.location else None,
+            "request_id": proposed["request_id"],
+            "area_ha": proposed["area_ha"],
+            "geometry": proposed["geometry"],
+            "pin": proposed["pin"],
+        })
+
+    return jsonify({"count": len(out), "boundaries": out})
+
+
 @dashboard_bp.route('/api/site-history/<int:site_id>')
 def api_site_history(site_id):
     """
@@ -1998,7 +2209,9 @@ def api_site_history(site_id):
     official record. Rejected reports are excluded for the same reason.
     """
     site = Site.query.get(site_id)
-    if site is None:
+    # A hidden site answers exactly like a missing one, so its id reveals
+    # nothing to someone who is not allowed to see it.
+    if site is None or not can_see_site(site):
         return jsonify({"found": False, "reason": "Site not found."}), 404
 
     # jurisdiction still applies
@@ -2042,6 +2255,9 @@ def api_site_history(site_id):
             "monitoring_date": r.monitoring_date.strftime('%Y-%m-%d'),
             "date_display": r.monitoring_date.strftime('%d %B %Y'),
             "officer": r.officer.username if r.officer else None,
+            # The monitoring date is the field visit and has no time; these
+            # two record when the report was sent and when it was approved.
+            "submitted_at": format_datetime(r.submitted_at, empty=None),
             "survival_rate": r.survival_rate,
             "meets_threshold": r.survival_rate >= 85,
             "plots_recorded": r.plots_recorded,
@@ -2052,8 +2268,7 @@ def api_site_history(site_id):
             "estimated_survivors": r.estimated_survivors,
             "remarks": r.remarks,
             "reviewed_by": r.reviewer.username if r.reviewer else None,
-            "date_reviewed": (r.date_reviewed.strftime('%d %b %Y')
-                              if r.date_reviewed else None),
+            "date_reviewed": format_datetime(r.date_reviewed, empty=None),
             "captured_area_ha": r.captured_area_ha,
             "photo_count": len(photos),
             "photos": photos,
@@ -2107,6 +2322,12 @@ def public_report_detail(report_id):
     report = MonitoringReport.query.filter_by(
         report_id=report_id, approval_status='Approved'
     ).first_or_404()
+
+    # A site made from a request is not public until its boundary is
+    # published, and its reports follow the site.
+    if report.site and not can_see_site(report.site):
+        flash("That report is not public yet.", "warning")
+        return redirect(url_for('dashboard.gis_map'))
 
     cenro = current_cenro()
     if cenro is not None and report.site and report.site.cenro != cenro:
@@ -2171,7 +2392,7 @@ def my_account():
 
         user.set_password(new_password)
         user.must_change_password = False
-        user.password_changed_at = datetime.now(MANILA)
+        user.password_changed_at = manila_now()
 
         # The before_request hook reads the session, so clearing the
         # column alone would keep the user trapped until they log out.

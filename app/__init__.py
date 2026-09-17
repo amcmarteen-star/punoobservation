@@ -16,6 +16,13 @@ def create_app():
 
     migrate.init_app(app,db)
 
+    # One way of writing dates and times on every page, in Philippine time:
+    #   {{ value|datetime_ph }}  ->  17 Sep 2026, 10:19 PM
+    #   {{ value|date_ph }}      ->  17 Sep 2026
+    from app.utils.timeutil import format_datetime, format_date
+    app.jinja_env.filters['datetime_ph'] = format_datetime
+    app.jinja_env.filters['date_ph'] = format_date
+
     # Register Blueprints
     from app.routes.auth import auth_bp
     from app.routes.dashboard import dashboard_bp

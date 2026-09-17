@@ -465,7 +465,7 @@
             <td>
               {{ r.reviewer.username if r.reviewer else 'unrecorded' }}
               <span class="po-sub">
-                {{ r.date_reviewed.strftime('%Y-%m-%d') if r.date_reviewed else 'date not recorded' }}
+                {{ r.date_reviewed|datetime_ph('date not recorded') }}
               </span>
             </td>
             <td>
@@ -579,7 +579,7 @@
             <td>
               {{ q.reviewer.username if q.reviewer else 'unrecorded' }}
               <span class="po-sub">
-                {{ q.date_reviewed.strftime('%Y-%m-%d') if q.date_reviewed else 'date not recorded' }}
+                {{ q.date_reviewed|datetime_ph('date not recorded') }}
               </span>
             </td>
             <td>

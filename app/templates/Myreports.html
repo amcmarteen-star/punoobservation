@@ -117,7 +117,7 @@
             </div>
             {% endif %}
           </td>
-          <td>{{ r.submitted_at.strftime('%Y-%m-%d') }}</td>
+          <td>{{ r.submitted_at|datetime_ph }}</td>
           <td>
             <a href="{{ url_for('dashboard.my_report_detail', report_id=r.report_id) }}"
                class="um-btn-row">

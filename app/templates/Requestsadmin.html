@@ -313,7 +313,7 @@ active_page = 'review_requests' %} {% block extra_head %}
             {{ r.description or '—' }}
           </td>
           <td>{{ r.contact_number or '—' }}</td>
-          <td>{{ r.date_submitted.strftime('%Y-%m-%d') }}</td>
+          <td>{{ r.date_submitted|datetime_ph }}</td>
           <td>
             <span
               class="status-pill status-{{ r.status|lower|replace(' ', '-') }}"

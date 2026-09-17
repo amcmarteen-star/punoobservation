@@ -5,6 +5,9 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from app.extensions import db
 from datetime import datetime
 from zoneinfo import ZoneInfo
+# Timestamps are stored as naive Manila time; see app/utils/timeutil.py
+# for why an aware datetime must never be saved into these columns.
+from app.utils.timeutil import manila_now
 
 class Location(db.Model):
     __tablename__ = 'location'
@@ -135,6 +138,22 @@ class Site(db.Model):
     # Relationship
     reforestation_records = db.relationship('ReforestationRecord', backref='site', lazy=True)
 
+    # The request this site was created from, when it came through the
+    # request process rather than the DENR import. Unique, so one request
+    # can never produce two sites.
+    #
+    # The requester's drawn area is NOT copied into boundary_geojson. It
+    # stays on the request and is shown as a temporary proposed area until
+    # the province publishes a GPS boundary; see proposed_area_for_site().
+    source_request_id = db.Column(
+        db.Integer, db.ForeignKey('request.request_id'),
+        nullable=True, unique=True,
+    )
+    source_request = db.relationship(
+        'Request', foreign_keys=[source_request_id],
+        backref=db.backref('created_site', uselist=False),
+    )
+
 
 class TreeSpecie(db.Model):
     __tablename__ = 'tree_specie'
@@ -248,7 +267,7 @@ class MonitoringReport(db.Model):
     submitted_at = db.Column(
         db.DateTime,
         nullable=False,
-        default=lambda: datetime.now(ZoneInfo("Asia/Manila"))
+        default=manila_now
     )
 
     # relationships
@@ -306,7 +325,7 @@ class MonitoringPhoto(db.Model):
     upload_time = db.Column(
         db.DateTime,
         nullable=False,
-        default=lambda: datetime.now(ZoneInfo("Asia/Manila"))
+        default=manila_now
     )
 
     # validation results. Recorded, never used to block an upload.
@@ -370,13 +389,30 @@ class Request(db.Model):
     date_submitted = db.Column(
         db.DateTime,
         nullable=False,
-        default=lambda: datetime.now(ZoneInfo("Asia/Manila"))
+        default=manila_now
     )
     date_reviewed = db.Column(db.DateTime, nullable=True)
     reviewed_by = db.Column(
         db.Integer, db.ForeignKey('users.user_id'), nullable=True
     )
     review_note = db.Column(db.Text, nullable=True)
+
+    # --- where, marked on the form map ---
+    # A pin near the centre of the site, and an optional area drawn by
+    # clicking its corners. boundary_geojson is a GeoJSON Polygon string,
+    # longitude first. boundary_area_ha is measured from that polygon.
+    latitude = db.Column(db.Float, nullable=True)
+    longitude = db.Column(db.Float, nullable=True)
+    boundary_geojson = db.Column(db.Text, nullable=True)
+    boundary_area_ha = db.Column(db.Float, nullable=True)
+
+    # --- about the land ---
+    land_ownership = db.Column(db.String(60), nullable=True)
+    land_cover = db.Column(db.String(60), nullable=True)
+
+    # --- seedlings needed (planning estimate) ---
+    planting_density_per_ha = db.Column(db.Integer, nullable=True)
+    estimated_seedlings = db.Column(db.Integer, nullable=True)
 
     location = db.relationship('Location', backref='requests')
 
@@ -409,7 +445,7 @@ class Notification(db.Model):
     created_at = db.Column(
         db.DateTime,
         nullable = False,
-        default = lambda: datetime.now(ZoneInfo("Asia/Manila"))
+        default = manila_now
     )
 
 class AuditLog(db.Model):
@@ -448,7 +484,7 @@ class AuditLog(db.Model):
     created_at = db.Column(
         db.DateTime,
         nullable=False,
-        default=lambda: datetime.now(ZoneInfo("Asia/Manila"))
+        default=manila_now
     )
 
     actor = db.relationship('User', foreign_keys=[user_id])
@@ -476,5 +512,5 @@ class RequestAttachment(db.Model):
     uploaded_at = db.Column(
         db.DateTime,
         nullable=False,
-        default=lambda: datetime.now(ZoneInfo("Asia/Manila"))
+        default=manila_now
     )

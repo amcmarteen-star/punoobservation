@@ -274,7 +274,7 @@ extra_head %}
         <span class="lbl">Approved by</span>
         <span class="val">
           {{ r.reviewer.username if r.reviewer else '—' }} {% if r.date_reviewed
-          %} on {{ r.date_reviewed.strftime('%d %b %Y') }} {% endif %}
+          %} on {{ r.date_reviewed|datetime_ph }} {% endif %}
         </span>
       </div>
       <div class="pub-line">

@@ -6,6 +6,7 @@
 {% block content_class %}page-content-wide{% endblock %}
 
 {% block extra_head %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <style>
   .rq-panel {
     background:var(--surface-1); border:1px solid var(--line); border-radius:10px;
@@ -45,6 +46,14 @@
 
   .rq-empty { text-align:center; padding:2rem 1rem; color:var(--text-3);
               font-size:.85rem; }
+
+  .rq-sub { display:block; font-size:.75rem; font-weight:400; color:var(--text-2); }
+
+  .rq-map { height:360px; border:1px solid var(--line); border-radius:8px;
+            background:var(--surface-2); }
+  .rq-map-legend { display:flex; flex-wrap:wrap; gap:.35rem 1.25rem; margin-top:.6rem;
+                   font-size:.8rem; color:var(--text-body); }
+  .rq-map-legend a { color:var(--brand-text); }
 </style>
 {% endblock %}
 
@@ -87,7 +96,31 @@
     <span class="lbl">Proposed area</span>
     <span class="val">
       {% if req.proposed_area_ha %}{{ req.proposed_area_ha }} ha
+        {% if req.boundary_area_ha %}<span class="rq-sub">measured from the drawn area</span>{% endif %}
       {% else %}not stated{% endif %}
+    </span>
+  </div>
+  <div class="rq-line">
+    <span class="lbl">Land ownership</span>
+    <span class="val">{{ req.land_ownership or 'not stated' }}</span>
+  </div>
+  <div class="rq-line">
+    <span class="lbl">On the land now</span>
+    <span class="val">{{ req.land_cover or 'not stated' }}</span>
+  </div>
+  <div class="rq-line">
+    <span class="lbl">Planting density</span>
+    <span class="val">
+      {% if req.planting_density_per_ha %}{{ "{:,}".format(req.planting_density_per_ha) }} per ha
+      {% else %}not stated{% endif %}
+    </span>
+  </div>
+  <div class="rq-line">
+    <span class="lbl">Estimated seedlings</span>
+    <span class="val">
+      {% if req.estimated_seedlings %}{{ "{:,}".format(req.estimated_seedlings) }}
+        <span class="rq-sub">planning estimate, no allowance for replanting</span>
+      {% else %}not estimated{% endif %}
     </span>
   </div>
   <div class="rq-line">
@@ -111,6 +144,33 @@
   {% endif %}
 </div>
 
+<!-- ===== SITE ON THE MAP ===== -->
+<div class="rq-panel">
+  <h5>Site on the map</h5>
+
+  {% if req.latitude is not none or site_boundary %}
+    <div id="rq-map" class="rq-map" role="img"
+         aria-label="Map of the requested site"></div>
+    <div class="rq-map-legend">
+      {% if req.latitude is not none %}
+        <span>Pin: {{ "%.6f"|format(req.latitude) }}, {{ "%.6f"|format(req.longitude) }}</span>
+        <a href="https://www.google.com/maps?q={{ req.latitude }},{{ req.longitude }}"
+           target="_blank" rel="noopener noreferrer">Open in Google Maps</a>
+      {% endif %}
+      {% if req.boundary_area_ha %}
+        <span>Drawn area (green): {{ "%.2f"|format(req.boundary_area_ha) }} ha</span>
+      {% endif %}
+      {% if barangay_geometry %}
+        <span>Dashed line: {{ req.location.barangay }} outline (approximate)</span>
+      {% endif %}
+    </div>
+  {% else %}
+    <div class="rq-empty">
+      The requester did not mark the site on the map.
+    </div>
+  {% endif %}
+</div>
+
 <!-- ===== DOCUMENTS ===== -->
 <div class="rq-panel">
   <h5>Supporting documents ({{ req.attachments | length }})</h5>
@@ -129,7 +189,7 @@
           <div class="doc-meta">
             {{ a.original_name or 'document' }}<br>
             <span class="text-secondary">
-              {{ a.uploaded_at.strftime('%d %b %Y') }}
+              {{ a.uploaded_at|datetime_ph }}
             </span>
           </div>
         </a>
@@ -182,7 +242,7 @@
       <div class="rq-line">
         <span class="lbl">
           #{{ r.request_id }} &middot; {{ r.request_type }}
-          &middot; {{ r.date_submitted.strftime('%d %b %Y') }}
+          &middot; {{ r.date_submitted|datetime_ph }}
         </span>
         <span class="val">
           <span class="rq-status st-{{ r.status|lower|replace(' ','-') }}">
@@ -194,6 +254,59 @@
   {% endif %}
 </div>
 
+<!-- ===== REFORESTATION SITE ===== -->
+{% if req.request_type in site_request_types %}
+<div class="rq-panel">
+  <h5>Reforestation site</h5>
+
+  {% if created_site %}
+    <div class="rq-line">
+      <span class="lbl">Site</span>
+      <span class="val">
+        {{ created_site.site_name }}
+        {% if created_site.site_code %}<span class="rq-sub">{{ created_site.site_code }}</span>{% endif %}
+      </span>
+    </div>
+    <div class="rq-line">
+      <span class="lbl">Established</span>
+      <span class="val">{{ created_site.date_established.strftime('%d %b %Y') }}</span>
+    </div>
+    <div class="rq-line">
+      <span class="lbl">Boundary</span>
+      <span class="val">
+        {% if created_site.boundary_published %}Published GPS boundary
+        {% elif created_site.boundary_geojson %}GPS boundary captured, not yet published
+        {% else %}No GPS boundary yet{% endif %}
+      </span>
+    </div>
+    <p class="text-secondary small mt-3 mb-0">
+      {% if created_site.boundary_published %}
+        The published GPS boundary has replaced the requester's drawn area.
+      {% else %}
+        Until the province publishes a GPS boundary, the requester's drawn
+        area shows on the site as a proposed area. It never appears on the
+        GIS map.
+      {% endif %}
+    </p>
+    <a href="{{ url_for('dashboard.Reforestation_sites') }}"
+       class="btn btn-outline-success btn-sm mt-3">Open Reforestation Sites</a>
+
+  {% elif req.status == 'Approved' %}
+    <p class="text-secondary small">
+      This request is approved. Create the reforestation site so field
+      officers can start monitoring it.
+    </p>
+    <a href="{{ url_for('admin.create_site_from_request', request_id=req.request_id) }}"
+       class="btn btn-success btn-sm">Create site from this request</a>
+
+  {% else %}
+    <p class="text-secondary small mb-0">
+      Approve the request first. A site can then be created from it.
+    </p>
+  {% endif %}
+</div>
+{% endif %}
+
 <!-- ===== DECISION ===== -->
 <div class="rq-panel">
   <h5>Decision</h5>
@@ -203,7 +316,7 @@
       Currently {{ req.status|lower }}
       {% if req.reviewer %}, set by {{ req.reviewer.username }}{% endif %}
       {% if req.date_reviewed %}
-        on {{ req.date_reviewed.strftime('%d %b %Y') }}
+        on {{ req.date_reviewed|datetime_ph }}
       {% endif %}.
       {% if req.review_note %}<br>Note: {{ req.review_note }}{% endif %}
       <br><br>
@@ -242,5 +355,43 @@
     The requester is notified whenever the status changes.
   </p>
 </div>
+
+{% if req.latitude is not none or site_boundary %}
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+  (function () {
+    const pin = {{ ([req.latitude, req.longitude] if req.latitude is not none else none) | tojson }};
+    const boundary = {{ site_boundary | tojson }};
+    const outline = {{ barangay_geometry | tojson }};
+
+    const map = L.map("rq-map", { scrollWheelZoom: false });
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      maxZoom: 19,
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+    }).addTo(map);
+
+    if (outline) {
+      L.geoJSON(outline, {
+        interactive: false,
+        style: { color: "#64748b", weight: 1.5, dashArray: "6 4", fill: false },
+      }).addTo(map);
+    }
+
+    const site = L.featureGroup().addTo(map);
+    if (boundary) {
+      L.geoJSON(boundary, {
+        style: { color: "#16a34a", weight: 2, fillColor: "#16a34a", fillOpacity: 0.2 },
+      }).addTo(site);
+    }
+    if (pin) L.marker(pin).addTo(site);
+
+    if (boundary) {
+      map.fitBounds(site.getBounds(), { padding: [30, 30], maxZoom: 17 });
+    } else {
+      map.setView(pin, 16);
+    }
+  })();
+</script>
+{% endif %}
 
 {% endblock %}
