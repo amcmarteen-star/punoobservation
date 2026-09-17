@@ -10,6 +10,7 @@ from app.models import (
 from app.utils.audit import log_action
 from sqlalchemy import func
 from collections import defaultdict
+import math
 from datetime import datetime
 from zoneinfo import ZoneInfo
 from app.services.recommender import recommend_for_location, _fmt, SALINITY_LABELS
@@ -1865,8 +1866,8 @@ def api_dashboard_analytics():
                 "total_cost": 0, "cost_sites": 0, "avg_cost_per_ha": None,
             },
             "by_year": [], "by_municipality": [], "by_zone": [],
-            "scatter": [], "unplanted_top": [], "species_rank": [],
-            "correlation": None, "scatter_n": 0,
+            "plant_next": _plant_next([]),
+            "unplanted_top": [], "species_rank": [],
         })
  
     targets = dict(
@@ -2000,7 +2001,7 @@ def api_dashboard_analytics():
             actuals.get(site.site_id) or 0
         )
  
-    scatter = []
+    suitability_points = []
     unplanted = []
  
     for loc in all_locations:
@@ -2014,7 +2015,7 @@ def api_dashboard_analytics():
         key = (loc.municipality, loc.barangay)
         planted = planted_by_brgy.get(key, 0)
  
-        scatter.append({
+        suitability_points.append({
             "municipality": loc.municipality,
             "barangay": loc.barangay,
             "suitability": round(mean_sim, 4),
@@ -2052,12 +2053,8 @@ def api_dashboard_analytics():
         key=lambda x: -x["count"],
     )[:12]
  
-    # --- does suitability predict planting? ---
-    with_sites = [s for s in scatter if s["has_site"] and s["planted"] > 0]
-    correlation = _pearson(
-        [s["suitability"] for s in with_sites],
-        [s["planted"] for s in with_sites],
-    ) if len(with_sites) > 2 else None
+    # --- where should planting go next? ---
+    plant_next = _plant_next(suitability_points)
  
     return jsonify({
         "scope": scope_label(),
@@ -2086,38 +2083,66 @@ def api_dashboard_analytics():
             {"zone": k, "sites": v}
             for k, v in sorted(by_zone.items(), key=lambda x: -x[1])
         ],
-        "scatter": scatter,
+        "plant_next": plant_next,
         "unplanted_top": unplanted[:15],
         "species_rank": species_rank,
-        "correlation": round(correlation, 3) if correlation is not None else None,
-        "scatter_n": len(with_sites),
     })
  
  
-def _pearson(xs, ys):
+# "Highly suitable" is the top quarter of barangays by suitability score.
+PLANT_NEXT_TOP_SHARE = 0.25
+
+
+def _plant_next(points, top_share=PLANT_NEXT_TOP_SHARE):
     """
-    Correlation between two lists, -1 to 1.
- 
-    Used to answer one question: are the most suitable barangays the ones
-    being planted? A value near zero means site suitability is not
-    driving where reforestation happens - which is the argument for a
-    recommendation system.
+    The most suitable barangays that have no reforestation site yet.
+
+    Answers the section's question directly: where should planting go
+    next? It replaced two charts that asked readers to interpret a
+    relationship between suitability and planting (a scatter plot, then
+    suitability groups), which the panel and test users found unclear.
+
+    "Highly suitable" is relative: a barangay whose score is in the top
+    quarter of all barangays compared. Scores sit in a narrow band (about
+    0.87 to 0.99), where a fixed number such as 0.95 would mean little to
+    a reader. Barangays tied at the cut-off score are all included, so
+    equal scores are never split.
+
+    Returns the cut-off score, how many barangays are highly suitable,
+    how many of those have no site, and that count per municipality,
+    largest first.
     """
-    n = len(xs)
-    if n < 3:
-        return None
- 
-    mx = sum(xs) / n
-    my = sum(ys) / n
- 
-    num = sum((x - mx) * (y - my) for x, y in zip(xs, ys))
-    dx = sum((x - mx) ** 2 for x in xs) ** 0.5
-    dy = sum((y - my) ** 2 for y in ys) ** 0.5
- 
-    if dx == 0 or dy == 0:
-        return None
- 
-    return num / (dx * dy)
+    result = {
+        "top_share_pct": round(top_share * 100),
+        "cutoff": None,
+        "highly_suitable": 0,
+        "without_site": 0,
+        "by_municipality": [],
+    }
+    if not points:
+        return result
+
+    ordered = sorted(points, key=lambda p: -p["suitability"])
+    top_n = max(1, math.ceil(len(ordered) * top_share))
+    cutoff = ordered[top_n - 1]["suitability"]
+
+    top = [p for p in ordered if p["suitability"] >= cutoff]
+    open_sites = [p for p in top if not p["has_site"]]
+
+    counts = defaultdict(int)
+    for p in open_sites:
+        counts[p["municipality"]] += 1
+
+    result.update({
+        "cutoff": cutoff,
+        "highly_suitable": len(top),
+        "without_site": len(open_sites),
+        "by_municipality": sorted(
+            ({"municipality": m, "barangays": c} for m, c in counts.items()),
+            key=lambda r: (-r["barangays"], r["municipality"]),
+        ),
+    })
+    return result
  
 @dashboard_bp.route('/api/published-boundaries')
 def api_published_boundaries():

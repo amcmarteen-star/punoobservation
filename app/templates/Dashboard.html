@@ -73,6 +73,7 @@
       <canvas id="chartArea" role="img"
               aria-label="Horizontal bar chart of contracted area by municipality."></canvas>
     </div>
+    <ul class="chart-key" id="areaKey"></ul>
   </div>
 
   <!-- ================= SECTION 2 ================= -->
@@ -129,6 +130,7 @@
       </p>
       <div class="chart-box"><canvas id="chartCost" role="img"
                 aria-label="Bar chart of three-year project cost per hectare by municipality."></canvas></div>
+      <ul class="chart-key" id="costKey"></ul>
     </div>
   </div>
 
@@ -142,16 +144,96 @@
     </p>
   </div>
 
+  <style>
+    /* Where to plant next: one headline number above the bars. */
+    .plant-next-hero {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      gap: 0.75rem;
+      margin: 0.25rem 0;
+    }
+
+    .plant-next-count {
+      font-size: 2.6rem;
+      font-weight: 800;
+      line-height: 1;
+      font-variant-numeric: tabular-nums;
+      color: var(--brand-text);
+    }
+
+    .plant-next-text {
+      display: flex;
+      flex-direction: column;
+      font-size: 0.95rem;
+      color: var(--text-body);
+    }
+
+    .plant-next-text strong {
+      font-weight: 600;
+      color: var(--text-heading);
+    }
+
+    .plant-next-text span {
+      font-size: 0.8rem;
+      color: var(--text-2);
+    }
+
+    .plant-next-note {
+      margin: 0.35rem 0 1rem;
+      font-size: 0.78rem;
+      color: var(--text-2);
+    }
+
+    .plant-next-table {
+      margin-top: 0.75rem;
+      font-size: 0.85rem;
+    }
+
+    .plant-next-table summary {
+      cursor: pointer;
+      font-weight: 600;
+      color: var(--brand-text);
+    }
+  </style>
+
   <div class="chart-card">
-    <h5>Suitability against planting activity</h5>
+    <h5>Where to plant next</h5>
     <p class="takeaway">
-      Each point is a barangay. Horizontal axis is its mean suitability score
-      across the top five recommended species. Vertical axis is how many
-      seedlings have been planted there.
+      Highly suitable barangays that have no reforestation site yet, by
+      municipality.
     </p>
-    <div class="chart-box tall"><canvas id="chartScatter" role="img"
-                aria-label="Scatter plot of barangay suitability score against seedlings planted."></canvas></div>
-    <div class="finding" id="scatterFinding"></div>
+
+    <div class="plant-next-hero">
+      <span class="plant-next-count" id="plantNextCount">0</span>
+      <span class="plant-next-text">
+        <strong>highly suitable barangays have no reforestation site yet</strong>
+        <span id="plantNextOf"></span>
+      </span>
+    </div>
+    <p class="plant-next-note" id="plantNextCutoff"></p>
+
+    <div class="chart-box" id="plantNextBox"><canvas id="chartPlantNext" role="img"
+                aria-label="Bar chart of highly suitable barangays with no reforestation site, by municipality."></canvas></div>
+    <ul class="chart-key" id="plantNextKey"></ul>
+
+    {# The same counts as a table, for anyone who cannot use the chart. #}
+    <details class="plant-next-table">
+      <summary>Show as a table</summary>
+      <div class="um-table-card mt-2">
+        <table class="um-table">
+          <thead>
+            <tr>
+              <th>Municipality</th>
+              <th class="text-end">Highly suitable, no site</th>
+            </tr>
+          </thead>
+          <tbody id="plantNextBody"></tbody>
+        </table>
+      </div>
+    </details>
+
+    <div class="finding" id="plantNextFinding"></div>
   </div>
 
   <div class="chart-row">
@@ -163,6 +245,7 @@
       </p>
       <div class="chart-box"><canvas id="chartSpecies" role="img"
                 aria-label="Horizontal bar chart of how often each species appears in a barangay's top five."></canvas></div>
+      <ul class="chart-key" id="speciesKey"></ul>
     </div>
 
     <div class="chart-card">
@@ -200,6 +283,7 @@
   // The series pair is validated for colour-vision deficiency: deutan dE
   // 31.7, tritan 14.4, normal 37.8 -- all clear of the floor.
   let GREEN, INDIGO, OK, AMBER, RED, ABSENT, INK, GRID;
+  let GREEN_MUTED, INDIGO_MUTED;
 
   function isDarkTheme() {
     return document.documentElement.getAttribute("data-theme") === "dark";
@@ -229,6 +313,15 @@
     AMBER = "#b45309";
     RED = "#dc2626";
 
+    /* Muted partners for the highlight charts: the same hue as a 40% tint
+       over the card. Unlike the series colours these must follow the theme,
+       because a tint is only a tint relative to the surface under it.
+       Checked against each surface: the tint sits 0.17-0.29 below or above
+       the full colour in OKLab lightness, so the pair stays apart for
+       colour-blind readers. */
+    GREEN_MUTED = dark ? "#16542e" : "#a2dab7";
+    INDIGO_MUTED = dark ? "#2d2f6c" : "#b9b5f5";
+
     Chart.defaults.color = INK;
     Chart.defaults.borderColor = GRID;
     Chart.defaults.plugins.tooltip.backgroundColor = dark
@@ -237,6 +330,29 @@
   }
 
   const fmt = (n) => (n || 0).toLocaleString();
+
+  /* --- highlight: emphasis, not identity ----------------------------------
+     A bar chart already names every bar on its axis, so a colour per bar
+     adds nothing and runs out of distinct colours past eight. Instead each
+     chart keeps one hue: the bars its text talks about keep the full colour,
+     the rest take the pale tint of the same hue. A thin full-colour edge
+     keeps a tinted bar visible against the card. The key under the chart
+     says what the highlight means, so meaning never rests on colour alone. */
+  function emphasis(flags, full, muted) {
+    return {
+      backgroundColor: flags.map((on) => (on ? full : muted)),
+      borderColor: full,
+      borderWidth: flags.map((on) => (on ? 0 : 1)),
+    };
+  }
+
+  function renderKey(id, full, muted, onLabel, offLabel) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.innerHTML = `
+      <li><span class="dot" style="background:${full}"></span>${onLabel}</li>
+      <li><span class="dot" style="background:${muted}; box-shadow: inset 0 0 0 1px ${full}"></span>${offLabel}</li>`;
+  }
 
   Chart.defaults.font.family =
     "'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif";
@@ -349,7 +465,7 @@
     buildAchievement(d.by_municipality);
     buildSurvival(d.by_municipality);
     buildCost(d.by_municipality);
-    buildScatter(d);
+    buildPlantNext(d);
     buildSpecies(d.species_rank);
     buildUnplanted(d.unplanted_top);
   }
@@ -510,6 +626,10 @@
     document.getElementById("areaTakeaway").textContent =
       `The three largest municipalities account for ${share}% of all contracted area.`;
 
+    // highlight the three the takeaway sentence is about
+    renderKey("areaKey", GREEN, GREEN_MUTED,
+      `Three largest (${share}% of all contracted area)`, "Other municipalities");
+
     mkChart(document.getElementById("chartArea"), {
       type: "bar",
       data: {
@@ -518,16 +638,24 @@
           {
             label: "Hectares",
             data: top.map((r) => r.area),
-            backgroundColor: GREEN,
+            ...emphasis(top.map((r, i) => i < 3), GREEN, GREEN_MUTED),
             borderRadius: 4,
             borderSkipped: "start",
+            // a very small area (1 ha against 1,500) still shows as a sliver;
+            // the exact figure is in the tooltip
+            minBarLength: 3,
           },
         ],
       },
       options: {
         indexAxis: "y",
         maintainAspectRatio: false,
-        plugins: { legend: { display: false } },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: { label: (c) => `${fmt(c.parsed.x)} ha under contract` },
+          },
+        },
         scales: { x: { beginAtZero: true } },
       },
     });
@@ -637,15 +765,48 @@
       .filter((r) => r.cost_per_ha)
       .sort((a, b) => b.cost_per_ha - a.cost_per_ha);
 
+    // Average of the municipalities shown, so the line and the bars use
+    // the same figures. Above it is highlighted.
+    const average = d.length
+      ? d.reduce((a, r) => a + r.cost_per_ha, 0) / d.length
+      : 0;
+    const averageLabel = "₱" + fmt(Math.round(average)) + " per ha";
+
+    renderKey("costKey", INDIGO, INDIGO_MUTED,
+      "Above the average", `At or below the average (${averageLabel})`);
+
+    const averageLine = {
+      id: "averageLine",
+      afterDraw(chart) {
+        if (!d.length) return;
+        const { ctx, chartArea, scales } = chart;
+        const y = scales.y.getPixelForValue(average);
+        ctx.save();
+        ctx.strokeStyle = INK;
+        ctx.setLineDash([5, 4]);
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(chartArea.left, y);
+        ctx.lineTo(chartArea.right, y);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.fillStyle = INK;
+        ctx.font = "600 10px sans-serif";
+        ctx.fillText("Average " + averageLabel, chartArea.left + 6, y - 5);
+        ctx.restore();
+      },
+    };
+
     mkChart(document.getElementById("chartCost"), {
       type: "bar",
+      plugins: [averageLine],
       data: {
         labels: d.map((r) => r.municipality),
         datasets: [
           {
             label: "Cost per ha",
             data: d.map((r) => r.cost_per_ha),
-            backgroundColor: INDIGO,
+            ...emphasis(d.map((r) => r.cost_per_ha > average), INDIGO, INDIGO_MUTED),
             borderRadius: 4,
             borderSkipped: "bottom",
           },
@@ -672,79 +833,94 @@
     });
   }
 
-  // ---------------- scatter ----------------
-  function buildScatter(d) {
-    const planted = d.scatter.filter((s) => s.has_site && s.planted > 0);
-    const empty = d.scatter.filter((s) => !s.has_site);
+  // ---------------- where to plant next ----------------
+  /* Answers the section's question directly: how many of the most suitable
+     barangays have no site yet, and in which municipalities. It replaced
+     two charts that asked readers to interpret a relationship between
+     suitability and planting (see _plant_next in dashboard.py). */
+  function buildPlantNext(d) {
+    const p = d.plant_next || {};
+    const rows = p.by_municipality || [];
 
-    const r = d.correlation;
-    let verdict;
-    if (r === null) {
-      verdict = "Too few planted barangays to assess a relationship.";
-    } else if (Math.abs(r) < 0.2) {
-      verdict = `Correlation is ${r}, effectively none. Site suitability
-                 does not explain where planting has taken place.`;
-    } else if (Math.abs(r) < 0.5) {
-      verdict = `Correlation is ${r}, weak.`;
-    } else {
-      verdict = `Correlation is ${r}, moderate to strong.`;
+    document.getElementById("plantNextCount").textContent = fmt(p.without_site);
+    document.getElementById("plantNextOf").textContent =
+      `out of ${fmt(p.highly_suitable)} highly suitable barangays`;
+    document.getElementById("plantNextCutoff").textContent =
+      p.cutoff === null || p.cutoff === undefined
+        ? ""
+        : `Highly suitable means a suitability score in the top ` +
+          `${p.top_share_pct}% of all barangays (${p.cutoff.toFixed(3)} or higher).`;
+
+    document.getElementById("plantNextFinding").innerHTML = rows.length
+      ? `<strong>Finding.</strong> ${rows[0].municipality} has the most
+         highly suitable barangays with no site (${fmt(rows[0].barangays)}).
+         The table below lists the most suitable barangays with no site,
+         and the species that suit each one best.`
+      : `<strong>Finding.</strong> Every highly suitable barangay already
+         has a reforestation site.`;
+
+    document.getElementById("plantNextBody").innerHTML = rows
+      .map(
+        (r) => `
+      <tr>
+        <td>${r.municipality}</td>
+        <td class="num-cell">${fmt(r.barangays)}</td>
+      </tr>`,
+      )
+      .join("");
+
+    // One bar per municipality, so the box grows with the list and no
+    // bar is squeezed. Hidden when there is nothing to draw.
+    const box = document.getElementById("plantNextBox");
+    box.style.display = rows.length ? "" : "none";
+    box.style.height = Math.max(160, rows.length * 28 + 50) + "px";
+
+    // Highlight the municipality the Finding names, and any tied with it.
+    const most = rows.length ? rows[0].barangays : 0;
+    const leaders = rows.filter((r) => r.barangays === most);
+    const keyEl = document.getElementById("plantNextKey");
+    if (rows.length) {
+      renderKey("plantNextKey", GREEN, GREEN_MUTED,
+        leaders.length === 1 ? `Most (${leaders[0].municipality})` : "Tied for most",
+        "Other municipalities");
+    } else if (keyEl) {
+      keyEl.innerHTML = "";
     }
 
-    document.getElementById("scatterFinding").innerHTML =
-      `<strong>Finding.</strong> ${verdict}
-       ${empty.length} barangays have no recorded planting at all.
-       Those in the upper suitability range with no planting are the
-       clearest opportunities, and are listed below.
-       <br><br>
-       <em>n = ${d.scatter_n} planted barangays.</em>`;
-
-    mkChart(document.getElementById("chartScatter"), {
-      type: "scatter",
+    mkChart(document.getElementById("chartPlantNext"), {
+      type: "bar",
       data: {
+        labels: rows.map((r) => r.municipality),
         datasets: [
           {
-            label: "Has planting record",
-            data: planted.map((s) => ({
-              x: s.suitability,
-              y: s.planted,
-              b: s.barangay,
-              m: s.municipality,
-            })),
-            backgroundColor: GREEN,
-            pointRadius: 5,
-            pointHoverRadius: 7,
-          },
-          {
-            label: "No planting record",
-            data: empty.map((s) => ({
-              x: s.suitability,
-              y: 0,
-              b: s.barangay,
-              m: s.municipality,
-            })),
-            backgroundColor: ABSENT,
-            pointRadius: 4,
+            label: "Highly suitable barangays with no site",
+            data: rows.map((r) => r.barangays),
+            ...emphasis(rows.map((r) => r.barangays === most), GREEN, GREEN_MUTED),
+            minBarLength: 3,
+            borderRadius: 4,
+            borderSkipped: "start",
+            maxBarThickness: 22,
           },
         ],
       },
       options: {
+        indexAxis: "y",
         maintainAspectRatio: false,
         plugins: {
+          legend: { display: false },
           tooltip: {
             callbacks: {
               label: (c) =>
-                `${c.raw.b}, ${c.raw.m}  \u2014  ` +
-                `suitability ${c.raw.x}, ${fmt(c.raw.y)} planted`,
+                `${fmt(c.parsed.x)} highly suitable barangay` +
+                `${c.parsed.x === 1 ? "" : "s"} with no site`,
             },
           },
         },
         scales: {
           x: {
-            title: { display: true, text: "Mean suitability (top 5 species)" },
-          },
-          y: {
             beginAtZero: true,
-            title: { display: true, text: "Seedlings planted" },
+            ticks: { precision: 0 },
+            title: { display: true, text: "Highly suitable barangays with no site" },
           },
         },
       },
@@ -753,6 +929,9 @@
 
   // ---------------- species ----------------
   function buildSpecies(rows) {
+    renderKey("speciesKey", GREEN, GREEN_MUTED,
+      "Five most often recommended", "Other species");
+
     mkChart(document.getElementById("chartSpecies"), {
       type: "bar",
       data: {
@@ -761,7 +940,7 @@
           {
             label: "Barangays in top 5",
             data: rows.map((r) => r.count),
-            backgroundColor: GREEN,
+            ...emphasis(rows.map((r, i) => i < 5), GREEN, GREEN_MUTED),
             borderRadius: 4,
             borderSkipped: "start",
           },
@@ -770,7 +949,14 @@
       options: {
         indexAxis: "y",
         maintainAspectRatio: false,
-        plugins: { legend: { display: false } },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: (c) => `In the top five of ${fmt(c.parsed.x)} barangays`,
+            },
+          },
+        },
         scales: { x: { beginAtZero: true } },
       },
     });
