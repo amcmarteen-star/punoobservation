@@ -75,6 +75,15 @@
     --sh-lg: 0 4px 8px rgba(19, 44, 30, 0.05), 0 20px 48px rgba(19, 44, 30, 0.11);
 
     --ease: cubic-bezier(0.16, 1, 0.3, 1);
+
+    /* Hover growth -- photographs and cards that take space under the
+       pointer. --ease is an expo-out curve: it covers most of its distance
+       in the first few frames, which reads as a snap however long the
+       duration is. This one eases in as well as out, so a picture grows
+       rather than jumps. Buttons and links keep their own quick timing:
+       a control should answer immediately. */
+    --grow: 900ms;
+    --grow-ease: cubic-bezier(0.37, 0, 0.25, 1);
     --shell: 78rem;
 }
 
@@ -182,8 +191,8 @@
     font-weight: 600;
     letter-spacing: -0.01em;
     cursor: pointer;
-    transition: transform 0.18s var(--ease), background-color 0.18s var(--ease),
-                border-color 0.18s var(--ease), box-shadow 0.18s var(--ease);
+    transition: transform var(--grow) var(--grow-ease), background-color var(--grow) var(--grow-ease),
+                border-color var(--grow) var(--grow-ease), box-shadow var(--grow) var(--grow-ease);
 }
 .landing-btn:active { transform: translateY(1px); }
 .landing-btn svg { width: 16px; height: 16px; }
@@ -214,7 +223,7 @@
     font-weight: 600;
     color: var(--accent);
 }
-.landing-link svg { width: 17px; height: 17px; transition: transform 0.2s var(--ease); }
+.landing-link svg { width: 17px; height: 17px; transition: transform var(--grow) var(--grow-ease); }
 .landing-link:hover svg { transform: translateX(3px); }
 
 /* ---------- Nav ---------- */
@@ -223,6 +232,22 @@
     top: 0;
     z-index: 60;
     padding: var(--sp-2) clamp(1.25rem, 4vw, 4rem) 0;
+    /* Slides out of the way going down the page and back on the way up;
+       the script decides which, this only draws it. transform rather than
+       top, so the move never touches layout. */
+    transition: transform var(--grow) var(--grow-ease);
+    will-change: transform;
+}
+
+/* Far enough to clear the bar and its padding whatever the viewport. */
+.landing-nav-wrap.is-hidden {
+    transform: translateY(-140%);
+}
+
+/* Someone who has asked for less motion still wants the bar out of the
+   way -- it just arrives without the slide. */
+@media (prefers-reduced-motion: reduce) {
+    .landing-nav-wrap { transition: none; }
 }
 
 .landing-nav {
@@ -244,7 +269,7 @@
     border: 1px solid var(--line);
     backdrop-filter: blur(16px) saturate(1.4);
     -webkit-backdrop-filter: blur(16px) saturate(1.4);
-    transition: background-color 0.3s var(--ease), box-shadow 0.3s var(--ease);
+    transition: background-color var(--grow) var(--grow-ease), box-shadow var(--grow) var(--grow-ease);
 }
 
 .landing-nav-wrap.is-stuck .landing-nav {
@@ -274,7 +299,7 @@
     font-weight: 500;
     color: var(--frame);
 }
-.landing-nav-links a { transition: color 0.18s var(--ease); }
+.landing-nav-links a { transition: color var(--grow) var(--grow-ease); }
 .landing-nav-links a:hover { color: var(--ink); }
 
 .landing-nav-actions { display: flex; align-items: center; gap: 0.5rem; }
@@ -296,16 +321,87 @@
 .landing-hero-media { position: absolute; inset: 0; z-index: -2; }
 .landing-hero-media img { width: 100%; height: 100%; object-fit: cover; }
 
-/* The photograph drifts slowly so the hero is never quite still. */
+/* The photograph drifts slowly so the hero is never quite still.
+
+   ease-in-out rather than --ease. --ease is an expo-out curve, which on a
+   34s push reaches nearly full scale in the first few seconds and then
+   crawls -- so the zoom looked like it happened once and stopped. A
+   symmetric curve spends the whole duration travelling, and `alternate`
+   then reads as a real zoom back out before it begins again. */
 @media (prefers-reduced-motion: no-preference) {
     .landing-hero-media img {
         transform-origin: 58% 45%;
-        animation: landing-drift 34s var(--ease) infinite alternate;
+        animation: landing-drift 34s ease-in-out infinite alternate;
     }
 }
 @keyframes landing-drift {
     from { transform: scale(1.04); }
     to   { transform: scale(1.16); }
+}
+
+/* --- Leaves on the wind ------------------------------------------------
+   A real leaf silhouette with its midrib, drawn as one small inline SVG:
+   no image to fetch, and crisp at any size.
+
+   The flight is the plain one -- carried across, swaying twice, turning
+   slowly as it goes. An earlier version tumbled the leaf end over end and
+   flipped it edge-on; it was busier without looking any more like wind.
+
+   The layer sits above the photograph and its scrim but below the copy,
+   and takes no pointer events, so nothing here can catch a click meant
+   for the buttons. */
+.landing-leaves {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    overflow: hidden;
+    pointer-events: none;
+}
+
+.leaf {
+    position: absolute;
+    top: var(--y, 40vh);
+    left: 0;
+    width: var(--size, 13px);
+    height: var(--size, 13px);
+    opacity: 0;
+    background-repeat: no-repeat;
+    background-size: contain;
+    /* Opaque fill. The first version stacked a translucent fill inside an
+       already fading element, and the two multiplied into something barely
+       there; the fade in and out belongs to the animation alone. */
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M2.5 21.5C1 12 7 3.5 21 1.5c1.5 10-5.5 19-18.5 20z' fill='%23a8d98f'/%3E%3Cpath d='M21 1.5C15 7 8 13 3 20.5' stroke='%236f9c6a' stroke-width='1.2' fill='none'/%3E%3C/svg%3E");
+    filter: drop-shadow(0 1px 2px rgba(4, 14, 9, 0.35));
+}
+
+@media (prefers-reduced-motion: no-preference) {
+    .leaf {
+        animation: leaf-blow var(--dur, 32s) linear infinite;
+        animation-delay: var(--delay, 0s);
+    }
+}
+
+/* Travel, sway and turn are one transform rather than three nested
+   animations, so each leaf stays on a single compositor layer. The
+   vertical movement is small on purpose: this is wind carrying a leaf
+   sideways, not a leaf falling. */
+@keyframes leaf-blow {
+    0% {
+        opacity: 0;
+        transform: translate3d(-8vw, 0, 0) rotate(0deg);
+    }
+    10%  { opacity: 0.95; }
+    25%  { transform: translate3d(22vw, var(--sway, 2rem), 0)
+                      rotate(calc(var(--spin, 200deg) * 0.25)); }
+    50%  { transform: translate3d(50vw, 0, 0)
+                      rotate(calc(var(--spin, 200deg) * 0.5)); }
+    75%  { transform: translate3d(78vw, var(--sway, 2rem), 0)
+                      rotate(calc(var(--spin, 200deg) * 0.75)); }
+    90%  { opacity: 0.8; }
+    100% {
+        opacity: 0;
+        transform: translate3d(108vw, 0, 0) rotate(var(--spin, 200deg));
+    }
 }
 
 /* Two scrims: one across so the copy column stays readable, one down so the
@@ -320,133 +416,25 @@
     inset: 0;
     z-index: -1;
     background:
-        linear-gradient(100deg, rgba(6, 20, 13, 0.9) 4%, rgba(6, 20, 13, 0.74) 36%, rgba(6, 20, 13, 0.4) 72%, rgba(6, 20, 13, 0.52) 100%),
+        linear-gradient(100deg, rgba(6, 20, 13, 0.6) 0%, rgba(6, 20, 13, 0.76) 50%, rgba(6, 20, 13, 0.6) 100%),
         linear-gradient(to bottom, rgba(6, 20, 13, 0.5) 0%, rgba(6, 20, 13, 0.12) 26%, rgba(6, 20, 13, 0.12) 60%, rgba(6, 20, 13, 0.62) 100%);
 }
 
-/* Copy on the left, the province on the right. */
+/* One centred column. The hero was copy on the left with the district map,
+   and later a wall of photographs, on the right; with the right-hand half
+   gone the text is the whole composition and belongs in the middle of it. */
 .landing-hero-inner {
     width: 100%;
     padding-inline: clamp(1.25rem, 4vw, 4rem);
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 0.58fr);
-    align-items: center;
-    gap: clamp(var(--sp-4), 5vw, var(--sp-10));
-}
-.landing-hero-copy { max-width: 46rem; }
-
-/* ---------- Hero map ----------
-   Pangasinan in outline, with the two surveyed districts filled. Both the
-   province and the districts come from the geojson the GIS map uses, so
-   the shapes stay registered against each other. */
-.landing-hero-map { margin: 0; }
-.landing-hero-map svg {
-    width: 100%;
-    height: auto;
-    overflow: visible;
-    filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.75)) drop-shadow(0 10px 34px rgba(0, 0, 0, 0.5));
-}
-.landing-hero-map path {
-    stroke-linejoin: round;
-    vector-effect: non-scaling-stroke;
-}
-.map-province {
-    fill: rgba(10, 24, 16, 0.28);
-    stroke: rgba(238, 244, 236, 0.7);
-    stroke-width: 1.5;
-}
-.map-d5 {
-    fill: rgba(79, 157, 104, 0.88);
-    stroke: rgba(169, 211, 174, 0.9);
-    stroke-width: 1.2;
-}
-.map-d6 {
-    fill: rgba(79, 157, 104, 0.38);
-    stroke: rgba(169, 211, 174, 0.65);
-    stroke-width: 1.2;
-}
-
-/* Sits to the right, under the filled districts it labels, rather than out
-   under the empty western half of the province. */
-.landing-hero-map figcaption {
     display: flex;
-    flex-wrap: wrap;
-    justify-content: flex-end;
-    gap: var(--sp-2);
-    margin-top: var(--sp-3);
-    font-family: "JetBrains Mono", monospace;
-    font-size: 0.625rem;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    color: #cbd8ce;
+    justify-content: center;
+    text-align: center;
 }
-.map-key { display: inline-flex; align-items: center; gap: 0.5rem; }
-.map-key::before {
-    content: "";
-    width: 12px;
-    height: 12px;
-    border-radius: 3px;
-}
-.map-key-5::before { background: rgba(79, 157, 104, 0.88); }
-.map-key-6::before { background: rgba(79, 157, 104, 0.38); box-shadow: inset 0 0 0 1px rgba(169, 211, 174, 0.65); }
-
-/* ---------- Municipality hover ----------
-   Each municipality is now its own path so it can be pointed at. Fill and
-   stroke still come from .map-d5 / .map-d6 above, so the districts look
-   exactly as they did when each was one merged shape - only now the strokes
-   fall between the towns as well, which is what makes them legible. */
-.map-muni {
-    cursor: pointer;
-    transition: fill 0.18s var(--ease), filter 0.18s var(--ease);
+.landing-hero-copy {
+    max-width: 52rem;
+    margin-inline: auto;
 }
 
-.map-muni:hover,
-.map-muni:focus-visible {
-    fill: #7dbd8e;
-    filter: drop-shadow(0 0 6px rgba(79, 157, 104, 0.7));
-    outline: none;
-}
-
-/* The figure is the positioning context; the tip is placed against it in px
-   by the handler, so it can follow the shape the pointer is actually over. */
-.landing-hero-map { position: relative; }
-
-.map-tip {
-    position: absolute;
-    z-index: 3;
-    min-width: 9.5rem;
-    padding: 0.6rem 0.75rem;
-    border: 1px solid rgba(169, 211, 174, 0.32);
-    border-radius: 10px;
-    background: rgba(6, 20, 13, 0.94);
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
-    /* Pointer events off so moving onto the tip never counts as leaving the
-       shape underneath, which would flicker it open and shut. */
-    pointer-events: none;
-    transform: translate(-50%, -100%);
-}
-
-/* Flipped under the shape when it sits too near the top of the figure. */
-.map-tip.is-below {
-    transform: translate(-50%, 0);
-}
-
-.map-tip p { margin: 0; }
-
-.map-tip-name {
-    font-size: 0.8rem;
-    font-weight: 600;
-    color: var(--bone);
-}
-
-.map-tip-stats {
-    margin-top: 0.15rem;
-    font-family: "JetBrains Mono", monospace;
-    font-size: 0.625rem;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: var(--leaf-soft);
-}
 .landing-hero h1 {
     margin-bottom: var(--sp-4);
     font-size: clamp(2.5rem, 1.1rem + 4.6vw, 4.75rem);
@@ -457,11 +445,13 @@
     font-variation-settings: "wdth" 100;
 }
 .landing-hero h1 .accent { color: var(--leaf-soft); }
-.landing-hero .landing-lead { max-width: 36rem; color: #d7e0d9; }
+
+.landing-hero .landing-lead { max-width: 44rem; margin-inline: auto; color: #d7e0d9; }
 
 .landing-hero-buttons {
     display: flex;
     flex-wrap: wrap;
+    justify-content: center;
     gap: 0.75rem;
     margin-top: var(--sp-4);
 }
@@ -526,8 +516,8 @@
     opacity: 0;
     pointer-events: none;
     transform: translate(calc(-50% + 130%), -50%) scale(0.62);
-    transition: transform 0.85s var(--ease), opacity 0.85s var(--ease),
-                box-shadow 0.85s var(--ease);
+    transition: transform var(--grow) var(--grow-ease), opacity var(--grow) var(--grow-ease),
+                box-shadow var(--grow) var(--grow-ease);
 }
 
 .landing-plate.is-center {
@@ -549,6 +539,13 @@
     pointer-events: auto;
     transform: translate(calc(-50% + 80%), -50%) scale(0.78);
 }
+.landing-plate.is-center:hover {
+    transform: translate(-50%, -50%) scale(1.045);
+}
+
+/* The side pictures come up to full strength under the pointer -- they are
+   clickable, so they have to answer -- but they do not grow. Only the
+   middle one is the subject. */
 .landing-plate.is-left:hover,
 .landing-plate.is-right:hover { opacity: 1; }
 
@@ -573,7 +570,7 @@
     /* The drift below only runs on the middle card. The transition is
        what carries the zoom back down when a card leaves the middle,
        instead of letting it snap. */
-    transition: transform 0.85s var(--ease);
+    transition: transform var(--grow) var(--grow-ease);
 }
 /* The volunteers shot has its subject low in the frame, so it is nudged
    up rather than cropped through the middle. */
@@ -721,7 +718,7 @@
     width: 100%;
     height: 100%;
     object-fit: cover;
-    transition: transform 0.7s var(--ease);
+    transition: transform var(--grow) var(--grow-ease);
 }
 .landing-slide::after {
     content: "";
@@ -729,7 +726,7 @@
     inset: 0;
     z-index: -1;
     background: linear-gradient(to top, rgba(6, 20, 13, 0.95) 6%, rgba(6, 20, 13, 0.5) 44%, rgba(6, 20, 13, 0.04) 100%);
-    transition: opacity 0.45s var(--ease);
+    transition: opacity var(--grow) var(--grow-ease);
 }
 
 /* A sheen sweeps across the photograph on hover, the same gesture the
@@ -787,8 +784,8 @@
     font-size: var(--fs-sm);
     color: #d3ddd5;
     max-width: 36ch;
-    transition: max-height 0.45s var(--ease), opacity 0.3s var(--ease),
-                transform 0.4s var(--ease), margin-top 0.45s var(--ease);
+    transition: max-height var(--grow) var(--grow-ease), opacity var(--grow) var(--grow-ease),
+                transform var(--grow) var(--grow-ease), margin-top var(--grow) var(--grow-ease);
 }
 .landing-slide:hover .landing-slide-body p,
 .landing-slide:focus-within .landing-slide-body p {
@@ -829,8 +826,9 @@
     color: var(--ink);
     white-space: nowrap;
     user-select: none;
-    transition: border-color 0.25s var(--ease), box-shadow 0.25s var(--ease),
-                transform 0.25s var(--ease);
+    transition: border-color var(--grow) var(--grow-ease),
+                box-shadow var(--grow) var(--grow-ease),
+                transform var(--grow) var(--grow-ease);
 }
 .landing-mini:hover {
     border-color: #c3cfba;
@@ -907,7 +905,7 @@
    around the mockup, so a plain box would give the shape away. */
 .landing-shot { position: relative; isolation: isolate; }
 .landing-shot img {
-    transition: transform 0.55s var(--ease);
+    transition: transform var(--grow) var(--grow-ease);
 }
 .landing-glint {
     position: absolute;
@@ -1076,7 +1074,7 @@
 .landing-footer ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.75rem; }
 .landing-footer li a {
     color: rgba(242, 248, 240, 0.84);
-    transition: color 0.18s var(--ease);
+    transition: color var(--grow) var(--grow-ease);
 }
 .landing-footer li a:hover { color: var(--on-lime); text-decoration: underline; }
 
@@ -1110,9 +1108,17 @@
             calc(var(--reveal-y, 26px) * var(--reveal-sign, 1)),
             0
         ) scale(0.985);
-        transition: opacity 0.75s var(--ease), transform 0.75s var(--ease);
+        transition: opacity var(--grow) var(--grow-ease), transform var(--grow) var(--grow-ease);
         transition-delay: var(--reveal-delay, 0ms);
     }
+    /* The hero copy comes up from further down and without the slight
+       shrink the scrolled-in elements use -- a headline that scales as it
+       arrives reads as a zoom, and this should read as floating up. */
+    .has-js .landing-reveal.landing-rise {
+        --reveal-y: 46px;
+        transform: translate3d(0, calc(var(--reveal-y) * var(--reveal-sign, 1)), 0);
+    }
+
     .has-js .landing-reveal.landing-from-left { --reveal-x: -52px; --reveal-y: 14px; }
     .has-js .landing-reveal.landing-from-right { --reveal-x: 52px; --reveal-y: 14px; }
 
@@ -1134,8 +1140,6 @@
     /* The hero keeps its negative top margin, so the top padding has to
        clear the nav bar as well as give the headline room. */
     .landing-hero { min-height: auto; padding-block: calc(84px + var(--sp-6)) var(--sp-8); }
-    .landing-hero-inner { grid-template-columns: minmax(0, 1fr); gap: var(--sp-6); }
-    .landing-hero-map { max-width: 26rem; }
     .landing-about { grid-template-columns: minmax(0, 1fr); }
     /* Stacked above the copy there is no gutter left to reach into, so
        the frame comes back inside the shell and rounds all four corners. */

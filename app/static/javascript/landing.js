@@ -17,6 +17,44 @@
         new IntersectionObserver(function (entries) {
             wrap.classList.toggle("is-stuck", !entries[0].isIntersecting);
         }).observe(sentinel);
+
+        /* The bar gets out of the way going down the page and comes back the
+           moment the reader turns round -- reading forward wants the room,
+           going back usually means looking for the navigation.
+
+           Two guards keep it from flickering. Nothing happens in the first
+           stretch of the page, where the bar is part of the hero rather than
+           an overlay; and a move has to cover a few pixels before it counts
+           as a direction, so the small jitters a trackpad produces are
+           ignored. */
+        var REVEAL_AT = 140;     /* px of scroll before hiding is allowed */
+        var THRESHOLD = 8;       /* px of travel before a direction counts */
+
+        var last = window.scrollY;
+        var ticking = false;
+
+        function onScroll() {
+            var y = window.scrollY;
+            var moved = y - last;
+
+            if (Math.abs(moved) < THRESHOLD) return;
+
+            /* Near the top the bar is always shown, whichever way the page
+               is moving. */
+            wrap.classList.toggle("is-hidden", moved > 0 && y > REVEAL_AT);
+            last = y;
+        }
+
+        window.addEventListener("scroll", function () {
+            if (ticking) return;
+            ticking = true;
+            /* One read per frame: reading scrollY inside the event itself
+               forces a layout on every one of them. */
+            window.requestAnimationFrame(function () {
+                onScroll();
+                ticking = false;
+            });
+        }, { passive: true });
     }
 
     /* ---------- Scroll reveal ----------
