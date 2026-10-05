@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+{% from 'partials/_assets.html' import asset_v %}<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -8,7 +8,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css', v=asset_v) }}">
 </head>
 <body class="login-page">
     <div class="login-shell">
@@ -31,7 +31,7 @@
             </div>
 
             <div class="brand-content">
-                <h1>Reforestation<br>Management<br>Platform</h1>
+                <h1>Reforestation<br class="brand-br"> Management<br class="brand-br"> Platform</h1>
                 <p>
                     A web-based decision support system for tree species recommendation and reforestation
                     management with geospatial visualization across Eastern Pangasinan.
@@ -46,7 +46,7 @@
             </div>
 
             <div class="brand-footer">
-                Pangasinan DENR &bull; Eastern Pangasinan Region I
+                Pangasinan DENR &bull; Eastern Pangasinan Region&nbsp;I
                 <br>
                 &copy; 2026 PuNoObservation. Capstone Project.
             </div>

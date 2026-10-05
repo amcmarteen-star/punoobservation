@@ -1,0 +1,7 @@
+{# Version stamp for the CSS and JS files. Browsers keep a copy of
+   style.css and may reuse it without asking the server, so after a design
+   change some users (another browser, another phone) kept the old look on
+   new pages. Every stylesheet and script link carries ?v=asset_v; bump it
+   whenever a file in app/static/css or app/static/js changes, and every
+   browser fetches the new copy. #}
+{% set asset_v = '2026.10.05-1' %}

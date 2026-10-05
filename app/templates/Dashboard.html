@@ -11,16 +11,35 @@
       Reforestation activity across Districts 5 and 6, Eastern Pangasinan.
     </p>
   </div>
-  <div id="dashboard-clock" class="dashboard-clock">
-    <span class="clock-time">
-      <span id="clock-hm">--:--</span><span
-        id="clock-sec" class="clock-sec">--</span><span
-        id="clock-meridiem" class="clock-meridiem">--</span>
-    </span>
-    <span class="clock-date">
-      <span id="clock-date">Loading date&hellip;</span>
-      <span class="clock-zone" title="Philippine Standard Time">PHT</span>
-    </span>
+  <div id="dashboard-clock" class="dashboard-clock" role="timer" aria-live="off">
+    {# Analog face: twelve ticks, the quarters longer. Hands are rotated
+       from the script; the second hand carries the brand colour. #}
+    <svg class="clock-face" viewBox="0 0 48 48" aria-hidden="true">
+      <circle class="clock-face-ring" cx="24" cy="24" r="22.5" />
+      {% for i in range(12) %}
+      <line class="clock-tick {% if i % 3 == 0 %}is-major{% endif %}"
+            x1="24" y1="{{ 4 if i % 3 == 0 else 4.5 }}" x2="24" y2="{{ 8 if i % 3 == 0 else 6.5 }}"
+            transform="rotate({{ i * 30 }} 24 24)" />
+      {% endfor %}
+      <line id="clock-hand-h" class="clock-hand-h" x1="24" y1="25.5" x2="24" y2="14" />
+      <line id="clock-hand-m" class="clock-hand-m" x1="24" y1="26.5" x2="24" y2="9" />
+      <line id="clock-hand-s" class="clock-hand-s" x1="24" y1="28" x2="24" y2="7" />
+      <circle class="clock-pin" cx="24" cy="24" r="1.6" />
+    </svg>
+
+    <div class="clock-text">
+      <span class="clock-time">
+        <span id="clock-hm">--:--</span><span
+          id="clock-sec" class="clock-sec">:--</span><span
+          id="clock-meridiem" class="clock-meridiem">--</span>
+      </span>
+      <span class="clock-date">
+        <span id="clock-date">Loading date&hellip;</span>
+        <span class="clock-zone" title="Philippine Standard Time (UTC+8)">
+          <span class="clock-live" aria-hidden="true"></span>PHT
+        </span>
+      </span>
+    </div>
   </div>
 </div>
 
@@ -1015,6 +1034,16 @@
     day: "numeric",
   });
 
+  const CLOCK_HANDS = {
+    h: document.getElementById("clock-hand-h"),
+    m: document.getElementById("clock-hand-m"),
+    s: document.getElementById("clock-hand-s"),
+  };
+
+  function setHand(el, deg) {
+    if (el) el.setAttribute("transform", "rotate(" + deg + " 24 24)");
+  }
+
   function updateDashboardClock() {
     const now = new Date();
     const part = {};
@@ -1022,11 +1051,21 @@
       part[p.type] = p.value;
     });
 
+    /* "09:05" reads as a timestamp; a wall clock drops the leading zero. */
     document.getElementById("clock-hm").textContent =
-      part.hour + ":" + part.minute;
+      String(parseInt(part.hour, 10)) + ":" + part.minute;
     document.getElementById("clock-sec").textContent = ":" + part.second;
     document.getElementById("clock-meridiem").textContent =
       (part.dayPeriod || "").toUpperCase();
+
+    /* Hands tick like a quartz movement: one step a second, no sweep, so
+       the second hand never spins backwards when it wraps past twelve. */
+    const h = parseInt(part.hour, 10) % 12;
+    const m = parseInt(part.minute, 10);
+    const s = parseInt(part.second, 10);
+    setHand(CLOCK_HANDS.h, h * 30 + m * 0.5);
+    setHand(CLOCK_HANDS.m, m * 6 + s * 0.1);
+    setHand(CLOCK_HANDS.s, s * 6);
 
     const dateEl = document.getElementById("clock-date");
     const dateStr = CLOCK_DATE.format(now);
@@ -1034,7 +1073,12 @@
     if (dateEl.textContent !== dateStr) dateEl.textContent = dateStr;
   }
 
-  updateDashboardClock();
-  setInterval(updateDashboardClock, 1000);
+  /* Scheduled against the top of each real second rather than a free-running
+     interval, so the display never lags the system clock by most of a
+     second, and never drifts. */
+  (function tickDashboardClock() {
+    updateDashboardClock();
+    setTimeout(tickDashboardClock, 1000 - (Date.now() % 1000) + 5);
+  })();
 </script>
 {% endblock %} {% endblock %}

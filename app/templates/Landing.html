@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+{% from 'partials/_assets.html' import asset_v %}<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -10,7 +10,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@100..125,400..800&family=Inter+Tight:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <link rel="preload" as="image" href="{{ url_for('static', filename='images/landing/hero-palms.jpg') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/landing.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/landing.css', v=asset_v) }}">
 </head>
 <script>document.documentElement.classList.add("has-js");</script>
 <body class="landing-page">

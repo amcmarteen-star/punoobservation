@@ -5,11 +5,26 @@
   href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
 />
 <style>
-  /* map page need full space, kill page-content padding */
+  /* The map fills whatever height the two bars above it leave. The main
+     column becomes a flex column on this page, so the map takes the rest
+     by flex rather than by a calc against the bars' heights -- which keeps
+     it exact when the toolbar wraps on a phone, and when iOS / Android
+     browser toolbars show or hide. */
+  .main-area {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .main-area > .global-topbar,
+  .main-area > .map-topbar {
+    flex: none;
+  }
+
   .page-content.map-page {
-    /* Declared here, on the ancestor both the bar and the map can read. */
-    /* two toolbar rows; the map's height is the viewport minus this */
-    --map-topbar-h: 88px;
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
     padding: 0;
     max-width: none;
   }
@@ -19,71 +34,29 @@
     background-color: #121212;
   }
 
-  /* One line, fixed height. .map-wrap sizes the map as the viewport minus
-     exactly --map-topbar-h, so a bar that wrapped its labels onto two
-     lines grew taller and pushed the map past the bottom of the screen.
-     Labels stay on one line; a window too narrow for them scrolls the
-     bar sideways instead. */
-  /* Two rows, three columns:
-       col 1: District (top), Show (bottom)
-       col 2: Barangay outlines (top), District outlines (bottom)
-       col 3: Heat map, pushed to the right end of the top row
-     A fixed height, so the map below is always sized correctly. Only a
-     window too narrow for the grid scrolls it sideways. */
+  /* One row: district filter, the Layers menu and the heat map, all
+     grouped on the left. The layer checkboxes live in the Layers popover,
+     which is what keeps the row from crowding. Overflow stays visible so
+     the popover can hang over the map. */
   .map-topbar {
-    display: grid;
-    grid-template-columns: auto auto 1fr;
-    grid-template-rows: 2.2rem 2.2rem;
-    align-content: center;
+    position: relative;
+    z-index: 20;
+    display: flex;
     align-items: center;
-    column-gap: 1.25rem;
-    row-gap: 0;
-    height: var(--map-topbar-h);
+    gap: 0.75rem;
+    min-height: 54px;
     padding: 0 1.5rem;
-    overflow-x: auto;
-    overflow-y: hidden;
     white-space: nowrap;
-    scrollbar-width: thin;
     background-color: var(--surface-1);
     border-bottom: 1px solid var(--line);
-    font-size: 0.9rem;
+    font-size: 0.875rem;
     color: var(--text-body);
   }
-
-  .map-topbar .tb-district { grid-column: 1; grid-row: 1; }
-  .map-topbar .tb-show { grid-column: 1; grid-row: 2; }
-  .map-topbar .tb-outline-brgy { grid-column: 2; grid-row: 1; }
-  .map-topbar .tb-outline-district { grid-column: 2; grid-row: 2; }
-  .map-topbar .tb-heat { grid-column: 3; grid-row: 1; justify-self: end; }
 
   .map-topbar .toolbar-group {
     display: flex;
     align-items: center;
-    gap: 0.9rem;
-  }
-
-  .map-topbar .toolbar-group label,
-  .map-topbar .toolbar-outline {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.35rem;
-    font-weight: 500;
-    color: var(--text-body);
-    cursor: pointer;
-  }
-
-  /* The two outline checkboxes share one divider on their left. Each
-     fills its whole row, so the two borders meet in a single line. */
-  .map-topbar .toolbar-outline {
-    align-self: stretch;
-    padding-left: 1.25rem;
-    border-left: 1px solid var(--line);
-  }
-
-  /* the heat map label sits alone at the right, so it needs no divider */
-  .map-topbar .toolbar-group .heat-select {
-    padding-left: 0;
-    border-left: 0;
+    gap: 0.6rem;
   }
 
   .map-topbar .toolbar-label {
@@ -94,28 +67,243 @@
     color: var(--text-2);
   }
 
-  .map-topbar .filter-group {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
+  .map-topbar .tb-divider {
+    width: 1px;
+    height: 1.5rem;
+    background-color: var(--line);
   }
 
-  .map-topbar .filter-group label {
+  /* District: radios drawn as a segmented control. The inputs stay in the
+     DOM (filterDistricts reads them) and keep keyboard arrows working. */
+  .map-topbar .seg {
+    display: inline-flex;
+    padding: 0.2rem;
+    gap: 0.15rem;
+    background-color: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: 9px;
+  }
+
+  .map-topbar .seg label {
+    position: relative;
+    padding: 0.3rem 0.75rem;
+    border-radius: 6px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--text-2);
+    cursor: pointer;
+    transition: background-color 140ms var(--ease), color 140ms var(--ease);
+  }
+
+  .map-topbar .seg input {
+    position: absolute;
+    opacity: 0;
+    width: 1px;
+    height: 1px;
+    pointer-events: none;
+  }
+
+  .map-topbar .seg label:hover {
+    color: var(--text-heading);
+  }
+
+  .map-topbar .seg label:has(input:checked) {
+    background-color: var(--surface-1);
+    color: var(--text-heading);
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.1), 0 0 0 1px var(--line);
+  }
+
+  .map-topbar .seg label:has(input:focus-visible) {
+    outline: 2px solid var(--brand-text);
+    outline-offset: 1px;
+  }
+
+  /* --- Layers menu --- */
+  .layers-menu {
+    position: relative;
+  }
+
+  .layers-btn {
     display: inline-flex;
     align-items: center;
-    gap: 0.3rem;
+    gap: 0.45rem;
+    min-height: 34px;
+    padding: 0.3rem 0.7rem;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background-color: var(--surface-1);
+    color: var(--text-strong);
+    font: inherit;
+    font-size: 0.82rem;
+    font-weight: 600;
     cursor: pointer;
+    transition: background-color 140ms var(--ease), border-color 140ms var(--ease);
+  }
+
+  .layers-btn:hover,
+  .layers-btn[aria-expanded="true"] {
+    background-color: var(--surface-3);
+    border-color: var(--line-strong);
+  }
+
+  .layers-btn svg {
+    width: 1rem;
+    height: 1rem;
+  }
+
+  .layers-btn .chev {
+    width: 0.8rem;
+    height: 0.8rem;
+    color: var(--text-2);
+    transition: transform 160ms var(--ease);
+  }
+
+  .layers-btn[aria-expanded="true"] .chev {
+    transform: rotate(180deg);
+  }
+
+  .layers-count {
+    min-width: 1.15rem;
+    padding: 0 0.3rem;
+    border-radius: 5px;
+    background-color: var(--ok-bg);
+    color: var(--ok-text);
+    font-size: 0.7rem;
+    line-height: 1.15rem;
+    text-align: center;
+  }
+
+  .layers-pop {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 0;
+    width: 300px;
+    padding: 0.5rem;
+    background-color: var(--surface-1);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06), 0 16px 40px rgba(15, 23, 42, 0.16);
+    white-space: normal;
+    transform-origin: top left;
+    animation: layers-pop 150ms var(--ease);
+  }
+
+  .layers-pop[hidden] {
+    display: none;
+  }
+
+  @keyframes layers-pop {
+    from { opacity: 0; transform: translateY(-4px) scale(0.98); }
+    to   { opacity: 1; transform: none; }
+  }
+
+  .layers-pop-heading {
+    margin: 0.35rem 0.6rem 0.25rem;
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    color: var(--text-2);
+  }
+
+  .layers-pop hr {
+    margin: 0.4rem 0.25rem;
+    border: 0;
+    border-top: 1px solid var(--line);
+  }
+
+  .layer-opt {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.6rem;
+    padding: 0.5rem 0.6rem;
+    border-radius: 8px;
     font-weight: 500;
-    color: var(--text-body);
+    color: var(--text-strong);
+    cursor: pointer;
+  }
+
+  .layer-opt:hover {
+    background-color: var(--surface-2);
+  }
+
+  .layer-opt input {
+    margin: 0.15rem 0 0;
+    width: 1rem;
+    height: 1rem;
+    accent-color: var(--brand-text);
+    cursor: pointer;
+  }
+
+  .layer-opt-text {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    min-width: 0;
+  }
+
+  .layer-opt-sub {
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--text-2);
+  }
+
+  /* Narrow windows: the row wraps; the map below shrinks to match. */
+  @media (max-width: 860px) {
+    .map-topbar {
+      flex-wrap: wrap;
+      align-content: center;
+      gap: 0.5rem 0.6rem;
+      padding: 0.6rem calc(0.75rem + env(safe-area-inset-right))
+               0.6rem calc(0.75rem + env(safe-area-inset-left));
+    }
+    .map-topbar .tb-divider {
+      display: none;
+    }
+    .map-topbar .tb-district {
+      width: 100%;
+    }
+    .map-topbar .seg {
+      flex: 1;
+    }
+    .map-topbar .seg label {
+      flex: 1;
+      text-align: center;
+      padding: 0.45rem 0.4rem;
+    }
+    .map-topbar .tb-heat {
+      flex: 1;
+      min-width: 0;
+    }
+    .map-topbar .heat-select {
+      width: 100%;
+    }
+    .map-topbar .tb-heat .heat-select select {
+      flex: 1;
+      width: 100%;
+      min-width: 0;
+      min-height: 38px;
+    }
+    .layers-btn {
+      min-height: 38px;
+    }
+    .layers-pop {
+      width: min(300px, calc(100vw - 1.5rem));
+    }
+  }
+
+  @media (max-width: 420px) {
+    /* the segmented control says what it is; the label is spare */
+    .map-topbar .tb-district > .toolbar-label {
+      display: none;
+    }
   }
 
   /* map-wrap now FLEX row: map on left, panel takes real space on right (no more float-over) */
   .map-wrap {
     position: relative;
-    /* Two bars sit above the map: the app's global topbar and this page's
-       own filter bar. Both are tokens so the map can never be sized against
-       a guess. */
-    height: calc(100vh - var(--topbar-h) - var(--map-topbar-h));
+    flex: 1 1 auto;
+    min-height: 0;
     width: 100%;
     display: flex;
   }
@@ -156,6 +344,40 @@
     width: var(--panel-width);
     height: 100%;
     overflow-y: auto;
+  }
+
+  /* Phones: the panel opens as a sheet from the bottom and the map shrinks
+     above it, the vertical version of the desktop push. It animates
+     height, which the open/close handlers listen for as well as width. */
+  @media (max-width: 860px) {
+    .map-wrap {
+      flex-direction: column;
+    }
+    .map-wrap #map {
+      width: 100%;
+      height: auto;
+      min-height: 0;
+    }
+    .muni-panel,
+    .muni-panel.active {
+      width: 100%;
+    }
+    .muni-panel {
+      height: 0;
+      border-radius: 16px 16px 0 0;
+      box-shadow: 0 -6px 24px rgba(0, 0, 0, 0.18);
+      transition: height 0.3s ease;
+    }
+    .muni-panel.active {
+      height: 58%;
+    }
+    .muni-panel-inner {
+      width: 100%;
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+    .map-wrap .muni-panel.active .panel-resizer {
+      display: none;
+    }
   }
 
   /* drag handle on the panel's left edge */
@@ -561,16 +783,6 @@
     background: #15803d;
   }
 
-  .map-topbar .site-toggle {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.35rem;
-    font-weight: 500;
-    color: var(--text-body);
-    padding-left: 1rem;
-    border-left: 1px solid var(--line);
-  }
-
   .map-topbar .site-count-note {
     color: var(--brand-text);
     font-weight: 600;
@@ -579,19 +791,26 @@
   .map-topbar .heat-select {
     display: inline-flex;
     align-items: center;
-    gap: 0.4rem;
-    padding-left: 1rem;
-    border-left: 1px solid var(--line);
+    gap: 0.5rem;
     font-weight: 500;
     color: var(--text-body);
   }
 
   .map-topbar .heat-select select {
-    font-size: 0.85rem;
-    padding: 0.2rem 0.4rem;
-    border: 1px solid var(--line-strong);
-    border-radius: 4px;
+    min-height: 34px;
+    min-width: 11rem;
+    font: inherit;
+    font-size: 0.82rem;
+    font-weight: 600;
+    padding: 0.3rem 0.6rem;
+    border: 1px solid var(--line);
+    border-radius: 8px;
     color: var(--text-strong);
+    cursor: pointer;
+  }
+
+  .map-topbar .heat-select select:hover {
+    border-color: var(--line-strong);
   }
 
   /* --- boundary key ---
@@ -602,8 +821,8 @@
     display: inline-flex;
     align-items: center;
     gap: 0.3rem;
-    margin-left: 0.5rem;
     font-size: 0.72rem;
+    color: var(--text-2);
     white-space: nowrap;
     opacity: 0.85;
   }
@@ -853,75 +1072,92 @@
   }
 </style>
 {% endblock %} {% block content_class %}map-page{% endblock %} {% block topbar_title %}
-<div class="topbar-title">{{ region_label }}</div>
+{# The whole-province fallback reads "Eastern Pangasinan" here, since the
+   map only covers Districts 5 and 6. CENRO labels pass through as-is. #}
+<div class="topbar-title">{{ 'Eastern Pangasinan' if region_label == 'Pangasinan' else region_label }}</div>
 {% endblock %} {% block topbar%}
-{# Toolbar laid out as a grid, two rows high:
-
-     DISTRICT radios              | Barangay outlines        HEAT MAP [ ]
-     SHOW sites, site boundaries  | District outlines
-
-     Column 1 holds the district filter above the layer toggles, column 2
-     stacks the two outline checkboxes, and the heat map sits at the right
-     end of the top row. Every id and handler is unchanged, so the map
-     script needs no edits. #}
+{# One row, grouped left: district filter | Layers menu | heat map.
+   The four layer checkboxes sit in the Layers popover. Every id and
+   handler is unchanged, so the map script needs no edits. #}
 <div class="map-topbar">
-  <div class="toolbar-group tb-district" role="radiogroup" aria-label="Filter district">
-    <span class="toolbar-label">District</span>
-    <label>
-      <input type="radio" name="districtFilter" value="all" checked
-             onchange="filterDistricts(this.value)" />
-      All
-    </label>
-    <label>
-      <input type="radio" name="districtFilter" value="5"
-             onchange="filterDistricts(this.value)" />
-      District 5
-    </label>
-    <label>
-      <input type="radio" name="districtFilter" value="6"
-             onchange="filterDistricts(this.value)" />
-      District 6
-    </label>
-    <label>
-      <input type="radio" name="districtFilter" value="none"
-             onchange="filterDistricts(this.value)" />
-      None
-    </label>
+  <div class="toolbar-group tb-district">
+    <span class="toolbar-label" id="districtLabel">District</span>
+    <div class="seg" role="radiogroup" aria-labelledby="districtLabel">
+      <label>
+        <input type="radio" name="districtFilter" value="all" checked
+               onchange="filterDistricts(this.value)" />
+        All
+      </label>
+      <label>
+        <input type="radio" name="districtFilter" value="5"
+               onchange="filterDistricts(this.value)" />
+        District 5
+      </label>
+      <label>
+        <input type="radio" name="districtFilter" value="6"
+               onchange="filterDistricts(this.value)" />
+        District 6
+      </label>
+      <label>
+        <input type="radio" name="districtFilter" value="none"
+               onchange="filterDistricts(this.value)" />
+        None
+      </label>
+    </div>
   </div>
 
-  <div class="toolbar-group tb-show" role="group" aria-label="Map layers">
-    <span class="toolbar-label">Show</span>
-    <label>
-      <input type="checkbox" id="siteToggle" checked
-             onchange="toggleSiteMarkers(this.checked)" />
-      Sites
-      <span class="site-count-note" id="siteCountNote"></span>
-    </label>
-    <label>
-      <input type="checkbox" id="boundaryToggle" checked
-             onchange="toggleBoundaries(this.checked)" />
-      Site boundaries
-      <span class="site-count-note" id="boundaryCount"></span>
-      {% if can_see_proposed %}
-      <span class="boundary-key" aria-hidden="true">
-        <span class="boundary-key-line"></span>Official
-        <span class="boundary-key-line is-proposed"></span>Proposed
-      </span>
-      {% endif %}
-    </label>
+  <span class="tb-divider" aria-hidden="true"></span>
+
+  <div class="layers-menu" id="layersMenu">
+    <button type="button" class="layers-btn" id="layersBtn"
+            aria-expanded="false" aria-controls="layersPop"
+            onclick="toggleLayersMenu()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83z"/><path d="M2 12a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 12"/><path d="M2 17a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 17"/></svg>
+      Layers
+      <span class="layers-count" id="layersCount" aria-label="layers on"></span>
+      <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+    </button>
+
+    <div class="layers-pop" id="layersPop" role="group" aria-label="Map layers" hidden>
+      <p class="layers-pop-heading">Sites</p>
+      <label class="layer-opt">
+        <input type="checkbox" id="siteToggle" checked
+               onchange="toggleSiteMarkers(this.checked)" />
+        <span class="layer-opt-text">
+          <span>Sites <span class="site-count-note" id="siteCountNote"></span></span>
+        </span>
+      </label>
+      <label class="layer-opt">
+        <input type="checkbox" id="boundaryToggle" checked
+               onchange="toggleBoundaries(this.checked)" />
+        <span class="layer-opt-text">
+          <span>Site boundaries</span>
+          <span class="layer-opt-sub site-count-note" id="boundaryCount"></span>
+          {% if can_see_proposed %}
+          <span class="boundary-key" aria-hidden="true">
+            <span class="boundary-key-line"></span>Official
+            <span class="boundary-key-line is-proposed"></span>Proposed
+          </span>
+          {% endif %}
+        </span>
+      </label>
+
+      <hr />
+      <p class="layers-pop-heading">Outlines</p>
+      <label class="layer-opt">
+        <input type="checkbox" id="brgyBorderToggle"
+               onchange="toggleBarangayBorders(this.checked)" />
+        <span class="layer-opt-text">Barangay outlines</span>
+      </label>
+      <label class="layer-opt">
+        <input type="checkbox" id="districtBorderToggle" checked
+               onchange="toggleDistrictBorders(this.checked)" />
+        <span class="layer-opt-text">District outlines</span>
+      </label>
+    </div>
   </div>
 
-  <label class="toolbar-outline tb-outline-brgy">
-    <input type="checkbox" id="brgyBorderToggle"
-           onchange="toggleBarangayBorders(this.checked)" />
-    Barangay outlines
-  </label>
-
-  <label class="toolbar-outline tb-outline-district">
-    <input type="checkbox" id="districtBorderToggle" checked
-           onchange="toggleDistrictBorders(this.checked)" />
-    District outlines
-  </label>
+  <span class="tb-divider" aria-hidden="true"></span>
 
   <div class="toolbar-group tb-heat">
     <label class="heat-select">
@@ -936,6 +1172,35 @@
     </label>
   </div>
 </div>
+<script>
+  // Layers popover: opens from the button, closes on a click outside or
+  // Escape. Ticking boxes inside keeps it open so several can be changed.
+  function toggleLayersMenu(force) {
+    const btn = document.getElementById("layersBtn");
+    const pop = document.getElementById("layersPop");
+    const open = force === undefined ? pop.hidden : force;
+    pop.hidden = !open;
+    btn.setAttribute("aria-expanded", String(open));
+  }
+
+  function syncLayersCount() {
+    const on = document.querySelectorAll("#layersPop input[type=checkbox]:checked").length;
+    document.getElementById("layersCount").textContent = on;
+  }
+
+  document.addEventListener("click", function (e) {
+    const menu = document.getElementById("layersMenu");
+    if (menu && !menu.contains(e.target)) toggleLayersMenu(false);
+  });
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape" && !document.getElementById("layersPop").hidden) {
+      toggleLayersMenu(false);
+      document.getElementById("layersBtn").focus();
+    }
+  });
+  document.getElementById("layersPop").addEventListener("change", syncLayersCount);
+  syncLayersCount();
+</script>
 {% endblock %} {% block content %}
 <div class="map-wrap">
   <div id="map"></div>
@@ -1718,7 +1983,7 @@
         muniPanel.addEventListener(
           "transitionend",
           function handler(ev) {
-            if (ev.propertyName !== "width") return;
+            if (ev.propertyName !== "width" && ev.propertyName !== "height") return;
             muniPanel.removeEventListener("transitionend", handler);
             map.invalidateSize();
             if (targetBounds) {
@@ -1750,7 +2015,7 @@
           fn();
         }
         muniPanel.addEventListener("transitionend", function handler(ev) {
-          if (ev.propertyName !== "width") return;
+          if (ev.propertyName !== "width" && ev.propertyName !== "height") return;
           muniPanel.removeEventListener("transitionend", handler);
           run();
         });
@@ -2240,7 +2505,7 @@
           if (openHistory) showSiteHistory(site.site_id);
         }
         muniPanel.addEventListener("transitionend", function handler(ev) {
-          if (ev.propertyName !== "width") return;
+          if (ev.propertyName !== "width" && ev.propertyName !== "height") return;
           muniPanel.removeEventListener("transitionend", handler);
           zoomToSite();
         });

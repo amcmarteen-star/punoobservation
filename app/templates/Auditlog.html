@@ -5,18 +5,77 @@
 
 {% block extra_head %}
 <style>
-  .al-strip { display:flex; flex-wrap:wrap; gap:.6rem; margin-bottom:1.25rem; }
-  .al-chip {
-    background:var(--surface-1); border:1px solid var(--line); border-radius:8px;
-    padding:.55rem .9rem; text-decoration:none; color:inherit; font-size:.82rem;
+  /* Summary tiles: all-time totals, each one a shortcut to its filter. */
+  .al-tiles {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+    gap: .75rem;
+    margin: 1rem 0 1.1rem;
   }
-  .al-chip:hover, .al-chip.active { border-color:#16a34a; color:inherit; }
-  .al-chip .n { font-weight:700; color:#14532d; margin-left:.35rem; }
+  .al-tile {
+    display: flex; align-items: center; gap: .85rem;
+    padding: .9rem 1.1rem;
+    background: var(--surface-1); border: 1px solid var(--line); border-radius: 12px;
+    text-decoration: none; color: inherit;
+    transition: border-color 160ms var(--ease), background-color 160ms var(--ease);
+  }
+  .al-tile:hover { border-color: var(--line-strong); }
+  .al-tile.active { border-color: var(--ok-line); background: var(--ok-bg); }
+  .al-tile-icon {
+    flex: none; display: inline-flex; align-items: center; justify-content: center;
+    width: 2.3rem; height: 2.3rem; border-radius: 10px;
+    background: var(--surface-3); color: var(--text-2);
+  }
+  .al-tile-icon svg { width: 1.1rem; height: 1.1rem; }
+  .al-tile-num {
+    display: block; font-size: 1.35rem; font-weight: 700; line-height: 1.1;
+    color: var(--text-heading); font-variant-numeric: tabular-nums;
+  }
+  .al-tile-label { display: block; font-size: .78rem; color: var(--text-2); margin-top: .1rem; }
+  .al-tile.is-ok .al-tile-icon { background: var(--ok-bg); color: var(--ok-text); }
+  .al-tile.is-danger .al-tile-icon { background: var(--danger-bg); color: var(--danger-text); }
+  .al-tile.is-danger .al-tile-num { color: var(--danger-text); }
+  .al-tile.is-danger.active { border-color: var(--danger-line); background: var(--danger-bg); }
 
+  /* One filter bar: action, user, period, and a clear link only when
+     something is narrowing the list. */
   .al-filters {
-    display:flex; flex-wrap:wrap; gap:.75rem; align-items:end;
-    background:var(--surface-1); border:1px solid var(--line); border-radius:10px;
-    padding:1rem; margin-bottom:1.25rem;
+    display: flex; flex-wrap: wrap; align-items: center; gap: .6rem;
+    background: var(--surface-1); border: 1px solid var(--line); border-radius: 12px;
+    padding: .75rem .9rem; margin-bottom: 1rem;
+  }
+  .al-field { display: flex; flex-direction: column; gap: .3rem; min-width: 0; }
+  .al-field label {
+    font-size: .68rem; font-weight: 700; letter-spacing: .05em;
+    text-transform: uppercase; color: var(--text-2);
+  }
+  .al-filters .notif-filter-select { min-width: 11rem; }
+  .al-clear {
+    align-self: flex-end;
+    display: inline-flex; align-items: center; gap: .35rem;
+    min-height: 38px; padding: 0 .8rem;
+    border: 1px solid var(--line); border-radius: 8px;
+    background: var(--surface-1); color: var(--text-strong);
+    font-size: .82rem; font-weight: 600; text-decoration: none; cursor: pointer;
+  }
+  .al-clear:hover { background: var(--surface-3); color: var(--text-heading); }
+  .al-clear svg { width: .9rem; height: .9rem; }
+  .al-shown {
+    margin-left: auto; align-self: flex-end; padding-bottom: .55rem;
+    font-size: .8rem; color: var(--text-2); font-variant-numeric: tabular-nums;
+  }
+  .al-shown strong { color: var(--text-heading); }
+
+  @media (max-width: 640px) {
+    /* three small tiles in a row instead of three tall cards stacked */
+    .al-tiles { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .5rem; }
+    .al-tile { padding: .7rem .75rem; }
+    .al-tile-icon { display: none; }
+    .al-tile-num { font-size: 1.15rem; }
+    .al-tile-label { font-size: .72rem; }
+    .al-field { flex: 1 1 100%; }
+    .al-filters .notif-filter-select { width: 100%; min-width: 0; }
+    .al-shown { margin-left: 0; padding-bottom: 0; }
   }
 
   .al-act {
@@ -38,7 +97,10 @@
 
   .al-role { font-size:.7rem; color:var(--text-3); }
   .al-ip { font-family:monospace; font-size:.72rem; color:var(--text-3); }
+  .al-detail { max-width: 28rem; white-space: normal; }
   .al-empty { text-align:center; padding:3rem 1rem; color:var(--text-2); }
+  .al-empty h5 { margin: 0 0 .4rem; font-size: 1rem; color: var(--text-heading); }
+  .al-empty p { margin: 0; font-size: .875rem; }
 </style>
 {% endblock %}
 
@@ -62,38 +124,54 @@
   </div>
 </div>
 
-<div class="al-strip">
-  <a href="{{ url_for('admin.audit_log', days=days) }}"
-     class="al-chip {% if not action_filter %}active{% endif %}">
-    All actions <span class="n">{{ total }}</span>
+{# The route reads action, user and days; days defaults to 7. #}
+{% set filtered = action_filter or user_filter or days != '7' %}
+<div class="al-tiles">
+  <a href="{{ url_for('admin.audit_log', days=days, user=user_filter or none) }}"
+     class="al-tile {% if not action_filter %}active{% endif %}">
+    <span class="al-tile-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 12h-5"/><path d="M15 8h-5"/><path d="M19 17V5a2 2 0 0 0-2-2H4"/><path d="M8 21h12a2 2 0 0 0 2-2v-1a1 1 0 0 0-1-1H11a1 1 0 0 0-1 1v1a2 2 0 1 1-4 0V5a2 2 0 1 0-4 0v2a1 1 0 0 0 1 1h3"/></svg></span>
+    <span><span class="al-tile-num">{{ total }}</span><span class="al-tile-label">All entries</span></span>
   </a>
-  {% for act, n in action_counts.items() %}
-    <a href="{{ url_for('admin.audit_log', action=act, days=days) }}"
-       class="al-chip {% if action_filter == act %}active{% endif %}">
-      {{ act|replace('_', ' ')|title }} <span class="n">{{ n }}</span>
-    </a>
-  {% endfor %}
+  <a href="{{ url_for('admin.audit_log', action='login', days=days, user=user_filter or none) }}"
+     class="al-tile is-ok {% if action_filter == 'login' %}active{% endif %}">
+    <span class="al-tile-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m10 17 5-5-5-5"/><path d="M15 12H3"/><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/></svg></span>
+    <span><span class="al-tile-num">{{ action_counts.get('login', 0) }}</span><span class="al-tile-label">Sign-ins</span></span>
+  </a>
+  <a href="{{ url_for('admin.audit_log', action='login_failed', days=days, user=user_filter or none) }}"
+     class="al-tile {% if failed_logins %}is-danger{% endif %} {% if action_filter == 'login_failed' %}active{% endif %}">
+    <span class="al-tile-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg></span>
+    <span><span class="al-tile-num">{{ failed_logins }}</span><span class="al-tile-label">Failed sign-ins</span></span>
+  </a>
 </div>
 
 <form method="GET" class="al-filters">
-  <input type="hidden" name="action" value="{{ action_filter }}">
-
-  <div>
-    <label class="form-label fw-semibold small mb-1">User</label>
-    <select name="user" class="form-select form-select-sm"
+  <div class="al-field">
+    <label for="al-action">Action</label>
+    <select id="al-action" name="action" class="notif-filter-select {% if action_filter %}is-set{% endif %}"
             onchange="this.form.submit()">
-      <option value="">Everyone</option>
-      {% for u in usernames %}
-        <option value="{{ u }}" {% if user_filter == u %}selected{% endif %}>
-          {{ u }}
+      <option value="">All actions ({{ total }})</option>
+      {% for act, n in action_counts.items() %}
+        <option value="{{ act }}" {% if action_filter == act %}selected{% endif %}>
+          {{ act|replace('_', ' ')|title }} ({{ n }})
         </option>
       {% endfor %}
     </select>
   </div>
 
-  <div>
-    <label class="form-label fw-semibold small mb-1">Period</label>
-    <select name="days" class="form-select form-select-sm"
+  <div class="al-field">
+    <label for="al-user">User</label>
+    <select id="al-user" name="user" class="notif-filter-select {% if user_filter %}is-set{% endif %}"
+            onchange="this.form.submit()">
+      <option value="">Everyone</option>
+      {% for u in usernames %}
+        <option value="{{ u }}" {% if user_filter == u %}selected{% endif %}>{{ u }}</option>
+      {% endfor %}
+    </select>
+  </div>
+
+  <div class="al-field">
+    <label for="al-days">Period</label>
+    <select id="al-days" name="days" class="notif-filter-select {% if days != '7' %}is-set{% endif %}"
             onchange="this.form.submit()">
       {% for v, l in [('1','Last 24 hours'), ('7','Last 7 days'),
                       ('30','Last 30 days'), ('all','All time')] %}
@@ -102,17 +180,21 @@
     </select>
   </div>
 
-  <div>
-    <a href="{{ url_for('admin.audit_log') }}" class="btn btn-outline-secondary btn-sm">
-      Clear filters
-    </a>
-  </div>
+  {% if filtered %}
+  <a href="{{ url_for('admin.audit_log') }}" class="al-clear"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+    Clear
+  </a>
+  {% endif %}
+
+  <noscript><button type="submit" class="al-clear">Apply</button></noscript>
+
+  <span class="al-shown">Showing <strong>{{ entries|length }}</strong>{% if entries|length >= 500 %}+{% endif %} {{ 'entry' if entries|length == 1 else 'entries' }}</span>
 </form>
 
 <div class="um-table-card">
   {% if entries %}
   <div class="um-scroll-wrap table-freeze-wrap">
-    <table class="um-table" data-freeze="2">
+    <table class="um-table um-scroll-table" data-freeze="2">
       <thead>
         <tr>
           <th>When</th>
@@ -141,7 +223,7 @@
               {{ e.action|replace('_', ' ') }}
             </span>
           </td>
-          <td>{{ e.detail or '—' }}</td>
+          <td class="al-detail">{{ e.detail or '—' }}</td>
           <td class="al-role">
             {% if e.entity_type %}
               {{ e.entity_type }}{% if e.entity_id %} #{{ e.entity_id }}{% endif %}
@@ -165,7 +247,7 @@
   <div class="al-empty">
     <h5>No activity recorded</h5>
     <p>
-      {% if action_filter or user_filter or days != 'all' %}
+      {% if filtered %}
         Nothing matches these filters. Try widening the period.
       {% else %}
         Logging began when this feature was added, so earlier activity

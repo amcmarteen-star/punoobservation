@@ -20,10 +20,10 @@
     border-bottom: 2px solid transparent;
     margin-bottom: -2px;
   }
-  .notif-tab:hover { color: #14532d; }
+  .notif-tab:hover { color: var(--brand-deep-text); }
   .notif-tab.active {
-    color: #14532d;
-    border-bottom-color: #16a34a;
+    color: var(--brand-deep-text);
+    border-bottom-color: var(--ok-solid);
   }
   .notif-tab-count {
     background: var(--line);
@@ -32,14 +32,25 @@
     padding: 0 7px;
     font-size: 0.75rem;
     margin-left: 0.3rem;
+    font-variant-numeric: tabular-nums;
   }
   .notif-tab.active .notif-tab-count {
     background: var(--ok-bg);
-    color: #15803d;
+    color: var(--ok-text);
   }
 </style>
 {% endblock %}
 {% block content %}
+
+{# Type and date filters run in the browser over the rows the route
+   already sends; they ride along in the URL so tab links and reloads keep
+   them. Read count = all minus unread, both of which the route provides. #}
+{% set type_filter = request.args.get('type', '') if request.args.get('type') in ['reports', 'requests'] else '' %}
+{% set period = request.args.get('period', '') if request.args.get('period') in ['today', '7d', '30d'] else '' %}
+{% set filter_args = {} %}
+{% if type_filter %}{% set _ = filter_args.update({'type': type_filter}) %}{% endif %}
+{% if period %}{% set _ = filter_args.update({'period': period}) %}{% endif %}
+{% set tab_counts = {'all': counts['all'], 'unread': counts['unread'], 'read': counts['all'] - counts['unread']} %}
 
 <div class="um-header">
     <div>
@@ -49,46 +60,83 @@
         <p class="um-subtitle">Updates on reforestation requests, reports, and account activity.</p>
     </div>
     {% if unread > 0 %}
-        <button type="button" class="notif-mark-all" onclick="markAllNotificationsRead()">
+        <button type="button" class="notif-mark-all"
+                onclick="markAllNotificationsRead().then(() => window.location.reload())">
             Mark all as read
         </button>
     {% endif %}
 </div>
 
 <div class="notif-tabs">
-  {% for key, label in [('unread','Unread'), ('all','All'),
-                        ('reports','Reports'), ('requests','Requests')] %}
-    <a href="{{ url_for('dashboard.notifications_page', tab=key) }}"
+  {% for key, label in [('all','All'), ('unread','Unread'), ('read','Read')] %}
+    <a href="{{ url_for('dashboard.notifications_page', tab=key, **filter_args) }}"
        class="notif-tab {% if tab == key %}active{% endif %}">
       {{ label }}
-      <span class="notif-tab-count">{{ counts[key] }}</span>
+      <span class="notif-tab-count" data-count="{{ key }}">{{ tab_counts[key] }}</span>
     </a>
   {% endfor %}
 </div>
 
 <div class="notif-toolbar">
-    <button type="button" id="notif-delete-btn" class="notif-delete-btn"
-            onclick="notifDeleteSelected()" disabled
-            aria-label="Delete selected notifications">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 11v6"/><path d="M14 11v6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-        Delete
-        <span class="notif-delete-count" id="notif-delete-count" hidden>0</span>
-    </button>
-    <!-- <select class="notif-filter-select" aria-label="Filter notifications by read status" onchange="notifFilterChange(this.value)">
-        <option value="all" {% if status == 'all' %}selected{% endif %}>All</option>
-        <option value="unread" {% if status == 'unread' %}selected{% endif %}>Unread</option>
-        <option value="read" {% if status == 'read' %}selected{% endif %}>Read</option>
-    </select> -->
+    <div class="notif-bulk">
+        <label class="notif-select-all" {% if not grouped %}hidden{% endif %}>
+            <input type="checkbox" id="notif-select-all" aria-label="Select all notifications shown">
+            <span id="notif-select-label">Select all</span>
+        </label>
+
+        {# Bulk actions only appear once something is ticked, so the bar
+           stays quiet until there is something to act on. #}
+        <div class="notif-bulk-actions" id="notif-bulk-actions" hidden>
+            <button type="button" class="notif-bulk-btn" onclick="notifBulk('read')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"/><circle cx="12" cy="12" r="3"/></svg>
+                Mark read
+            </button>
+            <button type="button" class="notif-bulk-btn" onclick="notifBulk('unread')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.733 5.076a10.744 10.744 0 0 1 11.205 6.575 1 1 0 0 1 0 .696 10.747 10.747 0 0 1-1.444 2.49"/><path d="M14.084 14.158a3 3 0 0 1-4.242-4.242"/><path d="M17.479 17.499a10.75 10.75 0 0 1-15.417-5.151 1 1 0 0 1 0-.696 10.75 10.75 0 0 1 4.446-5.143"/><path d="m2 2 20 20"/></svg>
+                Mark unread
+            </button>
+            <button type="button" id="notif-delete-btn" class="notif-delete-btn"
+                    onclick="notifBulk('delete')"
+                    aria-label="Delete selected notifications">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 11v6"/><path d="M14 11v6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                Delete
+            </button>
+        </div>
+    </div>
+
+    <div class="notif-filters">
+        <span class="notif-filter-note" id="notif-filter-note" hidden></span>
+        <svg class="notif-filters-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 20a1 1 0 0 0 .553.895l2 1A1 1 0 0 0 14 21v-7a2 2 0 0 1 .517-1.341L21.74 4.67A1 1 0 0 0 21 3H3a1 1 0 0 0-.742 1.67l7.225 7.989A2 2 0 0 1 10 14z"/></svg>
+        <select id="notif-filter-type" class="notif-filter-select"
+                aria-label="Filter by type" onchange="notifApplyFilters()">
+            <option value="" {% if not type_filter %}selected{% endif %}>All types</option>
+            <option value="reports" {% if type_filter == 'reports' %}selected{% endif %}>Reports</option>
+            <option value="requests" {% if type_filter == 'requests' %}selected{% endif %}>Requests</option>
+        </select>
+        <select id="notif-filter-period" class="notif-filter-select"
+                aria-label="Filter by date" onchange="notifApplyFilters()">
+            <option value="" {% if not period %}selected{% endif %}>Any time</option>
+            <option value="today" {% if period == 'today' %}selected{% endif %}>Today</option>
+            <option value="7d" {% if period == '7d' %}selected{% endif %}>Last 7 days</option>
+            <option value="30d" {% if period == '30d' %}selected{% endif %}>Last 30 days</option>
+        </select>
+        <button type="button" class="notif-filter-clear" id="notif-filter-clear"
+                onclick="notifClearFilters()" hidden>Clear</button>
+    </div>
 </div>
 
-<div class="card">
+<div class="card notif-list-card">
+    <div class="notif-empty" id="notif-filter-empty" hidden>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 20a1 1 0 0 0 .553.895l2 1A1 1 0 0 0 14 21v-7a2 2 0 0 1 .517-1.341L21.74 4.67A1 1 0 0 0 21 3H3a1 1 0 0 0-.742 1.67l7.225 7.989A2 2 0 0 1 10 14z"/></svg>
+        <p>No notifications match these filters.</p>
+        <button type="button" class="notif-filter-clear" onclick="notifClearFilters()">Clear filters</button>
+    </div>
     {% if grouped %}
         {% for group in grouped %}
         <div class="notif-day-group">
             <p class="notif-day-heading">{{ group.label }}</p>
             {% for n in group.notifications %}
                 {% set details_url = none %}
-
                 {% if n.report_id %}
                     {# a report notification: admins review it, officers open
                        their own copy read-only. The officer route rejects a
@@ -99,17 +147,18 @@
                     {% else %}
                         {% set details_url = url_for('dashboard.my_report_detail', report_id=n.report_id) %}
                     {% endif %}
-
                 {% elif n.notification_type == 'New Request' %}
                     {% set details_url = url_for('admin.review_requests') %}
-
                 {% elif n.notification_type == 'Request Update' %}
                     {% set details_url = url_for('dashboard.requests_page') %}
                 {% endif %}
                 <div class="notif-row {% if not n.is_read %}unread{% endif %}"
-                     data-id="{{ n.notification_id }}">
+                     data-id="{{ n.notification_id }}"
+                     data-type="{{ 'reports' if n.notification_type == 'Report' else ('requests' if n.notification_type in ['New Request', 'Request Update'] else 'other') }}"
+                     data-date="{{ n.created_at.strftime('%Y-%m-%d') if n.created_at else '' }}">
                     <input type="checkbox" class="notif-row-checkbox"
-                           data-id="{{ n.notification_id }}">
+                           data-id="{{ n.notification_id }}"
+                           aria-label="Select notification">
 
                     {% if n.notification_type == 'New Request' %}
                         <span class="notif-icon avatar">{{ n.message.split(' ')[0][0]|upper if n.message else '?' }}</span>
@@ -129,31 +178,48 @@
 
                     <div class="notif-row-body">
                         <p>{{ n.message }}</p>
-                        <span class="notif-row-time">{{ n.time_ago }}</span>
+                        <span class="notif-row-time">
+                            {{ n.time_ago }}
+                            <span class="notif-row-state">· {{ 'Unread' if not n.is_read else 'Read' }}</span>
+                        </span>
                     </div>
 
-                    <span class="notif-row-status">{{ 'Unread' if not n.is_read else 'Read' }}</span>
+                    {# Eye shows the state: closed while unread, open once seen.
+                       Clicking flips it either way. #}
+                    <button type="button" class="notif-row-eye"
+                            onclick="notifToggleRead({{ n.notification_id }}, this)"
+                            aria-pressed="{{ 'true' if n.is_read else 'false' }}"
+                            aria-label="{{ 'Mark as unread' if n.is_read else 'Mark as read' }}"
+                            title="{{ 'Mark as unread' if n.is_read else 'Mark as read' }}">
+                        <svg class="eye-open" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"/><circle cx="12" cy="12" r="3"/></svg>
+                        <svg class="eye-closed" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.733 5.076a10.744 10.744 0 0 1 11.205 6.575 1 1 0 0 1 0 .696 10.747 10.747 0 0 1-1.444 2.49"/><path d="M14.084 14.158a3 3 0 0 1-4.242-4.242"/><path d="M17.479 17.499a10.75 10.75 0 0 1-15.417-5.151 1 1 0 0 1 0-.696 10.75 10.75 0 0 1 4.446-5.143"/><path d="m2 2 20 20"/></svg>
+                    </button>
+
+                    <button type="button" class="notif-row-trash"
+                            onclick="notifDeleteOne({{ n.notification_id }}, this)"
+                            aria-label="Delete notification" title="Delete">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 11v6"/><path d="M14 11v6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                    </button>
 
                     {% if details_url %}
                         <a class="notif-row-details" href="{{ details_url }}"
-                           onclick="notifBeaconRead({{ n.notification_id }})">
+                           onclick="notifOpen({{ n.notification_id }})">
                             Details
                         </a>
-                    {% else %}
-                        <button type="button" class="notif-row-details"
-                                onclick="markNotificationRead({{ n.notification_id }}, this.closest('.notif-row'))">
-                            Mark read
-                        </button>
                     {% endif %}
                 </div>
             {% endfor %}
         </div>
         {% endfor %}
     {% else %}
-        <p class="placeholder-text">
-          {% if tab == 'unread' %}Nothing unread.
-          {% else %}No notifications here.{% endif %}
-        </p>
+        <div class="notif-empty">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.268 21a2 2 0 0 0 3.464 0"/><path d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326"/></svg>
+            <p>
+                {% if tab == 'unread' %}You're all caught up.
+                {% elif tab == 'read' %}Nothing read yet.
+                {% else %}No notifications yet.{% endif %}
+            </p>
+        </div>
     {% endif %}
 </div>
 
@@ -161,64 +227,217 @@
 
 {% block extra_scripts %}
 <script>
-    function notifFilterChange(value) {
-        const url = new URL(window.location.href);
-        url.searchParams.set('status', value);
-        window.location.href = url.toString();
+    // Only rows the filters leave visible can be selected, so "Select all"
+    // never reaches a row the user cannot see.
+    function notifCheckboxes() {
+        return Array.from(document.querySelectorAll('.notif-row:not([hidden]) .notif-row-checkbox'));
     }
 
-    function notifBeaconRead(id) {
-        // sendBeacon needs a body, or the request may be dropped
-        navigator.sendBeacon(
-            `/api/notifications/${id}/read`,
-            new Blob([], { type: 'application/x-www-form-urlencoded' })
-        );
+    // Manila calendar date, YYYY-MM-DD, n days back from today.
+    function notifManilaDate(daysBack) {
+        const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Manila' })
+            .format(new Date());
+        const d = new Date(today + 'T00:00:00Z');
+        d.setUTCDate(d.getUTCDate() - daysBack);
+        return d.toISOString().slice(0, 10);
+    }
+
+    const NOTIF_PERIOD_DAYS = { today: 0, '7d': 7, '30d': 30 };
+
+    function notifApplyFilters() {
+        const typeSel = document.getElementById('notif-filter-type');
+        const periodSel = document.getElementById('notif-filter-period');
+        const type = typeSel.value;
+        const period = periodSel.value;
+        const since = period ? notifManilaDate(NOTIF_PERIOD_DAYS[period]) : '';
+
+        const rows = Array.from(document.querySelectorAll('.notif-row'));
+        let shown = 0;
+        rows.forEach((row) => {
+            const match = (!type || row.dataset.type === type) &&
+                          (!since || row.dataset.date >= since);
+            row.hidden = !match;
+            if (match) {
+                shown++;
+            } else {
+                // a hidden row cannot stay selected
+                const cb = row.querySelector('.notif-row-checkbox');
+                if (cb) cb.checked = false;
+                row.classList.remove('selected');
+            }
+        });
+        document.querySelectorAll('.notif-day-group').forEach((g) => {
+            g.hidden = !g.querySelector('.notif-row:not([hidden])');
+        });
+
+        const active = !!(type || period);
+        typeSel.classList.toggle('is-set', !!type);
+        periodSel.classList.toggle('is-set', !!period);
+        document.getElementById('notif-filter-clear').hidden = !active;
+
+        const note = document.getElementById('notif-filter-note');
+        note.hidden = !active || !rows.length;
+        note.textContent = `Showing ${shown} of ${rows.length}`;
+
+        document.getElementById('notif-filter-empty').hidden = !(active && rows.length && !shown);
+        const selectAll = document.querySelector('.notif-select-all');
+        if (selectAll) selectAll.hidden = shown === 0;
+
+        // Keep the filters in the URL and on the tab links, so switching
+        // tabs or reloading does not drop them.
+        const url = new URL(window.location.href);
+        type ? url.searchParams.set('type', type) : url.searchParams.delete('type');
+        period ? url.searchParams.set('period', period) : url.searchParams.delete('period');
+        history.replaceState(null, '', url);
+        document.querySelectorAll('.notif-tab').forEach((a) => {
+            const link = new URL(a.href);
+            type ? link.searchParams.set('type', type) : link.searchParams.delete('type');
+            period ? link.searchParams.set('period', period) : link.searchParams.delete('period');
+            a.href = link;
+        });
+
+        notifSyncSelection();
+    }
+
+    function notifClearFilters() {
+        document.getElementById('notif-filter-type').value = '';
+        document.getElementById('notif-filter-period').value = '';
+        notifApplyFilters();
     }
 
     function notifSelectedIds() {
-        return Array.from(document.querySelectorAll('.notif-row-checkbox:checked'))
-            .map((cb) => cb.dataset.id);
+        return notifCheckboxes().filter((cb) => cb.checked).map((cb) => cb.dataset.id);
     }
 
-    // The Delete button stays disabled until at least one row is checked, so the
-    // checkbox is the only thing the user has to reach for before deleting.
-    function notifSyncDeleteButton() {
-        const btn = document.getElementById('notif-delete-btn');
-        const count = document.getElementById('notif-delete-count');
-        if (!btn || !count) return;
+    // Select-all is tri-state: ticked when every row is, a dash when only
+    // some are. The bulk actions show as soon as one row is ticked.
+    function notifSyncSelection() {
+        const boxes = notifCheckboxes();
+        const selected = boxes.filter((cb) => cb.checked).length;
+        const all = document.getElementById('notif-select-all');
+        const label = document.getElementById('notif-select-label');
+        const actions = document.getElementById('notif-bulk-actions');
 
-        const selected = notifSelectedIds().length;
-        btn.disabled = selected === 0;
-        count.hidden = selected === 0;
-        count.textContent = selected;
+        if (all) {
+            all.checked = boxes.length > 0 && selected === boxes.length;
+            all.indeterminate = selected > 0 && selected < boxes.length;
+        }
+        if (label) label.textContent = selected ? `${selected} selected` : 'Select all';
+        if (actions) actions.hidden = selected === 0;
     }
 
     document.addEventListener('change', function (e) {
-        if (e.target.classList.contains('notif-row-checkbox')) {
+        if (e.target.id === 'notif-select-all') {
+            notifCheckboxes().forEach((cb) => {
+                cb.checked = e.target.checked;
+                cb.closest('.notif-row').classList.toggle('selected', cb.checked);
+            });
+            notifSyncSelection();
+        } else if (e.target.classList.contains('notif-row-checkbox')) {
             e.target.closest('.notif-row').classList.toggle('selected', e.target.checked);
-            notifSyncDeleteButton();
+            notifSyncSelection();
         }
     });
 
-    document.addEventListener('DOMContentLoaded', notifSyncDeleteButton);
+    document.addEventListener('DOMContentLoaded', notifApplyFilters);
 
-    async function notifDeleteSelected() {
+    async function notifBulk(action) {
         const ids = notifSelectedIds();
         if (!ids.length) return;
 
-        if (!confirm(`Delete ${ids.length} notification${ids.length > 1 ? 's' : ''}?`)) {
+        if (action === 'delete' &&
+            !confirm(`Delete ${ids.length} notification${ids.length > 1 ? 's' : ''}? This can't be undone.`)) {
             return;
         }
 
-        const btn = document.getElementById('notif-delete-btn');
-        if (btn) btn.disabled = true;
-
-        await Promise.all(
-            ids.map((id) =>
-                fetch(`/api/notifications/${id}/delete`, { method: 'POST' })
-            )
-        );
+        document.querySelectorAll('.notif-bulk-actions button').forEach((b) => (b.disabled = true));
+        try {
+            // One request per notification, on the existing single-item
+            // endpoints (read / unread / delete).
+            const results = await Promise.all(
+                ids.map((id) =>
+                    fetch(`/api/notifications/${id}/${action}`, { method: 'POST' })
+                )
+            );
+            if (results.some((r) => !r.ok)) throw new Error('some requests failed');
+        } catch (err) {
+            console.error('Bulk notification action failed:', err);
+            alert('Something went wrong. Please try again.');
+        }
+        // Reloading keeps the tab counts and the current tab's rows honest.
         window.location.reload();
+    }
+
+    // A single toggle leaves the row where it is, even on the Unread tab, so
+    // a mis-click can be undone with a second click instead of a hunt.
+    async function notifToggleRead(id, btn) {
+        const row = btn.closest('.notif-row');
+        const makeRead = row.classList.contains('unread');
+        btn.disabled = true;
+        try {
+            const res = await fetch(
+                `/api/notifications/${id}/${makeRead ? 'read' : 'unread'}`,
+                { method: 'POST' }
+            );
+            if (!res.ok) throw new Error(res.status);
+
+            row.classList.toggle('unread', !makeRead);
+            const label = makeRead ? 'Mark as unread' : 'Mark as read';
+            btn.setAttribute('aria-pressed', String(makeRead));
+            btn.setAttribute('aria-label', label);
+            btn.title = label;
+            const state = row.querySelector('.notif-row-state');
+            if (state) state.textContent = makeRead ? '· Read' : '· Unread';
+
+            notifBumpCount('unread', makeRead ? -1 : 1);
+            notifBumpCount('read', makeRead ? 1 : -1);
+            loadNotifications(); // bell badge
+        } catch (err) {
+            console.error('Failed to toggle notification:', err);
+        } finally {
+            btn.disabled = false;
+        }
+    }
+
+    // Removes the row in place rather than reloading, so the scroll position
+    // and any other ticked rows survive.
+    async function notifDeleteOne(id, btn) {
+        if (!confirm("Delete this notification? This can't be undone.")) return;
+
+        const row = btn.closest('.notif-row');
+        btn.disabled = true;
+        try {
+            const res = await fetch(`/api/notifications/${id}/delete`, { method: 'POST' });
+            if (!res.ok) throw new Error(res.status);
+        } catch (err) {
+            console.error('Failed to delete notification:', err);
+            btn.disabled = false;
+            alert('Something went wrong. Please try again.');
+            return;
+        }
+
+        notifBumpCount('all', -1);
+        notifBumpCount(row.classList.contains('unread') ? 'unread' : 'read', -1);
+        loadNotifications(); // bell badge
+
+        row.classList.add('removing');
+        setTimeout(() => {
+            const group = row.closest('.notif-day-group');
+            row.remove();
+            if (group && !group.querySelector('.notif-row')) group.remove();
+            // Last one gone: reload for the proper empty state.
+            if (!document.querySelector('.notif-row')) {
+                window.location.reload();
+                return;
+            }
+            notifSyncSelection();
+        }, 180);
+    }
+
+    function notifBumpCount(key, delta) {
+        const el = document.querySelector(`[data-count="${key}"]`);
+        if (!el) return;
+        el.textContent = Math.max(0, (parseInt(el.textContent, 10) || 0) + delta);
     }
 </script>
 {% endblock %}

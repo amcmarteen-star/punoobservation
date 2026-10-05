@@ -282,6 +282,13 @@ html {
     scrollbar-gutter: stable;
 }
 
+/* Inside the app the window itself never scrolls (.main-area does), so
+   the reserved gutter was only an empty strip down the right edge. */
+html:has(> body.app-body) {
+    scrollbar-gutter: auto;
+    overflow: hidden;
+}
+
 .app-body {
     margin: 0;
     font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
@@ -607,16 +614,20 @@ html {
     min-width: 0;
     height: 100vh;
     overflow-y: auto;
-    /* The scrollbar's track is reserved whether or not a scrollbar is
-       showing, so a short page and a long one put the content in exactly
-       the same place. Without it every page that grows past the window
-       shifts its whole layout left the moment the bar appears. */
-    scrollbar-gutter: stable;
+    /* Scrolls by wheel, trackpad, touch and keyboard as usual, but draws no
+       scrollbar: the bar was a stray line down the right edge, and with no
+       bar there is no gutter to reserve, so content runs edge to edge and
+       never shifts when a page grows past the window. */
+    scrollbar-width: none;
     /* This is the page ground, the surface everything else sits above. In
        light it is the same value as --surface-2; in dark it must be the
        darkest layer or the cards have nothing to rise from. */
     background-color: var(--surface-0);
     overflow-x: hidden;
+}
+
+.main-area::-webkit-scrollbar {
+    display: none;
 }
 
 .page-content {
@@ -649,74 +660,154 @@ html {
     gap: 1rem;
 }
 
+/* Dashboard clock: a small analog face beside the digital reading. The
+   face is what makes it read as a clock at a glance; the digits give the
+   exact time. */
 .dashboard-clock {
     display: flex;
-    flex-direction: column;
-    align-items: flex-end;
+    align-items: center;
+    gap: 0.85rem;
     background-color: var(--surface-1);
     /* A hairline as well as the shadow: a shadow alone carries nothing on a
        dark ground, so the chip had no edge there at all. */
     border: 1px solid var(--line);
-    padding: 0.65rem 1rem;
-    border-radius: 10px;
+    padding: 0.7rem 1.1rem 0.7rem 0.8rem;
+    border-radius: 14px;
     box-shadow: var(--sh-sm);
+}
+
+.clock-face {
+    flex: none;
+    width: 3rem;
+    height: 3rem;
+    overflow: visible;
+}
+
+.clock-face-ring {
+    fill: var(--surface-2);
+    stroke: var(--line-strong);
+    stroke-width: 1;
+}
+
+.clock-tick {
+    stroke: var(--text-3);
+    stroke-width: 1;
+    stroke-linecap: round;
+}
+
+.clock-tick.is-major {
+    stroke: var(--text-2);
+    stroke-width: 1.6;
+}
+
+.clock-hand-h,
+.clock-hand-m {
+    stroke: var(--text-heading);
+    stroke-linecap: round;
+}
+
+.clock-hand-h { stroke-width: 2.6; }
+.clock-hand-m { stroke-width: 1.8; }
+
+.clock-hand-s {
+    stroke: var(--ok-solid);
+    stroke-width: 1;
+    stroke-linecap: round;
+}
+
+.clock-pin {
+    fill: var(--ok-solid);
+}
+
+.clock-text {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    min-width: 0;
 }
 
 .clock-time {
     display: flex;
     align-items: baseline;
-    gap: 0.15rem;
     /* Every digit the same width, so a ticking clock never nudges what
        sits beside it. */
     font-variant-numeric: tabular-nums;
-    font-size: 1.5rem;
+    font-size: 1.6rem;
     font-weight: 700;
-    line-height: 1.1;
-    letter-spacing: -0.01em;
+    line-height: 1;
+    letter-spacing: -0.02em;
     color: var(--text-heading);
 }
 
 /* The seconds change every tick, so they sit a size down and a shade back:
    the hour and minute are the reading, the seconds only say it is live. */
 .clock-sec {
-    font-size: 0.95rem;
+    font-size: 1rem;
     font-weight: 600;
+    letter-spacing: 0;
     color: var(--text-2);
 }
 
 .clock-meridiem {
-    margin-left: 0.2rem;
-    font-size: 0.7rem;
+    margin-left: 0.35rem;
+    font-size: 0.72rem;
     font-weight: 700;
     letter-spacing: 0.08em;
     color: var(--text-2);
 }
 
-/* The clock is pinned to Manila whatever the machine is set to, so it says
-   which zone it is showing. */
-.clock-zone {
-    padding: 0.05rem 0.3rem;
-    border-radius: 4px;
-    background-color: var(--surface-3);
-    font-size: 0.625rem;
-    font-weight: 700;
-    letter-spacing: 0.06em;
-    color: var(--text-3);
-    cursor: help;
-}
-
 .clock-date {
     display: flex;
     align-items: center;
-    gap: 0.4rem;
-    margin-top: 0.2rem;
+    gap: 0.5rem;
     font-size: 0.8125rem;
     color: var(--text-2);
+    white-space: nowrap;
+}
+
+/* The clock is pinned to Manila whatever the machine is set to, so it says
+   which zone it is showing. The dot says the time is live. */
+.clock-zone {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.1rem 0.4rem;
+    border-radius: 999px;
+    background-color: var(--ok-bg);
+    border: 1px solid var(--ok-line);
+    font-size: 0.625rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    color: var(--ok-text);
+    cursor: help;
+}
+
+.clock-live {
+    position: relative;
+    width: 0.4rem;
+    height: 0.4rem;
+    border-radius: 50%;
+    background-color: var(--ok-solid);
+}
+
+.clock-live::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background-color: var(--ok-solid);
+    animation: clock-live-pulse 2s var(--ease) infinite;
+}
+
+@keyframes clock-live-pulse {
+    0%   { transform: scale(1);   opacity: 0.6; }
+    70%  { transform: scale(2.6); opacity: 0; }
+    100% { transform: scale(2.6); opacity: 0; }
 }
 
 @media (max-width: 560px) {
     .dashboard-clock {
-        align-items: flex-start;
+        width: 100%;
     }
 }
 
@@ -862,21 +953,29 @@ html {
 .notif-dropdown {
     display: none;
     position: absolute;
-    top: calc(100% + 8px);
+    top: calc(100% + 10px);
     right: 0;
-    width: 340px;
-    max-height: 420px;
+    width: 380px;
+    max-width: calc(100vw - 2rem);
+    max-height: min(560px, calc(100vh - var(--topbar-h) - 2rem));
     background-color: var(--surface-1);
     border: 1px solid var(--line);
-    border-radius: 12px;
-    box-shadow: 0 12px 32px rgba(15, 23, 42, 0.12);
+    border-radius: 16px;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06), 0 16px 40px rgba(15, 23, 42, 0.14);
     overflow: hidden;
     z-index: 2000;
     flex-direction: column;
+    transform-origin: top right;
 }
 
 .notif-dropdown.active {
     display: flex;
+    animation: notif-pop 160ms var(--ease);
+}
+
+@keyframes notif-pop {
+    from { opacity: 0; transform: translateY(-4px) scale(0.98); }
+    to   { opacity: 1; transform: none; }
 }
 
 .notif-dropdown-header {
@@ -884,16 +983,51 @@ html {
     align-items: center;
     justify-content: space-between;
     gap: 0.5rem;
-    padding: 0.9rem 1rem;
-    border-bottom: 1px solid var(--surface-3);
+    padding: 1rem 1rem 0.75rem 1.1rem;
 }
 
 .notif-dropdown-header-title {
     font-weight: 700;
-    font-size: 1rem;
+    font-size: 0.95rem;
     color: var(--text-heading);
 }
 
+.notif-head-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.15rem;
+}
+
+.notif-head-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    border: none;
+    border-radius: 8px;
+    background: none;
+    color: var(--text-2);
+    cursor: pointer;
+    transition: background-color 160ms var(--ease), color 160ms var(--ease);
+}
+
+.notif-head-btn svg {
+    width: 1.05rem;
+    height: 1.05rem;
+}
+
+.notif-head-btn:hover:not(:disabled) {
+    background-color: var(--surface-3);
+    color: var(--text-heading);
+}
+
+.notif-head-btn:disabled {
+    opacity: 0.4;
+    cursor: default;
+}
+
+/* "Mark all as read" text link on the full Notifications page */
 .notif-mark-all {
     background: none;
     border: none;
@@ -909,14 +1043,70 @@ html {
     text-decoration: underline;
 }
 
+/* Segmented filter: a tray with the active choice raised out of it */
+.notif-seg {
+    display: flex;
+    gap: 0.15rem;
+    margin: 0 1.1rem 0.5rem;
+    padding: 0.2rem;
+    width: fit-content;
+    background-color: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+}
+
+.notif-seg-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.35rem 0.7rem;
+    border: 1px solid transparent;
+    border-radius: 7px;
+    background: none;
+    color: var(--text-2);
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 160ms var(--ease), color 160ms var(--ease);
+}
+
+.notif-seg-btn:hover {
+    color: var(--text-heading);
+}
+
+.notif-seg-btn.active {
+    background-color: var(--surface-1);
+    border-color: var(--line);
+    color: var(--text-heading);
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
+}
+
+.notif-seg-count {
+    min-width: 1.15rem;
+    padding: 0 0.3rem;
+    border-radius: 5px;
+    background-color: var(--surface-3);
+    color: var(--text-body);
+    font-size: 0.7rem;
+    line-height: 1.15rem;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+}
+
+.notif-seg-count[hidden] {
+    display: none;
+}
+
 #notif-dropdown-list {
     overflow-y: auto;
-    max-height: 320px;
+    flex: 1;
+    min-height: 0;
+    border-top: 1px dashed var(--line-strong);
 }
 
 #notif-dropdown-list .placeholder-text {
     margin: 0;
-    padding: 2.25rem 1rem;
+    padding: 2.5rem 1rem;
     text-align: center;
 }
 
@@ -925,9 +1115,11 @@ html {
 .notif-page-item {
     display: flex;
     align-items: flex-start;
-    gap: 0.7rem;
-    padding: 0.75rem 1rem;
-    border-bottom: 1px solid var(--surface-2);
+    gap: 0.75rem;
+    padding: 0.9rem 1.1rem;
+    border-bottom: 1px dashed var(--line-strong);
+    color: inherit;
+    text-decoration: none;
     cursor: pointer;
     transition: background-color 0.12s ease;
 }
@@ -942,10 +1134,15 @@ html {
     background-color: var(--surface-2);
 }
 
+.notif-item:focus-visible {
+    outline: 2px solid var(--brand-text);
+    outline-offset: -2px;
+}
+
 .notif-icon {
     flex-shrink: 0;
-    width: 2.1rem;
-    height: 2.1rem;
+    width: 2.25rem;
+    height: 2.25rem;
     border-radius: 50%;
     display: flex;
     align-items: center;
@@ -977,24 +1174,49 @@ html {
     min-width: 0;
 }
 
+/* Message on the left; the relative time and unread dot hold the top
+   right corner so they line up down the list. */
+.notif-item-top {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.6rem;
+}
+
+.notif-item-top .notif-message {
+    flex: 1;
+    min-width: 0;
+}
+
 .notif-message {
     margin: 0;
-    font-size: 0.875rem;
+    font-size: 0.85rem;
     line-height: 1.45;
     color: var(--text-body);
+}
+
+.notif-message strong {
+    color: var(--text-heading);
+    font-weight: 700;
 }
 
 .notif-item.unread .notif-message,
 .notif-page-item.unread .notif-message {
     color: var(--text-heading);
-    font-weight: 600;
+}
+
+.notif-ago {
+    flex-shrink: 0;
+    font-size: 0.72rem;
+    color: var(--text-2);
+    white-space: nowrap;
+    line-height: 1.6;
 }
 
 .notif-time {
     display: block;
     font-size: 0.75rem;
     color: var(--text-2);
-    margin-top: 0.2rem;
+    margin-top: 0.15rem;
 }
 
 .notif-dot {
@@ -1002,7 +1224,7 @@ html {
     width: 0.5rem;
     height: 0.5rem;
     border-radius: 50%;
-    background-color: var(--brand-solid);
+    background-color: var(--ok-solid);
     margin-top: 0.4rem;
     visibility: hidden;
 }
@@ -1012,19 +1234,26 @@ html {
     visibility: visible;
 }
 
-.notif-view-all {
-    display: block;
-    text-align: center;
-    padding: 0.85rem;
-    font-size: 0.875rem;
+/* A button-shaped cue inside the row link; the row itself is the target. */
+.notif-item-action {
+    display: inline-flex;
+    margin-top: 0.6rem;
+    padding: 0.35rem 0.75rem;
+    border-radius: 7px;
+    background-color: #12211a;
+    color: #ffffff;
+    font-size: 0.78rem;
     font-weight: 600;
-    color: var(--brand-text);
-    text-decoration: none;
-    border-top: 1px solid var(--surface-3);
 }
 
-.notif-view-all:hover {
-    background-color: var(--surface-2);
+.notif-item:hover .notif-item-action {
+    background-color: #2f4239;
+}
+
+:root[data-theme="dark"] .notif-item-action {
+    background-color: var(--surface-3);
+    border: 1px solid var(--line);
+    color: var(--text-heading);
 }
 
 /* Full notifications page */
@@ -1042,80 +1271,136 @@ html {
     margin: 0;
 }
 
-/* ---- toolbar: bulk delete + status filter ---- */
+/* ---- toolbar: select all + bulk actions on the left, filters right ---- */
 .notif-toolbar {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 0.75rem;
     flex-wrap: wrap;
-    margin: 1rem 0;
+    min-height: 40px;
+    margin: 0 0 1rem;
 }
 
-.notif-filter-wrap {
-    position: relative;
+.notif-bulk {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
 }
 
+/* Lines up with the row checkboxes below it (card padding + row padding) */
+.notif-select-all {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.5rem 0.9rem 0.5rem calc(1rem + 1px);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background-color: var(--surface-1);
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--text-strong);
+    cursor: pointer;
+    user-select: none;
+    font-variant-numeric: tabular-nums;
+}
+
+.notif-select-all[hidden] {
+    display: none;
+}
+
+.notif-select-all input {
+    width: 1rem;
+    height: 1rem;
+    margin: 0;
+    accent-color: var(--brand-text);
+    cursor: pointer;
+}
+
+.notif-bulk-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    animation: notif-pop 140ms var(--ease);
+}
+
+.notif-bulk-actions[hidden] {
+    display: none;
+}
+
+.notif-bulk-btn,
 .notif-delete-btn {
     display: inline-flex;
     align-items: center;
     gap: 0.45rem;
-    background-color: var(--surface-1);
-    color: var(--danger-text);
-    border: 1px solid var(--danger-line);
+    min-height: 38px;
+    padding: 0.45rem 0.85rem;
     border-radius: 8px;
-    padding: 0.5rem 0.9rem;
-    min-height: 40px;
-    font-size: 0.875rem;
+    font-size: 0.85rem;
     font-weight: 600;
     cursor: pointer;
     transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease;
 }
 
+.notif-bulk-btn {
+    background-color: var(--surface-1);
+    color: var(--text-strong);
+    border: 1px solid var(--line);
+}
+
+.notif-bulk-btn:hover:not(:disabled) {
+    background-color: var(--surface-3);
+    border-color: var(--line-strong);
+    color: var(--text-heading);
+}
+
+.notif-delete-btn {
+    background-color: var(--surface-1);
+    color: var(--danger-text);
+    border: 1px solid var(--danger-line);
+}
+
 .notif-delete-btn:hover:not(:disabled) {
     background-color: var(--danger-solid);
-    border-color: var(--danger-text);
+    border-color: var(--danger-solid);
     color: #ffffff;
 }
 
-/* Nothing selected yet -- the button is visible so users know where it is,
-   but greyed out until a checkbox is ticked. */
+.notif-bulk-btn:disabled,
 .notif-delete-btn:disabled {
-    background-color: var(--surface-2);
-    border-color: var(--line);
-    color: var(--text-2);
-    cursor: not-allowed;
+    opacity: 0.55;
+    cursor: progress;
 }
 
+.notif-bulk-btn svg,
 .notif-delete-btn svg {
     width: 1rem;
     height: 1rem;
 }
 
-.notif-delete-count {
-    background-color: var(--danger-solid);
-    color: #ffffff;
-    border-radius: 999px;
-    min-width: 1.25rem;
-    padding: 0 0.35rem;
-    font-size: 0.75rem;
-    font-weight: 700;
-    line-height: 1.25rem;
-    text-align: center;
+.notif-filters {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    margin: 0;
 }
 
-.notif-delete-btn:hover:not(:disabled) .notif-delete-count {
-    background-color: var(--surface-1);
-    color: var(--danger-text);
+.notif-filters-icon {
+    width: 1rem;
+    height: 1rem;
+    color: var(--text-2);
 }
 
 .notif-filter-select {
     appearance: none;
+    min-height: 38px;
     background-color: var(--surface-1);
     border: 1px solid var(--line);
     border-radius: 8px;
-    padding: 0.5rem 2rem 0.5rem 0.9rem;
-    font-size: 0.875rem;
+    padding: 0.45rem 2rem 0.45rem 0.85rem;
+    font-size: 0.85rem;
     font-weight: 600;
     color: var(--text-strong);
     cursor: pointer;
@@ -1125,9 +1410,56 @@ html {
     background-repeat: no-repeat;
 }
 
+.notif-filter-select:hover {
+    border-color: var(--line-strong);
+}
+
+/* A filter that is narrowing the list is marked, so an empty list never
+   looks like missing data. */
+.notif-filter-select.is-set {
+    border-color: var(--ok-line);
+    background-color: var(--ok-bg);
+    color: var(--ok-text);
+}
+
+.notif-filter-clear {
+    border: none;
+    background: none;
+    font: inherit;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--brand-text);
+    text-decoration: none;
+    padding: 0.25rem 0.35rem;
+    cursor: pointer;
+}
+
+.notif-filter-clear[hidden],
+.notif-filter-note[hidden],
+.notif-empty[hidden],
+.notif-row[hidden],
+.notif-day-group[hidden] {
+    display: none;
+}
+
+.notif-filter-note {
+    margin-right: 0.25rem;
+    font-size: 0.8rem;
+    color: var(--text-2);
+    font-variant-numeric: tabular-nums;
+}
+
+.notif-filter-clear:hover {
+    text-decoration: underline;
+}
+
 /* ---- day-grouped list ---- */
+.notif-list-card {
+    padding: 1.25rem 1rem;
+}
+
 .notif-day-group {
-    margin-bottom: 1.5rem;
+    margin-bottom: 1.25rem;
 }
 
 .notif-day-group:last-child {
@@ -1135,36 +1467,52 @@ html {
 }
 
 .notif-day-heading {
-    font-size: 0.875rem;
+    font-size: 0.75rem;
     font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
     color: var(--text-2);
-    margin: 0 0 0.6rem;
+    margin: 0 0 0.4rem;
+    padding: 0 1rem;
 }
 
 .notif-row {
     display: flex;
     align-items: center;
     gap: 0.85rem;
-    padding: 0.85rem 1rem;
-    border-bottom: 1px solid var(--surface-3);
+    padding: 0.8rem 1rem;
+    border-radius: 10px;
+    transition: background-color 120ms ease;
 }
 
-.notif-row:last-child {
-    border-bottom: none;
+.notif-row + .notif-row {
+    margin-top: 2px;
 }
 
 .notif-row:hover {
     background-color: var(--surface-2);
 }
 
-.notif-row.selected {
-    background-color: var(--danger-bg);
+/* Unread rows carry a faint brand tint as well as bold text, so the state
+   reads at a glance and not only from the eye icon. */
+.notif-row.unread {
+    background-color: var(--ok-bg);
+}
+
+.notif-row.unread:hover {
+    background-color: var(--surface-2);
+}
+
+.notif-row.selected,
+.notif-row.selected:hover {
+    background-color: var(--surface-3);
 }
 
 .notif-row-checkbox {
     flex-shrink: 0;
     width: 1rem;
     height: 1rem;
+    margin: 0;
     accent-color: var(--brand-text);
     cursor: pointer;
 }
@@ -1197,18 +1545,107 @@ html {
     margin-top: 0.15rem;
 }
 
-.notif-row-status {
-    flex-shrink: 0;
-    width: 4.5rem;
-    text-align: center;
-    font-size: 0.75rem;
+.notif-row.unread .notif-row-state {
+    color: var(--ok-text);
     font-weight: 600;
+}
+
+.notif-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 3rem 1rem;
+    text-align: center;
     color: var(--text-2);
 }
 
-.notif-row.unread .notif-row-status {
-    color: var(--brand-text);
+.notif-empty svg {
+    width: 1.75rem;
+    height: 1.75rem;
+    opacity: 0.6;
 }
+
+.notif-empty p {
+    margin: 0;
+    font-size: 0.9rem;
+}
+
+@media (max-width: 640px) {
+    .notif-toolbar {
+        align-items: stretch;
+        flex-direction: column;
+    }
+    .notif-row {
+        flex-wrap: wrap;
+        padding: 0.75rem;
+    }
+    .notif-row-body {
+        flex-basis: calc(100% - 5rem);
+    }
+}
+
+/* Read toggle: closed eye while unread (in brand green, since it still
+   wants attention), open eye once seen. Only one icon is ever shown. */
+.notif-row-eye,
+.notif-row-trash {
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    background: none;
+    color: var(--text-2);
+    cursor: pointer;
+    transition: background-color 160ms var(--ease), color 160ms var(--ease),
+                border-color 160ms var(--ease);
+}
+
+.notif-row-eye svg,
+.notif-row-trash svg {
+    width: 1.15rem;
+    height: 1.15rem;
+}
+
+.notif-row-eye:hover {
+    background-color: var(--surface-3);
+    color: var(--text-heading);
+}
+
+.notif-row-eye:disabled,
+.notif-row-trash:disabled {
+    opacity: 0.5;
+    cursor: progress;
+}
+
+/* Sits tight against the eye so the two read as one icon group */
+.notif-row-trash {
+    margin-left: -0.6rem;
+}
+
+.notif-row-trash:hover {
+    background-color: var(--danger-bg);
+    border-color: var(--danger-line);
+    color: var(--danger-text);
+}
+
+.notif-row.removing {
+    opacity: 0;
+    transform: translateX(8px);
+    transition: opacity 180ms var(--ease), transform 180ms var(--ease);
+}
+
+.notif-row-eye .eye-closed { display: none; }
+.notif-row.unread .notif-row-eye { color: var(--brand-text); }
+.notif-row.unread .notif-row-eye:hover {
+    background-color: var(--ok-bg);
+    border-color: var(--ok-line);
+}
+.notif-row.unread .notif-row-eye .eye-open { display: none; }
+.notif-row.unread .notif-row-eye .eye-closed { display: block; }
 
 .notif-row-details {
     flex-shrink: 0;
@@ -1241,11 +1678,6 @@ html {
     background-color: var(--line-strong);
 }
 
-@media (max-width: 720px) {
-    .notif-row-status {
-        display: none;
-    }
-}
 
 /*LOGIN PAGE*/
 
@@ -1829,6 +2261,51 @@ body.login-page :focus-visible {
 
     .auth-wrapper {
         padding: 1.75rem 1.25rem;
+    }
+
+    /* On a phone the brand panel filled the whole first screen and the
+       form only started below it. Here it shrinks to a header: logo,
+       name and a one-line headline. The pitch, chips and footer are
+       landing-page material and drop out. */
+    /* Stacked, the two panels no longer share the screen height: the
+       header takes what it needs and the form gets the rest, from the top. */
+    .brand-panel {
+        flex: none;
+        padding: 1.1rem 1.15rem 1.25rem;
+        padding-top: calc(1.1rem + env(safe-area-inset-top));
+    }
+
+    .auth-panel {
+        flex: 1 0 auto;
+        align-items: flex-start;
+    }
+
+    .brand-content {
+        padding-top: 1rem;
+    }
+
+    .brand-content h1 {
+        font-size: 1.35rem;
+        line-height: 1.2;
+    }
+
+    .brand-content p,
+    .chip-row,
+    .brand-footer,
+    .brand-br {
+        display: none;
+    }
+
+    .auth-panel {
+        padding: 0.75rem 0.5rem calc(2rem + env(safe-area-inset-bottom));
+    }
+}
+
+/* Phones draw overlay scrollbars, so the gutter the page reserves for a
+   desktop scrollbar was only an empty strip down the right edge. */
+@media (max-width: 860px) {
+    html {
+        scrollbar-gutter: auto;
     }
 }
 
@@ -4401,5 +4878,384 @@ table[data-freeze="2"].is-scrolled-x th:nth-child(2) {
     .kpi:hover,
     .chart-card:hover {
         transform: none;
+    }
+}
+
+/* ---- Leaflet maps stay under the app chrome ----
+   Leaflet gives its panes and controls z-index 400-1000. Without a
+   stacking context of their own they compete with the sticky top bar
+   (z-index 30), and the bell dropdown and account menu got drawn behind
+   the map. isolate keeps every map layer inside the map. */
+.leaflet-container {
+    isolation: isolate;
+}
+
+/* ============================================
+   MOBILE (Android + iOS)
+   Below 860px the sidebar leaves the layout and becomes a drawer that
+   slides in over the page from the hamburger in the top bar. Everything
+   else here is phone polish: dynamic viewport height (so iOS Safari's
+   toolbar never hides the bottom of the app), notch / home-bar safe
+   areas, 16px form text (anything smaller makes iOS zoom in on focus),
+   and touch-sized targets.
+   ============================================ */
+
+/* Phone-only controls; the desktop layout never shows them. */
+.nav-open-btn,
+.sidebar-close,
+.sidebar-backdrop {
+    display: none;
+}
+
+/* 100vh on mobile browsers is the height with the toolbar hidden, so the
+   bottom of a 100vh shell sits under it. dvh tracks what is visible, but
+   older Android browsers (Samsung Internet, older WebViews) lack it --
+   there the sidebar's Sign Out ended up under the address bar. So Base.html
+   writes the real visible height (innerHeight) to --app-h, with dvh and
+   then vh as the fallbacks before its script runs. */
+:root {
+    --app-h: 100vh;
+}
+
+@supports (height: 100dvh) {
+    :root {
+        --app-h: 100dvh;
+    }
+}
+
+.app-shell,
+.main-area,
+.sidebar {
+    height: var(--app-h);
+}
+
+.app-body {
+    -webkit-tap-highlight-color: transparent;
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+}
+
+@media (max-width: 860px) {
+    :root {
+        --topbar-h: 56px;
+    }
+
+    /* ---- Sidebar as a drawer ---- */
+    .sidebar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        z-index: 3000;
+        /* beats the inline width the desktop rail logic writes */
+        width: min(288px, 86vw) !important;
+        /* pinned to the top and bottom of what is visible, not to a height,
+           so Sign Out sits above the browser's bottom edge on every phone */
+        height: auto;
+        padding: calc(1.2rem + env(safe-area-inset-top)) 1rem
+                 calc(1rem + env(safe-area-inset-bottom))
+                 calc(1rem + env(safe-area-inset-left));
+        transform: translateX(-100%);
+        /* hidden when shut, so its links are not tab stops off-screen */
+        visibility: hidden;
+        transition: transform 260ms cubic-bezier(0.32, 0.72, 0, 1),
+                    visibility 0s linear 260ms;
+    }
+
+    body.nav-open .sidebar {
+        transform: none;
+        visibility: visible;
+        box-shadow: 0 0 48px rgba(0, 0, 0, 0.35);
+        transition: transform 260ms cubic-bezier(0.32, 0.72, 0, 1),
+                    visibility 0s;
+    }
+
+    /* The icon-rail state means nothing in a drawer: always full labels. */
+    .sidebar.collapsed .logo-text,
+    .sidebar.collapsed .nav-link-text,
+    .sidebar.collapsed .sign-out-text {
+        display: inline;
+    }
+
+    .sidebar.collapsed .role-pill-text {
+        display: flex;
+    }
+
+    .sidebar.collapsed .sidebar-logo,
+    .sidebar.collapsed .role-pill,
+    .sidebar.collapsed .nav-link,
+    .sidebar.collapsed .sign-out {
+        justify-content: flex-start;
+    }
+
+    .sidebar.collapsed .sidebar-header {
+        flex-direction: row;
+        gap: 0.3rem;
+    }
+
+    .sidebar-toggle,
+    .sidebar-resize-handle {
+        display: none;
+    }
+
+    .sidebar-close {
+        flex-shrink: 0;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 2.5rem;
+        height: 2.5rem;
+        margin: -0.4rem -0.4rem -0.4rem 0;
+        padding: 0;
+        border: 0;
+        border-radius: 10px;
+        background: none;
+        color: var(--side-text);
+        cursor: pointer;
+    }
+
+    .sidebar-close svg {
+        width: 1.25rem;
+        height: 1.25rem;
+    }
+
+    .sidebar-close:active {
+        background-color: rgba(255, 255, 255, 0.1);
+    }
+
+    /* Roomier rows: these are thumbs, not a pointer. */
+    .sidebar .nav-link {
+        min-height: 44px;
+    }
+
+    .sidebar-backdrop {
+        display: block;
+        position: fixed;
+        inset: 0;
+        z-index: 2999;
+        background-color: rgba(6, 14, 10, 0.5);
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 260ms ease;
+    }
+
+    body.nav-open .sidebar-backdrop {
+        opacity: 1;
+        pointer-events: auto;
+    }
+
+    /* ---- Top bar ---- */
+    .global-topbar {
+        height: calc(var(--topbar-h) + env(safe-area-inset-top));
+        padding: env(safe-area-inset-top)
+                 calc(0.6rem + env(safe-area-inset-right)) 0
+                 calc(0.6rem + env(safe-area-inset-left));
+        gap: 0.1rem;
+    }
+
+    .nav-open-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 2.75rem;
+        height: 2.75rem;
+        margin-right: auto;
+        padding: 0;
+        border: 0;
+        border-radius: 10px;
+        background: none;
+        color: var(--text-heading);
+        cursor: pointer;
+    }
+
+    /* With a page title beside it, the title takes the free space instead */
+    .nav-open-btn:has(+ .topbar-title) {
+        margin-right: 0;
+    }
+
+    .nav-open-btn svg {
+        width: 1.35rem;
+        height: 1.35rem;
+    }
+
+    .nav-open-btn:active {
+        background-color: var(--surface-3);
+    }
+
+    .topbar-title {
+        font-size: 0.95rem;
+        padding-left: 0.15rem;
+    }
+
+    .theme-toggle,
+    .notif-bell-btn {
+        width: 2.75rem;
+        height: 2.75rem;
+        padding: 0;
+    }
+
+    .topbar-account {
+        margin-left: 0.15rem;
+    }
+
+    /* The bell dropdown spans the screen instead of hanging off the bell. */
+    .notif-dropdown {
+        position: fixed;
+        top: calc(var(--topbar-h) + env(safe-area-inset-top) + 6px);
+        left: calc(0.5rem + env(safe-area-inset-left));
+        right: calc(0.5rem + env(safe-area-inset-right));
+        width: auto;
+        max-width: none;
+        max-height: calc(var(--app-h) - var(--topbar-h) - env(safe-area-inset-top) - 1.5rem);
+        transform-origin: top center;
+    }
+
+    .notif-seg {
+        max-width: calc(100% - 2.2rem);
+        overflow-x: auto;
+        scrollbar-width: none;
+    }
+
+    /* ---- Page ---- */
+    .page-content {
+        padding: 1.25rem calc(1rem + env(safe-area-inset-right))
+                 calc(2rem + env(safe-area-inset-bottom))
+                 calc(1rem + env(safe-area-inset-left));
+    }
+
+    .page-header h2,
+    .um-header h2 {
+        font-size: 1.35rem;
+    }
+
+    /* iOS zooms the page into any field under 16px when it gets focus. */
+    input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="file"]),
+    select,
+    textarea {
+        font-size: 16px !important;
+    }
+
+    /* Wide tables scroll sideways inside their card instead of widening
+       the page. Only the innermost box scrolls: a card is made a scroller
+       only when the table sits directly in it, never around a wrapper
+       that already scrolls. */
+    .um-table-card:not(.dt-card):has(> table),
+    .table-card,
+    .um-scroll-wrap,
+    .sites-scroll-wrap {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    /* On desktop these wrappers also scroll vertically under a pinned
+       header. On a phone that is a scroller inside the page's scroller:
+       the thumb gets trapped in the table, and the frozen first column
+       drifts out of line with the rest while it scrolls. Here the page
+       does all vertical scrolling and the table only moves sideways (its
+       first column still stays pinned for that). */
+    .um-scroll-wrap,
+    .table-freeze-wrap,
+    #sites-scroll {
+        max-height: none;
+        overflow-y: visible;
+    }
+
+    /* A table of five or more columns keeps a readable width and scrolls,
+       rather than squeezing every column down to an ellipsis. */
+    .um-table:has(thead th:nth-child(5)) {
+        min-width: 720px;
+    }
+
+    /* Search rows: the field takes the full width, the count drops below. */
+    .um-search-group {
+        flex-wrap: wrap;
+        width: 100%;
+    }
+
+    .dt-toolbar .um-search-group {
+        margin-left: 0;
+    }
+
+    .um-search-wrap {
+        flex: 1 1 100%;
+        min-width: 0;
+        max-width: none;
+    }
+
+    /* Tall modals scroll inside the sheet instead of running off-screen. */
+    .um-modal-overlay {
+        padding: 1rem;
+        align-items: flex-end;
+    }
+
+    .um-modal {
+        width: 100%;
+        max-height: calc(var(--app-h) - 2rem - env(safe-area-inset-top));
+        overflow-y: auto;
+        margin-bottom: env(safe-area-inset-bottom);
+    }
+}
+
+/* ============================================
+   TABLE SCROLLBARS
+   Chrome on Windows 11 draws overlay scrollbars: thin, and only there
+   while something is already scrolling. A mouse user had no bar to grab,
+   so columns past the right edge of a wide table were out of reach.
+   Styling the bar with ::-webkit-scrollbar makes Chromium use a classic,
+   always-visible one that can be dragged. Firefox has no such pseudo
+   element, so it gets the standard properties instead -- they must not
+   be set in Chromium, where they would switch the styling below off.
+   ============================================ */
+.um-scroll-wrap::-webkit-scrollbar,
+.sites-scroll-wrap::-webkit-scrollbar,
+.table-freeze-wrap::-webkit-scrollbar,
+.um-table-card::-webkit-scrollbar,
+.table-card::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+}
+
+.um-scroll-wrap::-webkit-scrollbar-track,
+.sites-scroll-wrap::-webkit-scrollbar-track,
+.table-freeze-wrap::-webkit-scrollbar-track,
+.um-table-card::-webkit-scrollbar-track,
+.table-card::-webkit-scrollbar-track {
+    background-color: var(--surface-2);
+}
+
+.um-scroll-wrap::-webkit-scrollbar-thumb,
+.sites-scroll-wrap::-webkit-scrollbar-thumb,
+.table-freeze-wrap::-webkit-scrollbar-thumb,
+.um-table-card::-webkit-scrollbar-thumb,
+.table-card::-webkit-scrollbar-thumb {
+    background-color: var(--text-3);
+    border: 2px solid var(--surface-2);
+    border-radius: 999px;
+}
+
+.um-scroll-wrap::-webkit-scrollbar-thumb:hover,
+.sites-scroll-wrap::-webkit-scrollbar-thumb:hover,
+.table-freeze-wrap::-webkit-scrollbar-thumb:hover,
+.um-table-card::-webkit-scrollbar-thumb:hover,
+.table-card::-webkit-scrollbar-thumb:hover {
+    background-color: var(--text-2);
+}
+
+.um-scroll-wrap::-webkit-scrollbar-corner,
+.sites-scroll-wrap::-webkit-scrollbar-corner,
+.table-freeze-wrap::-webkit-scrollbar-corner,
+.um-table-card::-webkit-scrollbar-corner,
+.table-card::-webkit-scrollbar-corner {
+    background-color: var(--surface-2);
+}
+
+@supports not selector(::-webkit-scrollbar) {
+    .um-scroll-wrap,
+    .sites-scroll-wrap,
+    .table-freeze-wrap,
+    .um-table-card,
+    .table-card {
+        scrollbar-width: auto;
+        scrollbar-color: var(--text-3) var(--surface-2);
     }
 }

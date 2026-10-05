@@ -1,8 +1,8 @@
-<!doctype html>
+{% from 'partials/_assets.html' import asset_v %}<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <title>{% block title %}PuNoObservation{% endblock %}</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -12,12 +12,25 @@
     />
     <link
       rel="stylesheet"
-      href="{{ url_for('static', filename='css/style.css') }}"
+      href="{{ url_for('static', filename='css/style.css', v=asset_v) }}"
     />
     <script>
       /* Runs before the body renders: setting the attribute afterwards
          would show one frame of the light theme first. Light stays the
          default -- dark applies only once someone has chosen it. */
+      /* The visible height, for browsers without dvh (style.css, --app-h).
+         Kept current as the address bar shows or hides and on rotation. */
+      (function () {
+        function setAppHeight() {
+          document.documentElement.style.setProperty(
+            "--app-h", window.innerHeight + "px"
+          );
+        }
+        setAppHeight();
+        window.addEventListener("resize", setAppHeight);
+        window.addEventListener("orientationchange", setAppHeight);
+      })();
+
       (function () {
         try {
           if (localStorage.getItem("pno-theme") === "dark") {
@@ -33,7 +46,7 @@
   <body class="app-body">
     <div class="app-shell">
       <!-- SIDEBAR -->
-      <aside class="sidebar">
+      <aside class="sidebar" id="appSidebar">
         <div class="sidebar-header">
           <a href="{{ url_for('dashboard.index') }}" class="sidebar-logo">
             <img
@@ -68,6 +81,18 @@
               <path d="M9 3v18" />
               <path id="sidebarToggleChevron" d="m16 15-3-3 3-3" />
             </svg>
+          </button>
+
+          <!-- Phones get the sidebar as a slide-in drawer; this closes it.
+               Hidden on wider screens, where the rail is always shown. -->
+          <button
+            type="button"
+            class="sidebar-close"
+            id="sidebarClose"
+            aria-label="Close menu"
+            title="Close menu"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
           </button>
         </div>
 
@@ -488,10 +513,25 @@
         ></div>
       </aside>
 
+      <!-- Dims the page behind the open drawer on phones; tapping it closes
+           the drawer. -->
+      <div class="sidebar-backdrop" id="sidebarBackdrop" aria-hidden="true"></div>
+
       <!-- MAIN CONTENT -->
       <div class="main-area">
         {% block global_topbar %}
         <div class="global-topbar">
+          {# Phones only: opens the sidebar drawer. #}
+          <button
+            type="button"
+            class="nav-open-btn"
+            id="navOpenBtn"
+            aria-label="Open menu"
+            aria-controls="appSidebar"
+            aria-expanded="false"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16"/><path d="M4 12h16"/><path d="M4 18h16"/></svg>
+          </button>
           {# Optional page title, on the left of the same row as the theme,
              bell and account controls. Pages fill it or leave it empty. #}
           {% block topbar_title %}{% endblock %}
@@ -530,27 +570,45 @@
                 >0</span
               >
             </button>
-            <div id="notif-dropdown" class="notif-dropdown">
+            <div id="notif-dropdown" class="notif-dropdown" role="dialog" aria-label="Notifications">
               <div class="notif-dropdown-header">
                 <span class="notif-dropdown-header-title">Notifications</span>
-                <button
-                  id="notif-mark-all"
-                  class="notif-mark-all"
-                  style="display: none"
-                  onclick="markAllNotificationsRead()"
-                >
-                  Mark all as read
+                <div class="notif-head-actions">
+                  <button
+                    type="button"
+                    id="notif-mark-all"
+                    class="notif-head-btn"
+                    onclick="markAllNotificationsRead()"
+                    aria-label="Mark all as read"
+                    title="Mark all as read"
+                    disabled
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 7 17l-5-5"/><path d="m22 10-7.5 7.5L13 16"/></svg>
+                  </button>
+                  <a
+                    href="{{ url_for('dashboard.notifications_page') }}"
+                    class="notif-head-btn"
+                    aria-label="Open all notifications"
+                    title="Open all notifications"
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg>
+                  </a>
+                </div>
+              </div>
+              <div class="notif-seg" role="tablist" aria-label="Filter notifications">
+                <button type="button" class="notif-seg-btn active" role="tab" aria-selected="true" data-filter="all" onclick="setNotifFilter('all')">
+                  View all
+                </button>
+                <button type="button" class="notif-seg-btn" role="tab" aria-selected="false" data-filter="reports" onclick="setNotifFilter('reports')">
+                  Reports
+                </button>
+                <button type="button" class="notif-seg-btn" role="tab" aria-selected="false" data-filter="requests" onclick="setNotifFilter('requests')">
+                  Requests
                 </button>
               </div>
               <div id="notif-dropdown-list">
                 <p class="placeholder-text">Loading...</p>
               </div>
-              <a
-                href="{{ url_for('dashboard.notifications_page') }}"
-                class="notif-view-all"
-              >
-                View all
-              </a>
             </div>
           </div>
 
@@ -680,6 +738,51 @@
         });
       })();
 
+      // Phone drawer. Below the breakpoint the sidebar slides in over the
+      // page instead of taking a column; the rail width logic above still
+      // runs but its inline width is overridden in the CSS.
+      (function () {
+        const MOBILE = window.matchMedia("(max-width: 860px)");
+        const body = document.body;
+        const openBtn = document.getElementById("navOpenBtn");
+        const closeBtn = document.getElementById("sidebarClose");
+        const backdrop = document.getElementById("sidebarBackdrop");
+        const sidebar = document.getElementById("appSidebar");
+        if (!openBtn || !sidebar) return;
+
+        function setOpen(open) {
+          body.classList.toggle("nav-open", open);
+          openBtn.setAttribute("aria-expanded", String(open));
+          if (open) {
+            closeBtn && closeBtn.focus();
+          }
+        }
+
+        openBtn.addEventListener("click", function () { setOpen(true); });
+        closeBtn && closeBtn.addEventListener("click", function () {
+          setOpen(false);
+          openBtn.focus();
+        });
+        backdrop && backdrop.addEventListener("click", function () { setOpen(false); });
+
+        // Following a link closes the drawer, so Back does not reopen it.
+        sidebar.addEventListener("click", function (e) {
+          if (MOBILE.matches && e.target.closest("a")) setOpen(false);
+        });
+
+        document.addEventListener("keydown", function (e) {
+          if (e.key === "Escape" && body.classList.contains("nav-open")) {
+            setOpen(false);
+            openBtn.focus();
+          }
+        });
+
+        // Rotating or resizing up to a wide screen drops the drawer state.
+        MOBILE.addEventListener("change", function (e) {
+          if (!e.matches) setOpen(false);
+        });
+      })();
+
       function updateThemeToggle() {
         var dark =
           document.documentElement.getAttribute("data-theme") === "dark";
@@ -767,41 +870,181 @@
           }
         }
         if (markAll) {
-          markAll.style.display = count > 0 ? "inline" : "none";
+          markAll.disabled = count === 0;
         }
+      }
+
+      // Messages carry user-typed text (site names, notes), so they are
+      // escaped before going into innerHTML.
+      function escapeNotifHtml(str) {
+        return String(str == null ? "" : str).replace(/[&<>"']/g, (c) => ({
+          "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
+        })[c]);
+      }
+
+      // "New Request" messages start with the requester's username, so the
+      // name is set in bold, the way the actor leads each line in a feed.
+      function notifMessageHtml(n) {
+        const msg = escapeNotifHtml(n.message);
+        if (n.type !== "New Request") return msg;
+        const space = msg.indexOf(" ");
+        if (space < 1) return msg;
+        return `<strong>${msg.slice(0, space)}</strong>${msg.slice(space)}`;
+      }
+
+      const NOTIF_FILTERS = {
+        all: () => true,
+        reports: (n) => n.type === "Report",
+        requests: (n) => n.type === "New Request" || n.type === "Request Update",
+      };
+      let notifFilter = "all";
+      let notifCache = [];
+
+      function setNotifFilter(key) {
+        notifFilter = key;
+        document.querySelectorAll(".notif-seg-btn").forEach((btn) => {
+          const on = btn.dataset.filter === key;
+          btn.classList.toggle("active", on);
+          btn.setAttribute("aria-selected", String(on));
+        });
+        renderNotifList(notifCache);
+      }
+
+      // Where each notification's row links to -- the same choice the
+      // Notifications page makes. Report URLs are rendered with a 0 id and
+      // the real id swapped in.
+      const NOTIF_URLS = {
+        report: "{{ url_for('admin.review_report_detail', report_id=0) if session.role in ['admin', 'superadmin'] else url_for('dashboard.my_report_detail', report_id=0) }}",
+        newRequest: "{{ url_for('admin.review_requests') }}",
+        requestUpdate: "{{ url_for('dashboard.requests_page') }}",
+      };
+
+      function notifUrl(n) {
+        if (n.report_id) {
+          return NOTIF_URLS.report.replace(/\/0(?=$|[/?#])/, "/" + n.report_id);
+        }
+        if (n.type === "New Request") return NOTIF_URLS.newRequest;
+        if (n.type === "Request Update") return NOTIF_URLS.requestUpdate;
+        return null;
+      }
+
+      // The API sends Manila wall time as "Sep 11, 12:16 AM" (no year).
+      // Both it and "now" are handled as Manila wall-clock values encoded
+      // as UTC, so the arithmetic never touches the machine's own zone.
+      const NOTIF_MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
+                            "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+      const NOTIF_DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday",
+                          "Thursday", "Friday", "Saturday"];
+      const NOTIF_NOW_PARTS = new Intl.DateTimeFormat("en-US", {
+        timeZone: "Asia/Manila", year: "numeric", month: "numeric",
+        day: "numeric", hour: "numeric", minute: "numeric", hourCycle: "h23",
+      });
+
+      function manilaNowWall() {
+        const p = {};
+        NOTIF_NOW_PARTS.formatToParts(new Date()).forEach((x) => (p[x.type] = +x.value));
+        return Date.UTC(p.year, p.month - 1, p.day, p.hour % 24, p.minute);
+      }
+
+      function parseNotifStamp(str, nowWall) {
+        const m = /^(\w{3}) (\d{1,2}), (\d{1,2}):(\d{2}) (AM|PM)$/.exec(str || "");
+        if (!m) return null;
+        const month = NOTIF_MONTHS.indexOf(m[1]);
+        if (month < 0) return null;
+        const hour = (+m[3] % 12) + (m[5] === "PM" ? 12 : 0);
+        let year = new Date(nowWall).getUTCFullYear();
+        let t = Date.UTC(year, month, +m[2], hour, +m[4]);
+        // No year in the string: a date "after" now belongs to last year.
+        if (t > nowWall + 60000) t = Date.UTC(year - 1, month, +m[2], hour, +m[4]);
+        return t;
+      }
+
+      function notifTimes(str) {
+        const nowWall = manilaNowWall();
+        const t = parseNotifStamp(str, nowWall);
+        if (t === null) return { ago: "", stamp: str || "" };
+
+        const d = new Date(t);
+        const clock = d.toLocaleTimeString("en-US", {
+          timeZone: "UTC", hour: "numeric", minute: "2-digit",
+        });
+        const mins = Math.floor((nowWall - t) / 60000);
+        const days = Math.round(
+          (Math.floor(nowWall / 86400000) * 86400000 -
+           Math.floor(t / 86400000) * 86400000) / 86400000,
+        );
+
+        let ago;
+        if (mins < 1) ago = "just now";
+        else if (days < 1 && mins < 60) ago = `${mins} min ago`;
+        else if (days < 1) ago = `${Math.floor(mins / 60)} hr ago`;
+        else if (days === 1) ago = "yesterday";
+        else if (days < 7) ago = `${days} days ago`;
+        else if (days < 60) ago = `${Math.floor(days / 7)} wk ago`;
+        else ago = `${Math.floor(days / 30)} mo ago`;
+
+        // "Friday 3:12 PM" within the week, "Sep 11, 12:16 AM" before that
+        const stamp = days < 7
+          ? `${NOTIF_DAYS[d.getUTCDay()]} ${clock}`
+          : `${NOTIF_MONTHS[d.getUTCMonth()]} ${d.getUTCDate()}, ${clock}`;
+        return { ago, stamp };
       }
 
       function renderNotifList(notifications) {
         const list = document.getElementById("notif-dropdown-list");
         if (!list) return;
-        if (!notifications.length) {
-          list.innerHTML =
-            '<p class="placeholder-text">No notifications yet.</p>';
+        const shown = notifications.filter(NOTIF_FILTERS[notifFilter]);
+        if (!shown.length) {
+          list.innerHTML = `<p class="placeholder-text">${
+            notifications.length ? "Nothing here yet." : "No notifications yet."
+          }</p>`;
           return;
         }
-        list.innerHTML = notifications
-          .map(
-            (n) => `
-            <div class="notif-item ${n.is_read ? "" : "unread"}" data-id="${n.id}"
-                 onclick="markNotificationRead(${n.id}, this)">
+        list.innerHTML = shown
+          .map((n) => {
+            const cls = `notif-item ${n.is_read ? "" : "unread"}`;
+            const url = notifUrl(n);
+            const times = notifTimes(n.created_at);
+            const action =
+              url && n.type === "New Request"
+                ? '<span class="notif-item-action">Review request</span>'
+                : "";
+            const inner = `
                 ${notifIconHtml(n.type, n.message)}
                 <div class="notif-body">
-                    <p class="notif-message">${n.message}</p>
-                    <span class="notif-time">${n.created_at}</span>
-                </div>
-                <span class="notif-dot"></span>
-            </div>
-        `,
-          )
+                    <div class="notif-item-top">
+                        <p class="notif-message">${notifMessageHtml(n)}</p>
+                        <span class="notif-ago">${escapeNotifHtml(times.ago)}</span>
+                        <span class="notif-dot"></span>
+                    </div>
+                    <span class="notif-time">${escapeNotifHtml(times.stamp)}</span>
+                    ${action}
+                </div>`;
+            // With somewhere to go, the whole row is the link; the read flag
+            // goes as a beacon so it survives the page unloading.
+            return url
+              ? `<a class="${cls}" href="${escapeNotifHtml(url)}" data-id="${n.id}"
+                    onclick="notifOpen(${n.id})">${inner}</a>`
+              : `<div class="${cls}" data-id="${n.id}" role="button" tabindex="0"
+                    onclick="markNotificationRead(${n.id}, this)">${inner}</div>`;
+          })
           .join("");
+      }
+
+      function notifOpen(id) {
+        navigator.sendBeacon(
+          `/api/notifications/${id}/read`,
+          new Blob([], { type: "application/x-www-form-urlencoded" }),
+        );
       }
 
       async function loadNotifications() {
         try {
           const res = await fetch("/api/notifications");
           const data = await res.json();
+          notifCache = data.notifications || [];
           renderNotifBadge(data.unread_count);
-          renderNotifList(data.notifications);
+          renderNotifList(notifCache);
         } catch (err) {
           console.error("Failed to load notifications:", err);
         }
@@ -823,7 +1066,7 @@
         try {
           await fetch("/api/notifications/mark-all-read", { method: "POST" });
           document
-            .querySelectorAll(".notif-item.unread, .notif-page-item.unread")
+            .querySelectorAll(".notif-item.unread, .notif-page-item.unread, .notif-row.unread")
             .forEach((el) => el.classList.remove("unread"));
           loadNotifications();
         } catch (err) {
@@ -836,7 +1079,7 @@
     </script>
 
     <!-- frozen header row + first columns on wide tables (data-freeze) -->
-    <script src="{{ url_for('static', filename='js/table-freeze.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/table-freeze.js', v=asset_v) }}"></script>
 
     {% block extra_scripts %}{% endblock %}
   </body>
