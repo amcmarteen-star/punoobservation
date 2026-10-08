@@ -477,9 +477,11 @@
     margin-bottom: 0.4rem;
   }
 
+  /* Same surface and edge as the site cards underneath, so the totals
+     and the per-site figures read as one panel. */
   .muni-panel .stat-box {
-    background-color: #14532d;
-    color: #ffffff;
+    background-color: var(--surface-2);
+    border: 1px solid var(--line);
     border-radius: 8px;
     padding: 0.7rem 0.8rem;
   }
@@ -488,11 +490,13 @@
     font-size: 1.25rem;
     font-weight: 700;
     display: block;
+    color: var(--brand-deep-text);
+    font-variant-numeric: tabular-nums;
   }
 
   .muni-panel .stat-box .stat-label {
     font-size: 0.72rem;
-    color: #bbf7d0;
+    color: var(--text-2);
   }
 
   .muni-panel .info-title {
@@ -533,16 +537,45 @@
     margin: 0.6rem 0 0.2rem;
   }
 
+  /* "Back to <town>", "View monitoring history", "See recommended
+     species", "View full report": small outlined buttons rather than
+     underlined text, so they read as actions. */
   .muni-panel .back-link {
-    background: none;
-    border: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35rem;
+    min-height: 32px;
+    padding: 0.35rem 0.75rem;
+    margin-bottom: 0.6rem;
+    background-color: var(--surface-1);
+    border: 1px solid var(--line-strong);
+    border-radius: 8px;
     color: var(--brand-text);
-    font-size: 0.8rem;
+    font: inherit;
+    font-size: 0.78rem;
     font-weight: 600;
+    line-height: 1.2;
+    text-align: center;
+    text-decoration: none;
     cursor: pointer;
-    padding: 0;
-    margin-bottom: 0.4rem;
-    text-decoration: underline;
+    transition: background-color 140ms ease, border-color 140ms ease;
+  }
+
+  .muni-panel .back-link:hover {
+    background-color: var(--ok-bg);
+    border-color: var(--ok-line);
+    text-decoration: none;
+  }
+
+  .muni-panel .back-link:focus-visible {
+    outline: 2px solid var(--brand-text);
+    outline-offset: 2px;
+  }
+
+  /* inside a site card the history button spans the card */
+  .muni-panel .site-card .back-link {
+    width: 100%;
   }
 
   /* "View full report" link at the bottom of each history visit */
@@ -3002,7 +3035,7 @@
                   <span>${s.actual_trees.toLocaleString()}</span>
                 </div>
                 <div style="margin-top:.5rem; padding-top:.5rem;
-                            border-top:1px solid #e2e8f0;">
+                            border-top:1px solid var(--line);">
                   <button type="button" class="back-link" style="margin:0;"
                           onclick="showSiteHistory(${s.site_id})">
                     View monitoring history

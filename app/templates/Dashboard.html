@@ -256,7 +256,7 @@
   </div>
 
   <div class="chart-row">
-    <div class="chart-card">
+    <div class="chart-card chart-card-fill">
       <h5>Most recommended species</h5>
       <p class="takeaway">
         How often each species appears in a barangay's top five across all 478
@@ -274,8 +274,10 @@
         reforestation record exists.
       </p>
       <div class="um-table-card">
-        <div class="um-scroll-wrap table-freeze-wrap" style="max-height: 340px">
-          <table class="um-table" data-freeze="1">
+        {# all rows shown: the list is short (15), and the chart beside it
+           grows to the same height, so neither needs its own scroll #}
+        <div class="um-scroll-wrap table-freeze-wrap" style="max-height: none">
+          <table class="um-table um-scroll-table" data-freeze="1">
             <thead>
               <tr>
                 <th>Barangay</th>
@@ -418,46 +420,57 @@
     return config;
   }
 
-  /* --- replay the entry animation on hover ---------------------------
-     Pointing at a chart plays it in again: the bars grow up from the axis
-     and the line draws itself, exactly as they do when the page first
-     loads. Nothing is recoloured -- the movement is the whole effect, so
-     the key still describes what the fills mean.
+  /* --- play the entry animation once, when the chart comes into view ---
+     The bars grow and the line draws itself the first time a chart is
+     scrolled onto the screen, and never again: replaying it on every
+     hover kept the page moving under the pointer. A chart is only built
+     once it is visible, so ones further down still get their entrance
+     instead of having played it unseen at page load.
 
-     A run is never restarted while one is playing. Without that, moving
-     across the canvas would keep knocking the bars back to zero under the
-     pointer. */
-  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+     Charts are rebuilt when the theme changes. One that has already been
+     seen is redrawn without the animation, so a theme switch does not
+     replay anything either. */
+  const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+  const chartSeen = new Set();      // canvas ids that have played their entry
+  const chartPending = new Map();   // canvas -> config waiting to be visible
 
-  function entryDuration(chart) {
-    const own = chart.options && chart.options.animation;
-    if (own && typeof own.duration === 'number') return own.duration;
-    const base = Chart.defaults.animation && Chart.defaults.animation.duration;
-    return typeof base === 'number' ? base : 1000;
-  }
-
-  function replayOnHover(chart, canvas) {
-    let playing = false;
-    canvas.addEventListener('mouseenter', function () {
-      if (playing || reducedMotion.matches) return;
-      playing = true;
-      /* reset() puts every element back to its start-of-animation state;
-         the update() that follows animates them in from there. */
-      chart.reset();
-      chart.update();
-      window.setTimeout(function () {
-        playing = false;
-      }, entryDuration(chart));
-    });
-  }
-
-  function mkChart(canvas, config) {
+  function buildChart(canvas, config) {
     const existing = Chart.getChart(canvas);
     if (existing) existing.destroy();
+    if (chartSeen.has(canvas.id) || reducedMotion.matches) {
+      config.options = Object.assign({}, config.options, { animation: false });
+    }
+    chartSeen.add(canvas.id);
+    new Chart(canvas, pinHoverColours(config));
+  }
 
-    const chart = new Chart(canvas, pinHoverColours(config));
-    replayOnHover(chart, canvas);
-    return chart;
+  const chartObserver =
+    "IntersectionObserver" in window
+      ? new IntersectionObserver(
+          function (entries) {
+            entries.forEach(function (entry) {
+              if (!entry.isIntersecting) return;
+              const canvas = entry.target;
+              chartObserver.unobserve(canvas);
+              const config = chartPending.get(canvas);
+              chartPending.delete(canvas);
+              if (config) buildChart(canvas, config);
+            });
+          },
+          // a little of the chart on screen is enough to start it
+          { threshold: 0.25 },
+        )
+      : null;
+
+  function mkChart(canvas, config) {
+    if (!canvas) return;
+    if (!chartObserver || chartSeen.has(canvas.id)) {
+      buildChart(canvas, config);
+      return;
+    }
+    // the latest config wins if data reloads before the chart is reached
+    chartPending.set(canvas, config);
+    chartObserver.observe(canvas);
   }
 
   async function loadDashboard() {

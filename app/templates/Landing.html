@@ -3,60 +3,51 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="theme-color" content="#f5f7f2">
+    <meta name="theme-color" content="#ecf8ef">
     <title>PuNoObservation - Map, match, and grow your forest</title>
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='images/favicon-32.png', v=asset_v) }}">
+    <link rel="apple-touch-icon" href="{{ url_for('static', filename='images/apple-touch-icon.png', v=asset_v) }}">
     <meta name="description" content="A decision support platform for tree species recommendation and reforestation management across Eastern Pangasinan, with geospatial visualization for DENR and partner teams.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@100..125,400..800&family=Inter+Tight:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-    <link rel="preload" as="image" href="{{ url_for('static', filename='images/landing/hero-palms.jpg') }}">
+    <link rel="preload" as="image" href="{{ url_for('static', filename='images/landing/hero-hillside.jpg') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/landing.css', v=asset_v) }}">
 </head>
 <script>document.documentElement.classList.add("has-js");</script>
-<body class="landing-page">
+<body class="landing-page" id="top">
 
     <span class="landing-nav-sentinel" aria-hidden="true"></span>
 
     <div class="landing-nav-wrap">
         <nav class="landing-nav" aria-label="Main">
             <a href="{{ url_for('dashboard.home') }}" class="landing-brand">
-                <img src="{{ url_for('static', filename='images/finallogo.png') }}" alt="" width="251" height="310">
+                <img src="{{ url_for('static', filename='images/logo-mark.png', v=asset_v) }}" alt="" width="145" height="145">
                 <span>PuNo<span class="accent">Observation</span></span>
             </a>
             <div class="landing-nav-links">
+                <a href="#top" aria-current="page">Home</a>
                 <a href="#about">About</a>
                 <a href="#coverage">Coverage</a>
                 <a href="#features">Features</a>
             </div>
             <div class="landing-nav-actions">
-                <a href="{{ url_for('auth.login') }}" class="landing-btn landing-btn-ghost landing-btn-sm">Log in</a>
-                <a href="{{ url_for('auth.register') }}" class="landing-btn landing-btn-primary landing-btn-sm">Create account</a>
+                <a href="{{ url_for('auth.login') }}" class="landing-nav-login">Log in</a>
+                <a href="{{ url_for('auth.register') }}" class="landing-btn landing-btn-primary landing-btn-sm landing-nav-cta">Create account</a>
             </div>
         </nav>
     </div>
 
     <header class="landing-hero">
         <div class="landing-hero-media">
-            <img src="{{ url_for('static', filename='images/landing/hero-palms.jpg') }}" alt="A tropical hillside of coconut palms and dense green growth under an overcast sky" width="2200" height="1467" fetchpriority="high" decoding="async">
+            <img src="{{ url_for('static', filename='images/landing/hero-hillside.jpg') }}" alt="Volunteers spread out along a grassy ridge, planting seedlings, with forested hills behind" width="1359" height="640" fetchpriority="high" decoding="async">
         </div>
         <div class="landing-hero-scrim"></div>
 
-        <!-- A few leaves carried across the hero on the wind. Purely
-             decorative: aria-hidden, no pointer events, and the whole layer
-             is dropped when the operating system asks for reduced motion.
-             Each leaf has its own height, speed and sway, which is what
-             keeps five of them from crossing as one line. -->
-        <div class="landing-leaves" aria-hidden="true">
-            <span class="leaf" style="--y: 12vh; --sway: 2rem; --size: 11px; --dur: 32s; --delay: -3s; --spin: 180deg"></span>
-            <span class="leaf" style="--y: 31vh; --sway: -3rem; --size: 12px; --dur: 35s; --delay: -3s; --spin: -180deg"></span>
-            <span class="leaf" style="--y: 48vh; --sway: -3rem; --size: 10px; --dur: 32s; --delay: -26s; --spin: 180deg"></span>
-            <span class="leaf" style="--y: 64vh; --sway: -2rem; --size: 10px; --dur: 34s; --delay: -27s; --spin: 180deg"></span>
-            <span class="leaf" style="--y: 81vh; --sway: -3rem; --size: 11px; --dur: 36s; --delay: -3s; --spin: -240deg"></span>
-        </div>
-
         <div class="landing-hero-inner">
             <div class="landing-hero-copy">
-                <h1 class="landing-reveal landing-rise" style="--reveal-delay: 60ms">Empowering <span>Reforestation through</span> <span class="accent">Data Driven Decisions</span>.</h1>
+                <span class="landing-hero-kicker landing-reveal landing-rise"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 20h10"/><path d="M10 20c5.5-2.5.8-6.4 3-10"/><path d="M9.5 9.4c1.1.8 1.8 2.2 2.3 3.7-2 .4-3.5.4-4.8-.3-1.2-.6-2.3-1.9-3-4.2 2.8-.5 4.4 0 5.5.8z"/><path d="M14.1 6a7 7 0 0 0-1.1 4c1.9-.1 3.3-.6 4.3-1.4 1-1 1.6-2.3 1.7-4.6-2.7.1-4 1-4.9 2z"/></svg> Tanim tayo, ano tara?</span>
+                <h1 class="landing-reveal landing-rise" style="--reveal-delay: 60ms">Empowering Reforestation <span>through Data </span> <span class="accent">Driven Decisions</span></h1>
                 <p class="landing-lead landing-reveal landing-rise" style="--reveal-delay: 180ms">
                     Monitor Reforestation initiatives, visualize planting sites,
                     and receive tree species recommendations based on your location and site conditions
@@ -107,7 +98,7 @@
                     </div>
                 </div>
 
-                <div class="landing-reveal" style="--reveal-delay: 120ms">
+                <div class="landing-about-copy landing-reveal" style="--reveal-delay: 120ms">
                     <span class="landing-tag">Get to know us</span>
                     <h2>One platform for smarter reforestation</h2>
                     <p class="landing-lead">
@@ -334,8 +325,8 @@
             <div class="landing-footer-grid">
                 <div>
                     <div class="landing-footer-brand">
-                        <img src="{{ url_for('static', filename='images/finallogo.png') }}" alt="" width="251" height="310">
-                        <span>PuNoObservation</span>
+                        <img src="{{ url_for('static', filename='images/logo-mark.png', v=asset_v) }}" alt="" width="145" height="145">
+                        <span>PuNo<span class="accent">Observation</span></span>
                     </div>
                     <p class="tagline">
                         Decision support for tree species recommendation and reforestation
@@ -373,6 +364,6 @@
         </div>
     </footer>
 
-    <script src="{{ url_for('static', filename='javascript/landing.js') }}" defer></script>
+    <script src="{{ url_for('static', filename='javascript/landing.js', v=asset_v) }}" defer></script>
 </body>
 </html>

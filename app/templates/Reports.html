@@ -66,6 +66,16 @@ endblock %} {% set active_page = 'reports' %} {% block content %}
 
     <div class="rep-site-facts" id="siteFacts">
       <div class="site-title" id="siteTitle"></div>
+      {# The server refuses a report for a site with no planting record:
+         survival is measured against the quantity planted. Saying so here,
+         before the field work is typed in, replaces a message that only
+         appeared after submitting and was easy to miss. #}
+      <div class="um-note um-note-warn" id="noRecordWarn" role="alert" hidden>
+        <strong>This site has no planting record yet.</strong>
+        A survival rate is measured against the number of seedlings planted,
+        so a report cannot be submitted for it. Ask an administrator to
+        import its planting record (Reference Dataset), or choose another site.
+      </div>
       <div class="um-fact-grid">
         <div class="um-fact">
           <span class="lbl">Area</span>
@@ -320,7 +330,7 @@ endblock %} {% set active_page = 'reports' %} {% block content %}
     </div>
 
     <div class="d-flex align-items-center gap-2 mt-3">
-      <button type="submit" class="um-btn-add">
+      <button type="submit" class="um-btn-add" id="reportSubmitBtn">
         <svg
           viewBox="0 0 24 24"
           fill="none"
@@ -442,7 +452,8 @@ endblock %} {% set active_page = 'reports' %} {% block content %}
         sites
           .map(
             (s) =>
-              `<option value="${s.site_id}">${s.site_name} (${s.area_size_ha} ha)</option>`,
+              `<option value="${s.site_id}">${s.site_name} (${s.area_size_ha} ha)` +
+              `${hasPlantingRecord(s) ? "" : " \u2014 no planting record"}</option>`,
           )
           .join("");
       siteSel.disabled = false;
@@ -520,9 +531,24 @@ endblock %} {% set active_page = 'reports' %} {% block content %}
     });
   }
 
+  // The sites API reports 0 planted and 0 target when no planting record
+  // exists, and submit_report turns such a site away.
+  function hasPlantingRecord(s) {
+    return !!(s && (s.actual_planted > 0 || s.target_trees > 0));
+  }
+
+  function syncSubmitForSite(s) {
+    const blocked = !!s && !hasPlantingRecord(s);
+    document.getElementById("noRecordWarn").hidden = !blocked;
+    const btn = document.getElementById("reportSubmitBtn");
+    btn.disabled = blocked;
+    btn.title = blocked ? "This site has no planting record yet" : "";
+  }
+
   function hideFacts() {
     currentSite = null;
     document.getElementById("siteFacts").classList.remove("show");
+    syncSubmitForSite(null);
     updatePlotHint();
   }
 
@@ -540,6 +566,7 @@ endblock %} {% set active_page = 'reports' %} {% block content %}
       ? s.boundary_area_ha + " ha"
       : "not captured";
     showProposed(s);
+    syncSubmitForSite(s);
     document.getElementById("siteFacts").classList.add("show");
     updatePlotHint();
   }

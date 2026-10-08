@@ -25,7 +25,8 @@
     --fs-lg: 1.125rem;
     --fs-xl: 1.375rem;
     --fs-h3: clamp(1.25rem, 1.1rem + 0.7vw, 1.75rem);
-    --fs-h2: clamp(2rem, 1.3rem + 3vw, 3.5rem);
+    /* every section heading sets at the About heading's size */
+    --fs-h2: clamp(1.9rem, 1.1rem + 1.7vw, 2.85rem);
     --fs-h1: clamp(2.5rem, 1.5rem + 3.9vw, 4.5rem);
     --fs-figure: clamp(2.75rem, 1.6rem + 4.8vw, 5.25rem);
 
@@ -41,9 +42,13 @@
 
     /* ---- colour ----
        Every value below clears 4.5:1 against the surface it sits on. */
-    --paper: #eef2ea;
+    /* Page grounds are tints of the logo's own green (hue ~142deg, the
+       #20c050 of the leaves), so the page and the mark read as one family.
+       Cards and buttons stay white on top of them. */
+    --paper: #ecf8ef;
+    --paper-alt: #f6fcf7;
     --paper-2: #ffffff;
-    --paper-3: #e4eade;
+    --paper-3: #dcf2e2;
     --ink: #0d1c14;
     --body: #4a5a51;
     --mute: #67786e;
@@ -55,14 +60,14 @@
        family, a quarter of the luminance. */
     --lime: #1c7a41;
     --lime-hover: #219049;
-    --lime-deep: #14532d;
+    --lime-deep: #005a38;   /* the logo's deep emerald; footer ground */
     --on-lime: #f2f8f0;
     --leaf: #4f9d68;
     --leaf-soft: #a9d3ae;
     --bone: #eef4ec;
     --frame: #2c3a32;
-    --line: #dde4d8;
-    --line-soft: #e7ece2;
+    --line: #d4eadb;
+    --line-soft: #e3f3e7;
 
     /* ---- shape ---- */
     --r: 16px;
@@ -154,7 +159,40 @@
     padding-block: clamp(var(--sp-8), 7vw, var(--sp-14));
     scroll-margin-top: 6rem;
 }
-.landing-section-alt { --section-bg: var(--paper-2); }
+.landing-section-alt { --section-bg: var(--paper-alt); }
+
+/* About, Coverage and Features each have their own ground, all tints of
+   the logo, kept light so dark type reads on every one:
+     About     mint  -- the leaves' green (and the hero's ground)
+     Coverage  pale lime -- the "P"
+     Features  cool sage -- the deep emerald of the trunk
+   Each holds its colour for most of its height and only in its last
+   stretch eases into the colour of the section after it, so the change is
+   seen but there is never an edge. --section-bg is what the marquee edge
+   fades blend into. */
+#about,
+#coverage,
+#features {
+    --g-about: #e3f6e8;
+    --g-coverage: #eef6d6;
+    --g-features: #ddeee9;
+    --g-after: var(--paper-alt);
+}
+
+#about {
+    --section-bg: var(--g-about);
+    background: linear-gradient(180deg, var(--g-about) 0%, var(--g-about) 72%, var(--g-coverage) 100%);
+}
+
+#coverage {
+    --section-bg: var(--g-coverage);
+    background: linear-gradient(180deg, var(--g-coverage) 0%, var(--g-coverage) 72%, var(--g-features) 100%);
+}
+
+#features {
+    --section-bg: var(--g-features);
+    background: linear-gradient(180deg, var(--g-features) 0%, var(--g-features) 86%, var(--g-after) 100%);
+}
 
 /* Mono is reserved for measurements and system labels, never for prose. */
 .landing-tag {
@@ -226,237 +264,257 @@
 .landing-link svg { width: 17px; height: 17px; transition: transform var(--grow) var(--grow-ease); }
 .landing-link:hover svg { transform: translateX(3px); }
 
-/* ---------- Nav ---------- */
+/* ---------- Nav ----------
+   A full-width bar pinned to the top of the window the whole way down:
+   brand on the left, page links in the middle, sign-in on the right. It is
+   frosted glass -- translucent white over a blur of whatever scrolls
+   beneath -- so the hero photograph still reads through it at the top and
+   the content does further down. */
+.landing-page { --nav-h: 3.5rem; }   /* 56px at the full size */
+
+/* Same desktop scale as the app (style.css): 80% on screens wider than a
+   phone, so the landing page and the app read at the same size. */
+@media (min-width: 861px) {
+    html {
+        font-size: 80%;
+    }
+}
+
 .landing-nav-wrap {
     position: sticky;
     top: 0;
     z-index: 60;
-    padding: var(--sp-2) clamp(1.25rem, 4vw, 4rem) 0;
-    /* Slides out of the way going down the page and back on the way up;
-       the script decides which, this only draws it. transform rather than
-       top, so the move never touches layout. */
-    transition: transform var(--grow) var(--grow-ease);
-    will-change: transform;
-}
-
-/* Far enough to clear the bar and its padding whatever the viewport. */
-.landing-nav-wrap.is-hidden {
-    transform: translateY(-140%);
-}
-
-/* Someone who has asked for less motion still wants the bar out of the
-   way -- it just arrives without the slide. */
-@media (prefers-reduced-motion: reduce) {
-    .landing-nav-wrap { transition: none; }
-}
-
-.landing-nav {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--sp-3);
-    /* Capped to the same width as the page content, so the bar sits over
-       the columns it belongs to rather than stretching the width of the
-       screen and leaving its own middle empty. */
-    max-width: var(--shell);
-    margin-inline: auto;
-    height: 68px;
-    padding: 0 0.875rem 0 1.125rem;
-    border-radius: var(--pill);
-    /* The bar sits on the hero photograph, so it carries its own light
-       surface instead of inheriting whatever is behind it. */
-    background: rgba(245, 247, 242, 0.9);
-    border: 1px solid var(--line);
-    backdrop-filter: blur(16px) saturate(1.4);
-    -webkit-backdrop-filter: blur(16px) saturate(1.4);
+    /* the page's mint (--paper), translucent */
+    background: rgba(236, 248, 239, 0.78);
+    backdrop-filter: blur(18px) saturate(1.6);
+    -webkit-backdrop-filter: blur(18px) saturate(1.6);
+    border-bottom: 1px solid rgba(13, 28, 20, 0.08);
     transition: background-color var(--grow) var(--grow-ease), box-shadow var(--grow) var(--grow-ease);
 }
 
-.landing-nav-wrap.is-stuck .landing-nav {
-    background: rgba(245, 247, 242, 0.95);
-    box-shadow: var(--sh-md);
+/* Off the hero, a touch more opaque and a soft shadow to lift it. */
+.landing-nav-wrap.is-stuck {
+    background: rgba(236, 248, 239, 0.88);
+    box-shadow: 0 6px 24px -12px rgba(13, 28, 20, 0.25);
+}
+
+/* Without backdrop-filter the glass would just be thin; go solid. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    .landing-nav-wrap { background: rgba(236, 248, 239, 0.97); }
+}
+
+.landing-nav {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    gap: var(--sp-3);
+    /* The full window width: brand near the left edge, sign-in near the
+       right, with a gutter that grows a little on wide screens. */
+    max-width: none;
+    height: var(--nav-h);
+    padding: 0 clamp(1.25rem, 2.5vw, 2.5rem);
 }
 
 .landing-page .landing-brand {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: 0.55rem;
+    justify-self: start;
     font-family: "Archivo", sans-serif;
     font-variation-settings: "wdth" 108;
     font-weight: 700;
-    font-size: 1.125rem;
+    font-size: 1rem;
     letter-spacing: -0.02em;
     color: var(--ink);
 }
-.landing-brand img { width: 32px; height: auto; }
+.landing-brand img { width: 24px; height: 24px; object-fit: contain; }
 .landing-brand .accent { color: var(--accent); }
 
 .landing-nav-links {
     display: flex;
     align-items: center;
-    gap: var(--sp-3);
-    font-size: var(--fs-base);
+    gap: clamp(1.25rem, 2.6vw, 2.25rem);
+    font-size: 1.0625rem;
     font-weight: 500;
-    color: var(--frame);
+    color: var(--mute);
 }
-.landing-nav-links a { transition: color var(--grow) var(--grow-ease); }
-.landing-nav-links a:hover { color: var(--ink); }
+.landing-nav-links a {
+    position: relative;
+    padding: 0.35rem 0;
+    transition: color 150ms ease;
+}
+.landing-nav-links a:hover,
+.landing-nav-links a[aria-current="page"] { color: var(--ink); }
 
-.landing-nav-actions { display: flex; align-items: center; gap: 0.5rem; }
+/* The link for the section on screen is underlined; landing.js moves
+   aria-current as the page scrolls. */
+.landing-nav-links a::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -2px;
+    height: 2px;
+    border-radius: 2px;
+    background: var(--accent);
+    transform: scaleX(0);
+    transition: transform 220ms var(--ease);
+}
+.landing-nav-links a[aria-current="page"]::after { transform: scaleX(1); }
+@media (prefers-reduced-motion: reduce) {
+    .landing-nav-links a::after { transition: none; }
+}
+
+.landing-nav-actions {
+    display: flex;
+    align-items: center;
+    justify-self: end;
+    gap: 1rem;
+}
+
+/* The one action in the bar: an outlined button, no fill. */
+.landing-page .landing-nav-login {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.45rem 1.1rem;
+    border: 1.5px solid var(--accent);
+    border-radius: 8px;
+    background: transparent;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--accent);
+    transition: background-color 150ms ease, color 150ms ease;
+}
+.landing-page .landing-nav-login:hover {
+    background: rgba(21, 128, 61, 0.08);
+    color: var(--accent-deep);
+}
+
+/* Create account beside it: solid, the same height and corners as the
+   outlined Log in, so the pair reads as one set. */
+.landing-page .landing-nav-cta {
+    padding: 0.45rem 1.1rem;
+    border: 1.5px solid transparent;
+    border-radius: 8px;
+    font-size: 0.8125rem;
+}
+
+/* No scrollbar line down the right edge while the page scrolls; the
+   wheel, trackpad, touch and keyboard all still scroll it. */
+html:has(> body.landing-page) {
+    scrollbar-width: none;
+}
+html:has(> body.landing-page)::-webkit-scrollbar {
+    display: none;
+}
 
 /* ---------- Hero ----------
-   The photograph fills the whole section. Copy sits on it under a scrim,
-   which is image treatment; the page ground below stays light. */
+   Light ground, copy on the left in dark type, and the photograph on the
+   right fading into the ground towards the copy. The ground is the mint
+   the About section opens with, so the two run on without a seam. */
 .landing-hero {
+    --hero-ground: #e3f6e8;
     position: relative;
+    min-height: 100vh;
     min-height: 100dvh;
     display: flex;
     align-items: center;
-    margin-top: -84px;   /* pull the sticky nav onto the photograph */
-    padding-top: 84px;
+    margin-top: calc(-1 * var(--nav-h));   /* the glass bar sits over the hero */
+    padding-top: var(--nav-h);
     overflow: hidden;
     isolation: isolate;
+    background: var(--hero-ground);
 }
 
-.landing-hero-media { position: absolute; inset: 0; z-index: -2; }
-.landing-hero-media img { width: 100%; height: 100%; object-fit: cover; }
+/* the photograph covers the right of the hero */
+.landing-hero-media {
+    position: absolute;
+    top: var(--nav-h);
+    right: 0;
+    bottom: 0;
+    left: 38%;
+    z-index: -2;
+}
+.landing-hero-media img { width: 100%; height: 100%; object-fit: cover; object-position: 60% 50%; }
 
-/* The photograph drifts slowly so the hero is never quite still.
-
-   ease-in-out rather than --ease. --ease is an expo-out curve, which on a
-   34s push reaches nearly full scale in the first few seconds and then
-   crawls -- so the zoom looked like it happened once and stopped. A
-   symmetric curve spends the whole duration travelling, and `alternate`
-   then reads as a real zoom back out before it begins again. */
+/* The photograph drifts slowly so the hero is never quite still. */
 @media (prefers-reduced-motion: no-preference) {
     .landing-hero-media img {
-        transform-origin: 58% 45%;
+        transform-origin: 60% 50%;
         animation: landing-drift 34s ease-in-out infinite alternate;
     }
 }
 @keyframes landing-drift {
-    from { transform: scale(1.04); }
-    to   { transform: scale(1.16); }
+    from { transform: scale(1.02); }
+    to   { transform: scale(1.1); }
 }
 
-/* --- Leaves on the wind ------------------------------------------------
-   A real leaf silhouette with its midrib, drawn as one small inline SVG:
-   no image to fetch, and crisp at any size.
-
-   The flight is the plain one -- carried across, swaying twice, turning
-   slowly as it goes. An earlier version tumbled the leaf end over end and
-   flipped it edge-on; it was busier without looking any more like wind.
-
-   The layer sits above the photograph and its scrim but below the copy,
-   and takes no pointer events, so nothing here can catch a click meant
-   for the buttons. */
-.landing-leaves {
-    position: absolute;
-    inset: 0;
-    z-index: -1;
-    overflow: hidden;
-    pointer-events: none;
-}
-
-.leaf {
-    position: absolute;
-    top: var(--y, 40vh);
-    left: 0;
-    width: var(--size, 13px);
-    height: var(--size, 13px);
-    opacity: 0;
-    background-repeat: no-repeat;
-    background-size: contain;
-    /* Opaque fill. The first version stacked a translucent fill inside an
-       already fading element, and the two multiplied into something barely
-       there; the fade in and out belongs to the animation alone. */
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M2.5 21.5C1 12 7 3.5 21 1.5c1.5 10-5.5 19-18.5 20z' fill='%23a8d98f'/%3E%3Cpath d='M21 1.5C15 7 8 13 3 20.5' stroke='%236f9c6a' stroke-width='1.2' fill='none'/%3E%3C/svg%3E");
-    filter: drop-shadow(0 1px 2px rgba(4, 14, 9, 0.35));
-}
-
-@media (prefers-reduced-motion: no-preference) {
-    .leaf {
-        animation: leaf-blow var(--dur, 32s) linear infinite;
-        animation-delay: var(--delay, 0s);
-    }
-}
-
-/* Travel, sway and turn are one transform rather than three nested
-   animations, so each leaf stays on a single compositor layer. The
-   vertical movement is small on purpose: this is wind carrying a leaf
-   sideways, not a leaf falling. */
-@keyframes leaf-blow {
-    0% {
-        opacity: 0;
-        transform: translate3d(-8vw, 0, 0) rotate(0deg);
-    }
-    10%  { opacity: 0.95; }
-    25%  { transform: translate3d(22vw, var(--sway, 2rem), 0)
-                      rotate(calc(var(--spin, 200deg) * 0.25)); }
-    50%  { transform: translate3d(50vw, 0, 0)
-                      rotate(calc(var(--spin, 200deg) * 0.5)); }
-    75%  { transform: translate3d(78vw, var(--sway, 2rem), 0)
-                      rotate(calc(var(--spin, 200deg) * 0.75)); }
-    90%  { opacity: 0.8; }
-    100% {
-        opacity: 0;
-        transform: translate3d(108vw, 0, 0) rotate(var(--spin, 200deg));
-    }
-}
-
-/* Two scrims: one across so the copy column stays readable, one down so the
-   section below meets the photograph instead of cutting against it.
-
-   Weighted for a bright photograph. The previous hero was a dark conifer
-   stand that carried the white type on its own; this one has a pale sky and
-   lit foliage, so the right-hand stops - where the district map sits - are
-   deepened enough for the outline and the legend to hold their contrast. */
+/* The fade: solid ground behind the copy, easing into the photograph
+   across the middle, plus a short fade at the bottom into the section
+   below. */
 .landing-hero-scrim {
     position: absolute;
     inset: 0;
     z-index: -1;
     background:
-        linear-gradient(100deg, rgba(6, 20, 13, 0.6) 0%, rgba(6, 20, 13, 0.76) 50%, rgba(6, 20, 13, 0.6) 100%),
-        linear-gradient(to bottom, rgba(6, 20, 13, 0.5) 0%, rgba(6, 20, 13, 0.12) 26%, rgba(6, 20, 13, 0.12) 60%, rgba(6, 20, 13, 0.62) 100%);
+        linear-gradient(90deg,
+            var(--hero-ground) 0%,
+            var(--hero-ground) 40%,
+            rgba(227, 246, 232, 0.88) 50%,
+            rgba(227, 246, 232, 0.35) 63%,
+            rgba(227, 246, 232, 0) 76%),
+        linear-gradient(to top, rgba(227, 246, 232, 0.7) 0%, rgba(227, 246, 232, 0) 4%);
 }
 
-/* One centred column. The hero was copy on the left with the district map,
-   and later a wall of photographs, on the right; with the right-hand half
-   gone the text is the whole composition and belongs in the middle of it. */
+/* The copy keeps a gutter of about a tenth of the screen from the left
+   edge, rather than following the centred page column, which left a wide
+   empty band on big screens. */
 .landing-hero-inner {
     width: 100%;
-    padding-inline: clamp(1.25rem, 4vw, 4rem);
-    display: flex;
-    justify-content: center;
-    text-align: center;
+    padding-inline: clamp(1.25rem, 10vw, 12rem);
 }
 .landing-hero-copy {
-    max-width: 52rem;
-    margin-inline: auto;
+    max-width: 36rem;
+    text-align: left;
 }
+
+/* small greeting over the headline */
+.landing-hero-kicker {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    margin-bottom: var(--sp-2);
+    font-size: var(--fs-sm);
+    font-weight: 600;
+    color: var(--accent);
+}
+.landing-hero-kicker svg { width: 1rem; height: 1rem; }
 
 .landing-hero h1 {
-    margin-bottom: var(--sp-4);
-    font-size: clamp(2.5rem, 1.1rem + 4.6vw, 4.75rem);
-    font-weight: 600;
-    line-height: 1.06;
-    letter-spacing: -0.025em;
-    color: var(--bone);
+    margin-bottom: var(--sp-3);
+    font-size: clamp(2.4rem, 1.2rem + 3.4vw, 3.9rem);
+    font-weight: 700;
+    line-height: 1.05;
+    letter-spacing: -0.03em;
+    color: var(--ink);
     font-variation-settings: "wdth" 100;
 }
-.landing-hero h1 .accent { color: var(--leaf-soft); }
+.landing-hero h1 .accent { color: var(--accent); }
 
-.landing-hero .landing-lead { max-width: 44rem; margin-inline: auto; color: #d7e0d9; }
+.landing-hero .landing-lead { max-width: 32rem; color: var(--body); }
 
 .landing-hero-buttons {
     display: flex;
     flex-wrap: wrap;
-    justify-content: center;
     gap: 0.75rem;
     margin-top: var(--sp-4);
 }
 
 /* ---------- About ---------- */
+/* Photographs on the left, reaching into the page gutter; the copy on
+   the right as one column -- label and heading centred over it, the
+   paragraphs and the credit reading left-aligned beneath. */
 .landing-about {
     display: grid;
     grid-template-columns: minmax(0, 1.18fr) minmax(0, 1fr);
@@ -464,6 +522,46 @@
     align-items: center;
 }
 .landing-about h2 { margin: var(--sp-2) 0 var(--sp-3); }
+
+/* The photographs reach into the left gutter, so the copy reaches into
+   the right one by the same amount and centres itself in that space --
+   otherwise a wide screen left an empty band down the right. The blocks
+   share one width so the paragraphs and the credit line up on the left. */
+.landing-about-copy {
+    margin-right: calc(-1 * max(0px, (100vw - var(--shell)) / 2) - var(--sp-3));
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.landing-about-copy > * {
+    width: min(100%, 38rem);
+}
+
+.landing-about-copy .landing-credit {
+    max-width: none;
+}
+
+.landing-about-copy .landing-tag {
+    display: flex;
+    justify-content: center;
+}
+
+/* sized so the heading sets on two lines over the column */
+.landing-about-copy h2 {
+    text-align: center;
+    font-size: clamp(1.9rem, 1.1rem + 1.7vw, 2.85rem);
+    line-height: 1.1;
+}
+
+.landing-about-copy .landing-lead {
+    max-width: none;
+    line-height: 1.75;
+    /* justified, with hyphenation so the spacing between words stays even */
+    text-align: justify;
+    hyphens: auto;
+    -webkit-hyphens: auto;
+}
 .landing-about .landing-lead + .landing-lead { margin-top: var(--sp-2); }
 
 .landing-credit {
@@ -486,8 +584,14 @@
    smooth motion rather than three elements reflowing past each other.
    The percentages in translate are of the card's own width, which is why
    the spacing holds at every screen size. */
+/* The set reaches into the left gutter, but on a wide screen it is also
+   slid right by --plates-shift (same size, it just sits closer to the
+   copy): the gutter minus 14rem, so it grows with the screen and is zero
+   on a laptop, where the two are already close. */
 .landing-plates {
-    margin-left: calc(-1 * max(0px, (100vw - var(--shell)) / 2) - var(--sp-3));
+    --plates-shift: max(0px, (100vw - var(--shell)) / 2 - 14rem);
+    margin-left: calc(-1 * max(0px, (100vw - var(--shell)) / 2) - var(--sp-3) + var(--plates-shift));
+    margin-right: calc(-1 * var(--plates-shift));
 }
 
 .landing-plate-stage {
@@ -875,15 +979,29 @@
 .landing-feature:nth-child(odd) .landing-feature-media { order: 2; }
 
 .landing-feature-copy { max-width: 38rem; }
+/* the small label over each feature sits centred over its column, as the
+   "Get to know us" label does in About */
+.landing-feature-copy .landing-tag {
+    display: flex;
+    justify-content: center;
+}
+/* title centred under its label; the description justified beneath, with
+   hyphenation so the word spacing stays even */
+.landing-feature-copy h3 { text-align: center; }
+.landing-feature-copy > p:not(.landing-feature-cta) {
+    text-align: justify;
+    hyphens: auto;
+    -webkit-hyphens: auto;
+}
 .landing-feature-copy h3 {
     margin: var(--sp-2) 0 var(--sp-3);
-    font-size: clamp(1.75rem, 1.1rem + 2.1vw, 2.75rem);
+    font-size: clamp(1.4rem, 1rem + 1vw, 2rem);
     font-weight: 600;
     line-height: 1.1;
     letter-spacing: -0.025em;
     font-variation-settings: "wdth" 100;
 }
-.landing-feature-copy p { color: var(--body); font-size: clamp(1.125rem, 0.99rem + 0.55vw, 1.375rem); line-height: 1.55; }
+.landing-feature-copy p { color: var(--body); font-size: var(--fs-lg); line-height: 1.75; }
 .landing-feature-cta { margin-top: var(--sp-3); }
 
 /* The screenshots arrive inside their own device mockups on transparent
@@ -1007,18 +1125,15 @@
 }
 /* Over a photograph the primary lifts one step and takes a hairline ring, so
    a mid-green pill still separates itself from mid-green foliage. */
-.landing-page .landing-hero .landing-btn-primary,
 .landing-page .landing-close .landing-btn-primary {
     background: var(--lime-hover);
     box-shadow: 0 0 0 1px rgba(242, 248, 240, 0.3), 0 8px 24px rgba(4, 14, 9, 0.45);
 }
-.landing-page .landing-hero .landing-btn-primary:hover,
 .landing-page .landing-close .landing-btn-primary:hover {
     background: #29a154;
 }
 
 /* On the photograph the ghost button needs its own surface to stay legible. */
-.landing-page .landing-hero .landing-btn-ghost,
 .landing-page .landing-close .landing-btn-ghost {
     background: rgba(255, 255, 255, 0.14);
     border-color: rgba(238, 244, 236, 0.42);
@@ -1026,7 +1141,6 @@
     backdrop-filter: blur(6px);
     -webkit-backdrop-filter: blur(6px);
 }
-.landing-page .landing-hero .landing-btn-ghost:hover,
 .landing-page .landing-close .landing-btn-ghost:hover {
     background: rgba(255, 255, 255, 0.24);
     border-color: rgba(238, 244, 236, 0.6);
@@ -1036,11 +1150,28 @@
 /* The footer carries the darkest tone of the same green the primary action
    uses, so the page closes on the brand colour. Type on it is bone, the
    same light the hero uses over the photograph. */
+/* The footer carries the logo's own gradient: the deep emerald at the
+   base of the trunk on the left, rising to the leaves' green on the right,
+   with a soft lime glow in the corner where the "P" would be. A thin
+   green-to-lime rule across the top is the same gradient the mark is
+   drawn in. Light type throughout; the column labels pick up the lime. */
 .landing-footer {
-    background: var(--lime-deep);
+    position: relative;
+    background:
+        radial-gradient(45% 80% at 100% 0%, rgba(144, 224, 48, 0.18), transparent 70%),
+        linear-gradient(120deg, #00472d 0%, #005c38 45%, #0b7a42 100%);
     color: var(--on-lime);
     padding-block: var(--sp-8) var(--sp-4);
     font-size: var(--fs-base);
+}
+.landing-footer::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #007040, #20c050 50%, #90e030);
 }
 .landing-footer-grid {
     display: grid;
@@ -1057,6 +1188,7 @@
     color: var(--on-lime);
 }
 .landing-footer-brand img { width: 30px; height: auto; }
+.landing-footer-brand .accent { color: #a8ec6a; }
 .landing-footer .tagline {
     margin-top: 0.75rem;
     color: rgba(242, 248, 240, 0.78);
@@ -1069,14 +1201,14 @@
     font-weight: 600;
     letter-spacing: 0.14em;
     text-transform: uppercase;
-    color: rgba(242, 248, 240, 0.66);
+    color: #a8ec6a;
 }
 .landing-footer ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.75rem; }
 .landing-footer li a {
     color: rgba(242, 248, 240, 0.84);
     transition: color var(--grow) var(--grow-ease);
 }
-.landing-footer li a:hover { color: var(--on-lime); text-decoration: underline; }
+.landing-footer li a:hover { color: #c6f59a; text-decoration: underline; }
 
 /* The rule that used to sit above the academic note now separates the link
    columns from the copyright, which is all that is left down here. */
@@ -1131,19 +1263,141 @@
     }
 }
 
+/* ---------- Photo viewer ----------
+   Opened from the About photographs. Large, but held inside the screen
+   with room around it; the page behind is blurred and dimmed. */
+.landing-plate { cursor: zoom-in; }
+.landing-plate:focus-visible {
+    outline: 3px solid var(--accent);
+    outline-offset: 3px;
+}
+
+.landing-viewer {
+    /* the dialog is the whole screen; the photograph sits in its middle */
+    position: fixed;
+    inset: 0;
+    width: 100vw;
+    height: 100vh;
+    height: 100dvh;
+    max-width: none;
+    max-height: none;
+    margin: 0;
+    padding: clamp(1rem, 4vw, 3rem);
+    border: 0;
+    background: transparent;
+    color: #fff;
+    display: none;
+    place-items: center;
+    overflow: hidden;
+}
+.landing-viewer[open] { display: grid; }
+.landing-viewer:focus { outline: none; }
+
+.landing-viewer::backdrop {
+    background: rgba(8, 18, 12, 0.5);
+    backdrop-filter: blur(10px) saturate(1.1);
+    -webkit-backdrop-filter: blur(10px) saturate(1.1);
+}
+
+.landing-viewer-frame {
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+    max-width: min(1100px, 100%);
+}
+
+.landing-viewer-frame img {
+    display: block;
+    max-width: 100%;
+    max-height: 78vh;
+    max-height: 78dvh;
+    width: auto;
+    height: auto;
+    border-radius: 14px;
+    box-shadow: 0 30px 80px -20px rgba(0, 0, 0, 0.6);
+    background: #1a2a20;
+}
+
+.landing-viewer-btn {
+    position: absolute;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.14);
+    color: #fff;
+    cursor: pointer;
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    transition: background-color 150ms ease;
+}
+.landing-viewer-btn:hover { background: rgba(255, 255, 255, 0.28); }
+.landing-viewer-btn:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+.landing-viewer-btn svg { width: 20px; height: 20px; }
+.landing-viewer-btn.is-close { top: clamp(0.75rem, 2vw, 1.5rem); right: clamp(0.75rem, 2vw, 1.5rem); }
+.landing-viewer-btn.is-prev { left: clamp(0.5rem, 2vw, 1.5rem); top: 50%; transform: translateY(-50%); }
+.landing-viewer-btn.is-next { right: clamp(0.5rem, 2vw, 1.5rem); top: 50%; transform: translateY(-50%); }
+
+@media (prefers-reduced-motion: no-preference) {
+    .landing-viewer[open] .landing-viewer-frame { animation: landing-viewer-in 220ms var(--ease); }
+    .landing-viewer[open]::backdrop { animation: landing-viewer-fade 220ms ease; }
+}
+@keyframes landing-viewer-in {
+    from { opacity: 0; transform: scale(0.96); }
+    to { opacity: 1; transform: none; }
+}
+@keyframes landing-viewer-fade {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+/* phones: arrows sit along the bottom so they do not cover the photo */
+@media (max-width: 640px) {
+    .landing-viewer-btn.is-prev,
+    .landing-viewer-btn.is-next { top: auto; bottom: 1rem; transform: none; }
+    .landing-viewer-btn.is-prev { left: calc(50% - 56px); }
+    .landing-viewer-btn.is-next { right: calc(50% - 56px); }
+    .landing-viewer-frame img { max-height: 70vh; max-height: 70dvh; }
+}
+
 /* ---------- Responsive ---------- */
 @media (max-width: 1080px) {
     .landing-nav-links { display: none; }
+    .landing-nav { grid-template-columns: 1fr auto; }
 }
 
 @media (max-width: 900px) {
     /* The hero keeps its negative top margin, so the top padding has to
        clear the nav bar as well as give the headline room. */
-    .landing-hero { min-height: auto; padding-block: calc(84px + var(--sp-6)) var(--sp-8); }
+    /* Narrow screens: the copy first, then the photograph as its own band
+       beneath it, fading in from the ground at its top edge -- so no text
+       ever sits on the busy part of the picture. */
+    .landing-hero {
+        min-height: auto;
+        flex-direction: column;
+        align-items: stretch;
+        padding-block: calc(var(--nav-h) + var(--sp-6)) 0;
+    }
+    .landing-hero-media {
+        position: relative;
+        inset: auto;
+        order: 2;
+        height: clamp(13rem, 55vw, 22rem);
+        margin-top: var(--sp-4);
+        -webkit-mask-image: linear-gradient(to bottom, transparent 0%, #000 28%);
+        mask-image: linear-gradient(to bottom, transparent 0%, #000 28%);
+    }
+    .landing-hero-scrim { display: none; }
     .landing-about { grid-template-columns: minmax(0, 1fr); }
     /* Stacked above the copy there is no gutter left to reach into, so
        the frame comes back inside the shell and rounds all four corners. */
-    .landing-plates { margin-left: 0; }
+    .landing-plates { margin-left: 0; margin-right: 0; }
+    .landing-about-copy { margin-right: 0; }
     .landing-plate-stage { min-height: 0; }
     .landing-feature { grid-template-columns: minmax(0, 1fr); gap: var(--sp-4); }
     .landing-feature:nth-child(odd) .landing-feature-media { order: 0; }
@@ -1155,8 +1409,9 @@
    line, so the mark carries the brand and the buttons keep their room. */
 @media (max-width: 560px) {
     .landing-page .landing-brand > span { display: none; }
-    .landing-nav { gap: var(--sp-2); padding-inline: 0.75rem; }
-    .landing-brand img { width: 32px; }
+    .landing-nav { gap: var(--sp-2); padding-inline: 1rem; }
+    .landing-nav-actions { gap: 0.9rem; }
+    .landing-brand img { width: 32px; height: 32px; object-fit: contain; }
 }
 
 @media (max-width: 640px) {

@@ -253,7 +253,7 @@
 
   .rec-tiles {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(6.875rem, 1fr));
     gap: 0.6rem;
   }
 
@@ -572,7 +572,169 @@
       0 0 0 4px rgba(22, 163, 74, 0.18),
       0 24px 50px rgba(15, 23, 42, 0.25);
   }
+
+  /* --- Show recommendations button + loading state --- */
+  /* a little more room between the barangay field and the button than
+     between the two fields, so the action reads as its own step */
+  .rec-show-field {
+    flex: 0 0 auto;
+    justify-content: flex-end;
+    margin-left: 0.75rem;
+  }
+  /* same height as the selects beside it, so the row lines up */
+  .rec-show-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    height: 40px;
+    padding: 0 1.4rem;
+    white-space: nowrap;
+  }
+  .rec-show-btn:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+  .rec-show-spin {
+    display: none;
+    width: 1rem;
+    height: 1rem;
+    animation: rec-spin 0.8s linear infinite;
+  }
+  .rec-show-btn.is-loading {
+    opacity: 1;
+    cursor: progress;
+  }
+  .rec-show-btn.is-loading .rec-show-spin {
+    display: inline-block;
+  }
+  @keyframes rec-spin {
+    to { transform: rotate(360deg); }
+  }
+  /* the old results stay in place, dimmed, until the new ones arrive */
+  #rec-results {
+    transition: opacity 160ms ease;
+  }
+  #rec-results.is-loading {
+    opacity: 0.45;
+    pointer-events: none;
+  }
+  @media (max-width: 640px) {
+    .rec-show-field {
+      margin-left: 0;
+    }
+    .rec-show-field,
+    .rec-show-btn {
+      width: 100%;
+    }
+    .rec-show-btn {
+      height: 44px;
+    }
+  }
 </style>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  /* Partial loading for the recommendation picker. The page still works as
+     a plain GET form; with JavaScript the same URL is fetched and only the
+     barangay list and the results area are replaced. A full reload
+     repainted the whole app, and with the sidebar collapsed it visibly
+     jumped every time a barangay changed. */
+  (function () {
+    const form = document.getElementById("rec-picker");
+    const results = document.getElementById("rec-results");
+    const btn = document.getElementById("rec-show-btn");
+    if (!form || !results || !btn) return;
+    const label = btn.querySelector(".rec-show-label");
+
+    window.recSyncShowButton = function () {
+      if (!btn.classList.contains("is-loading")) {
+        btn.disabled = !form.barangay.value;
+      }
+    };
+
+    function setLoading(on, text) {
+      btn.classList.toggle("is-loading", on);
+      btn.disabled = on || !form.barangay.value;
+      label.textContent = on ? text : "Show recommendations";
+      results.classList.toggle("is-loading", on);
+      results.setAttribute("aria-busy", String(on));
+    }
+
+    // inline scripts do not run when inserted with innerHTML, so each one
+    // is replaced by a fresh element (they are all self-contained IIFEs)
+    function runScripts(root) {
+      root.querySelectorAll("script").forEach(function (old) {
+        const fresh = document.createElement("script");
+        fresh.textContent = old.textContent;
+        old.replaceWith(fresh);
+      });
+    }
+
+    async function load(url, opts) {
+      opts = opts || {};
+      setLoading(true, opts.loadingText || "Loading…");
+      try {
+        const res = await fetch(url, { headers: { "X-Requested-With": "fetch" } });
+        if (!res.ok) throw new Error(res.status);
+        const doc = new DOMParser().parseFromString(await res.text(), "text/html");
+
+        const newSelect = doc.getElementById("barangay");
+        if (newSelect) {
+          form.barangay.innerHTML = newSelect.innerHTML;
+          form.barangay.disabled = newSelect.disabled;
+        }
+        const newSlot = doc.getElementById("rec-count-slot");
+        const slot = document.getElementById("rec-count-slot");
+        if (newSlot && slot) slot.innerHTML = newSlot.innerHTML;
+
+        const newResults = doc.getElementById("rec-results");
+        if (!newResults) throw new Error("no results region");
+        results.innerHTML = newResults.innerHTML;
+        runScripts(results);
+        if (window.initFrozenTables) window.initFrozenTables();
+
+        if (opts.push !== false) history.pushState({ rec: true }, "", url);
+      } catch (err) {
+        // anything unexpected: fall back to an ordinary page load
+        window.location.href = url;
+        return;
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    function urlFor(params) {
+      const url = new URL(form.action || window.location.href, window.location.href);
+      url.search = new URLSearchParams(params).toString();
+      return url.pathname + url.search;
+    }
+
+    window.recPickMunicipality = function (f) {
+      f.barangay.value = "";
+      load(urlFor({ municipality: f.municipality.value }), {
+        loadingText: "Loading barangays…",
+      });
+    };
+
+    form.addEventListener("submit", function (e) {
+      e.preventDefault();
+      if (!form.barangay.value) return;
+      load(urlFor({
+        municipality: form.municipality.value,
+        barangay: form.barangay.value,
+      }), { loadingText: "Loading…" });
+    });
+
+    // Back / Forward between barangays loads that barangay again
+    window.addEventListener("popstate", function () {
+      const q = new URLSearchParams(window.location.search);
+      form.municipality.value = q.get("municipality") || "";
+      load(window.location.pathname + window.location.search, { push: false });
+    });
+  })();
+</script>
 {% endblock %}
 
 {% block content %}
@@ -581,9 +743,11 @@
   <div>
     <div class="um-title-row">
       <h2>Species Recommendation</h2>
+      <span id="rec-count-slot">
       {% if result and result.found %}
         <span class="um-count-pill">{{ result.total_species }}</span>
       {% endif %}
+      </span>
     </div>
     <p class="um-subtitle">Pick a barangay to see which tree species suit its measured elevation, temperature, rainfall and soil.</p>
   </div>
@@ -591,11 +755,11 @@
 
 <!-- ============ PICKER ============ -->
 <div class="um-table-card rec-picker-card">
-  <form method="GET" class="rec-picker-row">
+  <form method="GET" class="rec-picker-row" id="rec-picker">
     <div class="um-field">
       <label for="municipality">Municipality</label>
       <select name="municipality" id="municipality"
-              onchange="this.form.barangay.value=''; this.form.submit();">
+              onchange="recPickMunicipality(this.form)">
         <option value="">Choose a municipality</option>
         {% for m in municipalities %}
           <option value="{{ m }}" {% if m == selected_muni %}selected{% endif %}>
@@ -609,7 +773,7 @@
       <label for="barangay">Barangay</label>
       <select name="barangay" id="barangay"
               {% if not barangays %}disabled{% endif %}
-              onchange="this.form.submit();">
+              onchange="recSyncShowButton()">
         <option value="">
           {% if barangays %}Choose a barangay{% else %}Pick a municipality first{% endif %}
         </option>
@@ -622,11 +786,20 @@
       </select>
     </div>
 
-    <noscript>
-      <button type="submit" class="um-btn-confirm">Show</button>
-    </noscript>
+    <div class="um-field rec-show-field">
+      <button type="submit" class="um-btn-confirm rec-show-btn" id="rec-show-btn"
+              {% if not selected_brgy %}disabled{% endif %}>
+        <svg class="rec-show-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+        <span class="rec-show-label">Show recommendations</span>
+      </button>
+    </div>
   </form>
 </div>
+
+{# Everything from the barangay title down is swapped in place when a new
+   barangay is shown, so the rest of the page (sidebar, picker) never
+   reloads and nothing flickers. #}
+<div id="rec-results" aria-live="polite">
 
 
 {% if result and result.found %}
@@ -1406,5 +1579,7 @@
   </p>
 
 {% endif %}
+
+</div>{# /#rec-results #}
 
 {% endblock %}

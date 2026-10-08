@@ -224,7 +224,7 @@
 
     /* Fixed rather than derived from padding, because the map sizes itself
        against it and anything sticky sits below it. */
-    --topbar-h: 64px;
+    --topbar-h: 4rem;   /* 64px at the full size; follows the desktop scale below */
 
     background-color: var(--surface-0);
     color: var(--text-body);
@@ -282,6 +282,17 @@ html {
     scrollbar-gutter: stable;
 }
 
+/* Desktop scale. Everything in the interface is sized in rem, so the root
+   size sets the scale of the whole thing: at 80% the app looks the way it
+   did at 80% browser zoom, which reads better on laptop screens. It is a
+   percentage, so someone who has raised the browser's own default font
+   size still gets their larger text. Phones keep the full size. */
+@media (min-width: 861px) {
+    html {
+        font-size: 80%;
+    }
+}
+
 /* Inside the app the window itself never scrolls (.main-area does), so
    the reserved gutter was only an empty strip down the right edge. */
 html:has(> body.app-body) {
@@ -313,7 +324,8 @@ html:has(> body.app-body) {
     --side-text-dim: rgba(255, 255, 255, 0.52);
     --side-accent: #7fd8a8;
 
-    width: 240px;
+    /* the saved width when there is one (set in Base.html before paint) */
+    width: var(--sidebar-init-w, 240px);
     flex-shrink: 0;
     transition: width 0.18s ease;
     background-color: var(--brand-deepest);
@@ -348,7 +360,13 @@ html:has(> body.app-body) {
     background-color: rgba(22, 163, 74, 0.4);
 }
 
-/* Icon rail: labels hide, icons stay centered, links still work as normal <a> tags */
+/* Icon rail: labels hide, icons stay centered, links still work as normal <a> tags.
+   .sidebar-init-collapsed is the same state set before first paint, so a
+   collapsed rail is already narrow on the first frame. */
+.sidebar-init-collapsed .sidebar .logo-text,
+.sidebar-init-collapsed .sidebar .role-pill-text,
+.sidebar-init-collapsed .sidebar .nav-link-text,
+.sidebar-init-collapsed .sidebar .sign-out-text,
 .sidebar.collapsed .logo-text,
 .sidebar.collapsed .role-pill-text,
 .sidebar.collapsed .nav-link-text,
@@ -356,6 +374,10 @@ html:has(> body.app-body) {
     display: none;
 }
 
+.sidebar-init-collapsed .sidebar .sidebar-logo,
+.sidebar-init-collapsed .sidebar .role-pill,
+.sidebar-init-collapsed .sidebar .nav-link,
+.sidebar-init-collapsed .sidebar .sign-out,
 .sidebar.collapsed .sidebar-logo,
 .sidebar.collapsed .role-pill,
 .sidebar.collapsed .nav-link,
@@ -1423,15 +1445,21 @@ html:has(> body.app-body) {
 }
 
 .notif-filter-clear {
-    border: none;
-    background: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 38px;
+    padding: 0 0.85rem;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background-color: var(--surface-1);
     font: inherit;
-    font-size: 0.8rem;
+    font-size: 0.82rem;
     font-weight: 600;
-    color: var(--brand-text);
+    color: var(--text-strong);
     text-decoration: none;
-    padding: 0.25rem 0.35rem;
     cursor: pointer;
+    transition: background-color 150ms ease, border-color 150ms ease;
 }
 
 .notif-filter-clear[hidden],
@@ -1450,7 +1478,9 @@ html:has(> body.app-body) {
 }
 
 .notif-filter-clear:hover {
-    text-decoration: underline;
+    background-color: var(--surface-3);
+    border-color: var(--line-strong);
+    color: var(--text-heading);
 }
 
 /* ---- day-grouped list ---- */
@@ -1734,7 +1764,8 @@ body.login-page :focus-visible {
     isolation: isolate;
     display: flex;
     flex-direction: column;
-    justify-content: space-between;
+    justify-content: center;
+    align-items: center;
 }
 
 /* ---- Animated mesh gradient ----
@@ -1822,11 +1853,14 @@ body.login-page :focus-visible {
     pointer-events: none;
 }
 
-.brand-top,
-.brand-content,
-.brand-footer {
+.brand-stack {
     position: relative;
     z-index: 2;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    max-width: 34rem;
+    text-align: center;
 }
 
 /* Movement in the corner of the eye is exactly what the OS setting is for. */
@@ -1836,94 +1870,45 @@ body.login-page :focus-visible {
     }
 }
 
-.brand-header {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-}
-
-/* The logo art is 251x310, so it must be sized explicitly -- left unstyled
-   it renders at natural size and swamps the header. */
-.logo-box {
-    width: 3.25rem;
-    height: 3.25rem;
+.brand-logo {
     display: block;
+    width: 7.5rem;
+    height: 7.5rem;
     object-fit: contain;
-    flex-shrink: 0;
+    filter: drop-shadow(0 10px 28px rgba(0, 0, 0, 0.35));
 }
 
-.brand-copy {
-    display: flex;
-    flex-direction: column;
-    gap: 0.15rem;
-}
-
-.brand-name {
-    font-size: 2rem;
+/* Small tracked label over the name. */
+.brand-eyebrow {
+    margin: 1.75rem 0 0;
+    font-size: 0.75rem;
     font-weight: 700;
-    line-height: 1;
-    letter-spacing: -0.04em;
-    color: var(--surface-3);
+    letter-spacing: 0.24em;
+    text-transform: uppercase;
+    color: #8fe3ad;
 }
 
-.brand-title {
-    font-size: 0.875rem;
-    letter-spacing: 0.15em;
-    color: rgba(227, 240, 232, 0.75);
-    font-weight: 600;
-}
-
-/* Centres the pitch in whatever height is left instead of pinning it near
-   the top, which left a large hole above the footer on tall screens. */
-.brand-content {
-    margin: auto 0;
-    padding: 3rem 0;
-}
-
-.brand-content h1 {
-    margin: 0;
-    font-size: clamp(2.75rem, 4vw, 4.5rem);
-    line-height: 0.98;
-    letter-spacing: -0.045em;
+.brand-heading {
+    margin: 0.6rem 0 0;
+    font-size: clamp(2.25rem, 3.4vw, 3.25rem);
     font-weight: 800;
-    max-width: 14ch;
+    line-height: 1.05;
+    letter-spacing: -0.035em;
     color: #ffffff;
 }
 
-.brand-content p {
-    max-width: 46ch;
-    margin: 1.5rem 0 0;
+.brand-lead {
+    max-width: 40ch;
+    margin: 1.25rem 0 0;
     font-size: 1rem;
-    line-height: 1.65;
-    color: rgba(236, 244, 238, 0.82);
+    line-height: 1.7;
+    color: rgba(236, 244, 238, 0.78);
 }
 
-.chip-row {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.625rem;
-    margin: 2rem 0 0;
-    padding: 0;
-    list-style: none;
-    max-width: 40rem;
-}
-
-.chip-row li {
-    display: inline-flex;
-    align-items: center;
-    padding: 0.5rem 0.875rem;
-    border-radius: 999px;
-    border: 1px solid rgba(192, 224, 204, 0.28);
-    background: rgba(255, 255, 255, 0.04);
-    color: var(--surface-3);
-    font-size: 0.875rem;
-    line-height: 1.2;
-}
-
-.brand-footer {
-    color: rgba(231, 239, 233, 0.72);
-    font-size: 0.875rem;
-    line-height: 1.6;
+/* the key phrases pick up the label colour */
+.brand-lead strong {
+    font-weight: 600;
+    color: #a9f0c3;
 }
 
 /* ---------- Auth panel (right) ---------- */
@@ -1935,6 +1920,35 @@ body.login-page :focus-visible {
     justify-content: center;
     align-items: center;
     padding: 2.5rem 2rem;
+}
+
+/* Desktop: log in and sign up are the same fixed frame, exactly one
+   screen tall. The sign-up form is longer than the screen; before, it
+   stretched the whole page, so the brand panel grew and its logo slid
+   down, and a page scrollbar narrowed everything -- a visible jump when
+   switching between the two. Now only the form column scrolls (and
+   centres the form when it fits), and the brand panel never moves. */
+@media (min-width: 981px) {
+    html:has(> body.login-page) {
+        overflow: hidden;
+        scrollbar-gutter: auto;
+    }
+
+    .login-shell {
+        height: 100vh;
+        height: 100dvh;
+        min-height: 0;
+    }
+
+    .auth-panel {
+        overflow-y: auto;
+        align-items: safe center;
+        scrollbar-width: none;
+    }
+
+    .auth-panel::-webkit-scrollbar {
+        display: none;
+    }
 }
 
 .auth-wrapper {
@@ -2198,22 +2212,12 @@ body.login-page :focus-visible {
         min-height: auto;
         margin: 0.75rem;
         border-radius: 1.25rem;
-        padding: 2rem 1.75rem;
+        padding: 2.5rem 1.75rem;
     }
 
-    /* Stacked, the pitch no longer needs to fill a column. */
-    .brand-content {
-        margin: 0;
-        padding: 2rem 0 0;
-    }
-
-    .brand-content h1 {
-        font-size: clamp(2rem, 6vw, 2.75rem);
-        max-width: none;
-    }
-
-    .brand-footer {
-        margin-top: 2rem;
+    .brand-logo {
+        width: 5.5rem;
+        height: 5.5rem;
     }
 
     .auth-panel {
@@ -2222,82 +2226,46 @@ body.login-page :focus-visible {
 }
 
 @media (max-width: 580px) {
-    .brand-panel {
-        margin: 0.5rem;
-        border-radius: 1rem;
-        padding: 1.5rem 1.25rem;
-    }
-
-    .brand-header {
-        gap: 0.75rem;
-    }
-
-    .logo-box {
-        width: 2.5rem;
-        height: 2.5rem;
-    }
-
-    .brand-name {
-        font-size: 1.5rem;
-    }
-
-    .brand-title {
-        font-size: 0.75rem;
-        letter-spacing: 0.1em;
-    }
-
-    .brand-content h1 {
-        font-size: 2rem;
-    }
-
-    .chip-row li {
-        font-size: 0.875rem;
-        padding: 0.4375rem 0.75rem;
-    }
-
-    .auth-panel {
-        padding: 1.5rem 1rem 2.5rem;
-    }
-
-    .auth-wrapper {
-        padding: 1.75rem 1.25rem;
-    }
-
-    /* On a phone the brand panel filled the whole first screen and the
-       form only started below it. Here it shrinks to a header: logo,
-       name and a one-line headline. The pitch, chips and footer are
-       landing-page material and drop out. */
-    /* Stacked, the two panels no longer share the screen height: the
-       header takes what it needs and the form gets the rest, from the top. */
+    /* On a phone the panel is a short header -- mark, label and name --
+       so the form starts on the first screen. The line about the
+       platform drops out. Stacked, the two panels no longer share the
+       screen height: the header takes what it needs, the form the rest. */
     .brand-panel {
         flex: none;
-        padding: 1.1rem 1.15rem 1.25rem;
-        padding-top: calc(1.1rem + env(safe-area-inset-top));
+        margin: 0.5rem;
+        border-radius: 1rem;
+        padding: 1.4rem 1.15rem 1.5rem;
+        padding-top: calc(1.4rem + env(safe-area-inset-top));
+    }
+
+    .brand-logo {
+        width: 3.75rem;
+        height: 3.75rem;
+    }
+
+    .brand-eyebrow {
+        margin-top: 0.9rem;
+        font-size: 0.65rem;
+        letter-spacing: 0.2em;
+    }
+
+    .brand-heading {
+        margin-top: 0.35rem;
+        font-size: 1.6rem;
+    }
+
+    .brand-lead {
+        display: none;
     }
 
     .auth-panel {
         flex: 1 0 auto;
         align-items: flex-start;
-    }
-
-    .brand-content {
-        padding-top: 1rem;
-    }
-
-    .brand-content h1 {
-        font-size: 1.35rem;
-        line-height: 1.2;
-    }
-
-    .brand-content p,
-    .chip-row,
-    .brand-footer,
-    .brand-br {
-        display: none;
-    }
-
-    .auth-panel {
         padding: 0.75rem 0.5rem calc(2rem + env(safe-area-inset-bottom));
+    }
+
+    .auth-wrapper {
+        padding: 1.75rem 1.25rem;
     }
 }
 
@@ -2604,6 +2572,24 @@ body.login-page :focus-visible {
     background-color: var(--ok-solid);
 }
 
+.um-btn-add:disabled,
+.um-btn-add:disabled:hover {
+    background-color: var(--surface-3);
+    color: var(--text-3);
+    cursor: not-allowed;
+}
+
+/* These classes also go on <a> tags (Export to Excel, New monitoring
+   report, row links), which carry the browser's link underline. */
+a.um-btn-add,
+a.um-btn-ghost,
+a.um-btn-row,
+a.um-btn-add:hover,
+a.um-btn-ghost:hover,
+a.um-btn-row:hover {
+    text-decoration: none;
+}
+
 .um-btn-add svg {
     width: 0.95rem;
     height: 0.95rem;
@@ -2836,6 +2822,14 @@ body.login-page :focus-visible {
     background-color: var(--surface-2);
     border-bottom: 1px solid var(--line);
     white-space: nowrap;
+}
+
+/* .um-table th sets text-align:left with more weight than .text-end, so a
+   numeric column's header sat at the left while its figures sat right. */
+.um-table th.text-end,
+.um-table td.text-end,
+.um-table td.num-cell {
+    text-align: right;
 }
 
 .um-th-flex {
@@ -3941,7 +3935,7 @@ table[data-freeze="2"].is-scrolled-x th:nth-child(2) {
 /* --- form grid (replaces Bootstrap's .row / .col-md-*) --- */
 .um-field-row {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(11.875rem, 1fr));
     gap: 1rem;
 }
 
@@ -4374,7 +4368,7 @@ table[data-freeze="2"].is-scrolled-x th:nth-child(2) {
 /* --- photo evidence --- */
 .rep-photo-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(11.25rem, 1fr));
     gap: 0.9rem;
 }
 
@@ -4422,7 +4416,7 @@ table[data-freeze="2"].is-scrolled-x th:nth-child(2) {
 /* --- review decision row: status / note / submit --- */
 .rep-decision-row {
     display: grid;
-    grid-template-columns: minmax(140px, 1fr) minmax(220px, 2fr) auto;
+    grid-template-columns: minmax(8.75rem, 1fr) minmax(13.75rem, 2fr) auto;
     gap: 1rem;
     align-items: end;
 }
@@ -4492,7 +4486,7 @@ table[data-freeze="2"].is-scrolled-x th:nth-child(2) {
 
 .kpi-strip {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(11.875rem, 1fr));
     gap: 0.85rem;
     margin-bottom: 1.5rem;
 }
@@ -4612,6 +4606,38 @@ table[data-freeze="2"].is-scrolled-x th:nth-child(2) {
 
 .chart-box.tall {
     height: 420px;
+}
+
+/* Highest-suitability barangays (Dashboard): on a wide screen the row
+   carries both species on one line, "Pili · Yakal-yamban", with tighter
+   padding, so the 15 rows and the species chart beside them stop running
+   far down the page. Phones keep the two-line cells. */
+@media (min-width: 861px) {
+    #unplantedBody td {
+        padding-top: 0.5rem;
+        padding-bottom: 0.5rem;
+    }
+
+    #unplantedBody td > div {
+        display: inline;
+    }
+
+    #unplantedBody td > div + div::before {
+        content: " \00B7  ";
+    }
+}
+
+/* A chart that stretches to the height of the card beside it in the row
+   (the species chart next to the unplanted-barangays table). */
+.chart-card-fill {
+    display: flex;
+    flex-direction: column;
+}
+
+.chart-card-fill .chart-box {
+    flex: 1 1 auto;
+    height: auto;
+    min-height: 300px;
 }
 
 .chart-row {
@@ -4778,7 +4804,7 @@ table[data-freeze="2"].is-scrolled-x th:nth-child(2) {
    a line of text that the real content then shoves aside. */
 .dash-skeleton .sk-strip {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(11.875rem, 1fr));
     gap: 0.85rem;
     margin-bottom: var(--sp-3);
 }

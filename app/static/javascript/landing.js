@@ -18,43 +18,56 @@
             wrap.classList.toggle("is-stuck", !entries[0].isIntersecting);
         }).observe(sentinel);
 
-        /* The bar gets out of the way going down the page and comes back the
-           moment the reader turns round -- reading forward wants the room,
-           going back usually means looking for the navigation.
+        /* The bar stays on screen the whole way down the page; it no longer
+           slides away while scrolling down. */
+    }
 
-           Two guards keep it from flickering. Nothing happens in the first
-           stretch of the page, where the bar is part of the hero rather than
-           an overlay; and a move has to cover a few pixels before it counts
-           as a direction, so the small jitters a trackpad produces are
-           ignored. */
-        var REVEAL_AT = 140;     /* px of scroll before hiding is allowed */
-        var THRESHOLD = 8;       /* px of travel before a direction counts */
+    /* ---------- Current section in the nav ----------
+       Underlines the link for the part of the page being read: Home over
+       the hero, then About, Coverage and Features as each reaches the top
+       third of the screen. Checked once per frame while scrolling. */
+    function initNavSpy() {
+        var links = Array.prototype.slice.call(
+            document.querySelectorAll('.landing-nav-links a[href^="#"]'));
+        var items = links.map(function (a) {
+            var id = a.getAttribute("href").slice(1);
+            return { link: a, target: document.getElementById(id) };
+        }).filter(function (it) { return it.target; });
+        if (!items.length) return;
 
-        var last = window.scrollY;
-        var ticking = false;
+        var bar = document.querySelector(".landing-nav-wrap");
+        var current = null;
 
-        function onScroll() {
-            var y = window.scrollY;
-            var moved = y - last;
-
-            if (Math.abs(moved) < THRESHOLD) return;
-
-            /* Near the top the bar is always shown, whichever way the page
-               is moving. */
-            wrap.classList.toggle("is-hidden", moved > 0 && y > REVEAL_AT);
-            last = y;
+        function setCurrent(it) {
+            if (it === current) return;
+            current = it;
+            items.forEach(function (x) {
+                if (x === it) x.link.setAttribute("aria-current", "page");
+                else x.link.removeAttribute("aria-current");
+            });
         }
 
+        function update() {
+            var line = (bar ? bar.offsetHeight : 0) + window.innerHeight * 0.3;
+            var active = items[0];   // Home: the hero, before any section
+            items.forEach(function (it, i) {
+                if (i === 0) return;
+                if (it.target.getBoundingClientRect().top <= line) active = it;
+            });
+            setCurrent(active);
+        }
+
+        var ticking = false;
         window.addEventListener("scroll", function () {
             if (ticking) return;
             ticking = true;
-            /* One read per frame: reading scrollY inside the event itself
-               forces a layout on every one of them. */
-            window.requestAnimationFrame(function () {
-                onScroll();
-                ticking = false;
-            });
+            window.requestAnimationFrame(function () { update(); ticking = false; });
         }, { passive: true });
+        // once more when scrolling stops, so the final section is always
+        // right even if a frame was skipped (or after a jump from a link)
+        window.addEventListener("scrollend", update);
+        window.addEventListener("resize", update);
+        update();
     }
 
     /* ---------- Scroll reveal ----------
@@ -271,11 +284,27 @@
         var centre = 1;
         var timer = null;
 
-        /* Clicking a card off to the side brings it in. There is no
-           other control: the set runs on its own, and a picture people
-           want to hold still is held by hovering it. */
+        /* Clicking any photograph opens it in the viewer, and also brings
+           it to the middle, so closing the viewer leaves the set on the
+           picture that was being looked at. Each card is a keyboard target
+           too (Enter or Space). */
+        var viewer = createViewer(slides, function (i) {
+            centre = i;
+            paint();
+        }, stop, restart);
+
         slides.forEach(function (slide, i) {
-            slide.addEventListener("click", function () { centre = i; paint(); restart(); });
+            var img = slide.querySelector("img");
+            slide.setAttribute("tabindex", "0");
+            slide.setAttribute("role", "button");
+            slide.setAttribute("aria-label", "View photo: " + (img ? img.alt : "photograph"));
+            slide.addEventListener("click", function () { viewer.open(i); });
+            slide.addEventListener("keydown", function (e) {
+                if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    viewer.open(i);
+                }
+            });
         });
 
         /* Steps forward from the middle card, so the one before it comes
@@ -325,6 +354,85 @@
 
         paint();
         restart();
+    }
+
+    /* ---------- Photo viewer ----------
+       One photograph at a time, large but not full-screen, over a blurred
+       and dimmed page. A native <dialog> shown with showModal() brings
+       Escape-to-close, a focus trap and an inert page for free; the blur
+       is its ::backdrop. Arrows (and the arrow keys) step through the set,
+       and clicking anywhere outside the photograph closes it. */
+    function createViewer(slides, onShow, pause, resume) {
+        var dialog = document.createElement("dialog");
+        dialog.className = "landing-viewer";
+        // focus lands on the dialog itself when it opens, not on the close
+        // button, so no focus ring shows until someone presses Tab
+        dialog.setAttribute("tabindex", "-1");
+        dialog.setAttribute("aria-label", "Photograph");
+        dialog.innerHTML =
+            '<figure class="landing-viewer-frame">' +
+            '  <img alt="">' +
+            '</figure>' +
+            '<button type="button" class="landing-viewer-btn is-close" aria-label="Close">' +
+            '  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>' +
+            '</button>' +
+            '<button type="button" class="landing-viewer-btn is-prev" aria-label="Previous photograph">' +
+            '  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>' +
+            '</button>' +
+            '<button type="button" class="landing-viewer-btn is-next" aria-label="Next photograph">' +
+            '  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>' +
+            '</button>';
+        document.body.appendChild(dialog);
+
+        var img = dialog.querySelector("img");
+        var current = 0;
+
+        function show(i) {
+            current = (i + slides.length) % slides.length;
+            var src = slides[current].querySelector("img");
+            img.src = src.currentSrc || src.src;
+            img.alt = src.alt;
+            onShow(current);
+        }
+
+        function open(i) {
+            pause();
+            show(i);
+            if (typeof dialog.showModal === "function") {
+                dialog.showModal();
+            } else {
+                dialog.setAttribute("open", "");
+            }
+            dialog.focus();
+        }
+
+        function close() {
+            if (typeof dialog.close === "function") dialog.close();
+            else dialog.removeAttribute("open");
+        }
+
+        dialog.querySelector(".is-close").addEventListener("click", close);
+        dialog.querySelector(".is-prev").addEventListener("click", function () { show(current - 1); });
+        dialog.querySelector(".is-next").addEventListener("click", function () { show(current + 1); });
+
+        // a click on the dialog itself (the blurred margin), not on the
+        // photograph or a button, closes it
+        dialog.addEventListener("click", function (e) {
+            if (e.target === dialog) close();
+        });
+
+        dialog.addEventListener("keydown", function (e) {
+            if (e.key === "ArrowLeft") { e.preventDefault(); show(current - 1); }
+            if (e.key === "ArrowRight") { e.preventDefault(); show(current + 1); }
+        });
+
+        dialog.addEventListener("close", function () {
+            resume();
+            var back = slides[current];
+            if (back) back.focus({ preventScroll: true });
+        });
+
+        return { open: open };
     }
 
     /* ---------- Hero map ----------
@@ -437,6 +545,7 @@
 
     function init() {
         initNav();
+        initNavSpy();
         initReveals();
         initMarquee();
         initPlates();

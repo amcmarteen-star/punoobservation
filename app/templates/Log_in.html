@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#0d3632">
     <title>Log In - PuNoObservation</title>
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='images/favicon-32.png', v=asset_v) }}">
+    <link rel="apple-touch-icon" href="{{ url_for('static', filename='images/apple-touch-icon.png', v=asset_v) }}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -20,35 +22,18 @@
                 <span class="blob blob-4"></span>
             </div>
 
-            <div class="brand-top">
-                <div class="brand-header">
-                    <img src="{{ url_for('static', filename='images/finallogo.png') }}" alt="" class="logo-box" width="251" height="310" />
-                    <div class="brand-copy">
-                        <div class="brand-name">PuNoObservation</div>
-                        <div class="brand-title">DECISION SUPPORT SYSTEM</div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="brand-content">
-                <h1>Reforestation<br class="brand-br"> Management<br class="brand-br"> Platform</h1>
-                <p>
-                    A web-based decision support system for tree species recommendation and reforestation
-                    management with geospatial visualization across Eastern Pangasinan.
+            {# One centred stack: large mark, a small tracked label, the
+               name, and a short line about what the platform is. #}
+            <div class="brand-stack">
+                <img src="{{ url_for('static', filename='images/logo-mark.png', v=asset_v) }}" alt="" class="brand-logo" width="145" height="145" />
+                <p class="brand-eyebrow">Reforestation Management Platform</p>
+                <h1 class="brand-heading">PuNoObservation</h1>
+                <p class="brand-lead">
+                    A web-based decision support system for
+                    <strong>tree species recommendation</strong> and
+                    <strong>reforestation management</strong>, with geospatial
+                    visualization across <strong>Eastern Pangasinan</strong>.
                 </p>
-
-                <ul class="chip-row">
-                    <li>GIS Mapping</li>
-                    <li>Species Recommendation</li>
-                    <li>Analytics</li>
-                    <li>Reports</li>
-                </ul>
-            </div>
-
-            <div class="brand-footer">
-                Pangasinan DENR &bull; Eastern Pangasinan Region&nbsp;I
-                <br>
-                &copy; 2026 PuNoObservation. Capstone Project.
             </div>
         </aside>
 

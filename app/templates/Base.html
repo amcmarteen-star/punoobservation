@@ -4,6 +4,8 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <title>{% block title %}PuNoObservation{% endblock %}</title>
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='images/favicon-32.png', v=asset_v) }}">
+    <link rel="apple-touch-icon" href="{{ url_for('static', filename='images/apple-touch-icon.png', v=asset_v) }}">
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -31,6 +33,24 @@
         window.addEventListener("orientationchange", setAppHeight);
       })();
 
+      /* The saved sidebar width, applied before the first paint. The rail
+         logic further down only runs once the page has been parsed, so the
+         sidebar used to paint at full width and then snap narrow -- a jump
+         on every page load with the rail collapsed. */
+      (function () {
+        try {
+          var w = parseInt(localStorage.getItem("sidebarWidth"), 10);
+          if (w) {
+            w = Math.max(64, Math.min(w, 320));
+            var root = document.documentElement;
+            root.style.setProperty("--sidebar-init-w", w + "px");
+            if (w < 150) root.classList.add("sidebar-init-collapsed");
+          }
+        } catch (e) {
+          /* storage blocked; the default width is used */
+        }
+      })();
+
       (function () {
         try {
           if (localStorage.getItem("pno-theme") === "dark") {
@@ -50,7 +70,7 @@
         <div class="sidebar-header">
           <a href="{{ url_for('dashboard.index') }}" class="sidebar-logo">
             <img
-              src="{{ url_for('static', filename='images/finallogo.png') }}"
+              src="{{ url_for('static', filename='images/logo-mark.png', v=asset_v) }}"
               alt="PuNoObservation Logo"
               class="logo-icon"
             />
@@ -686,6 +706,8 @@
         const saved = parseInt(localStorage.getItem("sidebarWidth"), 10);
         sidebar.classList.add("resizing");
         applyWidth(saved || DEFAULT_WIDTH);
+        // the rail now carries its own state; the pre-paint hint can go
+        document.documentElement.classList.remove("sidebar-init-collapsed");
         void sidebar.offsetWidth;
         sidebar.classList.remove("resizing");
 
