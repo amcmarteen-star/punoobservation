@@ -3418,6 +3418,11 @@ a.um-btn-row:hover {
         align-items: stretch;
         gap: 0.8rem;
     }
+
+    /* stacked, the 220px flex-basis became a 220px height per field */
+    .rec-picker-row .um-field {
+        flex: 0 0 auto;
+    }
 }
 
 .rec-table {

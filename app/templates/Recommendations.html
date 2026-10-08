@@ -576,9 +576,13 @@
   /* --- Show recommendations button + loading state --- */
   /* a little more room between the barangay field and the button than
      between the two fields, so the action reads as its own step */
-  .rec-show-field {
+  /* .rec-picker-row .um-field gives every field flex:1, which made the
+     button's own field grow too and left the button stranded at its left.
+     Sized to the button instead, the two selects take the width and the
+     button sits at the right end of the card. */
+  .rec-picker-row .rec-show-field {
     flex: 0 0 auto;
-    justify-content: flex-end;
+    min-width: 0;
     margin-left: 0.75rem;
   }
   /* same height as the selects beside it, so the row lines up */
@@ -620,7 +624,7 @@
     pointer-events: none;
   }
   @media (max-width: 640px) {
-    .rec-show-field {
+    .rec-picker-row .rec-show-field {
       margin-left: 0;
     }
     .rec-show-field,
