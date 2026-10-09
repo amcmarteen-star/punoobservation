@@ -356,6 +356,189 @@
         restart();
     }
 
+    /* ---------- Feature route ----------
+       The route behind the features is drawn through the centre of each
+       mockup, first to last, as smooth curves that leave and arrive
+       vertically -- so it sweeps across in the open space between rows,
+       behind the pictures rather than through the copy. It is rebuilt when
+       the layout changes (resize, images loading). On a single-column
+       screen it runs straight down the left gutter instead.
+
+       Its drawn tip is held level with the middle of the screen: the
+       height of that line is looked up on the path itself (the path's
+       height only ever increases along its length), so the tip reaches
+       each mockup exactly as the mockup reaches the middle of the screen.
+       With reduced motion the whole route is simply drawn. */
+    function initRoute() {
+        var page = document.querySelector("[data-route]");
+        var timeline = page && page.querySelector(".lf-timeline");
+        var svg = timeline && timeline.querySelector(".lf-route");
+        var path = svg && svg.querySelector(".lf-route-progress");
+        var leafLayer = svg && svg.querySelector(".lf-leaves");
+        if (!path || !leafLayer) return;
+        var leaves = [];      // [{len, el}] in order along the branch
+        var shots = timeline.querySelectorAll(".lf-visual .landing-shot");
+        var narrow = window.matchMedia("(max-width: 900px)");
+        var samples = [];     // [{len, y}] along the path, y ascending
+        var total = 0;
+        var TIP = 0.5;        // where the tip sits, as a share of the screen height
+
+        function build() {
+            var box = timeline.getBoundingClientRect();
+            var w = Math.round(box.width), h = Math.round(box.height);
+            svg.setAttribute("viewBox", "0 0 " + w + " " + h);
+
+            var pts = Array.prototype.map.call(shots, function (el) {
+                var r = el.getBoundingClientRect();
+                return {
+                    x: narrow.matches ? 20 : r.left + r.width / 2 - box.left,
+                    y: r.top + r.height / 2 - box.top
+                };
+            });
+            if (pts.length < 2) return;
+
+            var d = "M" + pts[0].x.toFixed(1) + " " + pts[0].y.toFixed(1);
+            for (var i = 1; i < pts.length; i++) {
+                var p0 = pts[i - 1], p1 = pts[i], k = (p1.y - p0.y) * 0.55;
+                d += " C" + p0.x.toFixed(1) + " " + (p0.y + k).toFixed(1) +
+                     " " + p1.x.toFixed(1) + " " + (p1.y - k).toFixed(1) +
+                     " " + p1.x.toFixed(1) + " " + p1.y.toFixed(1);
+            }
+            path.setAttribute("d", d);
+
+            total = path.getTotalLength();
+            samples = [];
+            var steps = 240;
+            for (var s = 0; s <= steps; s++) {
+                var len = total * s / steps;
+                samples.push({ len: len, y: path.getPointAtLength(len).y });
+            }
+            growLeaves();
+            progress();
+        }
+
+        /* Leaves along the branch. Spacing, side, angle, size and shade all
+           vary a little, from a fixed seed so the branch looks the same on
+           every visit. Each leaf: a short curved stalk, then a slightly
+           lopsided blade with a pale midrib. */
+        var SHADES = ["#2f8f4a", "#3fa452", "#58b14a", "#76c043", "#24793f"];
+        function rng(seed) {
+            return function () {
+                seed |= 0; seed = (seed + 0x6D2B79F5) | 0;
+                var t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+                t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+                return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+            };
+        }
+
+        function leafMarkup(size, side, shade) {
+            var stalk = size * 0.35;
+            var L = size, W1 = L * 0.34, W2 = L * 0.27;     // lopsided blade
+            var x0 = stalk, x1 = stalk + L;
+            var bend = side * 1.5;
+            return '<path class="lf-twig" d="M0 0 Q' + (stalk / 2).toFixed(1) + " " + bend +
+                   " " + x0.toFixed(1) + ' 0"/>' +
+                   '<path fill="' + shade + '" d="M' + x0.toFixed(1) + " 0" +
+                   " C" + (x0 + L * 0.22).toFixed(1) + " " + (-W1).toFixed(1) +
+                   " " + (x0 + L * 0.72).toFixed(1) + " " + (-W1 * 0.85).toFixed(1) +
+                   " " + x1.toFixed(1) + " 0" +
+                   " C" + (x0 + L * 0.7).toFixed(1) + " " + (W2 * 0.9).toFixed(1) +
+                   " " + (x0 + L * 0.25).toFixed(1) + " " + W2.toFixed(1) +
+                   " " + x0.toFixed(1) + ' 0Z"/>' +
+                   '<path class="lf-vein" d="M' + (x0 + 1).toFixed(1) + " 0 Q" +
+                   (x0 + L * 0.5).toFixed(1) + " " + (-side * 0.8).toFixed(1) + " " +
+                   (x0 + L * 0.82).toFixed(1) + ' 0"/>';
+        }
+
+        function growLeaves() {
+            var rand = rng(20261009);
+            var html = "";
+            var marks = [];
+            var single = narrow.matches;
+            var side = 1;
+            for (var len = 46; len < total - 18; len += 52 + rand() * 46) {
+                if (rand() < 0.82) side = -side;          // mostly alternate
+                var s = single ? 1 : side;                  // one side in the gutter
+                var p = path.getPointAtLength(len);
+                var q = path.getPointAtLength(Math.min(total, len + 1));
+                var tangent = Math.atan2(q.y - p.y, q.x - p.x) * 180 / Math.PI;
+                var angle = tangent + s * (38 + rand() * 26);
+                var size = (single ? 12 : 16) + rand() * (single ? 7 : 12);
+                var shade = SHADES[Math.floor(rand() * SHADES.length)];
+                html += '<g transform="translate(' + p.x.toFixed(1) + " " + p.y.toFixed(1) +
+                        ") rotate(" + angle.toFixed(1) + ')"><g class="lf-leaf">' +
+                        leafMarkup(size, s, shade) + "</g></g>";
+                marks.push(len);
+
+                // now and then a smaller leaf just after it, on the other side
+                if (!single && rand() < 0.35 && len + 9 < total) {
+                    var p2 = path.getPointAtLength(len + 9);
+                    var a2 = tangent - s * (44 + rand() * 20);
+                    var shade2 = SHADES[Math.floor(rand() * SHADES.length)];
+                    html += '<g transform="translate(' + p2.x.toFixed(1) + " " + p2.y.toFixed(1) +
+                            ") rotate(" + a2.toFixed(1) + ')"><g class="lf-leaf">' +
+                            leafMarkup(size * 0.62, -s, shade2) + "</g></g>";
+                    marks.push(len + 9);
+                }
+            }
+            leafLayer.innerHTML = html;
+            var els = leafLayer.querySelectorAll(".lf-leaf");
+            leaves = marks.map(function (len, i) { return { len: len, el: els[i] }; });
+        }
+
+        // open the leaves the tip has passed, close the ones it has not
+        function showLeaves(tipLen) {
+            for (var i = 0; i < leaves.length; i++) {
+                leaves[i].el.classList.toggle("is-out", tipLen >= leaves[i].len + 8);
+            }
+        }
+
+        // length along the path at which it reaches height y
+        function lengthAt(y) {
+            if (!samples.length) return 0;
+            if (y <= samples[0].y) return 0;
+            var last = samples[samples.length - 1];
+            if (y >= last.y) return total;
+            var lo = 0, hi = samples.length - 1;
+            while (hi - lo > 1) {
+                var mid = (lo + hi) >> 1;
+                if (samples[mid].y < y) lo = mid; else hi = mid;
+            }
+            var a = samples[lo], b = samples[hi];
+            var t = b.y === a.y ? 0 : (y - a.y) / (b.y - a.y);
+            return a.len + (b.len - a.len) * t;
+        }
+
+        var ticking = false;
+        function progress() {
+            ticking = false;
+            if (reduced.matches) {
+                page.style.setProperty("--route-progress", "1");
+                showLeaves(Infinity);
+                return;
+            }
+            if (!total) return;
+            var tipY = window.innerHeight * TIP - timeline.getBoundingClientRect().top;
+            var tipLen = lengthAt(tipY);
+            page.style.setProperty("--route-progress", (tipLen / total).toFixed(4));
+            showLeaves(tipLen);
+        }
+
+        window.addEventListener("scroll", function () {
+            if (ticking) return;
+            ticking = true;
+            window.requestAnimationFrame(progress);
+        }, { passive: true });
+        window.addEventListener("resize", build);
+        if ("ResizeObserver" in window) {
+            new ResizeObserver(build).observe(timeline);
+        }
+        Array.prototype.forEach.call(timeline.querySelectorAll("img"), function (img) {
+            if (!img.complete) img.addEventListener("load", build);
+        });
+        build();
+    }
+
     /* ---------- Photo viewer ----------
        One photograph at a time, large but not full-screen, over a blurred
        and dimmed page. A native <dialog> shown with showModal() brings
@@ -546,6 +729,7 @@
     function init() {
         initNav();
         initNavSpy();
+        initRoute();
         initReveals();
         initMarquee();
         initPlates();

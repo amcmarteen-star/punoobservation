@@ -176,7 +176,7 @@
     --g-about: #e3f6e8;
     --g-coverage: #eef6d6;
     --g-features: #ddeee9;
-    --g-after: var(--paper-alt);
+    --g-after: #e1f2dc;   /* the call-to-action section's top colour */
 }
 
 #about {
@@ -191,7 +191,18 @@
 
 #features {
     --section-bg: var(--g-features);
-    background: linear-gradient(180deg, var(--g-features) 0%, var(--g-features) 86%, var(--g-after) 100%);
+    background:
+        radial-gradient(circle at 10% 22%, rgba(197, 236, 211, 0.6), transparent 26%),
+        radial-gradient(circle at 90% 47%, rgba(215, 243, 220, 0.7), transparent 24%),
+        linear-gradient(180deg, var(--g-features) 0%, var(--g-features) 86%, var(--g-after) 100%);
+}
+
+/* The closing "See what is already on the map" section: its own ground,
+   the logo's leaf green, deepening towards the bottom so it leads into
+   the dark green footer. */
+.landing-section-cta {
+    --section-bg: #e1f2dc;
+    background: linear-gradient(180deg, #e1f2dc 0%, #d4ecd2 55%, #c3e3c4 100%);
 }
 
 /* Mono is reserved for measurements and system labels, never for prose. */
@@ -940,57 +951,298 @@ html:has(> body.landing-page)::-webkit-scrollbar {
 }
 .landing-mini svg { width: 17px; height: 17px; }
 
-/* ---------- Features ---------- */
-/* A centred header for a section whose content runs full width beneath it. */
-.landing-head-center { text-align: center; }
-.landing-head-center h2 { margin-inline: auto; max-width: 24ch; }
-.landing-head-center .landing-note {
-    justify-content: center;
-    margin-inline: auto;
-    text-align: left;
+/* ---------- Features ----------
+   A centred header, then four features along a green route that is drawn
+   behind them as the page scrolls. The mockups are always shown; only the
+   copy beside each one comes in as it is reached.
+   Each feature is copy on one side and its mockup on the other, the sides
+   alternating; the route runs from mockup to mockup behind them. Then
+   the "More features" pills under a soft dome. */
+.lf {
+    --route-progress: 0;
+    position: relative;
+    overflow: hidden;
+    padding-block: 0;
 }
 
-/* One feature per row, with the photograph changing sides down the list
-   so the eye has somewhere new to land each time. */
-.landing-features {
-    display: grid;
-    gap: clamp(var(--sp-8), 8vw, var(--sp-14));
-    margin-top: var(--sp-8);
+.lf-kicker {
+    margin: 0;
+    font-size: 0.6875rem;
+    font-weight: 700;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--accent);
 }
 
-.landing-feature {
-    display: grid;
-    grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
-    align-items: center;
-    gap: clamp(var(--sp-4), 4.5vw, var(--sp-8));
-}
-.landing-feature:nth-child(odd) .landing-feature-media { order: 2; }
-
-.landing-feature-copy { max-width: 38rem; }
-/* the small label over each feature sits centred over its column, as the
-   "Get to know us" label does in About */
-.landing-feature-copy .landing-tag {
+/* header */
+.lf-head {
+    position: relative;
     display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 520px;
     justify-content: center;
+    padding: 110px 24px 120px;
+    text-align: center;
 }
-/* title centred under its label; the description justified beneath, with
-   hyphenation so the word spacing stays even */
-.landing-feature-copy h3 { text-align: center; }
-.landing-feature-copy > p:not(.landing-feature-cta) {
-    text-align: justify;
-    hyphens: auto;
-    -webkit-hyphens: auto;
+.lf-head::before {
+    content: "";
+    position: absolute;
+    top: 40px;
+    left: 50%;
+    width: 680px;
+    max-width: 92vw;
+    height: 340px;
+    border: 1px solid rgba(35, 143, 86, 0.12);
+    border-radius: 50%;
+    transform: translateX(-50%);
 }
-.landing-feature-copy h3 {
-    margin: var(--sp-2) 0 var(--sp-3);
-    font-size: clamp(1.4rem, 1rem + 1vw, 2rem);
+.lf-head h2 {
+    position: relative;
+    max-width: 820px;
+    margin: 18px 0 22px;
+    font-size: clamp(2.4rem, 1.4rem + 3vw, 4.5rem);
+    font-weight: 800;
+    line-height: 1.04;
+    letter-spacing: -0.045em;
+}
+.lf-intro {
+    position: relative;
+    max-width: 37rem;
+    margin: 0;
+    color: var(--body);
+    font-size: var(--fs-lg);
+    line-height: 1.75;
+}
+.lf-note {
+    position: relative;
+    max-width: 37rem;
+    margin: 0.9rem 0 0;
+    color: var(--mute);
+    font-size: var(--fs-sm);
+    line-height: 1.6;
+}
+.lf-cue {
+    position: absolute;
+    bottom: 12px;
+    left: 50%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    transform: translateX(-50%);
+    color: var(--mute);
+    font-size: 0.625rem;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+}
+
+/* the route */
+.lf-timeline {
+    position: relative;
+    width: min(1240px, calc(100% - 48px));
+    margin: 0 auto;
+}
+.lf-route {
+    position: absolute;
+    z-index: 0;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+    pointer-events: none;
+}
+/* The branch: a bark-brown stroke drawn by its dash offset, after the
+   usual "plant growing" technique (stem drawn with stroke-dashoffset,
+   leaves scaled in from their base as it passes). No glow -- a plain
+   stroke and flat leaves read as drawn, not generated. */
+.lf-route-progress {
+    fill: none;
+    stroke: url(#lf-bark);
+    stroke-width: 4.5;
+    stroke-linecap: round;
+    vector-effect: non-scaling-stroke;
+    stroke-dasharray: 1;
+    stroke-dashoffset: calc(1 - var(--route-progress));
+}
+
+/* Each leaf is drawn with its stalk at the group origin, so scaling the
+   group from 0 0 grows it out of the branch. */
+.lf-leaf {
+    transform: scale(0);
+    transform-box: view-box;
+    transform-origin: 0 0;
+    transition: transform 520ms cubic-bezier(0.34, 1.45, 0.64, 1);
+}
+.lf-leaf.is-out { transform: scale(1); }
+.lf-twig {
+    fill: none;
+    stroke: #6e5236;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+}
+.lf-vein {
+    fill: none;
+    stroke: rgba(255, 255, 255, 0.38);
+    stroke-width: 0.9;
+    stroke-linecap: round;
+}
+@media (prefers-reduced-motion: reduce) {
+    .lf-leaf { transition: none; }
+}
+
+/* one feature */
+.lf-row {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    min-height: 690px;
+    grid-template-columns: minmax(0, 0.86fr) minmax(0, 1.14fr);
+    align-items: center;
+    gap: 7%;
+}
+.lf-row.lf-reverse { grid-template-columns: minmax(0, 1.14fr) minmax(0, 0.86fr); }
+.lf-row.lf-reverse .lf-copy { order: 2; justify-self: end; }
+.lf-row.lf-reverse .lf-visual { order: 1; }
+
+.lf-copy {
+    position: relative;
+    max-width: 500px;
+    padding-left: 42px;
+}
+.lf-num {
+    position: absolute;
+    top: -8px;
+    left: 0;
+    font-size: 0.8125rem;
+    font-weight: 800;
+    color: rgba(12, 118, 70, 0.28);
+}
+.lf-copy h3 {
+    margin: 15px 0 18px;
+    font-size: clamp(1.9rem, 1.2rem + 1.5vw, 2.7rem);
+    font-weight: 800;
+    line-height: 1.12;
+    letter-spacing: -0.04em;
+}
+.lf-desc {
+    margin: 0;
+    color: var(--body);
+    font-size: var(--fs-base);
+    line-height: 1.75;
+}
+.lf-cta { margin-top: 25px; }
+
+/* the mockup */
+.lf-visual {
+    position: relative;
+    min-width: 0;
+}
+.lf-visual::before {
+    content: "";
+    position: absolute;
+    z-index: -1;
+    inset: 12% 5%;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(69, 177, 105, 0.2), transparent 67%);
+    filter: blur(20px);
+}
+.lf-visual .landing-shot { transition: transform 450ms cubic-bezier(.2, .7, .2, 1); }
+.lf-visual:hover .landing-shot { transform: translateY(-8px); }
+
+/* more features */
+.lf-more {
+    position: relative;
+    padding: 125px 24px 150px;
+    overflow: hidden;
+    text-align: center;
+}
+.lf-more::before {
+    content: "";
+    position: absolute;
+    inset: 45px -10% 0;
+    border-radius: 50% 50% 0 0;
+    background:
+        radial-gradient(circle at center top, rgba(182, 232, 181, 0.44), transparent 55%),
+        rgba(232, 248, 229, 0.4);
+}
+.lf-more > * { position: relative; }
+.lf-more h2 {
+    max-width: 700px;
+    margin: 16px auto 14px;
+    font-weight: 800;
+    line-height: 1.08;
+    letter-spacing: -0.045em;
+}
+.lf-more-intro {
+    max-width: 600px;
+    margin: 0 auto;
+    color: var(--body);
+    font-size: var(--fs-base);
+    line-height: 1.7;
+}
+.lf-pills {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 12px;
+    max-width: 1280px;
+    margin: 48px auto 0;
+    padding: 0;
+    list-style: none;
+}
+.lf-pill {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    min-height: 58px;
+    padding: 8px 17px 8px 9px;
+    border: 1px solid rgba(27, 105, 70, 0.08);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.86);
+    box-shadow: 0 10px 24px rgba(32, 91, 64, 0.08);
+    color: #20342b;
+    font-size: 0.875rem;
     font-weight: 600;
-    line-height: 1.1;
-    letter-spacing: -0.025em;
-    font-variation-settings: "wdth" 100;
 }
-.landing-feature-copy p { color: var(--body); font-size: var(--fs-lg); line-height: 1.75; }
-.landing-feature-cta { margin-top: var(--sp-3); }
+.lf-pill-icon {
+    display: grid;
+    place-items: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: #edf8ee;
+    color: #09814b;
+}
+.lf-pill-icon svg { width: 20px; height: 20px; }
+
+@media (max-width: 900px) {
+    .lf-head { min-height: 460px; padding-top: 90px; }
+    .lf-timeline { width: min(680px, calc(100% - 36px)); }
+    .lf-row,
+    .lf-row.lf-reverse {
+        min-height: auto;
+        grid-template-columns: 1fr;
+        gap: 38px;
+        padding: 78px 0 88px 48px;
+    }
+    .lf-row.lf-reverse .lf-copy,
+    .lf-row.lf-reverse .lf-visual { order: initial; }
+    .lf-row.lf-reverse .lf-copy { justify-self: start; }
+    .lf-copy { padding-left: 36px; }
+}
+
+@media (max-width: 560px) {
+    .lf-head::before { width: 420px; }
+    .lf-timeline { width: calc(100% - 24px); }
+    .lf-row,
+    .lf-row.lf-reverse { gap: 24px; padding: 70px 0 70px 24px; }
+    .lf-copy { padding-left: 26px; }
+    .lf-more { padding: 100px 18px 110px; }
+    .lf-pills { flex-direction: column; align-items: stretch; }
+}
 
 /* The screenshots arrive inside their own device mockups on transparent
    backgrounds, so they need no bezel. The cap stops the squarer mockups
@@ -1140,9 +1392,8 @@ html:has(> body.landing-page)::-webkit-scrollbar {
    same light the hero uses over the photograph. */
 /* The footer carries the logo's own gradient: the deep emerald at the
    base of the trunk on the left, rising to the leaves' green on the right,
-   with a soft lime glow in the corner where the "P" would be. A thin
-   green-to-lime rule across the top is the same gradient the mark is
-   drawn in. Light type throughout; the column labels pick up the lime. */
+   with a soft lime glow in the corner where the "P" would be. Light type
+   throughout; the column labels pick up the lime. */
 .landing-footer {
     position: relative;
     background:
@@ -1151,15 +1402,6 @@ html:has(> body.landing-page)::-webkit-scrollbar {
     color: var(--on-lime);
     padding-block: var(--sp-8) var(--sp-4);
     font-size: var(--fs-base);
-}
-.landing-footer::before {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 3px;
-    background: linear-gradient(90deg, #007040, #20c050 50%, #90e030);
 }
 .landing-footer-grid {
     display: grid;
@@ -1387,9 +1629,6 @@ html:has(> body.landing-page)::-webkit-scrollbar {
     .landing-plates { margin-left: 0; margin-right: 0; }
     .landing-about-copy { margin-right: 0; }
     .landing-plate-stage { min-height: 0; }
-    .landing-feature { grid-template-columns: minmax(0, 1fr); gap: var(--sp-4); }
-    .landing-feature:nth-child(odd) .landing-feature-media { order: 0; }
-    .landing-feature-copy { max-width: none; }
     .landing-footer-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
