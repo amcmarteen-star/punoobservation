@@ -61,6 +61,14 @@
         }
       })();
     </script>
+    {# Map tile sources, set in app/config.py (and .env). Every Leaflet
+       map uses MAP_TILES.street, and the GIS map adds .satellite. #}
+    <script type="application/json" id="map-tiles">{{ map_tiles | tojson }}</script>
+    {# Upload, password and session limits from app/config.py. #}
+    <script type="application/json" id="app-limits">{{ app_limits | tojson }}</script>
+    <script>
+      window.MAP_TILES = JSON.parse(document.getElementById("map-tiles").textContent);
+    </script>
     {% block extra_head %}{% endblock %}
   </head>
   <body class="app-body">
@@ -493,7 +501,7 @@
         </nav>
 
         {% if session.username %}
-        <a href="{{ url_for('auth.logout') }}" class="sign-out">
+        <a href="{{ url_for('auth.logout') }}" class="sign-out" id="signOutLink">
           <svg
             viewBox="0 0 24 24"
             fill="none"
@@ -661,6 +669,71 @@
         </main>
       </div>
     </div>
+
+    {% if session.username %}
+    <!-- ============ SIGN OUT CONFIRMATION ============ -->
+    <div class="um-modal-overlay" id="signOutModal">
+      <div class="um-modal" role="dialog" aria-modal="true" aria-labelledby="signOutTitle">
+        <div class="um-modal-head">
+          <h3 id="signOutTitle">Sign Out</h3>
+          <button type="button" class="um-modal-close" aria-label="Close dialog" data-signout-close>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>
+          </button>
+        </div>
+        <div class="um-modal-body">
+          <p class="um-modal-text">Are you sure you want to sign out?</p>
+        </div>
+        <div class="um-modal-foot">
+          <button type="button" class="um-btn-cancel" data-signout-close>Stay signed in</button>
+          <a href="{{ url_for('auth.logout') }}" class="um-btn-confirm">Yes, sign out</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ SESSION TIMED OUT ============ -->
+    {# Its own overlay class, not um-modal-overlay: several pages close
+       every um-modal-overlay on Escape, and this one must stay up. #}
+    <div class="session-overlay" id="sessionExpired">
+      <div class="um-modal" role="alertdialog" aria-modal="true"
+           aria-labelledby="sessionExpiredTitle" aria-describedby="sessionExpiredText">
+        <div class="um-modal-head">
+          <h3 id="sessionExpiredTitle">Session timed out</h3>
+        </div>
+        <div class="um-modal-body">
+          <p class="um-modal-text" id="sessionExpiredText">
+            You were signed out after {{ app_limits.sessionIdleMinutes }}
+            minutes without activity, to keep your account safe. Anything
+            you had not saved was not kept.
+          </p>
+        </div>
+        <div class="um-modal-foot">
+          <a href="#" class="um-btn-confirm" id="sessionExpiredLogin"
+             style="text-align:center; text-decoration:none;">Sign in again</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ IDLE SIGN-OUT WARNING ============ -->
+    <div class="um-modal-overlay" id="idleModal">
+      <div class="um-modal" role="alertdialog" aria-modal="true"
+           aria-labelledby="idleTitle" aria-describedby="idleText">
+        <div class="um-modal-head">
+          <h3 id="idleTitle">Still there?</h3>
+        </div>
+        <div class="um-modal-body">
+          <p class="um-modal-text" id="idleText">
+            You will be signed out in <strong id="idleCountdown">2:00</strong>
+            because there has been no activity. Anything you have not saved
+            will be lost.
+          </p>
+        </div>
+        <div class="um-modal-foot">
+          <a href="{{ url_for('auth.logout') }}" class="um-btn-cancel" style="text-align:center; text-decoration:none;">Sign out now</a>
+          <button type="button" class="um-btn-confirm" id="idleStay">Stay signed in</button>
+        </div>
+      </div>
+    </div>
+    {% endif %}
 
     <script>
       // Notification bell logic -- lives outside extra_scripts block on purpose,
@@ -1098,6 +1171,167 @@
 
       // load on every page that uses this layout
       loadNotifications();
+
+      // Sign Out asks first. The link still works without JS.
+      (function () {
+        const link = document.getElementById("signOutLink");
+        const modal = document.getElementById("signOutModal");
+        if (!link || !modal) return;
+
+        function close() {
+          modal.classList.remove("open");
+          link.focus();
+        }
+
+        link.addEventListener("click", function (e) {
+          e.preventDefault();
+          modal.classList.add("open");
+          modal.querySelector(".um-btn-cancel").focus();
+        });
+        modal.querySelectorAll("[data-signout-close]").forEach(function (btn) {
+          btn.addEventListener("click", close);
+        });
+        modal.addEventListener("click", function (e) {
+          if (e.target === modal) close();
+        });
+        document.addEventListener("keydown", function (e) {
+          if (e.key === "Escape" && modal.classList.contains("open")) close();
+        });
+      })();
+
+      const APP_LIMITS = JSON.parse(document.getElementById("app-limits").textContent);
+
+      // Idle sign-out (SESSION_IDLE_MINUTES in app/config.py). The server
+      // keeps the real clock; this asks it how long is left, so activity
+      // in another tab counts too. A warning shows two minutes before.
+      (function () {
+        const modal = document.getElementById("idleModal");
+        if (!modal) return;   // signed out: nothing to time
+        const STATUS_URL = "{{ url_for('auth.session_status') }}";
+        const KEEPALIVE_URL = "{{ url_for('auth.session_keepalive') }}";
+        const LOGIN_URL = "{{ url_for('auth.login', timeout=1) }}";
+        const WARN_SECONDS = 120;
+        const countdown = document.getElementById("idleCountdown");
+        const stayBtn = document.getElementById("idleStay");
+        let checkTimer = null;
+        let tickTimer = null;
+
+        // Say so on the page, rather than moving the user away from it.
+        function signedOut() {
+          clearTimeout(checkTimer);
+          clearInterval(tickTimer);
+          modal.classList.remove("open");
+          const here = window.location.pathname + window.location.search;
+          const link = document.getElementById("sessionExpiredLogin");
+          link.href = LOGIN_URL + "&next=" + encodeURIComponent(here);
+          document.getElementById("sessionExpired").classList.add("open");
+          link.focus();
+        }
+
+        function schedule(remaining) {
+          clearTimeout(checkTimer);
+          checkTimer = setTimeout(check, Math.max(0, remaining - WARN_SECONDS) * 1000);
+        }
+
+        function hide() {
+          clearInterval(tickTimer);
+          modal.classList.remove("open");
+        }
+
+        function show(remaining) {
+          let left = remaining;
+          function draw() {
+            const m = Math.floor(left / 60);
+            const s = String(left % 60).padStart(2, "0");
+            countdown.textContent = m + ":" + s;
+          }
+          draw();
+          modal.classList.add("open");
+          stayBtn.focus();
+          clearInterval(tickTimer);
+          tickTimer = setInterval(function () {
+            left -= 1;
+            if (left <= 0) {
+              clearInterval(tickTimer);
+              check();   // the server decides; another tab may have kept it alive
+            } else {
+              draw();
+            }
+          }, 1000);
+        }
+
+        function check() {
+          fetch(STATUS_URL, { credentials: "same-origin" })
+            .then(function (res) {
+              if (res.status === 401) return signedOut();
+              return res.json().then(function (data) {
+                if (data.remaining <= 0) return signedOut();
+                if (data.remaining > WARN_SECONDS + 5) {
+                  hide();
+                  schedule(data.remaining);
+                } else {
+                  show(data.remaining);
+                }
+              });
+            })
+            .catch(function () {
+              // offline for a moment: ask again shortly
+              checkTimer = setTimeout(check, 30000);
+            });
+        }
+
+        stayBtn.addEventListener("click", function () {
+          fetch(KEEPALIVE_URL, { method: "POST", credentials: "same-origin" })
+            .then(function (res) {
+              if (res.status === 401) return signedOut();
+              return res.json().then(function (data) {
+                hide();
+                schedule(data.remaining);
+              });
+            })
+            .catch(function () { hide(); schedule(WARN_SECONDS + 60); });
+        });
+
+        // This page load was activity, so the full time is left.
+        schedule(APP_LIMITS.sessionIdleMinutes * 60);
+      })();
+
+      // File size and count, checked as soon as files are chosen, on every
+      // file box. data-max-mb and data-max-files override the defaults.
+      // The server checks again (app/utils/security.py).
+      document.addEventListener("change", function (e) {
+        const input = e.target;
+        if (!(input instanceof HTMLInputElement) || input.type !== "file") return;
+
+        const maxMb = Number(input.dataset.maxMb || APP_LIMITS.maxFileMb);
+        const maxFiles = Number(input.dataset.maxFiles || 0);
+        const files = Array.from(input.files || []);
+        let problem = "";
+        if (maxFiles && files.length > maxFiles) {
+          problem = "Choose at most " + maxFiles + " files.";
+        } else {
+          const big = files.filter(function (f) { return f.size > maxMb * 1024 * 1024; });
+          if (big.length) {
+            problem = "Each file must be " + maxMb + " MB or smaller. Too big: "
+              + big.map(function (f) { return f.name; }).join(", ") + ".";
+          }
+        }
+
+        let note = input.parentNode.querySelector(".upload-error");
+        if (!problem) {
+          if (note) note.remove();
+          return;
+        }
+        input.value = "";
+        if (!note) {
+          note = document.createElement("p");
+          note.className = "upload-error";
+          note.setAttribute("role", "alert");
+          note.style.cssText = "margin:.35rem 0 0; font-size:.8rem; font-weight:600; color:var(--danger-strong);";
+          input.insertAdjacentElement("afterend", note);
+        }
+        note.textContent = problem;
+      });
     </script>
 
     <!-- frozen header row + first columns on wide tables (data-freeze) -->

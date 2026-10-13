@@ -561,8 +561,8 @@
               <div class="sites-name-cell">
                 {{ q.requester.username if q.requester else 'unknown' }}
               </div>
-              {% if q.contact_number %}
-                <span class="po-sub">{{ q.contact_number }}</span>
+              {% if q.contact_name or q.contact_number %}
+                <span class="po-sub">{{ q.contact_name or '' }}{% if q.contact_name and q.contact_number %} &middot; {% endif %}{{ q.contact_number or '' }}</span>
               {% endif %}
             </td>
             <td>{{ row.barangay or '—' }}</td>

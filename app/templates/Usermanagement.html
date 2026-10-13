@@ -411,14 +411,15 @@ active_page = 'users' %} {% block extra_head %}
             type="text"
             name="new_password"
             id="um-reset-pw"
-            minlength="8"
-            placeholder="At least 8 characters"
+            minlength="{{ app_limits.passwordMin }}" maxlength="{{ app_limits.passwordMax }}"
+            pattern="(?=.*[A-Za-z])(?=.*[0-9]).*" title="Use at least one letter and one number."
+            placeholder="{{ app_limits.passwordMin }} to {{ app_limits.passwordMax }} characters"
             autocomplete="off"
             required
           />
           <div class="form-text">
-            Shown as plain text so you can read it out. Give it to them
-            directly, never by email.
+            {{ app_limits.passwordMin }} to {{ app_limits.passwordMax }} characters, with at least one letter and one number. Shown as plain text so you can read it out. Give it
+            to them directly, never by email.
           </div>
         </div>
       </div>
@@ -491,8 +492,11 @@ active_page = 'users' %} {% block extra_head %}
             id="um-password"
             name="password"
             placeholder="Set an initial password"
+            minlength="{{ app_limits.passwordMin }}" maxlength="{{ app_limits.passwordMax }}"
+            pattern="(?=.*[A-Za-z])(?=.*[0-9]).*" title="Use at least one letter and one number."
             required
           />
+          <div class="form-text">{{ app_limits.passwordMin }} to {{ app_limits.passwordMax }} characters, with at least one letter and one number.</div>
         </div>
         <div class="um-field">
           <label for="um-role">Role</label>

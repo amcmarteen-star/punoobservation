@@ -404,9 +404,9 @@
   (function () {
     const map = L.map('boundaryMap');
 
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    L.tileLayer(MAP_TILES.street.url, {
       maxZoom: 19,
-      attribution: '&copy; OpenStreetMap contributors',
+      attribution: MAP_TILES.street.attribution,
     }).addTo(map);
 
     const boundary = {{ report.boundary_geojson | safe }};

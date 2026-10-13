@@ -312,7 +312,11 @@ active_page = 'review_requests' %} {% block extra_head %}
           <td class="req-desc" title="{{ r.description or '' }}">
             {{ r.description or '—' }}
           </td>
-          <td>{{ r.contact_number or '—' }}</td>
+          <td>
+            {% if r.contact_name %}{{ r.contact_name }}<br>{% endif %}
+            {{ r.contact_number or '—' }}
+            {% if r.contact_email %}<br>{{ r.contact_email }}{% endif %}
+          </td>
           <td>{{ r.date_submitted|datetime_ph }}</td>
           <td>
             <span

@@ -3,3 +3,5 @@ e.g. Approved by "CENRO OFFICER/name"
 
 suggestions or random thoughts to review:
  user can uploads the boundaries when requesting reforestation
+
+Test The accuracy of the boundary publications

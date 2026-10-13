@@ -18,13 +18,18 @@ from app.services.wikipedia import (
     refresh_species_summary, WikipediaUnavailable, LICENSE_NAME, LICENSE_URL,
 )
 from app.services.request_site import (
-    SITE_REQUEST_TYPES, LAND_OWNERSHIP_CHOICES, LAND_COVER_CHOICES,
+    SITE_REQUEST_TYPES, ADOPTION_REQUEST_TYPE, REQUEST_TYPES,
+    DESCRIPTION_TEMPLATE, tidy_description,
+    LAND_OWNERSHIP_CHOICES, LAND_COVER_CHOICES,
     parse_pin, parse_boundary, boundary_centre, boundary_points,
     points_outside, parse_spacing, density_from_spacing, estimate_seedlings,
-    common_planting_densities, proposed_area_for_site, site_position,
+    PLANTING_TYPES, proposed_area_for_site, site_position,
     geometry_bbox,
 )
 from app.utils.timeutil import manila_now, format_datetime
+from app.utils.security import (
+    password_problem, upload_problem,
+)
 from app.utils.jurisdiction import (
     normalize_municipality, cenro_for_municipality, reviewing_admins,
     can_see_unofficial_sites, can_see_site, region_label,
@@ -118,7 +123,15 @@ def index():
 
 @dashboard_bp.route('/gis-map')
 def gis_map():
-    """Renders the full interactive GIS Map page. Open to guests."""
+    """
+    Renders the full interactive GIS Map page. Open to guests.
+
+    /gis-map?request=1 opens it in request mode for a signed-in user:
+    they find the place, drop a pin or draw the plot (or pick a site to
+    adopt), then continue to the request form with it filled in.
+    """
+    request_mode = (request.args.get('request') == '1'
+                    and bool(session.get('user_id')))
     return render_template(
         'GIS_map.html',
         # Staff get the proposed boundary layer and its key. The API
@@ -126,7 +139,26 @@ def gis_map():
         can_see_proposed=can_see_unofficial_sites(),
         # Title in the top bar: the user's part of the province.
         region_label=region_label(),
+        request_mode=request_mode,
+        request_config={
+            "requestTypes": list(REQUEST_TYPES),
+            "siteTypes": list(SITE_REQUEST_TYPES),
+            "adoption": ADOPTION_REQUEST_TYPE,
+            "municipalities": _request_municipalities(),
+            "geojsonUrl": url_for('static', filename='geojson/barangay.geojson'),
+            "formUrl": url_for('dashboard.requests_page'),
+        } if request_mode else None,
     )
+
+
+def _request_municipalities():
+    """Municipalities the current user may submit a request in."""
+    q = (
+        db.session.query(Location.municipality)
+        .filter(Location.elevation_m.isnot(None))
+    )
+    q = scope_locations(q)
+    return [m[0] for m in q.distinct().order_by(Location.municipality).all()]
 
 
 @dashboard_bp.route('/api/municipality/<name>')
@@ -177,6 +209,8 @@ def municipality_info(name):
                 "actual_trees": totals[1] or 0,
                 "lat": position[0] if position else location.latitude,
                 "lon": position[1] if position else location.longitude,
+                # False: lat/lon is the barangay centre, not the site.
+                "exact": position is not None,
             })
 
     first = locations[0]
@@ -966,16 +1000,35 @@ def requests_page():
         municipality = (request.form.get('municipality') or '').strip()
         barangay = (request.form.get('barangay') or '').strip()
         request_type = (request.form.get('request_type') or '').strip()
-        description = (request.form.get('description') or '').strip()
+        description = tidy_description(request.form.get('description'))
         area_raw = (request.form.get('proposed_area_ha') or '').strip()
         contact = (request.form.get('contact_number') or '').strip()
+        contact_name = (request.form.get('contact_name') or '').strip()
+        contact_email = (request.form.get('contact_email') or '').strip()
 
         # --- validate before touching the database ---
+        # Contact name, number and email are all required.
+        if not contact_name or len(contact_name) > 120:
+            flash("Enter the contact person's name.", "danger")
+            return redirect(url_for('dashboard.requests_page'))
+
+        # Spaces and dashes are allowed while typing; 7 to 15 digits,
+        # with an optional leading +, e.g. 09171234567 or +639171234567.
+        contact = re.sub(r'[\s\-]', '', contact)
+        if not re.fullmatch(r'\+?\d{7,15}', contact):
+            flash("Enter a valid contact number, e.g. 09171234567.", "danger")
+            return redirect(url_for('dashboard.requests_page'))
+
+        if (len(contact_email) > 120 or
+                not re.fullmatch(r'[^@\s]+@[^@\s]+\.[^@\s]+', contact_email)):
+            flash("Enter a valid email address, e.g. name@gmail.com.", "danger")
+            return redirect(url_for('dashboard.requests_page'))
+
         if not municipality or not barangay:
             flash("Choose a municipality and barangay.", "danger")
             return redirect(url_for('dashboard.requests_page'))
 
-        if not request_type:
+        if request_type not in REQUEST_TYPES:
             flash("Choose a request type.", "danger")
             return redirect(url_for('dashboard.requests_page'))
 
@@ -1002,6 +1055,29 @@ def requests_page():
             flash("That barangay was not found.", "danger")
             return redirect(url_for('dashboard.requests_page'))
 
+        # --- files: count and size, before anything is saved ---
+        problem = upload_problem(
+            request.files.getlist('attachments'),
+            max_files=current_app.config['MAX_REQUEST_FILES'])
+        if problem:
+            flash(problem, "danger")
+            return redirect(url_for('dashboard.requests_page'))
+
+        # --- adoption: the existing site being taken on ---
+        adopted_site = None
+        if request_type == ADOPTION_REQUEST_TYPE:
+            site_raw = (request.form.get('adopted_site_id') or '').strip()
+            adopted_site = (db.session.get(Site, int(site_raw))
+                            if site_raw.isdigit() else None)
+            if (adopted_site is None or not can_see_site(adopted_site)
+                    or adopted_site.location_id != location.location_id):
+                flash(f"Choose the site to adopt from the sites in "
+                      f"{barangay}, {municipality}.", "danger")
+                return redirect(url_for('dashboard.requests_page'))
+            # The site's recorded area stands in when none was typed.
+            if area is None:
+                area = adopted_site.area_size_ha
+
         # --- map: pin and drawn area ---
         try:
             pin = parse_pin(request.form.get('latitude'),
@@ -1010,6 +1086,15 @@ def requests_page():
                 request.form.get('boundary_geojson'))
         except ValueError as exc:
             flash(str(exc), "danger")
+            return redirect(url_for('dashboard.requests_page'))
+
+        # A pin and a plot must describe the same place: the pin goes
+        # inside the plot. Checked on the map too (request-mode.js).
+        if pin is not None and boundary and not point_in_geojson(
+                pin[1], pin[0], json.loads(boundary)):
+            flash("The pin is outside the plot you drew. Change it on the "
+                  "map: move the pin inside the plot, or redraw the plot "
+                  "around the pin.", "danger")
             return redirect(url_for('dashboard.requests_page'))
 
         # An area with no pin still marks the site: its centre stands in.
@@ -1057,9 +1142,11 @@ def requests_page():
             return redirect(url_for('dashboard.requests_page'))
 
         # --- seedlings needed ---
-        density = None
-        density_choice = (request.form.get('density_choice') or '').strip()
-        if density_choice == 'custom':
+        # Seedlings = area / spacing. Each planting type has a fixed
+        # spacing; Custom takes the two spacings the requester typed.
+        row_m = plant_m = None
+        planting_type = (request.form.get('planting_type') or '').strip()
+        if planting_type == 'custom':
             try:
                 row_m, plant_m = parse_spacing(
                     request.form.get('spacing_row_m'),
@@ -1067,25 +1154,25 @@ def requests_page():
             except ValueError as exc:
                 flash(str(exc), "danger")
                 return redirect(url_for('dashboard.requests_page'))
-            density = density_from_spacing(row_m, plant_m)
-        elif density_choice:
-            # Presets are recomputed here, so a hand-edited form cannot
-            # submit a density the page never offered.
-            allowed = {d['density'] for d in common_planting_densities()}
-            density = int(density_choice) if density_choice.isdigit() else None
-            if density not in allowed:
-                flash("Choose a planting density from the list.", "danger")
+        elif planting_type:
+            if planting_type not in PLANTING_TYPES:
+                flash("Choose a planting type from the list.", "danger")
                 return redirect(url_for('dashboard.requests_page'))
+            row_m = PLANTING_TYPES[planting_type]['row_m']
+            plant_m = PLANTING_TYPES[planting_type]['plant_m']
 
-        estimated_seedlings = estimate_seedlings(area, density)
+        density = density_from_spacing(row_m, plant_m) if row_m else None
+        estimated_seedlings = estimate_seedlings(area, row_m, plant_m)
 
         new_request = Request(
             user_id=user_id,
             location_id=location.location_id,
             request_type=request_type,
-            description=description or None,
+            description=description,
             proposed_area_ha=area,
-            contact_number=contact or None,
+            contact_number=contact,
+            contact_name=contact_name,
+            contact_email=contact_email.lower(),
             latitude=pin[0] if pin else None,
             longitude=pin[1] if pin else None,
             boundary_geojson=boundary,
@@ -1094,6 +1181,7 @@ def requests_page():
             land_cover=land_cover,
             planting_density_per_ha=density,
             estimated_seedlings=estimated_seedlings,
+            adopted_site_id=adopted_site.site_id if adopted_site else None,
             status='Submitted',
         )
         db.session.add(new_request)
@@ -1124,6 +1212,9 @@ def requests_page():
             ))
             saved += 1
 
+        what = (f"Adoption of {adopted_site.site_name}" if adopted_site
+                else request_type)
+
         # Tell the CENRO that reviews this barangay, and nobody else.
         # PENRO and superadmin cannot act on a request.
         admins = reviewing_admins(cenro_for_municipality(municipality))
@@ -1133,13 +1224,13 @@ def requests_page():
                 notification_type='New Request',
                 message=(
                     f"{session.get('username')} requested "
-                    f"{request_type} for {barangay}, {municipality}."
+                    f"{what} for {barangay}, {municipality}."
                 ),
                 is_read=False,
             ))
 
         log_action('submit_request', 'request', new_request.request_id,
-                f"{request_type} for {barangay}, {municipality}")
+                f"{what} for {barangay}, {municipality}")
             
         db.session.commit()
 
@@ -1161,14 +1252,7 @@ def requests_page():
         return redirect(url_for('dashboard.requests_page'))
 
     # --- GET ---
-    q = (
-        db.session.query(Location.municipality)
-        .filter(Location.elevation_m.isnot(None))
-    )
-    q = scope_locations(q)
-    municipalities = [
-        m[0] for m in q.distinct().order_by(Location.municipality).all()
-    ]
+    municipalities = _request_municipalities()
 
     # Pending is the default: what a requester usually wants to know is
     # what is still waiting. Approved, Rejected and All are one click away.
@@ -1205,10 +1289,13 @@ def requests_page():
         total_count=base().count(),
         status_filter=status_filter,
         pending_statuses=PENDING_REQUEST_STATUSES,
-        density_presets=common_planting_densities(),
+        planting_types=PLANTING_TYPES,
         land_ownership_choices=LAND_OWNERSHIP_CHOICES,
         land_cover_choices=LAND_COVER_CHOICES,
         site_request_types=SITE_REQUEST_TYPES,
+        request_types=REQUEST_TYPES,
+        adoption_type=ADOPTION_REQUEST_TYPE,
+        description_template=DESCRIPTION_TEMPLATE,
     )
 
 
@@ -1611,6 +1698,14 @@ def submit_report():
         flash(calc['reason'], "danger")
         return redirect(url_for('dashboard.reports_page'))
  
+    # Photo sizes, before the report exists, so a too-big photo is not
+    # silently left out of the evidence.
+    problem = upload_problem(request.files.getlist('plot_photos')
+                             + request.files.getlist('boundary_photos'))
+    if problem:
+        flash(problem, "danger")
+        return redirect(url_for('dashboard.reports_page'))
+
     # ---------- 3. create the report ----------
     report = MonitoringReport(
         record_id=record.record_id,
@@ -2402,8 +2497,9 @@ def my_account():
             flash("Your current password is incorrect.", "danger")
             return redirect(url_for('dashboard.my_account'))
 
-        if len(new_password) < 8:
-            flash("Use at least 8 characters.", "danger")
+        problem = password_problem(new_password)
+        if problem:
+            flash(problem, "danger")
             return redirect(url_for('dashboard.my_account'))
 
         if new_password != confirm_password:

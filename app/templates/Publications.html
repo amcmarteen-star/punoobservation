@@ -392,8 +392,9 @@ extra_head %}
     if (!el || !geoData) return;
 
     const m = L.map(el, { zoomControl: false, attributionControl: false });
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { 
-      maxZoom: 19 
+    L.tileLayer(MAP_TILES.street.url, {
+      maxZoom: 19,
+      attribution: MAP_TILES.street.attribution,
     }).addTo(m);
 
     // If geoData is passed as a JSON string from backend, parse it

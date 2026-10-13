@@ -504,10 +504,10 @@ endblock %} {% set active_page = 'reports' %} {% block content %}
 
     if (!proposedMap) {
       proposedMap = L.map("proposedMap", { scrollWheelZoom: false });
-      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-        maxZoom: 19,
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-      }).addTo(proposedMap);
+      L.tileLayer(MAP_TILES.street.url, {
+      maxZoom: 19,
+      attribution: MAP_TILES.street.attribution,
+    }).addTo(proposedMap);
     }
     if (proposedLayer) proposedMap.removeLayer(proposedLayer);
     proposedLayer = L.featureGroup().addTo(proposedMap);

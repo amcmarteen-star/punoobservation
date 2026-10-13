@@ -22,6 +22,7 @@ from app.services.wikipedia import refresh_species_summary, WikipediaUnavailable
 from app.services.request_site import boundary_dict, SITE_REQUEST_TYPES
 from app.services.export_report import build_sites_workbook
 from app.utils.timeutil import manila_now
+from app.utils.security import password_problem
 from sqlalchemy.exc import IntegrityError
 from app.routes.dashboard import _load_barangay_geometry
 
@@ -47,6 +48,11 @@ def create_field_officer():
 
     if not username or not email or not password:
         flash("Username, email and password are all required.", "danger")
+        return redirect(url_for('admin.user_management'))
+
+    problem = password_problem(password)
+    if problem:
+        flash(problem, "danger")
         return redirect(url_for('admin.user_management'))
 
     VALID_ROLES = ('superadmin', 'admin', 'field_officer', 'normal_user')
@@ -411,13 +417,17 @@ def reset_password(user_id):
     user = User.query.get_or_404(user_id)
 
     new_password = request.form.get('new_password') or ''
-    if len(new_password) < 8:
-        flash("A temporary password needs at least 8 characters.", "danger")
+    problem = password_problem(new_password)
+    if problem:
+        flash(problem, "danger")
         return redirect(url_for('admin.user_management'))
 
     user.set_password(new_password)
     user.must_change_password = True
     user.password_changed_at = None
+    # A reset is also how an administrator unlocks a locked login.
+    user.failed_login_count = 0
+    user.locked_until = None
 
     # The password value is never written to the log, only the fact.
     log_action('reset_password', 'users', user_id,

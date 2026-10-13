@@ -1,4 +1,4 @@
-{% extends "Base.html" %} {% block title %}GIS Map - PuNoObservation{% endblock
+{% extends "Base.html" %} {% from 'partials/_assets.html' import asset_v %} {% block title %}GIS Map - PuNoObservation{% endblock
 %} {% set active_page = 'gis_map' %} {% block extra_head %}
 <link
   rel="stylesheet"
@@ -1024,6 +1024,7 @@
 
   .muni-panel .site-card-foot {
     display: flex;
+    flex-wrap: wrap;
     gap: 0.4rem;
     margin-top: 0.55rem;
     padding-top: 0.5rem;
@@ -1032,7 +1033,8 @@
 
   .muni-panel .btn-locate,
   .muni-panel .btn-report {
-    flex: 1;
+    flex: 1 1 auto;
+    white-space: nowrap;
     border: none;
     border-radius: 5px;
     padding: 0.35rem 0.5rem;
@@ -1102,6 +1104,241 @@
 
   .leaflet-control-attribution a {
     color: var(--text-body) !important;
+  }
+
+  /* ---------- request mode (/gis-map?request=1) ---------- */
+  .rq-panel {
+    position: absolute;
+    top: 12px;
+    left: 56px;
+    z-index: 1000;
+    width: 300px;
+    max-height: calc(100% - 24px);
+    overflow-y: auto;
+    padding: 0.85rem 0.95rem;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: var(--surface-1);
+    box-shadow: 0 10px 28px rgba(15, 23, 42, 0.22);
+    color: var(--text-strong);
+    font-size: 0.875rem;
+  }
+
+  .rq-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+  }
+
+  .rq-head h2 {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--text-heading);
+  }
+
+  .rq-collapse {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.9rem;
+    height: 1.9rem;
+    padding: 0;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    background: var(--surface-1);
+    color: var(--text-body);
+    cursor: pointer;
+  }
+
+  .rq-collapse svg {
+    width: 1rem;
+    height: 1rem;
+    transition: transform 0.2s ease;
+  }
+
+  .rq-panel.is-collapsed .rq-collapse svg {
+    transform: rotate(-90deg);
+  }
+
+  .rq-panel.is-collapsed .rq-body {
+    display: none;
+  }
+
+  .rq-body {
+    margin-top: 0.7rem;
+  }
+
+  .rq-label {
+    display: block;
+    margin-bottom: 0.3rem;
+    font-weight: 600;
+  }
+
+  .rq-select {
+    width: 100%;
+    padding: 0.5rem 0.6rem;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--surface-1);
+    color: var(--text-strong);
+    font: inherit;
+  }
+
+  .rq-note {
+    margin: 0.4rem 0 0;
+    font-size: 0.8rem;
+    line-height: 1.5;
+    color: var(--text-2);
+  }
+
+  .rq-tools {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    margin-top: 0.7rem;
+  }
+
+  .rq-tools[hidden],
+  .rq-summary[hidden] {
+    display: none;
+  }
+
+  .rq-tool {
+    padding: 0.35rem 0.7rem;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    background: var(--surface-1);
+    color: var(--text-body);
+    font: inherit;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .rq-tool[aria-pressed="true"] {
+    border-color: #16a34a;
+    background: #16a34a;
+    color: #ffffff;
+  }
+
+  .rq-tool:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .rq-summary {
+    margin-top: 0.7rem;
+    padding: 0.55rem 0.7rem;
+    border: 1px solid var(--ok-line);
+    border-radius: 8px;
+    background: var(--ok-bg);
+    font-size: 0.82rem;
+    line-height: 1.55;
+  }
+
+  .rq-status {
+    margin: 0.6rem 0 0;
+    font-size: 0.8rem;
+    line-height: 1.5;
+    color: var(--text-body);
+  }
+
+  .rq-status:empty {
+    display: none;
+  }
+
+  .rq-status.is-error {
+    padding: 0.5rem 0.65rem;
+    border: 1px solid var(--danger-line);
+    border-radius: 8px;
+    background: var(--danger-bg);
+    color: var(--danger-strong);
+    font-weight: 600;
+  }
+
+  .rq-status.is-warn {
+    padding: 0.5rem 0.65rem;
+    border: 1px solid var(--warn-line, #fcd34d);
+    border-radius: 8px;
+    background: var(--warn-bg);
+    color: var(--warn-strong);
+    font-weight: 600;
+  }
+
+  .rq-actions {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 0.85rem;
+  }
+
+  .rq-cancel,
+  .rq-continue {
+    flex: 1;
+    padding: 0.6rem 0.75rem;
+    border-radius: 8px;
+    font: inherit;
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-align: center;
+    text-decoration: none;
+    cursor: pointer;
+  }
+
+  .rq-cancel {
+    border: 1px solid var(--line);
+    background: var(--surface-1);
+    color: var(--text-body);
+  }
+
+  .rq-continue {
+    border: none;
+    background: var(--brand-solid);
+    color: #ffffff;
+  }
+
+  .rq-continue:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .rq-adopt-btn {
+    padding: 0.3rem 0.7rem;
+    border: none;
+    border-radius: 6px;
+    background: #16a34a;
+    color: #ffffff;
+    font: inherit;
+    font-size: 0.78rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  /* While dropping a pin or drawing, clicks go to the map, not to the
+     towns, heat map or site trees underneath. The request pin stays
+     draggable. */
+  #map.req-placing,
+  #map.req-placing .leaflet-grab,
+  #map.req-placing .leaflet-interactive {
+    cursor: crosshair;
+  }
+
+  #map.req-placing .leaflet-overlay-pane *,
+  #map.req-placing .leaflet-boundaryPane-pane *,
+  #map.req-placing .leaflet-marker-pane .leaflet-marker-icon:not(.rq-pin) {
+    pointer-events: none !important;
+  }
+
+  @media (max-width: 860px) {
+    .rq-panel {
+      top: auto;
+      right: 8px;
+      bottom: 8px;
+      left: 8px;
+      width: auto;
+      max-height: 55%;
+    }
   }
 </style>
 {% endblock %} {% block content_class %}map-page{% endblock %} {% block topbar_title %}
@@ -1238,6 +1475,46 @@
 <div class="map-wrap">
   <div id="map"></div>
 
+  {% if request_mode %}
+  {# Request mode (/gis-map?request=1). request-mode.js runs it. #}
+  <section class="rq-panel" id="rq-panel" aria-labelledby="rq-title">
+    <div class="rq-head">
+      <h2 id="rq-title">New request</h2>
+      <button type="button" class="rq-collapse" id="rq-collapse"
+              aria-expanded="true" aria-controls="rq-body" title="Show or hide">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+      </button>
+    </div>
+    <div class="rq-body" id="rq-body">
+      <label class="rq-label" for="rq-type">Request type</label>
+      <select id="rq-type" class="rq-select">
+        <option value="">Choose a type</option>
+        {% for t in request_config.requestTypes %}
+        <option value="{{ t }}">{{ t }}</option>
+        {% endfor %}
+      </select>
+      <p class="rq-note" id="rq-type-note"></p>
+
+      <div class="rq-tools" id="rq-tools" role="group" aria-label="Map tools" hidden>
+        <button type="button" class="rq-tool" data-mode="explore" aria-pressed="true">Explore</button>
+        <button type="button" class="rq-tool" data-mode="pin" aria-pressed="false">Drop pin</button>
+        <button type="button" class="rq-tool" data-mode="draw" aria-pressed="false">Draw plot</button>
+        <button type="button" class="rq-tool" id="rq-undo" disabled>Undo</button>
+        <button type="button" class="rq-tool" id="rq-clear" disabled>Clear</button>
+      </div>
+
+      <div class="rq-summary" id="rq-summary" hidden></div>
+      <p class="rq-status" id="rq-status" aria-live="polite"></p>
+
+      <div class="rq-actions">
+        <a href="{{ request_config.formUrl }}" class="rq-cancel">Cancel</a>
+        <button type="button" class="rq-continue" id="rq-continue" disabled>Continue to form</button>
+      </div>
+    </div>
+  </section>
+  <script type="application/json" id="req-mode-config">{{ request_config | tojson }}</script>
+  {% endif %}
+
   <div id="muni-panel" class="muni-panel">
     <div
       class="panel-resizer"
@@ -1282,10 +1559,27 @@
     maxBoundsViscosity: 1.0,
   });
 
-  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+  // Tile sources come from app/config.py (and .env) as MAP_TILES.
+  const streetLayer = L.tileLayer(MAP_TILES.street.url, {
     maxZoom: 19,
-    attribution: "© OpenStreetMap contributors",
+    attribution: MAP_TILES.street.attribution,
   }).addTo(map);
+
+  // Satellite photos help people recognise real land, roads and rivers.
+  // Off when MAP_SATELLITE_TILES is set to an empty value.
+  if (MAP_TILES.satellite) {
+    const satelliteLayer = L.tileLayer(MAP_TILES.satellite.url, {
+      maxZoom: 19,
+      maxNativeZoom: MAP_TILES.satellite.maxNativeZoom,
+      attribution: MAP_TILES.satellite.attribution,
+    });
+    L.control
+      .layers({ Map: streetLayer, Satellite: satelliteLayer }, null, {
+        position: "topright",
+        collapsed: false,
+      })
+      .addTo(map);
+  }
 
   // Site boundaries get their own pane: above the district, barangay and
   // heat map fills (overlayPane, z-index 400) and below the site markers
@@ -1644,6 +1938,20 @@
         `;
       }
 
+      /* "Google Maps" button for a site card. Most DENR-imported sites have
+         no position of their own and sit at the barangay centre; the hover
+         text says which one Google Maps will open. */
+      function googleMapsButton(lat, lon, exact, cls) {
+        if (lat === null || lat === undefined || lon === null || lon === undefined) return "";
+        const url = "https://www.google.com/maps/search/?api=1&query="
+          + encodeURIComponent(lat + "," + lon);
+        const where = exact
+          ? "Open this site in Google Maps"
+          : "Opens the barangay centre: this site has no exact position yet";
+        return `<a class="${cls}" href="${url}" target="_blank" rel="noopener noreferrer"
+                   title="${where}" onclick="event.stopPropagation();">Google Maps</a>`;
+      }
+
       /* Site cards with Locate, History and, for field officers, Monitoring
          Report. Shared by the municipality panel and the barangay Sites
          view, so both always look and behave the same. */
@@ -1674,6 +1982,8 @@
                                        showSiteHistory(${s.site_id})">
                         History
                       </button>
+                      ${googleMapsButton(s.lat, s.lon, s.exact, "btn-locate")}
+                      ${window.reqMode ? reqMode.adoptButton(s, s.municipality, s.barangay) : ""}
                       {% if session.role == 'field_officer'%}
                         ${
                           CAN_REPORT
@@ -3040,6 +3350,8 @@
                           onclick="showSiteHistory(${s.site_id})">
                     View monitoring history
                   </button>
+                  ${googleMapsButton(b.lat, b.lon, b.exact, "back-link")}
+                  ${window.reqMode ? reqMode.adoptButton(s, b.municipality, b.barangay) : ""}
                 </div>
               </div>
             `,
@@ -3095,4 +3407,7 @@
 
   loadMapData();
 </script>
+{% if request_mode %}
+<script src="{{ url_for('static', filename='js/request-mode.js', v=asset_v) }}"></script>
+{% endif %}
 {% endblock %}

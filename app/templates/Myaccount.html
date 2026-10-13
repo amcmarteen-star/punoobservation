@@ -223,6 +223,7 @@
         name="current_password"
         id="current_password"
         autocomplete="current-password"
+        maxlength="{{ app_limits.passwordMax }}"
         required
       />
       <p class="acct-hint">
@@ -237,11 +238,12 @@
         type="password"
         name="new_password"
         id="new_password"
-        minlength="8"
+        minlength="{{ app_limits.passwordMin }}" maxlength="{{ app_limits.passwordMax }}"
+        pattern="(?=.*[A-Za-z])(?=.*[0-9]).*" title="Use at least one letter and one number."
         autocomplete="new-password"
         required
       />
-      <p class="acct-hint">At least 8 characters.</p>
+      <p class="acct-hint">{{ app_limits.passwordMin }} to {{ app_limits.passwordMax }} characters, with at least one letter and one number.</p>
     </div>
 
     <div class="um-field">
@@ -250,7 +252,7 @@
         type="password"
         name="confirm_password"
         id="confirm_password"
-        minlength="8"
+        minlength="{{ app_limits.passwordMin }}" maxlength="{{ app_limits.passwordMax }}"
         autocomplete="new-password"
         required
       />

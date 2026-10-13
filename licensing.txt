@@ -1,0 +1,107 @@
+TECHNICAL MEMORANDUM
+Map pictures in PuNoObservation: licences to settle before daily use
+
+For:     CENRO officials and the office IT staff
+From:    PuNoObservation project team
+Date:    October 2026
+Action:  Choose a licensed map source before the system goes into
+         daily office use
+
+
+IN SHORT
+--------
+The maps in PuNoObservation show a street map and an optional
+satellite view. Both are loaded from outside services. The system
+currently uses their free public servers. That is allowed for
+development and demonstrations.
+
+If a CENRO office uses the system every day, the office should switch
+to a source it is licensed to use. The switch is a settings change
+only. No programming is needed.
+
+
+WHAT THE MAPS USE TODAY
+-----------------------
+Every map in the system draws its background from small picture
+squares called "tiles". The boundaries, sites and pins on top are the
+system's own data and are not affected by this memo.
+
+Street map: OpenStreetMap public tile servers
+  - The map data is free to use, with credit to OpenStreetMap.
+  - The servers are run by volunteers. Their Tile Usage Policy asks
+    heavy users to use another provider or host their own tiles.
+  - They may slow down or block heavy users without notice.
+
+Satellite view: Esri World Imagery
+  - Helps staff recognise real land, roads and rivers when marking
+    sites.
+  - Esri expects apps in production to use an ArcGIS account and key.
+  - ArcGIS Location Platform has a free monthly allowance of map tiles.
+
+
+OPTIONS FOR THE OFFICE
+----------------------
+Pick one option for the satellite view and one for the street map.
+They can be decided separately.
+
+1. Esri key (suggested)
+   What to do: Create an ArcGIS Location Platform account, make an API
+               key, and give it to IT. The satellite view keeps
+               working as it does now.
+   Cost:       Free within the monthly allowance.
+
+2. Government source
+   What to do: Ask NAMRIA which Geoportal Philippines map services the
+               office may use, and under what terms.
+   Cost:       Depends on NAMRIA.
+
+3. No satellite
+   What to do: IT turns the satellite view off. Only the street map
+               shows.
+   Cost:       None.
+
+4. Street map provider
+   What to do: Use a commercial tile provider that serves OpenStreetMap
+               maps, or host the tiles on an office server.
+   Cost:       Many providers have a free tier.
+
+
+WHAT IT STAFF CHANGE
+--------------------
+The settings live in the .env file on the server. A full example with
+notes is in .env.example in the project. After editing, restart the
+application.
+
+  # Satellite, with the office's ArcGIS key
+  MAP_SATELLITE_TILES=https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}?token=YOUR_ARCGIS_KEY
+  MAP_SATELLITE_ATTRIBUTION=Imagery &copy; Esri, Maxar, Earthstar Geographics
+
+  # Or, to turn the satellite view off
+  # MAP_SATELLITE_TILES=
+
+  # Street map from the office's chosen provider
+  MAP_STREET_TILES=https://tiles.example-provider.com/{z}/{x}/{y}.png?key=YOUR_KEY
+  MAP_STREET_ATTRIBUTION=&copy; OpenStreetMap contributors
+
+{z} {x} {y} are filled in by the map and must stay as written. The
+credit line appears in the corner of every map, as the licences
+require.
+
+
+BEFORE GOING LIVE
+-----------------
+[ ] A satellite option is chosen: Esri key, NAMRIA source, or off.
+[ ] A street map option is chosen: provider or office-hosted tiles.
+[ ] The keys are stored only in .env on the server, never shared by
+    email or chat.
+[ ] IT has restarted the application and checked the GIS map, the
+    request form and a request detail page.
+[ ] The credit line in the corner of the map names the right source.
+
+
+PLEASE CHECK THE CURRENT TERMS
+------------------------------
+Esri and OpenStreetMap update their terms and free allowances from
+time to time. This memo describes them as the project team understood
+them in October 2026. It is not legal advice. Confirm the details on
+each provider's website before signing up.

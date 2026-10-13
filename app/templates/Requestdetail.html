@@ -92,6 +92,15 @@
       {% else %}&mdash;{% endif %}
     </span>
   </div>
+  {% if req.adopted_site %}
+  <div class="rq-line">
+    <span class="lbl">Site to adopt</span>
+    <span class="val">
+      {{ req.adopted_site.site_name }}
+      <span class="rq-sub">existing site{% if req.adopted_site.area_size_ha %}, {{ req.adopted_site.area_size_ha }} ha recorded{% endif %}</span>
+    </span>
+  </div>
+  {% endif %}
   <div class="rq-line">
     <span class="lbl">Proposed area</span>
     <span class="val">
@@ -125,7 +134,11 @@
   </div>
   <div class="rq-line">
     <span class="lbl">Contact</span>
-    <span class="val">{{ req.contact_number or '—' }}</span>
+    <span class="val">
+      {% if req.contact_name %}{{ req.contact_name }}<br>{% endif %}
+      {{ req.contact_number or '—' }}
+      {% if req.contact_email %}<br><a href="mailto:{{ req.contact_email }}">{{ req.contact_email }}</a>{% endif %}
+    </span>
   </div>
   {% if req.requester and req.requester.organization %}
   <div class="rq-line">
@@ -139,7 +152,7 @@
   {% if req.description %}
   <div class="mt-3">
     <div class="lbl text-secondary small text-uppercase">Description</div>
-    <p class="mb-0">{{ req.description }}</p>
+    <p class="mb-0" style="white-space: pre-line;">{{ req.description }}</p>
   </div>
   {% endif %}
 </div>
@@ -173,7 +186,7 @@
 
 <!-- ===== DOCUMENTS ===== -->
 <div class="rq-panel">
-  <h5>Supporting documents ({{ req.attachments | length }})</h5>
+  <h5>Indicative Management Plan ({{ req.attachments | length }})</h5>
 
   {% if req.attachments %}
     <div class="rq-docs">
@@ -365,9 +378,9 @@
     const outline = {{ barangay_geometry | tojson }};
 
     const map = L.map("rq-map", { scrollWheelZoom: false });
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    L.tileLayer(MAP_TILES.street.url, {
       maxZoom: 19,
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+      attribution: MAP_TILES.street.attribution,
     }).addTo(map);
 
     if (outline) {

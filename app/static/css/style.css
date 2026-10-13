@@ -2003,6 +2003,12 @@ body.login-page :focus-visible {
     margin-top: 0.0625rem;
 }
 
+.flash-message.warning {
+    background: var(--warn-bg);
+    color: var(--warn-strong);
+    border-color: var(--warn-line, #fcd34d);
+}
+
 .flash-message.success {
     background: var(--ok-bg);
     color: var(--auth-ok);
@@ -2097,6 +2103,13 @@ body.login-page :focus-visible {
     background-position: calc(100% - 18px) center, calc(100% - 13px) center;
     background-size: 5px 5px, 5px 5px;
     background-repeat: no-repeat;
+}
+
+/* Register: a location list waiting on the one above it. */
+.login-form select:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+    border-color: var(--auth-line);
 }
 
 /* ---------- Show / hide password ---------- */
@@ -3144,6 +3157,23 @@ a.um-btn-row:hover {
     display: flex;
 }
 
+/* "Session timed out" (Base.html). Like a modal overlay, but darker and
+   above everything, and pages' close-all-dialogs code leaves it alone. */
+.session-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 6000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
+    background-color: rgba(15, 23, 42, 0.65);
+}
+
+.session-overlay.open {
+    display: flex;
+}
+
 .um-modal {
     background-color: var(--surface-1);
     border-radius: 12px;
@@ -3191,6 +3221,20 @@ a.um-btn-row:hover {
 
 .um-modal-body {
     padding: 0 1.4rem 1.2rem;
+}
+
+.um-modal-text {
+    margin: 0;
+    font-size: 0.9375rem;
+    line-height: 1.55;
+    color: var(--text-body);
+}
+
+/* A confirm button that is a link (Sign Out goes to a GET route). */
+a.um-btn-confirm {
+    display: block;
+    text-align: center;
+    text-decoration: none;
 }
 
 .um-warn {

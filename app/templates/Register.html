@@ -67,6 +67,7 @@
                                placeholder="Enter your username"
                                autocomplete="username"
                                autocapitalize="none" spellcheck="false"
+                               value="{{ form.get('username', '') }}"
                                required>
                     </div>
 
@@ -76,24 +77,42 @@
                                placeholder="yourname@denr.gov.ph"
                                autocomplete="email"
                                autocapitalize="none" spellcheck="false"
+                               value="{{ form.get('email_address', '') }}"
                                required>
+                    </div>
+
+                    {# Location first, then the organizations registered in
+                       that barangay. register.js fills each list from the
+                       one before it. #}
+                    <div class="field-group">
+                        <label for="reg_province">Province</label>
+                        <select id="reg_province" required>
+                            <option value="">Choose a province</option>
+                        </select>
+                    </div>
+
+                    <div class="field-group">
+                        <label for="reg_municipality">Municipality / City</label>
+                        <select id="reg_municipality" required disabled>
+                            <option value="">Choose a province first</option>
+                        </select>
+                    </div>
+
+                    <div class="field-group">
+                        <label for="location_id">Barangay</label>
+                        <select name="location_id" id="location_id" required disabled>
+                            <option value="">Choose a municipality first</option>
+                        </select>
                     </div>
 
                     <div class="field-group">
                         <label for="organization_id">Organization / Affiliation</label>
                         <select name="organization_id" id="organization_id"
                                 autocomplete="organization"
-                                aria-describedby="organization_hint">
-                            <option value="" selected>None / Individual User</option>
-                            {% if organizations %}
-                                {% for org in organizations %}
-                                    <option value="{{ org.organization_id }}">
-                                        {{ org.organization_name }} ({{ org.organization_type }})
-                                    </option>
-                                {% endfor %}
-                            {% endif %}
+                                aria-describedby="organization_hint" disabled>
+                            <option value="">Choose a barangay first</option>
                         </select>
-                        <p class="field-hint" id="organization_hint">Optional. Leave as-is if you are signing up on your own.</p>
+                        <p class="field-hint" id="organization_hint">Only organizations registered in your barangay are listed. Pick "None / Individual User" if you are signing up on your own.</p>
                     </div>
 
                     <div class="field-group">
@@ -102,7 +121,8 @@
                             <input type="password" name="password" id="password"
                                    placeholder="Enter your password"
                                    autocomplete="new-password"
-                                   minlength="8"
+                                   minlength="{{ app_limits.passwordMin }}" maxlength="{{ app_limits.passwordMax }}"
+                                   pattern="(?=.*[A-Za-z])(?=.*[0-9]).*" title="Use at least one letter and one number."
                                    aria-describedby="password_hint"
                                    required>
                             <button type="button" class="field-toggle" data-toggle-password="password"
@@ -111,7 +131,7 @@
                                 <svg class="icon-eye-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.733 5.076a10.744 10.744 0 0 1 11.205 6.575 1 1 0 0 1 0 .696 10.747 10.747 0 0 1-1.444 2.49"/><path d="M14.084 14.158a3 3 0 0 1-4.242-4.242"/><path d="M17.479 17.499a10.75 10.75 0 0 1-15.417-5.151 1 1 0 0 1 0-.696 10.75 10.75 0 0 1 4.446-5.143"/><path d="m2 2 20 20"/></svg>
                             </button>
                         </div>
-                        <p class="field-hint" id="password_hint">At least 8 characters.</p>
+                        <p class="field-hint" id="password_hint">{{ app_limits.passwordMin }} to {{ app_limits.passwordMax }} characters, with at least one letter and one number.</p>
                     </div>
 
                     <div class="field-group">
@@ -120,6 +140,7 @@
                             <input type="password" name="confirmPassword" id="confirmPassword"
                                    placeholder="Re-type your password"
                                    autocomplete="new-password"
+                                   maxlength="{{ app_limits.passwordMax }}"
                                    aria-describedby="error-message"
                                    required>
                             <button type="button" class="field-toggle" data-toggle-password="confirmPassword"
@@ -141,6 +162,12 @@
         </main>
     </div>
 
+    <script id="register-data" type="application/json">
+        {{ {"locations": locations, "organizations": organizations,
+            "location_id": form.get("location_id", ""),
+            "organization_id": form.get("organization_id", "")} | tojson }}
+    </script>
     <script src="{{ url_for('static', filename='javascript/script.js') }}"></script>
+    <script src="{{ url_for('static', filename='javascript/register.js', v=asset_v) }}"></script>
 </body>
 </html>
