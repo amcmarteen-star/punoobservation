@@ -28,6 +28,10 @@ def create_app():
 
     # Map tile sources, from app/config.py. Base.html hands them to every
     # page's JavaScript as MAP_TILES, so no template hard-codes a server.
+    # target_intensity: the sampling intensity target in percent, so no
+    # template hard-codes it either.
+    from app.services.monitoring import TARGET_INTENSITY
+
     @app.context_processor
     def _map_tiles():
         cfg = app.config
@@ -50,7 +54,7 @@ def create_app():
                 "attribution": cfg['MAP_STREET_ATTRIBUTION'],
             },
             "satellite": satellite,
-        }}
+        }, "target_intensity": TARGET_INTENSITY}
 
     # Register Blueprints
     from app.routes.auth import auth_bp

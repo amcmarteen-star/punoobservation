@@ -4292,7 +4292,8 @@ table[data-freeze="2"].is-scrolled-x th:nth-child(2) {
     color: var(--warn-strong);
 }
 
-/* --- plot plan: plots needed for 5% on the chosen site, and progress ---
+/* --- plot plan: plots needed on the chosen site, and progress ---
+   Target: see TARGET_INTENSITY in monitoring.py.
    Sits above the plot rows so the target is known before counting starts. */
 .rep-plan {
     background-color: var(--surface-2);

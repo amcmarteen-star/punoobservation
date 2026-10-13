@@ -128,8 +128,8 @@ endblock %} {% set active_page = 'reports' %} {% block content %}
       Lay out square plots of equal size spread across the site. In each plot,
       count only the seedlings that are <strong>alive</strong>. Enter one row
       per plot below. <br /><br />
-      DENR uses a <strong>5% sampling intensity</strong>: the plots together
-      cover 5% of the site area. Pick a plot size below, and the
+      DENR uses a <strong>{{ '%g'|format(target_intensity) }}% sampling intensity</strong>: the plots together
+      cover {{ '%g'|format(target_intensity) }}% of the site area. Pick a plot size below, and the
       <strong>plot plan</strong> tells you how many plots to lay out for this
       site. <br /><br />
       You do not type the survival rate. It is calculated from your counts.
@@ -179,8 +179,8 @@ endblock %} {% set active_page = 'reports' %} {% block content %}
     </div>
 
     <!-- ============ PLOT PLAN ============ -->
-    <!-- Filled by updatePlotHint(): plots needed for 5% on the chosen site,
-         and how many have been entered so far. -->
+    <!-- Filled by updatePlotHint(): plots needed to reach the sampling
+         target on the chosen site, and how many have been entered so far. -->
     <div class="rep-plan" id="plotPlan" aria-live="polite">
       <p class="rep-plan-empty" id="plotPlanEmpty">
         Choose a site in step 1 to see how many plots you need.
@@ -196,7 +196,7 @@ endblock %} {% set active_page = 'reports' %} {% block content %}
           <span class="val" id="planSize">—</span>
         </div>
         <div class="rep-calc-line">
-          <span class="lbl">Plots needed for 5%</span>
+          <span class="lbl">Plots needed for {{ '%g'|format(target_intensity) }}%</span>
           <span class="val" id="planNeeded">—</span>
         </div>
         <div class="rep-plan-status" id="planStatus"></div>
@@ -572,21 +572,27 @@ endblock %} {% set active_page = 'reports' %} {% block content %}
   }
 
   // The officer chooses the plot size before going out and lays out that
-  // same square at every sampling point. The plot plan turns the 5% rule
-  // into a number to aim for, and counts the plots entered against it,
-  // rather than a warning they only receive after the field work.
+  // same square at every sampling point. The plot plan turns the sampling
+  // target into a number to aim for, and counts the plots entered against
+  // it, rather than a warning they only receive after the field work.
   const MIN_PLOTS = 3;    // fewer and the server cannot judge variation
   const MANY_PLOTS = 60;  // past this, suggest a bigger plot
 
-  // Plots for 5%, same rule as compute_survival(): plots x plot area must
-  // reach 5% of the site. Worked in m\u00B2 with a small tolerance, so a
-  // floating-point 5.000000001 does not round up to one plot too many.
-  function plotsFor5Percent() {
+  // The sampling target in percent. It comes from TARGET_INTENSITY in
+  // app/services/monitoring.py and is written nowhere else.
+  const TARGET_PCT = Number("{{ target_intensity }}");
+  const TARGET = TARGET_PCT / 100;
+
+  // Plots for the target, same rule as compute_survival(): plots x plot
+  // area must reach TARGET of the site. Worked in m\u00B2 with a small
+  // tolerance, so a floating-point 5.000000001 plots does not round up to
+  // one plot too many.
+  function plotsForTarget() {
     const size = parseFloat(document.getElementById("plot_size_sqm").value);
     if (!currentSite || !currentSite.area_size_ha || !size || size <= 0) {
       return null;
     }
-    const sqmNeeded = currentSite.area_size_ha * 10000 * 0.05;
+    const sqmNeeded = currentSite.area_size_ha * 10000 * TARGET;
     return Math.max(1, Math.ceil(sqmNeeded / size - 1e-9));
   }
 
@@ -596,9 +602,9 @@ endblock %} {% set active_page = 'reports' %} {% block content %}
     if (!empty || !body) return;
 
     const size = parseFloat(document.getElementById("plot_size_sqm").value);
-    const for5 = plotsFor5Percent();
+    const forTarget = plotsForTarget();
 
-    if (for5 === null) {
+    if (forTarget === null) {
       empty.textContent = currentSite
         ? "Enter a plot size to see how many plots you need."
         : "Choose a site in step 1 to see how many plots you need.";
@@ -610,7 +616,7 @@ endblock %} {% set active_page = 'reports' %} {% block content %}
     empty.hidden = true;
     body.hidden = false;
 
-    const needed = Math.max(for5, MIN_PLOTS);
+    const needed = Math.max(forTarget, MIN_PLOTS);
     const side = Math.sqrt(size);
     const sideText = Number.isInteger(side)
       ? `${side} m \u00D7 ${side} m`
@@ -630,14 +636,14 @@ endblock %} {% set active_page = 'reports' %} {% block content %}
     const done = entered >= needed;
     status.classList.toggle("done", done);
     status.textContent = done
-      ? `\u2713 ${entered} of ${needed} plots entered. That reaches 5%.`
+      ? `\u2713 ${entered} of ${needed} plots entered. That reaches ${TARGET_PCT}%.`
       : `${entered} of ${needed} plots entered. ` +
-        `${needed - entered} more to reach 5%.`;
+        `${needed - entered} more to reach ${TARGET_PCT}%.`;
 
     const tip = document.getElementById("planTip");
-    if (for5 < MIN_PLOTS) {
+    if (forTarget < MIN_PLOTS) {
       tip.textContent =
-        `5% needs only ${for5} on this site, but record at least ` +
+        `${TARGET_PCT}% needs only ${forTarget} on this site, but record at least ` +
         `${MIN_PLOTS} plots so the variation between them can be checked.`;
       tip.hidden = false;
     } else if (needed > MANY_PLOTS) {
@@ -657,9 +663,9 @@ endblock %} {% set active_page = 'reports' %} {% block content %}
   }
 
   function addRowsToPlan() {
-    const for5 = plotsFor5Percent();
-    if (for5 === null) return;
-    const needed = Math.max(for5, MIN_PLOTS);
+    const forTarget = plotsForTarget();
+    if (forTarget === null) return;
+    const needed = Math.max(forTarget, MIN_PLOTS);
     const wrap = document.getElementById("plotRows");
     while (wrap.children.length < needed) addPlotRow();
     updatePlotHint();

@@ -135,8 +135,8 @@
     <span class="lbl">Sampling intensity</span>
     <span class="val">
       {{ report.sampling_intensity }}%
-      {% if report.sampling_intensity and report.sampling_intensity < 5 %}
-        <span class="rep-badge-flag">below 5% reference</span>
+      {% if report.sampling_intensity and report.sampling_intensity < target_intensity %}
+        <span class="rep-badge-flag">below {{ '%g'|format(target_intensity) }}% reference</span>
       {% endif %}
     </span>
   </div>

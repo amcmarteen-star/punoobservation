@@ -171,7 +171,7 @@ def check_timestamp(taken, monitoring_date, max_days=60):
 
 SQM_PER_HA = 10000.0
 DENR_THRESHOLD = 85.0
-TARGET_INTENSITY = 5.0
+TARGET_INTENSITY = 10.0
 
 
 def compute_survival(plot_counts, plot_size_sqm, site_area_ha,
@@ -263,10 +263,12 @@ def compute_survival(plot_counts, plot_size_sqm, site_area_ha,
 
     if intensity < TARGET_INTENSITY:
         out["warnings"].append(
-            f"Sampling intensity is {intensity:.2f}%, below the 5% DENR "
+            f"Sampling intensity is {intensity:.2f}%, below the "
+            f"{TARGET_INTENSITY:g}% DENR "
             f"reference. Roughly "
             f"{math.ceil((site_area_ha * TARGET_INTENSITY / 100) / plot_ha)} "
-            f"plots of this size would be needed to reach 5%."
+            f"plots of this size would be needed to reach "
+            f"{TARGET_INTENSITY:g}%."
         )
 
     if n < 3:
