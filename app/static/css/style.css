@@ -1065,22 +1065,26 @@ html:has(> body.app-body) {
     text-decoration: underline;
 }
 
-/* Segmented filter: a tray with the active choice raised out of it */
+/* Segmented filter: a tray with the active choice raised out of it.
+   Spans the dropdown, the three choices sharing it equally. */
 .notif-seg {
     display: flex;
     gap: 0.15rem;
     margin: 0 1.1rem 0.5rem;
     padding: 0.2rem;
-    width: fit-content;
     background-color: var(--surface-2);
     border: 1px solid var(--line);
     border-radius: 10px;
 }
 
 .notif-seg-btn {
+    flex: 1 1 0;
+    min-width: 0;
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     gap: 0.4rem;
+    white-space: nowrap;
     padding: 0.35rem 0.7rem;
     border: 1px solid transparent;
     border-radius: 7px;
@@ -5186,10 +5190,10 @@ table[data-freeze="2"].is-scrolled-x th:nth-child(2) {
         transform-origin: top center;
     }
 
-    .notif-seg {
-        max-width: calc(100% - 2.2rem);
-        overflow-x: auto;
-        scrollbar-width: none;
+    /* Taller choices, easier to tap */
+    .notif-seg-btn {
+        min-height: 2.5rem;
+        padding: 0.35rem 0.4rem;
     }
 
     /* ---- Page ---- */

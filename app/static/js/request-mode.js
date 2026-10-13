@@ -435,10 +435,16 @@
     render();
   }
 
-  fetch(CFG.geojsonUrl)
-    .then(function (res) { return res.json(); })
-    .then(function (data) {
-      features = data.features;
+  // One barangay file per CENRO the user's map covers (CENRO_GEOJSON).
+  Promise.all((CFG.geojsonUrls || []).map(function (url) {
+    return fetch(url).then(function (res) {
+      if (!res.ok) throw new Error(url + " " + res.status);
+      return res.json();
+    });
+  }))
+    .then(function (files) {
+      if (!files.length) throw new Error("no barangay outlines for this CENRO");
+      features = [].concat.apply([], files.map(function (d) { return d.features; }));
       features.forEach(function (f) { f.bbox = bboxOf(f); });
       restore();
     })

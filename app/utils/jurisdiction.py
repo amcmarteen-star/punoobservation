@@ -24,9 +24,9 @@ from app.models import Site, Location, User
 # Which municipalities belong to which CENRO.
 #
 # Districts 5 and 6 are the CENRO Urdaneta jurisdiction and are the only
-# ones we hold data for. Dagupan and Alaminos are listed so the mapping
-# is complete and so a panel can see the structure, even though those
-# municipalities carry no data yet.
+# ones we hold site data for. Dagupan (districts 2-4) and Alaminos
+# (district 1) are listed from their district map files, so their staff
+# can open their own towns on the map. Their towns carry no site data yet.
 CENRO_MUNICIPALITIES = {
     "Urdaneta City": [
         "Alcala", "Asingan", "Balungao", "Bautista", "Binalonan",
@@ -34,8 +34,16 @@ CENRO_MUNICIPALITIES = {
         "San Nicolas", "San Quintin", "Santa Maria", "Santo Tomas",
         "Sison", "Tayug", "Umingan", "Urdaneta City", "Villasis",
     ],
-    "Dagupan": [],      # Central Pangasinan - no data imported
-    "Alaminos": [],     # Western Pangasinan - no data imported
+    "Dagupan": [        # Central Pangasinan - no site data imported
+        "Aguilar", "Basista", "Bayambang", "Binmaley", "Bugallon",
+        "Calasiao", "Dagupan City", "Labrador", "Lingayen", "Malasiqui",
+        "Manaoag", "Mangaldan", "Mangatarem", "Mapandan", "San Carlos City",
+        "San Fabian", "San Jacinto", "Santa Barbara", "Urbiztondo",
+    ],
+    "Alaminos": [       # Western Pangasinan - no site data imported
+        "Agno", "Alaminos City", "Anda", "Bani", "Bolinao", "Burgos",
+        "Dasol", "Infanta", "Mabini", "Sual",
+    ],
 }
 
 CENRO_LIST = list(CENRO_MUNICIPALITIES.keys())
@@ -46,6 +54,39 @@ CENRO_REGIONS = {
     "Dagupan": "Central Pangasinan",
     "Alaminos": "Western Pangasinan",
 }
+
+# Map files for each CENRO, in app/static/geojson/<folder>/:
+#   district<N>.geojson  one file per district, one feature per town
+#   barangay.geojson     barangay outlines. Optional: a CENRO without
+#                        one still gets its districts on the map.
+# Folder names stay lowercase. The server runs on Linux, where
+# "Eastern" and "eastern" are different folders.
+# To add a CENRO: add its folder here, and its towns above.
+CENRO_GEOJSON = {
+    "Urdaneta City": {"folder": "eastern", "districts": [5, 6]},
+    "Dagupan": {"folder": "central", "districts": [2, 3, 4]},
+    "Alaminos": {"folder": "western", "districts": [1]},
+}
+
+
+def map_cenros():
+    """
+    The CENROs whose map files the current user's map loads.
+
+    Their own CENRO for CENRO staff. Every CENRO for everyone else
+    (superadmin, PENRO, normal users, guests), the same fail-open rule as
+    current_cenro().
+    """
+    cenro = current_cenro()
+    if cenro in CENRO_GEOJSON:
+        return [cenro]
+    return list(CENRO_GEOJSON)
+
+
+def geojson_folder(municipality):
+    """The map folder for the CENRO covering a municipality, or None."""
+    entry = CENRO_GEOJSON.get(cenro_for_municipality(municipality))
+    return entry["folder"] if entry else None
 
 
 def current_cenro():

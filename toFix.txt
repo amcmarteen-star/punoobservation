@@ -4,4 +4,12 @@ e.g. Approved by "CENRO OFFICER/name"
 suggestions or random thoughts to review:
  user can uploads the boundaries when requesting reforestation
 
+
+October::
 Test The accuracy of the boundary publications
+
+geojson for dagupan and alaminos CENRO
+
+Revise the table remove sensitive data columns
+review the map (yung sinabi ni sir sherwin)
+Test deployment

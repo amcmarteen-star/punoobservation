@@ -1370,9 +1370,9 @@
   }
 </style>
 {% endblock %} {% block content_class %}map-page{% endblock %} {% block topbar_title %}
-{# The whole-province fallback reads "Eastern Pangasinan" here, since the
-   map only covers Districts 5 and 6. CENRO labels pass through as-is. #}
-<div class="topbar-title">{{ 'Eastern Pangasinan' if region_label == 'Pangasinan' else region_label }}</div>
+{# The user's part of the province ("Western Pangasinan"), or
+   "Pangasinan" for province-wide users, whose map shows every CENRO. #}
+<div class="topbar-title">{{ region_label }}</div>
 {% endblock %} {% block topbar%}
 {# One row, grouped left: district filter | Layers menu | heat map.
    The four layer checkboxes sit in the Layers popover. Every id and
@@ -1386,16 +1386,13 @@
                onchange="filterDistricts(this.value)" />
         All
       </label>
+      {% for d in district_files %}
       <label>
-        <input type="radio" name="districtFilter" value="5"
+        <input type="radio" name="districtFilter" value="{{ d.district }}"
                onchange="filterDistricts(this.value)" />
-        District 5
+        District {{ d.district }}
       </label>
-      <label>
-        <input type="radio" name="districtFilter" value="6"
-               onchange="filterDistricts(this.value)" />
-        District 6
-      </label>
+      {% endfor %}
       <label>
         <input type="radio" name="districtFilter" value="none"
                onchange="filterDistricts(this.value)" />
@@ -1543,6 +1540,10 @@
   <script type="application/json" id="req-mode-config">{{ request_config | tojson }}</script>
   {% endif %}
 
+  {# District and barangay files for this user's CENRO (CENRO_GEOJSON in
+     app/utils/jurisdiction.py), read by loadMapData(). #}
+  <script type="application/json" id="map-files">{{ {"districts": district_files, "barangays": barangay_urls} | tojson }}</script>
+
   <div id="muni-panel" class="muni-panel">
     <div
       class="panel-resizer"
@@ -1573,8 +1574,8 @@
     USER_ROLE,
   );
   const pangasinanBounds = L.latLngBounds(
-    L.latLng(15.5, 119.7),
-    L.latLng(16.4, 122.9),
+    L.latLng(15.5, 119.6),
+    L.latLng(16.55, 122.9),
   );
 
   const map = L.map("map", {
@@ -1639,7 +1640,10 @@
   // .leaflet-interactive rule), so the boundaries stay clickable.
   map.getPane("boundaryPane").style.pointerEvents = "none";
 
-  let district5Layer, district6Layer, focusGroup;
+  // One layer per district, keyed by its number as a string ("5"), the
+  // same value the district filter radios carry.
+  const districtLayers = {};
+  let focusGroup;
 
   function extractAllPolygonRings(geojsonData) {
     const feature = geojsonData.features
@@ -1663,17 +1667,29 @@
 
   async function loadMapData() {
     try {
-      const [provinceRes, dist5Res, dist6Res, barangayRes] = await Promise.all([
-        fetch("/static/geojson/pangasinan.geojson"),
-        fetch("/static/geojson/eastern/district5.geojson"),
-        fetch("/static/geojson/eastern/district6.geojson"),
-        fetch("/static/geojson/eastern/barangay.geojson"),
+      // Which files to load comes from the server: the user's CENRO, or
+      // every CENRO for province-wide users.
+      const MAP_FILES = JSON.parse(
+        document.getElementById("map-files").textContent,
+      );
+      const getJSON = (url) =>
+        fetch(url).then((res) => {
+          if (!res.ok) throw new Error(url + ": " + res.status);
+          return res.json();
+        });
+
+      const [provinceData, districtData, barangayFiles] = await Promise.all([
+        getJSON("/static/geojson/pangasinan.geojson"),
+        Promise.all(MAP_FILES.districts.map((d) => getJSON(d.url))),
+        Promise.all(MAP_FILES.barangays.map(getJSON)),
       ]);
 
-      const provinceData = await provinceRes.json();
-      const district5Data = await dist5Res.json();
-      const district6Data = await dist6Res.json();
-      const barangayData = await barangayRes.json();
+      // Every barangay file as one collection. A CENRO without a barangay
+      // file simply adds none, and its towns show no barangay outlines.
+      const barangayData = {
+        type: "FeatureCollection",
+        features: barangayFiles.flatMap((d) => d.features),
+      };
 
       const provinceRings = extractAllPolygonRings(provinceData);
       const outerWorld = [
@@ -1691,8 +1707,8 @@
       }).addTo(map);
 
       // --- BARANGAY BORDERS (hidden by default, only show for clicked municipality) ---
-      // barangay.geojson spells town names without spaces (e.g. "SanManuel") while
-      // district5/6.geojson use spaces (e.g. "San Manuel") -- normalize both sides
+      // The map files spell town names with or without spaces ("SanManuel",
+      // "San Manuel") -- normalize both sides
       // before comparing so they still match correctly.
       function normalizeName(str) {
         return (str || "").toLowerCase().replace(/[\s.\-]/g, "");
@@ -2644,13 +2660,13 @@
       }
 
       function applyDistrictFill() {
-        [district5Layer, district6Layer].forEach(function (lyr) {
-          if (lyr) lyr.setStyle({ fillOpacity: districtFillOpacity() });
+        Object.values(districtLayers).forEach(function (lyr) {
+          lyr.setStyle({ fillOpacity: districtFillOpacity() });
         });
       }
 
-      const district5Munis = municipalitySet(district5Data);
-      const district6Munis = municipalitySet(district6Data);
+      // District number -> the towns in it, for the site marker filter.
+      const districtMunis = {};
 
       // Town names sit over each municipality at the district view and
       // fade out from this zoom up, where they would cover the barangays.
@@ -2672,47 +2688,43 @@
       }
       map.on("zoomend", updateMuniLabels);
 
-      district5Layer = L.geoJSON(district5Data, {
-        style: {
-          color: "#FF7800",
-          weight: 2,
-          lineJoin: "round",
-          fillColor: "#FF7800",
-          fillOpacity: 0.4,
-        },
-        onEachFeature: (feature, layer) => {
-          /* Registered here rather than inside onMunicipalityClick, so
-             "Back to <town>" can find the layer even when the panel was
-             opened from a site marker and the town was never clicked. */
-          municipalityLayers[normalizeName(feature.properties.NAME_2)] = layer;
-          addMuniLabel(feature, layer);
-          layer.on("click", onMunicipalityClick);
-          layer.on("mouseover", () => layer.setStyle({ fillOpacity: districtHoverOpacity() }));
-          layer.on("mouseout", () => layer.setStyle({ fillOpacity: districtFillOpacity() }));
-        },
-      }).addTo(map);
+      // Fill and outline colour per district. Neighbouring districts get
+      // colours far apart. A district not listed here falls back to grey.
+      const DISTRICT_COLORS = {
+        1: "#0EA5E9",
+        2: "#E11D48",
+        3: "#4F46E5",
+        4: "#0D9488",
+        5: "#FF7800",
+        6: "#9B51E0",
+      };
 
-      district6Layer = L.geoJSON(district6Data, {
-        style: {
-          color: "#9B51E0",
-          weight: 2,
-          lineJoin: "round",
-          fillColor: "#9B51E0",
-          fillOpacity: 0.4,
-        },
-        onEachFeature: (feature, layer) => {
-          /* Registered here rather than inside onMunicipalityClick, so
-             "Back to <town>" can find the layer even when the panel was
-             opened from a site marker and the town was never clicked. */
-          municipalityLayers[normalizeName(feature.properties.NAME_2)] = layer;
-          addMuniLabel(feature, layer);
-          layer.on("click", onMunicipalityClick);
-          layer.on("mouseover", () => layer.setStyle({ fillOpacity: districtHoverOpacity() }));
-          layer.on("mouseout", () => layer.setStyle({ fillOpacity: districtFillOpacity() }));
-        },
-      }).addTo(map);
+      MAP_FILES.districts.forEach(function (d, i) {
+        const key = String(d.district);
+        const color = DISTRICT_COLORS[d.district] || "#64748B";
+        districtMunis[key] = municipalitySet(districtData[i]);
+        districtLayers[key] = L.geoJSON(districtData[i], {
+          style: {
+            color: color,
+            weight: 2,
+            lineJoin: "round",
+            fillColor: color,
+            fillOpacity: 0.4,
+          },
+          onEachFeature: (feature, layer) => {
+            /* Registered here rather than inside onMunicipalityClick, so
+               "Back to <town>" can find the layer even when the panel was
+               opened from a site marker and the town was never clicked. */
+            municipalityLayers[normalizeName(feature.properties.NAME_2)] = layer;
+            addMuniLabel(feature, layer);
+            layer.on("click", onMunicipalityClick);
+            layer.on("mouseover", () => layer.setStyle({ fillOpacity: districtHoverOpacity() }));
+            layer.on("mouseout", () => layer.setStyle({ fillOpacity: districtFillOpacity() }));
+          },
+        }).addTo(map);
+      });
 
-      focusGroup = L.featureGroup([district5Layer, district6Layer]);
+      focusGroup = L.featureGroup(Object.values(districtLayers));
       map.fitBounds(focusGroup.getBounds(), { padding: [20, 20] });
       updateMuniLabels();
 
@@ -3216,8 +3228,7 @@
       };
 
       window.toggleDistrictBorders = function (show) {
-        [district5Layer, district6Layer].forEach(function (lyr) {
-          if (!lyr) return;
+        Object.values(districtLayers).forEach(function (lyr) {
           lyr.setStyle({
             weight: show ? 2 : 0,
             opacity: show ? 1 : 0,
@@ -3295,8 +3306,8 @@
       function siteInCurrentDistrict(b) {
         // "None" only clears the district colour; every marker still shows.
         if (currentDistrict === "all" || currentDistrict === "none") return true;
-        const set = currentDistrict === "5" ? district5Munis : district6Munis;
-        return set.has(normalizeName(b.municipality));
+        const set = districtMunis[currentDistrict];
+        return !!set && set.has(normalizeName(b.municipality));
       }
 
       /* The single place that decides which markers are on the map. Both
@@ -3440,21 +3451,19 @@
         // Colour for the chosen option: "None" clears it, the rest restore it.
         applyDistrictFill();
 
-        if (value === "none" || value === "all") {
-          // "None" is "All" without the colour: both districts stay, with
-          // their outlines and clickable towns, and every marker shows.
-          if (!map.hasLayer(district5Layer)) map.addLayer(district5Layer);
-          if (!map.hasLayer(district6Layer)) map.addLayer(district6Layer);
-          targetBounds = focusGroup.getBounds();
-        } else if (value === "5") {
-          if (!map.hasLayer(district5Layer)) map.addLayer(district5Layer);
-          map.removeLayer(district6Layer);
-          targetBounds = district5Layer.getBounds();
-        } else if (value === "6") {
-          if (!map.hasLayer(district6Layer)) map.addLayer(district6Layer);
-          map.removeLayer(district5Layer);
-          targetBounds = district6Layer.getBounds();
-        }
+        // "None" is "All" without the colour: every district stays, with
+        // its outlines and clickable towns, and every marker shows.
+        const showAll = value === "none" || value === "all";
+        Object.entries(districtLayers).forEach(function ([key, lyr]) {
+          if (showAll || key === value) {
+            if (!map.hasLayer(lyr)) map.addLayer(lyr);
+          } else {
+            map.removeLayer(lyr);
+          }
+        });
+        targetBounds = showAll
+          ? focusGroup.getBounds()
+          : districtLayers[value].getBounds();
 
         const wasOpen = muniPanel.classList.contains("active");
         muniPanel.classList.remove("active");
