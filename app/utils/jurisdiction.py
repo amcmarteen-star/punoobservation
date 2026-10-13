@@ -57,8 +57,11 @@ CENRO_REGIONS = {
 
 # Map files for each CENRO, in app/static/geojson/<folder>/:
 #   district<N>.geojson  one file per district, one feature per town
-#   barangay.geojson     barangay outlines. Optional: a CENRO without
-#                        one still gets its districts on the map.
+#   barangay outlines, in either of two layouts (both are read):
+#     barangay.geojson              one file for the whole folder
+#     district<N>_barangay.geojson  one file per district
+#   The outlines are optional: a CENRO without them still gets its
+#   districts on the map, just no barangays.
 # Folder names stay lowercase. The server runs on Linux, where
 # "Eastern" and "eastern" are different folders.
 # To add a CENRO: add its folder here, and its towns above.
@@ -83,10 +86,20 @@ def map_cenros():
     return list(CENRO_GEOJSON)
 
 
-def geojson_folder(municipality):
-    """The map folder for the CENRO covering a municipality, or None."""
-    entry = CENRO_GEOJSON.get(cenro_for_municipality(municipality))
-    return entry["folder"] if entry else None
+def barangay_geojson_names(cenro):
+    """
+    Where a CENRO's barangay outlines may be, relative to app/static/:
+    the whole-folder file first, then one per district. Callers keep the
+    ones that exist. An unknown CENRO has none.
+    """
+    entry = CENRO_GEOJSON.get(cenro)
+    if not entry:
+        return []
+    folder = entry["folder"]
+    return [f"geojson/{folder}/barangay.geojson"] + [
+        f"geojson/{folder}/district{n}_barangay.geojson"
+        for n in entry["districts"]
+    ]
 
 
 def current_cenro():

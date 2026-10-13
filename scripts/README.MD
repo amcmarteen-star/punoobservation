@@ -11,9 +11,10 @@ Run in this order:
    Source: ERA5 reanalysis via Open-Meteo Archive API
    Period: 2014-2023 (10 years)
 
-barangay_coords.csv was generated from
-app/static/geojson/eastern/barangay.geojson by computing the
-centroid of each barangay polygon.
+barangay_coords.csv was generated from the eastern barangay
+outlines (now app/static/geojson/eastern/district5_barangay.geojson
+and district6_barangay.geojson) by computing the centroid of each
+barangay polygon.
 
 Final output: barangay_climate.csv — 478 barangays with
 elevation, average temperature, and annual rainfall.

@@ -33,7 +33,7 @@ from app.utils.security import (
 from app.utils.jurisdiction import (
     normalize_municipality, cenro_for_municipality, reviewing_admins,
     can_see_unofficial_sites, can_see_site, region_label,
-    CENRO_GEOJSON, map_cenros, geojson_folder,
+    CENRO_GEOJSON, CENRO_REGIONS, map_cenros, barangay_geojson_names,
 )
 from app.services.recommender_eval import species_evaluation
 import json, os, re
@@ -133,7 +133,7 @@ def gis_map():
     """
     request_mode = (request.args.get('request') == '1'
                     and bool(session.get('user_id')))
-    district_files, barangay_urls = _map_files()
+    district_files, barangay_urls, map_areas = _map_files()
     return render_template(
         'GIS_map.html',
         # Staff get the proposed boundary layer and its key. The API
@@ -145,6 +145,8 @@ def gis_map():
         # whole province when they have none.
         district_files=district_files,
         barangay_urls=barangay_urls,
+        # The area filter's choices, west to east.
+        map_areas=map_areas,
         request_mode=request_mode,
         request_config={
             "requestTypes": list(REQUEST_TYPES),
@@ -161,27 +163,39 @@ def _map_files():
     """
     The map files the current user's GIS map loads, from CENRO_GEOJSON.
 
-    Returns (districts, barangay_urls). Each district is
-    {"district": 5, "cenro": "Urdaneta City", "url": ...}, in district
-    order. A barangay file is listed only when it exists, so a CENRO
-    without one still shows its districts.
+    Returns (districts, barangay_urls, areas).
+      districts  {"district": 5, "cenro": "Urdaneta City", "url": ...},
+                 in district order
+      areas      one per CENRO, for the area filter:
+                 {"cenro": ..., "region": "Eastern Pangasinan",
+                  "label": "Eastern", "districts": [5, 6]},
+                 ordered by district number, which runs west to east
+    Barangay files are listed only when they exist (either layout, see
+    CENRO_GEOJSON), so a CENRO without any still shows its districts.
     """
-    districts, barangay_urls = [], []
+    districts, barangay_urls, areas = [], [], []
     for cenro in map_cenros():
         folder = CENRO_GEOJSON[cenro]["folder"]
-        for n in CENRO_GEOJSON[cenro]["districts"]:
+        numbers = sorted(CENRO_GEOJSON[cenro]["districts"])
+        for n in numbers:
             districts.append({
                 "district": n,
                 "cenro": cenro,
                 "url": url_for('static',
                                filename=f'geojson/{folder}/district{n}.geojson'),
             })
-        if os.path.exists(os.path.join(current_app.static_folder, 'geojson',
-                                       folder, 'barangay.geojson')):
-            barangay_urls.append(url_for(
-                'static', filename=f'geojson/{folder}/barangay.geojson'))
+        region = CENRO_REGIONS.get(cenro, cenro)
+        areas.append({
+            "cenro": cenro,
+            "region": region,
+            "label": region.replace(" Pangasinan", ""),
+            "districts": numbers,
+        })
+        barangay_urls.extend(url_for('static', filename=name)
+                             for name in _barangay_files(cenro))
     districts.sort(key=lambda d: d["district"])
-    return districts, barangay_urls
+    areas.sort(key=lambda a: a["districts"][0] if a["districts"] else 99)
+    return districts, barangay_urls, areas
 
 
 def _request_municipalities():
@@ -1927,52 +1941,58 @@ def submit_report():
     return redirect(url_for('dashboard.my_reports_page'))
  
  
+def _barangay_files(cenro):
+    """A CENRO's barangay outline files that exist, relative to static/."""
+    return [
+        name for name in barangay_geojson_names(cenro)
+        if os.path.exists(os.path.join(current_app.static_folder, name))
+    ]
+
+
 def _load_barangay_geometry(municipality, barangay):
     """
-    Pull one barangay's polygon out of its CENRO's barangay.geojson.
- 
+    Pull one barangay's polygon out of its CENRO's barangay files.
+
     Names are normalised on both sides because the geojson writes towns
     without spaces while the database does not.
     """
-    # The town decides the folder (CENRO_GEOJSON). A town no CENRO lists
-    # has no outline to check against.
-    folder = geojson_folder(municipality)
-    if folder is None:
-        return None
-    path = os.path.join(
-        current_app.static_folder, 'geojson', folder, 'barangay.geojson'
-    )
- 
-    def squash(s):
-        return re.sub(r'[\s.\-]', '', str(s or '')).lower()
- 
+    # The town decides the CENRO, and so the files (CENRO_GEOJSON). A
+    # town no CENRO lists has no outline to check against.
+    cenro = cenro_for_municipality(municipality)
+    files = _barangay_files(cenro)
     # A missing or broken file skips every check that uses the outline
     # (request pins, photo locations, publishing), so say so in the log.
-    try:
-        with open(path, encoding='utf-8') as fh:
-            data = json.load(fh)
-    except FileNotFoundError:
-        # Normal for a CENRO whose barangay file is not added yet.
-        current_app.logger.warning("No barangay outlines at %s", path)
-        return None
-    except Exception:
+    if not files:
         current_app.logger.warning(
-            "Barangay outlines could not be read from %s", path,
-            exc_info=True,
-        )
+            "No barangay outlines for %s (CENRO %s)", municipality, cenro)
         return None
- 
+
+    def squash(s):
+        return re.sub(r'[\s.\-]', '', str(s or '')).lower()
+
     # The town goes through normalize_municipality() so the aliases apply
     # too: barangay.geojson spells Pozorrubio "Pozzorubio", and a plain
     # squash never matched any of its 34 barangays.
     target = (normalize_municipality(municipality), squash(barangay))
- 
-    for feat in data.get('features', []):
-        p = feat.get('properties', {})
-        if (normalize_municipality(p.get('NAME_2')),
-                squash(p.get('NAME_3'))) == target:
-            return feat.get('geometry')
- 
+
+    for name in files:
+        path = os.path.join(current_app.static_folder, name)
+        try:
+            with open(path, encoding='utf-8') as fh:
+                data = json.load(fh)
+        except Exception:
+            current_app.logger.warning(
+                "Barangay outlines could not be read from %s", path,
+                exc_info=True,
+            )
+            continue
+
+        for feat in data.get('features', []):
+            p = feat.get('properties', {})
+            if (normalize_municipality(p.get('NAME_2')),
+                    squash(p.get('NAME_3'))) == target:
+                return feat.get('geometry')
+
     return None
 
  

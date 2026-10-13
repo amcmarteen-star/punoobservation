@@ -118,6 +118,35 @@
     outline-offset: 1px;
   }
 
+  /* Area first, then that area's districts. The district step stays
+     hidden until an area with more than one district is picked. */
+  .map-topbar .toolbar-group[hidden],
+  .map-topbar .seg label[hidden] {
+    display: none;
+  }
+
+  .map-topbar .tb-step {
+    width: 1rem;
+    height: 1rem;
+    color: var(--text-2);
+    flex: none;
+  }
+
+  .map-topbar .tb-subdistrict:not([hidden]) {
+    animation: tb-reveal 180ms var(--ease);
+  }
+
+  @keyframes tb-reveal {
+    from { opacity: 0; transform: translateX(-6px); }
+    to   { opacity: 1; transform: none; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .map-topbar .tb-subdistrict:not([hidden]) {
+      animation: none;
+    }
+  }
+
   /* --- Layers menu --- */
   .layers-menu {
     position: relative;
@@ -260,8 +289,12 @@
     .map-topbar .tb-divider {
       display: none;
     }
-    .map-topbar .tb-district {
+    .map-topbar .tb-district,
+    .map-topbar .tb-subdistrict {
       width: 100%;
+    }
+    .map-topbar .tb-step {
+      display: none;
     }
     .map-topbar .seg {
       flex: 1;
@@ -295,6 +328,10 @@
   @media (max-width: 420px) {
     /* the segmented control says what it is; the label is spare */
     .map-topbar .tb-district > .toolbar-label {
+      display: none;
+    }
+    /* "District" is already the row's label, so the buttons say "2" */
+    .map-topbar .seg-word {
       display: none;
     }
   }
@@ -1378,7 +1415,42 @@
    The four layer checkboxes sit in the Layers popover. Every id and
    handler is unchanged, so the map script needs no edits. #}
 <div class="map-topbar">
+  {# Area, then district. Province-wide users pick an area (one per
+     CENRO) and then one of its districts. CENRO staff have one area, so
+     they go straight to its districts. "None" sits in the first row:
+     every district stays, without its colour. #}
+  {% set many_areas = map_areas|length > 1 %}
+  {% if district_files %}
+  {% if many_areas %}
   <div class="toolbar-group tb-district">
+    <span class="toolbar-label" id="areaLabel">Area</span>
+    <div class="seg" role="radiogroup" aria-labelledby="areaLabel">
+      <label>
+        <input type="radio" name="areaFilter" value="all" checked
+               onchange="filterArea(this.value)" />
+        All
+      </label>
+      {% for a in map_areas %}
+      <label title="{{ a.region }} &middot; CENRO {{ a.cenro }}">
+        <input type="radio" name="areaFilter" value="{{ a.cenro }}"
+               onchange="filterArea(this.value)" />
+        {{ a.label }}
+      </label>
+      {% endfor %}
+      <label>
+        <input type="radio" name="areaFilter" value="none"
+               onchange="filterArea(this.value)" />
+        None
+      </label>
+    </div>
+  </div>
+  {% endif %}
+
+  <div class="toolbar-group tb-subdistrict" id="districtGroup"
+       {% if many_areas %}hidden{% endif %}>
+    {% if many_areas %}
+    <svg class="tb-step" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+    {% endif %}
     <span class="toolbar-label" id="districtLabel">District</span>
     <div class="seg" role="radiogroup" aria-labelledby="districtLabel">
       <label>
@@ -1387,21 +1459,24 @@
         All
       </label>
       {% for d in district_files %}
-      <label>
+      <label data-area="{{ d.cenro }}" {% if many_areas %}hidden{% endif %}>
         <input type="radio" name="districtFilter" value="{{ d.district }}"
                onchange="filterDistricts(this.value)" />
-        District {{ d.district }}
+        <span class="seg-word">District </span>{{ d.district }}
       </label>
       {% endfor %}
+      {% if not many_areas %}
       <label>
         <input type="radio" name="districtFilter" value="none"
                onchange="filterDistricts(this.value)" />
         None
       </label>
+      {% endif %}
     </div>
   </div>
 
   <span class="tb-divider" aria-hidden="true"></span>
+  {% endif %}
 
   <div class="layers-menu" id="layersMenu">
     <button type="button" class="layers-btn" id="layersBtn"
@@ -1542,7 +1617,7 @@
 
   {# District and barangay files for this user's CENRO (CENRO_GEOJSON in
      app/utils/jurisdiction.py), read by loadMapData(). #}
-  <script type="application/json" id="map-files">{{ {"districts": district_files, "barangays": barangay_urls} | tojson }}</script>
+  <script type="application/json" id="map-files">{{ {"districts": district_files, "barangays": barangay_urls, "areas": map_areas} | tojson }}</script>
 
   <div id="muni-panel" class="muni-panel">
     <div
@@ -1586,6 +1661,11 @@
     maxZoom: 18,
     maxBounds: pangasinanBounds,
     maxBoundsViscosity: 1.0,
+    // Quarter zoom steps. With whole steps, Western and Central fit at
+    // the same zoom as the whole province, so picking them only slid
+    // the map instead of zooming in. The +/- buttons still move one
+    // whole step (zoomDelta).
+    zoomSnap: 0.25,
   });
 
   // Tile sources come from app/config.py (and .env) as MAP_TILES.
@@ -2533,7 +2613,7 @@
         clearBarangays();
         removeLocatePin(false);
         // panel closing = map gets wider again, zoom back out to full district view
-        refitAfterPanelTransition(focusGroup ? focusGroup.getBounds() : null);
+        refitAfterPanelTransition(currentViewBounds());
       };
 
       async function onMunicipalityClick(e) {
@@ -2643,14 +2723,14 @@
       }
 
       /* How strongly the districts are coloured, decided in one place.
-           - "None" in the district filter: no colour at all. Outlines,
-             clickable towns and site markers all stay.
+           - "None" in the filter: no colour at all.
+             Outlines, clickable towns and site markers all stay.
            - heat map on: a faint fill, so the shading shows through
            - otherwise: the normal fill
          Hover adds to that base, so it never brings colour back while
          "None" is chosen. */
       function districtFillOpacity() {
-        if (currentDistrict === "none") return 0;
+        if (!showDistrictFill) return 0;
         return heatLayer ? 0.08 : 0.4;
       }
 
@@ -2736,7 +2816,13 @@
 
       let siteLayer = null;
       let allSiteMarkers = [];
+      // The area and district filters. Area is "all" or a CENRO name.
+      // District is "all" or a district number as a string ("5"). CENRO
+      // staff have one area, so theirs is chosen from the start.
+      let currentArea =
+        MAP_FILES.areas.length === 1 ? MAP_FILES.areas[0].cenro : "all";
       let currentDistrict = "all";
+      let showDistrictFill = true; // false while "None" is chosen
 
       function buildTreeIcon(b, zoom) {
         const detailed = zoom >= 12;
@@ -3302,12 +3388,31 @@
         return String(n);
       }
 
+      /* District numbers ("5") the area and district filters leave on. */
+      function visibleDistricts() {
+        return MAP_FILES.districts
+          .filter(function (d) {
+            return (currentArea === "all" || d.cenro === currentArea) &&
+              (currentDistrict === "all" || String(d.district) === currentDistrict);
+          })
+          .map(function (d) { return String(d.district); });
+      }
+
+      /* Where to zoom for what the filters leave on. */
+      function currentViewBounds() {
+        const layers = visibleDistricts().map(function (k) {
+          return districtLayers[k];
+        });
+        return layers.length ? L.featureGroup(layers).getBounds() : null;
+      }
+
       /* A marker belongs to the district its municipality sits in. */
       function siteInCurrentDistrict(b) {
-        // "None" only clears the district colour; every marker still shows.
-        if (currentDistrict === "all" || currentDistrict === "none") return true;
-        const set = districtMunis[currentDistrict];
-        return !!set && set.has(normalizeName(b.municipality));
+        if (currentArea === "all" && currentDistrict === "all") return true;
+        const town = normalizeName(b.municipality);
+        return visibleDistricts().some(function (k) {
+          return !!districtMunis[k] && districtMunis[k].has(town);
+        });
       }
 
       /* The single place that decides which markers are on the map. Both
@@ -3442,28 +3547,57 @@
 
       loadSiteMarkers();
 
-      // expose for the district filter radios
+      /* The district step lists only the chosen area's districts. It
+         stays hidden for "All", and for an area with a single district,
+         where the area choice already says everything. */
+      function syncDistrictChoices() {
+        const group = document.getElementById("districtGroup");
+        if (!group) return;
+        const area = MAP_FILES.areas.find(function (a) {
+          return a.cenro === currentArea;
+        });
+        group.hidden = !area || area.districts.length < 2;
+        group.querySelectorAll("label[data-area]").forEach(function (lbl) {
+          lbl.hidden = lbl.dataset.area !== currentArea;
+        });
+        const all = group.querySelector('input[value="all"]');
+        if (all) all.checked = true;
+      }
+
+      // expose for the area and district radios. "None" is "All" without
+      // the colour: every district stays, with its outlines and clickable
+      // towns, and every marker shows.
+      window.filterArea = function (value) {
+        showDistrictFill = value !== "none";
+        currentArea = value === "none" ? "all" : value;
+        currentDistrict = "all";
+        syncDistrictChoices();
+        applyDistrictFill();
+        applyDistrictView();
+      };
+
       window.filterDistricts = function (value) {
-        let targetBounds;
-        currentDistrict = value;
+        showDistrictFill = value !== "none";
+        currentDistrict = value === "none" ? "all" : value;
+        applyDistrictFill();
+        applyDistrictView();
+      };
+
+      /* Show the districts the filters leave on, filter the markers to
+         match, and zoom to them. */
+      function applyDistrictView() {
         applySiteFilter();
 
-        // Colour for the chosen option: "None" clears it, the rest restore it.
-        applyDistrictFill();
-
-        // "None" is "All" without the colour: every district stays, with
-        // its outlines and clickable towns, and every marker shows.
-        const showAll = value === "none" || value === "all";
+        const shown = new Set(visibleDistricts());
         Object.entries(districtLayers).forEach(function ([key, lyr]) {
-          if (showAll || key === value) {
+          if (shown.has(key)) {
             if (!map.hasLayer(lyr)) map.addLayer(lyr);
           } else {
             map.removeLayer(lyr);
           }
         });
-        targetBounds = showAll
-          ? focusGroup.getBounds()
-          : districtLayers[value].getBounds();
+        const targetBounds = currentViewBounds();
+        if (!targetBounds) return;
 
         const wasOpen = muniPanel.classList.contains("active");
         muniPanel.classList.remove("active");
