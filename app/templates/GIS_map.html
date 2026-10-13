@@ -1106,6 +1106,34 @@
     color: var(--text-body) !important;
   }
 
+  /* Municipality names floating over each town at the district view.
+     No box, just text with a white halo, so it reads on both the street
+     and the satellite tiles. Faded out once zoomed in (see
+     MUNI_LABEL_MAX_ZOOM), where the barangays take over. */
+  .leaflet-tooltip.muni-label {
+    background: transparent;
+    border: 0;
+    box-shadow: none;
+    padding: 0;
+    color: #1d2b22;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    text-shadow:
+      0 0 3px #fff, 0 0 3px #fff, 0 0 2px #fff, 0 0 1px #fff;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+  }
+
+  .leaflet-tooltip.muni-label::before {
+    display: none; /* no arrow */
+  }
+
+  #map.hide-muni-labels .leaflet-tooltip.muni-label,
+  #map.muni-labels-off .leaflet-tooltip.muni-label {
+    opacity: 0 !important;
+  }
+
   /* ---------- request mode (/gis-map?request=1) ---------- */
   .rq-panel {
     position: absolute;
@@ -1567,19 +1595,36 @@
 
   // Satellite photos help people recognise real land, roads and rivers.
   // Off when MAP_SATELLITE_TILES is set to an empty value.
+  const baseLayers = {};
   if (MAP_TILES.satellite) {
     const satelliteLayer = L.tileLayer(MAP_TILES.satellite.url, {
       maxZoom: 19,
       maxNativeZoom: MAP_TILES.satellite.maxNativeZoom,
       attribution: MAP_TILES.satellite.attribution,
     });
-    L.control
-      .layers({ Map: streetLayer, Satellite: satelliteLayer }, null, {
-        position: "topright",
-        collapsed: false,
-      })
-      .addTo(map);
+    baseLayers.Map = streetLayer;
+    baseLayers.Satellite = satelliteLayer;
   }
+
+  // Municipality names switch, under Map / Satellite. The group holds
+  // nothing: it only gives the control a checkbox, and adding or removing
+  // it shows or hides the names (the .muni-label tooltips). Kept apart
+  // from the zoom rule, so names stay hidden when zoomed in either way.
+  const muniNamesSwitch = L.layerGroup()
+    .on("add", function () {
+      map.getContainer().classList.remove("muni-labels-off");
+    })
+    .on("remove", function () {
+      map.getContainer().classList.add("muni-labels-off");
+    })
+    .addTo(map);
+
+  L.control
+    .layers(baseLayers, { "Municipality names": muniNamesSwitch }, {
+      position: "topright",
+      collapsed: false,
+    })
+    .addTo(map);
 
   // Site boundaries get their own pane: above the district, barangay and
   // heat map fills (overlayPane, z-index 400) and below the site markers
@@ -1620,9 +1665,9 @@
     try {
       const [provinceRes, dist5Res, dist6Res, barangayRes] = await Promise.all([
         fetch("/static/geojson/pangasinan.geojson"),
-        fetch("/static/geojson/district5.geojson"),
-        fetch("/static/geojson/district6.geojson"),
-        fetch("/static/geojson/barangay.geojson"),
+        fetch("/static/geojson/eastern/district5.geojson"),
+        fetch("/static/geojson/eastern/district6.geojson"),
+        fetch("/static/geojson/eastern/barangay.geojson"),
       ]);
 
       const provinceData = await provinceRes.json();
@@ -2607,6 +2652,26 @@
       const district5Munis = municipalitySet(district5Data);
       const district6Munis = municipalitySet(district6Data);
 
+      // Town names sit over each municipality at the district view and
+      // fade out from this zoom up, where they would cover the barangays.
+      const MUNI_LABEL_MAX_ZOOM = 12;
+
+      function addMuniLabel(feature, layer) {
+        layer.bindTooltip(feature.properties.NAME_2, {
+          permanent: true,
+          direction: "center",
+          className: "muni-label",
+          interactive: false,
+        });
+      }
+
+      function updateMuniLabels() {
+        document
+          .getElementById("map")
+          .classList.toggle("hide-muni-labels", map.getZoom() >= MUNI_LABEL_MAX_ZOOM);
+      }
+      map.on("zoomend", updateMuniLabels);
+
       district5Layer = L.geoJSON(district5Data, {
         style: {
           color: "#FF7800",
@@ -2620,6 +2685,7 @@
              "Back to <town>" can find the layer even when the panel was
              opened from a site marker and the town was never clicked. */
           municipalityLayers[normalizeName(feature.properties.NAME_2)] = layer;
+          addMuniLabel(feature, layer);
           layer.on("click", onMunicipalityClick);
           layer.on("mouseover", () => layer.setStyle({ fillOpacity: districtHoverOpacity() }));
           layer.on("mouseout", () => layer.setStyle({ fillOpacity: districtFillOpacity() }));
@@ -2639,6 +2705,7 @@
              "Back to <town>" can find the layer even when the panel was
              opened from a site marker and the town was never clicked. */
           municipalityLayers[normalizeName(feature.properties.NAME_2)] = layer;
+          addMuniLabel(feature, layer);
           layer.on("click", onMunicipalityClick);
           layer.on("mouseover", () => layer.setStyle({ fillOpacity: districtHoverOpacity() }));
           layer.on("mouseout", () => layer.setStyle({ fillOpacity: districtFillOpacity() }));
@@ -2647,6 +2714,7 @@
 
       focusGroup = L.featureGroup([district5Layer, district6Layer]);
       map.fitBounds(focusGroup.getBounds(), { padding: [20, 20] });
+      updateMuniLabels();
 
       // ==============================================================
       // REFORESTATION SITE MARKERS

@@ -145,7 +145,7 @@ def gis_map():
             "siteTypes": list(SITE_REQUEST_TYPES),
             "adoption": ADOPTION_REQUEST_TYPE,
             "municipalities": _request_municipalities(),
-            "geojsonUrl": url_for('static', filename='geojson/barangay.geojson'),
+            "geojsonUrl": url_for('static', filename='geojson/eastern/barangay.geojson'),
             "formUrl": url_for('dashboard.requests_page'),
         } if request_mode else None,
     )
@@ -1902,16 +1902,22 @@ def _load_barangay_geometry(municipality, barangay):
     without spaces while the database does not.
     """
     path = os.path.join(
-        current_app.static_folder, 'geojson', 'barangay.geojson'
+        current_app.static_folder, 'geojson', 'eastern', 'barangay.geojson'
     )
  
     def squash(s):
         return re.sub(r'[\s.\-]', '', str(s or '')).lower()
  
+    # A missing or broken file skips every check that uses the outline
+    # (request pins, photo locations, publishing), so say so in the log.
     try:
         with open(path, encoding='utf-8') as fh:
             data = json.load(fh)
     except Exception:
+        current_app.logger.warning(
+            "Barangay outlines could not be read from %s", path,
+            exc_info=True,
+        )
         return None
  
     # The town goes through normalize_municipality() so the aliases apply

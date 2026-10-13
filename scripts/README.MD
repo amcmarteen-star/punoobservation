@@ -12,7 +12,7 @@ Run in this order:
    Period: 2014-2023 (10 years)
 
 barangay_coords.csv was generated from
-app/static/geojson/barangay.geojson by computing the
+app/static/geojson/eastern/barangay.geojson by computing the
 centroid of each barangay polygon.
 
 Final output: barangay_climate.csv — 478 barangays with
