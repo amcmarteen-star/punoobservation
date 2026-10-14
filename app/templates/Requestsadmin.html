@@ -3,11 +3,21 @@ endblock %} {% block content_class %}page-content-wide{% endblock %} {% set
 active_page = 'review_requests' %} {% block extra_head %}
 <style>
   .status-pill {
-    display: inline-block;
-    padding: 3px 10px;
-    border-radius: 12px;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.25rem 0.7rem;
+    border-radius: 999px;
     font-size: 0.75rem;
-    font-weight: 600;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+  .status-pill::before {
+    content: "";
+    width: 0.45rem;
+    height: 0.45rem;
+    border-radius: 50%;
+    background: currentColor;
   }
 
   .status-submitted {
@@ -20,7 +30,7 @@ active_page = 'review_requests' %} {% block extra_head %}
   }
   .status-approved {
     background: var(--ok-bg);
-    color: #15803d;
+    color: var(--ok-text);
   }
   .status-rejected {
     background: var(--danger-bg);
@@ -114,17 +124,24 @@ active_page = 'review_requests' %} {% block extra_head %}
   .review-form {
     display: flex;
     flex-direction: column;
-    gap: 0.35rem;
-    min-width: 200px;
+    gap: 0.45rem;
+    width: 16rem;
     flex: 0 0 auto;
+    padding: 0.9rem;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: var(--surface-1);
   }
 
   .review-form select,
   .review-form input {
-    font-size: 0.875rem;
-    padding: 0.35rem 0.5rem;
+    font: inherit;
+    font-size: 0.85rem;
+    padding: 0.5rem 0.65rem;
     border: 1px solid var(--line);
-    border-radius: 6px;
+    border-radius: 8px;
+    background: var(--surface-1);
+    color: var(--text-strong);
   }
 
   .review-form select:focus,
@@ -135,12 +152,48 @@ active_page = 'review_requests' %} {% block extra_head %}
   }
 
   .review-form button {
-    border-radius: 6px;
+    border-radius: 8px;
+    padding: 0.55rem 1rem;
   }
 
   .req-cell-secondary {
     color: var(--text-2);
     font-size: 0.75rem;
+  }
+
+  .req-date {
+    white-space: nowrap;
+    color: var(--text-body);
+  }
+
+  /* the way into the full request page */
+  .req-open {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.4rem 0.8rem;
+    border: 1px solid var(--line-strong);
+    border-radius: 8px;
+    background: var(--surface-1);
+    color: var(--brand-text);
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-decoration: none;
+    white-space: nowrap;
+    transition: background-color 150ms ease, border-color 150ms ease;
+  }
+  .req-open:hover {
+    border-color: var(--ok-solid);
+    background: var(--ok-bg);
+    color: var(--brand-text);
+  }
+  .req-open svg {
+    width: 0.9rem;
+    height: 0.9rem;
+  }
+
+  .req-summary-block a {
+    color: var(--brand-text);
   }
 </style>
 {% endblock %} {% block content %}
@@ -273,13 +326,10 @@ active_page = 'review_requests' %} {% block extra_head %}
           <th>Requested By</th>
           <th>Location</th>
           <th>Type</th>
-          <th class="text-end">Area (ha)</th>
-          <th>Description</th>
-          <th>Contact</th>
           <th>Submitted</th>
           <th>Status</th>
-          <th>Action</th>
-          <th></th>
+          <th><span class="visually-hidden">Review</span></th>
+          <th><span class="visually-hidden">Details</span></th>
         </tr>
       </thead>
       <tbody>
@@ -307,17 +357,11 @@ active_page = 'review_requests' %} {% block extra_head %}
             <div class="req-cell-secondary">{{ r.location.municipality }}</div>
             {% else %} &mdash; {% endif %}
           </td>
-          <td>{{ r.request_type }}</td>
-          <td class="num-cell">{{ r.proposed_area_ha or '—' }}</td>
-          <td class="req-desc" title="{{ r.description or '' }}">
-            {{ r.description or '—' }}
-          </td>
           <td>
-            {% if r.contact_name %}{{ r.contact_name }}<br>{% endif %}
-            {{ r.contact_number or '—' }}
-            {% if r.contact_email %}<br>{{ r.contact_email }}{% endif %}
+            <div class="fw-semibold">{{ r.request_type }}</div>
+            <div class="req-cell-secondary">{% if r.proposed_area_ha %}{{ r.proposed_area_ha }} ha proposed{% else %}area not stated{% endif %}</div>
           </td>
-          <td>{{ r.date_submitted|datetime_ph }}</td>
+          <td class="req-date">{{ r.date_submitted|datetime_ph }}</td>
           <td>
             <span
               class="status-pill status-{{ r.status|lower|replace(' ', '-') }}"
@@ -328,8 +372,9 @@ active_page = 'review_requests' %} {% block extra_head %}
           <td>
             <a
               href="{{ url_for('admin.review_request_detail', request_id=r.request_id) }}"
-              class="btn btn-success btn-sm"
-              >View</a
+              class="req-open"
+              >Review
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></a
             >
           </td>
           <td class="req-toggle-cell">
@@ -340,11 +385,18 @@ active_page = 'review_requests' %} {% block extra_head %}
         </tr>
 
         <tr class="req-summary" data-summary="{{ r.request_id }}" hidden>
-          <td colspan="11">
+          <td colspan="8">
             <div class="req-summary-inner">
               <div class="req-summary-block">
                 <h6>Description</h6>
                 <p>{{ r.description or 'No description was given.' }}</p>
+
+                <h6>Contact</h6>
+                <p>
+                  {% if r.contact_name %}{{ r.contact_name }} &middot; {% endif %}
+                  {{ r.contact_number or '—' }}
+                  {% if r.contact_email %} &middot; <a href="mailto:{{ r.contact_email }}">{{ r.contact_email }}</a>{% endif %}
+                </p>
 
                 {% if r.reviewed_by and r.reviewer %}
                 <h6>Review</h6>
