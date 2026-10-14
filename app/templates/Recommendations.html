@@ -1236,9 +1236,26 @@
           form.addEventListener(type, function (e) { e.stopPropagation(); });
         });
 
+        // the photo is checked here, then sent behind the progress card
         const input = form.querySelector('input[type="file"]');
         input.addEventListener('change', function () {
-          if (input.files.length) form.submit();
+          const file = input.files[0];
+          if (!file) return;
+          const problem = window.PNOUpload
+            ? PNOUpload.check(file, input.getAttribute('accept'), 5 * 1024 * 1024, 5)
+            : null;
+          if (problem) {
+            input.value = '';
+            alert('This photo was not uploaded.
+
+' + problem);
+            return;
+          }
+          if (window.PNOUpload) {
+            PNOUpload.send(form, { title: 'Uploading photo', processing: 'Saving photo...' });
+          } else {
+            form.submit();
+          }
         });
 
         const remove = form.querySelector('.rec-thumb-remove');

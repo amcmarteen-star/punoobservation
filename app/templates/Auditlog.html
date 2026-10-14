@@ -66,6 +66,12 @@
   }
   .al-shown strong { color: var(--text-heading); }
 
+  /* search sits first and takes the spare width */
+  .al-search { flex: 1 1 16rem; }
+  .al-search .um-search-wrap { min-width: 0; max-width: none; }
+  .al-search .um-search-input { min-height: 38px; }
+  .al-nomatch td { text-align: center; padding: 2rem 1rem; color: var(--text-2); }
+
   @media (max-width: 640px) {
     /* three small tiles in a row instead of three tall cards stacked */
     .al-tiles { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .5rem; }
@@ -125,7 +131,7 @@
 </div>
 
 {# The route reads action, user and days; days defaults to 7. #}
-{% set filtered = action_filter or user_filter or days != '7' %}
+{% set filtered = action_filter or user_filter or days != '7' or request.args.get('q') %}
 <div class="al-tiles">
   <a href="{{ url_for('admin.audit_log', days=days, user=user_filter or none) }}"
      class="al-tile {% if not action_filter %}active{% endif %}">
@@ -145,6 +151,18 @@
 </div>
 
 <form method="GET" class="al-filters">
+  {# Search narrows the rows already on the page (by user, action, detail,
+     target or IP). It keeps its text in the URL as q, so changing a filter
+     below keeps the search. #}
+  <div class="al-field al-search">
+    <label for="al-q">Search</label>
+    <div class="um-search-wrap">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg>
+      <input type="search" id="al-q" name="q" class="um-search-input" autocomplete="off"
+             placeholder="Search user, action, detail or IP" value="{{ request.args.get('q', '') }}">
+    </div>
+  </div>
+
   <div class="al-field">
     <label for="al-action">Action</label>
     <select id="al-action" name="action" class="notif-filter-select {% if action_filter %}is-set{% endif %}"
@@ -188,7 +206,7 @@
 
   <noscript><button type="submit" class="al-clear">Apply</button></noscript>
 
-  <span class="al-shown">Showing <strong>{{ entries|length }}</strong>{% if entries|length >= 500 %}+{% endif %} {{ 'entry' if entries|length == 1 else 'entries' }}</span>
+  <span class="al-shown">Showing <strong id="al-count">{{ entries|length }}</strong>{% if entries|length >= 500 %}+{% endif %} {{ 'entry' if entries|length == 1 else 'entries' }}</span>
 </form>
 
 <div class="um-table-card">
@@ -205,7 +223,7 @@
           <th>IP</th>
         </tr>
       </thead>
-      <tbody>
+      <tbody id="al-rows">
         {% for e in entries %}
         <tr>
           <td style="white-space:nowrap;">
@@ -258,4 +276,38 @@
   {% endif %}
 </div>
 
+<script>
+  (function () {
+    const input = document.getElementById("al-q");
+    const body = document.getElementById("al-rows");
+    const count = document.getElementById("al-count");
+    if (!input || !body) return;
+    const rows = Array.from(body.querySelectorAll("tr"));
+    const text = rows.map((tr) => tr.textContent.replace(/\s+/g, " ").toLowerCase());
+    const none = document.createElement("tr");
+    none.className = "al-nomatch";
+    none.innerHTML = '<td colspan="6">No entries match your search.</td>';
+
+    function apply() {
+      const q = input.value.trim().toLowerCase();
+      let shown = 0;
+      rows.forEach((tr, i) => {
+        const hit = !q || q.split(/\s+/).every((w) => text[i].includes(w));
+        tr.hidden = !hit;
+        if (hit) shown++;
+      });
+      count.textContent = shown;
+      if (!shown && rows.length) body.appendChild(none); else none.remove();
+      // keep the search in the address, so reloads and links keep it
+      const url = new URL(location.href);
+      q ? url.searchParams.set("q", input.value.trim()) : url.searchParams.delete("q");
+      history.replaceState(null, "", url);
+    }
+
+    input.addEventListener("input", apply);
+    // Enter would submit the filter form; the list already filters as you type
+    input.addEventListener("keydown", (e) => { if (e.key === "Enter") e.preventDefault(); });
+    if (input.value) apply();
+  })();
+</script>
 {% endblock %}

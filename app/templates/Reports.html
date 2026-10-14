@@ -23,6 +23,9 @@ endblock %} {% set active_page = 'reports' %} {% block content %}
   action="{{ url_for('dashboard.submit_report') }}"
   enctype="multipart/form-data"
   id="reportForm"
+  data-upload-form
+  data-upload-title="Submitting report"
+  data-upload-processing="Reading photo locations..."
 >
   <!-- ============ STEP 1 : LOCATION ============ -->
   <div class="um-panel">
@@ -279,6 +282,8 @@ endblock %} {% set active_page = 'reports' %} {% block content %}
         id="plot_photos"
         multiple
         accept="image/*"
+        data-upload-zone
+        data-max-mb="15"
       />
       <p class="um-field-hint">
         Evidence of what you counted. One per plot is ideal.
@@ -295,6 +300,8 @@ endblock %} {% set active_page = 'reports' %} {% block content %}
         id="boundary_photos"
         multiple
         accept="image/*"
+        data-upload-zone
+        data-max-mb="15"
       />
       <p class="um-field-hint">
         Stand at each corner of the site and take one photo.

@@ -568,6 +568,7 @@ endblock %} {% set active_page = 'requests' %} {% block extra_head %}
       </button>
     </div>
     <form method="POST" class="req-add-form" id="req-add-form"
+          data-upload-form data-upload-title="Sending request"
           enctype="multipart/form-data">
       <div class="um-modal-body">
 
@@ -808,6 +809,8 @@ endblock %} {% set active_page = 'requests' %} {% block extra_head %}
               multiple
               accept="image/*,.pdf"
               data-max-files="{{ app_limits.maxRequestFiles }}"
+              data-upload-zone
+              data-max-mb="{{ app_limits.maxFileMb }}"
             />
             <div class="req-help">
               Photograph or scan of your Indicative Management Plan (IMP).

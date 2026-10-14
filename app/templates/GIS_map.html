@@ -381,7 +381,11 @@
     width: var(--panel-width);
     height: 100%;
     overflow-y: auto;
+    /* still scrolls by wheel, touch and keyboard; the bar itself is hidden
+       so the panel looks the same whether a tab overflows or not */
+    scrollbar-width: none;
   }
+  .muni-panel-inner::-webkit-scrollbar { display: none; }
 
   /* Phones: the panel opens as a sheet from the bottom and the map shrinks
      above it, the vertical version of the desktop push. It animates
@@ -491,21 +495,218 @@
     margin: 0;
   }
 
+  /* One close X for every panel header (municipality, barangay, site,
+     species, monitoring), so it sits in exactly the same spot whichever
+     panel is open. */
   .muni-panel .close-btn {
     position: absolute;
-    top: 12px;
-    right: 12px;
-    background: none;
+    top: 0.75rem;
+    right: 0.75rem;
+    display: grid;
+    place-items: center;
+    width: 1.75rem;
+    height: 1.75rem;
+    padding: 0;
     border: none;
-    font-size: 1rem;
-    cursor: pointer;
+    background: none;
     color: #ffffff;
     opacity: 0.85;
+    cursor: pointer;
   }
+  .muni-panel .close-btn:hover { opacity: 1; }
+  .muni-panel .close-btn svg { width: 1.1rem; height: 1.1rem; }
 
   .muni-panel .panel-body {
     padding: 1rem 1.1rem;
   }
+
+  /* ---- Site panel (a site clicked on the map) ----
+     Same information as before -- counts, area, seedlings, the species
+     link, and each site's record -- laid out as cards under a green
+     header. Ground conditions come from /api/recommend, the same source
+     the species panel uses, and fill in once loaded. */
+  .muni-panel .bp-head {
+    position: sticky;
+    top: 0;
+    z-index: 3;
+    padding: 1rem 1.1rem;
+    background:
+      radial-gradient(120% 140% at 100% 0%, rgba(144, 224, 48, 0.16), transparent 55%),
+      linear-gradient(135deg, #0f5a35 0%, #0b3f27 100%);
+    color: #fff;
+  }
+  .bp-eyebrow {
+    margin: 0 0 0.2rem;
+    font-size: 0.68rem; letter-spacing: 0.05em; text-transform: uppercase;
+    color: #86efac;
+  }
+  .bp-head h3 { margin: 0 0 0.15rem; padding-right: 2rem; font-size: 1.1rem; font-weight: 700; line-height: 1.25; color: #fff; }
+  .bp-sub { margin: 0; font-size: 0.78rem; color: #bbf7d0; }
+  .bp-note { margin: 0.4rem 0 0; font-size: 0.78rem; line-height: 1.5; color: #bfe4ff; }
+
+  .bp-body { padding: 1rem; display: grid; gap: 0.85rem; }
+  .bp-card {
+    padding: 1rem 1.1rem;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    background: var(--surface-2);
+  }
+  .bp-kicker {
+    margin: 0 0 0.5rem;
+    font-size: 0.66rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--ok-text);
+  }
+
+  /* hectares large on the left, site count on the right */
+  .bp-stats { display: grid; grid-template-columns: 1.4fr 1fr; gap: 0.75rem; }
+  .bp-stat-big { display: flex; flex-direction: column; justify-content: flex-end; min-height: 7.5rem; }
+  .bp-stat-big .bp-num { font-size: 2.3rem; font-weight: 700; line-height: 1; color: var(--brand-text); font-variant-numeric: tabular-nums; }
+  .bp-stat-big .bp-lbl { margin-top: 0.45rem; font-size: 0.7rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-2); }
+  .bp-stat-small { display: flex; flex-direction: column; justify-content: center; gap: 0.3rem; }
+  .bp-stat-small .bp-num { font-size: 1.6rem; font-weight: 700; color: var(--text-heading); font-variant-numeric: tabular-nums; }
+  .bp-stat-small .bp-lbl { font-size: 0.7rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-2); }
+
+  /* seedlings: target and planted, with a bar of planted against target */
+  .bp-bar { height: 6px; margin: 0.6rem 0 0.75rem; border-radius: 999px; background: var(--line); overflow: hidden; }
+  .bp-bar span { display: block; height: 100%; border-radius: inherit; background: var(--ok-solid); }
+  .bp-pair { display: flex; justify-content: space-between; gap: 1rem; font-size: 0.82rem; color: var(--text-2); }
+  .bp-pair strong { color: var(--text-heading); font-variant-numeric: tabular-nums; }
+
+  /* ground conditions */
+  .bp-cond.bp-totals { grid-template-columns: 1fr; margin-bottom: 1rem; }
+  .bp-totals strong { font-size: 1.05rem; }
+  .bp-cond-head { display: flex; align-items: baseline; justify-content: space-between; gap: 0.5rem; margin-bottom: 0.75rem; }
+  .bp-cond-head h4 { margin: 0; font-size: 1.05rem; color: var(--text-heading); }
+  .bp-link { border: 0; background: none; padding: 0; font: inherit; font-size: 0.78rem; font-weight: 600; color: var(--ok-text); cursor: pointer; }
+  .bp-link:hover { text-decoration: underline; }
+  .bp-cond { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; }
+  .bp-cond > div {
+    display: flex; align-items: center; gap: 0.6rem;
+    padding: 0.7rem 0.75rem; border-radius: 10px;
+    background: var(--surface-1); border: 1px solid var(--line);
+  }
+  .bp-cond svg { flex: none; width: 1.1rem; height: 1.1rem; color: var(--text-2); }
+  .bp-cond small { display: block; font-size: 0.7rem; color: var(--text-2); }
+  .bp-cond strong { display: block; font-size: 0.88rem; color: var(--text-heading); }
+  .bp-cond-empty { grid-column: 1 / -1; font-size: 0.8rem; color: var(--text-2); }
+
+  /* the existing "see recommended species" action, as a card */
+  .bp-action {
+    display: flex; align-items: center; gap: 0.85rem; width: 100%;
+    padding: 0.9rem 1rem; text-align: left; font: inherit; cursor: pointer;
+    border: 1px solid var(--ok-line); border-radius: 14px; background: var(--ok-bg);
+    color: var(--text-heading);
+    transition: border-color 150ms ease;
+  }
+  .bp-action:hover { border-color: var(--ok-solid); }
+  .bp-action-icon {
+    flex: none; display: grid; place-items: center; width: 2.4rem; height: 2.4rem;
+    border-radius: 10px; background: var(--surface-1); color: var(--ok-text);
+  }
+  .bp-action-icon svg, .bp-action-go svg { width: 1.05rem; height: 1.05rem; }
+  .bp-action-text { flex: 1; font-size: 0.88rem; font-weight: 600; }
+  .bp-action-go {
+    flex: none; display: grid; place-items: center; width: 2.2rem; height: 2.2rem;
+    border-radius: 9px; border: 1px solid var(--ok-line); color: var(--ok-text);
+  }
+
+  /* each site's record */
+  .bp-site h4 { margin: 0 0 0.6rem; font-size: 0.98rem; line-height: 1.35; color: var(--text-heading); }
+  .bp-rows { margin: 0; }
+  .bp-rows div {
+    display: flex; justify-content: space-between; gap: 1rem;
+    padding: 0.55rem 0; border-top: 1px solid var(--line); font-size: 0.82rem;
+  }
+  .bp-rows dt { color: var(--text-2); }
+  .bp-rows dd { margin: 0; color: var(--text-heading); text-align: right; font-variant-numeric: tabular-nums; }
+  .bp-site .back-link,
+  .bp-site .rq-adopt-btn { width: 100%; margin: 0.6rem 0 0; }
+  .bp-site .back-link + .back-link { margin-top: 0.45rem; }
+
+  /* tabs: overview, species, monitoring */
+  .bp-tabs {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.25rem;
+    padding: 0.3rem; border: 1px solid var(--line); border-radius: 12px; background: var(--surface-2);
+  }
+  .bp-tabs button {
+    min-height: 2.4rem; border: 0; border-radius: 9px; background: none;
+    font: inherit; font-size: 0.8rem; font-weight: 600; color: var(--text-2); cursor: pointer;
+    transition: background-color 150ms ease, color 150ms ease;
+  }
+  .bp-tabs button:hover { color: var(--text-heading); }
+  .bp-tabs button[aria-selected="true"] {
+    background: var(--surface-1); color: var(--ok-text);
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.12), inset 0 0 0 1px var(--ok-line);
+  }
+  :root[data-theme="dark"] .bp-tabs button[aria-selected="true"] { background: var(--ok-bg); }
+  #bp-tab { display: grid; gap: 0.85rem; }
+  .bp-muted { margin: 0; font-size: 0.8rem; color: var(--text-2); }
+
+  /* species tab */
+  .bp-conds-row { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.45rem; }
+  .bp-conds-row > div {
+    display: flex; flex-direction: column; align-items: center; gap: 0.3rem;
+    padding: 0.6rem 0.3rem; border: 1px solid var(--line); border-radius: 10px;
+    background: var(--surface-2); text-align: center; font-size: 0.72rem; color: var(--text-heading);
+  }
+  .bp-conds-row svg { width: 1rem; height: 1rem; color: var(--text-2); }
+  .bp-rec { position: relative; padding-left: 1.25rem; overflow: hidden; }
+  /* Photo on the right half of each species card, fading into the card on
+     the left like the landing hero, so it reads as one picture behind the
+     text. The species' own photo when one was uploaded, else a shared tree. */
+  .bp-rec-photo {
+    position: absolute; top: 0; right: 0; bottom: 0; width: 58%;
+    object-fit: cover; object-position: 50% 40%;
+    -webkit-mask-image: linear-gradient(to right, transparent 0%, rgba(0, 0, 0, 0.25) 30%, rgba(0, 0, 0, 0.8) 65%, #000 100%);
+            mask-image: linear-gradient(to right, transparent 0%, rgba(0, 0, 0, 0.25) 30%, rgba(0, 0, 0, 0.8) 65%, #000 100%);
+    pointer-events: none;
+  }
+  .bp-rec > :not(.bp-rec-photo) { position: relative; z-index: 1; }
+  .bp-rec::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: var(--ok-solid); }
+  .bp-rec.outside::before { background: var(--warn-solid); }
+  .bp-rec-top { display: flex; align-items: flex-start; gap: 0.75rem; }
+  .bp-rec-top > div { flex: 1; min-width: 0; }
+  .bp-rec h4 { margin: 0; font-size: 1.02rem; color: var(--text-heading); }
+  .bp-rec .bp-sci { margin: 0.2rem 0 0; font-style: italic; font-family: Georgia, serif; font-size: 0.8rem; color: var(--text-2); }
+  /* similarity score: the same pill as the barangay "View all" list */
+  .bp-score {
+    flex: none; padding: 0.2rem 0.6rem; border-radius: 999px;
+    background: var(--surface-2); box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    font-size: 0.9rem; font-weight: 700; color: var(--brand-text);
+    font-variant-numeric: tabular-nums; white-space: nowrap;
+  }
+  .bp-rec .bp-meta { margin: 0.6rem 0; font-size: 0.78rem; line-height: 1.6; color: var(--text-body); }
+  .bp-flag {
+    display: inline-flex; align-items: center; gap: 0.3rem; padding: 0.25rem 0.55rem;
+    border-radius: 999px; font-size: 0.72rem; font-weight: 600;
+    background: var(--ok-bg); border: 1px solid var(--ok-line); color: var(--ok-text);
+  }
+  .bp-flag.no { background: var(--warn-bg); border-color: var(--warn-line); color: var(--warn-text); }
+  .bp-foot { margin: 0; font-size: 0.72rem; color: var(--text-2); }
+
+  /* monitoring tab */
+  .bp-empty {
+    display: flex; flex-direction: column; align-items: center; gap: 0.7rem;
+    padding: 1.6rem 1rem; text-align: center;
+    border: 1.5px dashed var(--line-strong); border-radius: 14px;
+  }
+  .bp-empty-icon {
+    display: grid; place-items: center; width: 3rem; height: 3rem; border-radius: 12px;
+    background: var(--ok-bg); color: var(--ok-text);
+  }
+  .bp-empty-icon svg { width: 1.3rem; height: 1.3rem; }
+  .bp-empty h4 { margin: 0; font-size: 0.95rem; color: var(--text-heading); }
+  .bp-empty p { margin: 0; font-size: 0.8rem; color: var(--text-2); }
+  .bp-visits { margin: 0.4rem 0 0; padding: 0; list-style: none; }
+  .bp-visits li {
+    display: flex; justify-content: space-between; gap: 1rem;
+    padding: 0.5rem 0; border-top: 1px solid var(--line); font-size: 0.82rem; color: var(--text-body);
+  }
+  .bp-visits strong { color: var(--ok-text); font-variant-numeric: tabular-nums; }
+  .bp-visits strong.below { color: var(--danger-text); }
+  .bp-latest { display: flex; align-items: baseline; gap: 0.5rem; }
+  .bp-latest b { font-size: 1.6rem; color: var(--text-heading); font-variant-numeric: tabular-nums; }
+
 
   .muni-panel .stat-grid {
     display: grid;
@@ -628,6 +829,14 @@
     border-radius: 8px;
     padding: 0.6rem 0.75rem;
     margin-bottom: 0.55rem;
+  }
+
+  /* same fading photo as the site panel's species cards */
+  .muni-panel .rec-card { position: relative; overflow: hidden; }
+  .muni-panel .rec-card > :not(.bp-rec-photo) { position: relative; z-index: 1; }
+  .muni-panel .rec-card .rec-score {
+    padding: 0.15rem 0.5rem; border-radius: 999px;
+    background: var(--surface-2); box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
   }
 
   .muni-panel .rec-card.outside {
@@ -1888,7 +2097,7 @@
         if (!d.found) {
           inner.innerHTML = `
             <div class="panel-header">
-              <button class="close-btn" onclick="closeMuniPanel()">&#10005;</button>
+              <button type="button" class="close-btn" onclick="closeMuniPanel()" aria-label="Close" title="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
               <p class="panel-eyebrow">Monitoring History</p>
               <h3>Not available</h3>
             </div>
@@ -1968,7 +2177,7 @@
 
         inner.innerHTML = `
           <div class="panel-header">
-            <button class="close-btn" onclick="closeMuniPanel()">&#10005;</button>
+            <button type="button" class="close-btn" onclick="closeMuniPanel()" aria-label="Close" title="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
             <p class="panel-eyebrow">Monitoring History</p>
             <h3>${d.site_name}</h3>
             <p class="panel-subtext">
@@ -2152,7 +2361,7 @@
 
         const header = `
           <div class="panel-header">
-            <button class="close-btn" onclick="closeMuniPanel()">&#10005;</button>
+            <button type="button" class="close-btn" onclick="closeMuniPanel()" aria-label="Close" title="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
             <p class="panel-eyebrow">Barangay</p>
             <h3>${escBoundary(brgyName)}</h3>
             <p class="panel-subtext">${escBoundary(muniName)}, Pangasinan</p>
@@ -2232,7 +2441,7 @@
           if (!data.found) {
             inner.innerHTML = `
               <div class="panel-header">
-                <button class="close-btn" onclick="closeMuniPanel()">&#10005;</button>
+                <button type="button" class="close-btn" onclick="closeMuniPanel()" aria-label="Close" title="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
                 <p class="panel-eyebrow">Barangay</p>
                 <h3>${brgyName}</h3>
                 <p class="panel-subtext">${muniName}</p>
@@ -2252,7 +2461,7 @@
 
           inner.innerHTML = `
             <div class="panel-header">
-              <button class="close-btn" onclick="closeMuniPanel()">&#10005;</button>
+              <button type="button" class="close-btn" onclick="closeMuniPanel()" aria-label="Close" title="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
               <p class="panel-eyebrow">Barangay</p>
               <h3>${data.barangay}</h3>
               <p class="panel-subtext">${data.municipality}, Pangasinan</p>
@@ -2299,6 +2508,7 @@
                 .map(
                   (r, i) => `
                 <div class="rec-card ${r.within_all_ranges ? "" : "outside"}">
+                  ${window.speciesPhotoTag(r)}
                   <div class="rec-head">
                     <div>
                       <div class="rec-name">${i + 1}. ${r.specie_name}</div>
@@ -2308,7 +2518,7 @@
                           : ""
                       }
                     </div>
-                    <div class="rec-score">${r.similarity}</div>
+                    <div class="rec-score" title="Similarity ${r.similarity}">${isFinite(Number(r.similarity)) ? Number(r.similarity).toFixed(2) : r.similarity}</div>
                   </div>
                   <div class="rec-meta">
                     Elevation ${r.elevation_range}<br>
@@ -2339,7 +2549,7 @@
           console.error(err);
           inner.innerHTML = `
             <div class="panel-header">
-              <button class="close-btn" onclick="closeMuniPanel()">&#10005;</button>
+              <button type="button" class="close-btn" onclick="closeMuniPanel()" aria-label="Close" title="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
               <p class="panel-eyebrow">Barangay</p>
               <h3>${brgyName}</h3>
             </div>
@@ -2650,7 +2860,7 @@
             municipalitySitesCache[normalizeName(townName)] = data.sites;
             muniPanelInner.innerHTML = `
               <div class="panel-header">
-                <button class="close-btn" onclick="closeMuniPanel()">✕</button>
+                <button type="button" class="close-btn" onclick="closeMuniPanel()" aria-label="Close" title="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
                 <p class="panel-eyebrow">Municipality</p>
                 <h3>${data.municipality}</h3>
                 <p class="panel-subtext">${data.province}, ${data.region}</p>
@@ -2685,7 +2895,7 @@
           } else {
             muniPanelInner.innerHTML = `
               <div class="panel-header">
-                <button class="close-btn" onclick="closeMuniPanel()">✕</button>
+                <button type="button" class="close-btn" onclick="closeMuniPanel()" aria-label="Close" title="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
                 <p class="panel-eyebrow">Municipality</p>
                 <h3>${townName}</h3>
                 <p class="panel-subtext">No records yet</p>
@@ -2698,7 +2908,7 @@
         } catch (err) {
           muniPanelInner.innerHTML = `
             <div class="panel-header">
-              <button class="close-btn" onclick="closeMuniPanel()">✕</button>
+              <button type="button" class="close-btn" onclick="closeMuniPanel()" aria-label="Close" title="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
               <h3>${townName}</h3>
             </div>
             <div class="panel-body">
@@ -3453,96 +3663,243 @@
         applySiteFilter();
       };
 
+      // ---- site panel: header, totals, then Overview / Species / Monitoring
+      let sitePanelToken = 0;
+      let sitePanel = null;     // { b, token, rec: Promise, hist: Promise }
+      const BP_TREE_PHOTO = "{{ url_for('static', filename='images/species-placeholder.jpg') }}";
+      const BP_STATIC = "{{ url_for('static', filename='') }}";
+      /* The species card photo, shared by the site panel's Species tab and
+         the barangay "View all" list. On window so both can reach it. */
+      window.speciesPhotoTag = function (r) {
+        return `<img class="bp-rec-photo" alt="" loading="lazy" decoding="async"
+                     src="${r.photo_url ? escBoundary(BP_STATIC + r.photo_url) : BP_TREE_PHOTO}"
+                     onerror="this.onerror=null; this.src='${BP_TREE_PHOTO}';">`;
+      };
+      const BP_ICONS = {
+        elev: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m8 3 4 8 5-5 5 15H2L8 3z"/></svg>', temp: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>', rain: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242"/><path d="M16 14v6"/><path d="M8 14v6"/><path d="M12 16v6"/></svg>', soil: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83z"/><path d="M2 12a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 12"/><path d="M2 17a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 17"/></svg>',
+      };
+
+
+      const BP_HIST = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/></svg>';
+
+      function bpArg(v) {
+        return escBoundary(v).replace(/'/g, "\\'");
+      }
+
+      // /api/recommend for this barangay, fetched once per panel
+      function bpRecommend() {
+        if (!sitePanel.rec) {
+          const b = sitePanel.b;
+          sitePanel.rec = fetch(
+            "/api/recommend?municipality=" + encodeURIComponent(b.municipality) +
+            "&barangay=" + encodeURIComponent(b.barangay),
+          ).then((r) => r.json());
+        }
+        return sitePanel.rec;
+      }
+
+      function bpConditions(p) {
+        const cell = (icon, label, value) =>
+          "<div>" + BP_ICONS[icon] + "<span><small>" + label + "</small><strong>" +
+          escBoundary(value) + "</strong></span></div>";
+        return cell("elev", "Elevation", Math.round(p.elevation_m) + " m") +
+          cell("temp", "Avg. temperature", p.avg_temp_c + " °C") +
+          cell("rain", "Rainfall", Math.round(p.annual_rainfall_mm).toLocaleString() + " mm") +
+          cell("soil", "Soil texture", p.soil_texture || "—");
+      }
+
+      function bpOverview() {
+        const b = sitePanel.b, token = sitePanel.token;
+        const share = b.total_target > 0 ? Math.min(100, (b.total_actual / b.total_target) * 100) : 0;
+        const tab = document.getElementById("bp-tab");
+        tab.innerHTML = `
+          <div class="bp-card">
+            <p class="bp-kicker">Seedlings</p>
+            <div class="bp-pair"><span>Target seedlings</span><strong>${b.total_target.toLocaleString()}</strong></div>
+            <div class="bp-bar" aria-hidden="true"><span style="width:${share.toFixed(1)}%"></span></div>
+            <div class="bp-pair"><span>Actually planted</span><strong>${b.total_actual.toLocaleString()}</strong></div>
+          </div>
+
+          <div class="bp-card">
+            <p class="bp-kicker">Site profile</p>
+            <div class="bp-cond bp-totals">
+              <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><rect width="10" height="8" x="7" y="8" rx="1"/></svg><span><small>Hectares</small><strong>${b.total_area_ha}</strong></span></div>
+            </div>
+            <div class="bp-cond-head">
+              <h4>Ground conditions</h4>
+              <button type="button" class="bp-link"
+                      onclick="showBarangayRecommendations('${bpArg(b.municipality)}', '${bpArg(b.barangay)}')">View all</button>
+            </div>
+            <div class="bp-cond" id="bp-cond"><p class="bp-cond-empty">Loading&hellip;</p></div>
+          </div>
+
+          <button type="button" class="bp-action" onclick="bpShowTab('species')">
+            <span class="bp-action-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/></svg></span>
+            <span class="bp-action-text">See recommended species for ${escBoundary(b.barangay)}</span>
+            <span class="bp-action-go"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></span>
+          </button>
+
+          ${b.sites.map((s) => `
+            <div class="bp-card bp-site site-card" id="site-card-${s.site_id}">
+              <p class="bp-kicker">Site record</p>
+              <h4 class="site-card-title">${escBoundary(s.site_name)}</h4>
+              <dl class="bp-rows">
+                <div><dt>Site Code</dt><dd>${escBoundary(s.site_code || "—")}</dd></div>
+                <div><dt>Zone</dt><dd>${escBoundary(s.zone_type || "—")}</dd></div>
+                <div><dt>Year</dt><dd>${s.year_contracted || "—"}</dd></div>
+                <div><dt>Area</dt><dd>${s.area_size_ha} ha</dd></div>
+                <div><dt>Target</dt><dd>${s.target_trees.toLocaleString()}</dd></div>
+                <div><dt>Planted</dt><dd>${s.actual_trees.toLocaleString()}</dd></div>
+              </dl>
+              <button type="button" class="back-link" onclick="showSiteHistory(${s.site_id})">
+                View monitoring history
+              </button>
+              ${googleMapsButton(b.lat, b.lon, b.exact, "back-link")}
+              ${window.reqMode ? reqMode.adoptButton(s, b.municipality, b.barangay) : ""}
+            </div>`).join("")}
+        `;
+
+        bpRecommend().then((data) => {
+          const box = document.getElementById("bp-cond");
+          if (!box || token !== sitePanelToken) return;
+          box.innerHTML = data.found && data.site_profile
+            ? bpConditions(data.site_profile)
+            : '<p class="bp-cond-empty">No measured conditions for this barangay.</p>';
+        }).catch(() => {
+          const box = document.getElementById("bp-cond");
+          if (box && token === sitePanelToken) box.innerHTML = '<p class="bp-cond-empty">Ground conditions could not load.</p>';
+        });
+      }
+
+      function bpSpecies() {
+        const token = sitePanel.token;
+        const tab = document.getElementById("bp-tab");
+        tab.innerHTML = '<p class="bp-muted">Loading recommended species&hellip;</p>';
+        bpRecommend().then((data) => {
+          if (token !== sitePanelToken || sitePanel.view !== "species") return;
+          if (!data.found) {
+            tab.innerHTML = `<p class="bp-muted">${escBoundary(data.reason || "No site data for this barangay.")}</p>`;
+            return;
+          }
+          const p = data.site_profile;
+          const mini = (icon, value) => "<div>" + BP_ICONS[icon] + "<span>" + escBoundary(value) + "</span></div>";
+          tab.innerHTML = `
+            <div class="bp-conds-row">
+              ${mini("elev", Math.round(p.elevation_m) + " m")}
+              ${mini("temp", p.avg_temp_c + "°")}
+              ${mini("rain", Math.round(p.annual_rainfall_mm).toLocaleString() + " mm")}
+              ${mini("soil", p.soil_texture || "—")}
+            </div>
+            <p class="bp-kicker" style="margin:0.2rem 0 0;">Recommended species (top 5 of ${data.total_species})</p>
+            ${data.recommendations.map((r, i) => `
+              <div class="bp-card bp-rec ${r.within_all_ranges ? "" : "outside"}">
+                ${window.speciesPhotoTag(r)}
+                <div class="bp-rec-top">
+                  <div>
+                    <h4>${i + 1}. ${escBoundary(r.specie_name)}</h4>
+                    ${r.scientific_name ? `<p class="bp-sci">${escBoundary(r.scientific_name)}</p>` : ""}
+                  </div>
+                  <span class="bp-score" title="Similarity ${escBoundary(r.similarity)}">${isFinite(Number(r.similarity)) ? Number(r.similarity).toFixed(2) : escBoundary(r.similarity)}</span>
+                </div>
+                <div class="bp-meta">
+                  Elevation ${escBoundary(r.elevation_range)}<br>
+                  Temperature ${escBoundary(r.temperature_range)}<br>
+                  Rainfall ${escBoundary(r.rainfall_range)}<br>
+                  Soil ${escBoundary(r.preferred_soil || "—")}
+                </div>
+                <span class="bp-flag ${r.within_all_ranges ? "" : "no"}">
+                  ${r.within_all_ranges ? "Within published ranges" : "Outside published ranges"}
+                </span>
+              </div>`).join("")}
+            <p class="bp-foot">Ranked by ${escBoundary(data.method)} against published ecological
+              profiles. Decision support only; does not replace field assessment.</p>
+          `;
+        }).catch(() => {
+          if (token === sitePanelToken) tab.innerHTML = '<p class="bp-muted">Could not load recommendations.</p>';
+        });
+      }
+
+      function bpMonitoring() {
+        const b = sitePanel.b, token = sitePanel.token;
+        const tab = document.getElementById("bp-tab");
+        tab.innerHTML = b.sites.map((s) => `
+          <div id="bp-mon-${s.site_id}"><p class="bp-muted">Loading monitoring history&hellip;</p></div>`).join("");
+        if (!sitePanel.hist) {
+          sitePanel.hist = Promise.all(b.sites.map((s) =>
+            fetch("/api/site-history/" + s.site_id).then((r) => r.json()).catch(() => null)));
+        }
+        sitePanel.hist.then((all) => {
+          if (token !== sitePanelToken || sitePanel.view !== "monitoring") return;
+          all.forEach((d, i) => {
+            const s = b.sites[i];
+            const box = document.getElementById("bp-mon-" + s.site_id);
+            if (!box) return;
+            if (!d || !d.found || !d.report_count) {
+              box.innerHTML = `
+                <div class="bp-empty">
+                  <span class="bp-empty-icon">${BP_HIST}</span>
+                  <h4>${escBoundary(s.site_name)}</h4>
+                  <p>${d && !d.found ? escBoundary(d.reason || "") : "No approved monitoring reports for this site yet."}</p>
+                </div>`;
+              return;
+            }
+            box.innerHTML = `
+              <div class="bp-card">
+                <p class="bp-kicker">Monitoring history</p>
+                <h4 style="margin:0 0 0.5rem; font-size:0.98rem; color:var(--text-heading);">${escBoundary(s.site_name)}</h4>
+                <div class="bp-latest"><b>${d.latest_survival}%</b>
+                  <span class="bp-muted">${d.report_count} monitoring visit${d.report_count > 1 ? "s" : ""}</span></div>
+                <ul class="bp-visits">
+                  ${d.history.map((h) => `
+                    <li><span>${escBoundary(h.date_display)}</span>
+                        <strong class="${h.meets_threshold ? "" : "below"}">${h.survival_rate}%</strong></li>`).join("")}
+                </ul>
+                <button type="button" class="back-link" style="width:100%; margin:0.6rem 0 0;"
+                        onclick="showSiteHistory(${s.site_id})">View monitoring history</button>
+              </div>`;
+          });
+        });
+      }
+
+      window.bpShowTab = function (view) {
+        if (!sitePanel) return;
+        sitePanel.view = view;
+        document.querySelectorAll(".bp-tabs button").forEach((btn) => {
+          btn.setAttribute("aria-selected", String(btn.dataset.view === view));
+        });
+        if (view === "species") bpSpecies();
+        else if (view === "monitoring") bpMonitoring();
+        else bpOverview();
+      };
+
       function showBarangaySites(b) {
         muniPanel.classList.add("active");
         lastMunicipality = b.municipality;
+        sitePanel = { b: b, token: ++sitePanelToken, view: "overview", rec: null, hist: null };
 
         muniPanelInner.innerHTML = `
-          <div class="panel-header">
-            <button class="close-btn" onclick="closeMuniPanel()">&#10005;</button>
-            <p class="panel-eyebrow">${b.kind === "proposed" ? "Proposed Site" : "Reforestation Sites"}</p>
+          <div class="bp-head">
+            <button type="button" class="close-btn" onclick="closeMuniPanel()" aria-label="Close" title="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
+            <p class="bp-eyebrow">${b.kind === "proposed" ? "Proposed Site" : "Reforestation Sites"}</p>
             <h3>${escBoundary(b.barangay)}</h3>
-            <p class="panel-subtext">${escBoundary(b.municipality)}, Pangasinan</p>
+            <p class="bp-sub">${escBoundary(b.municipality)}, Pangasinan</p>
             ${b.kind === "proposed"
-              ? `<p class="panel-subtext" style="color:#0369a1;">
-                   Made from an approved request. Not yet surveyed. The
-                   official boundary replaces it once published.
-                 </p>`
+              ? `<p class="bp-note">Made from an approved request. Not yet surveyed. The
+                   official boundary replaces it once published.</p>`
               : ""}
           </div>
-          <div class="panel-body">
-            <div class="stat-grid">
-              <div class="stat-box">
-                <span class="stat-num">${b.site_count}</span>
-                <span class="stat-label">Sites</span>
-              </div>
-              <div class="stat-box">
-                <span class="stat-num">${b.total_area_ha}</span>
-                <span class="stat-label">Hectares</span>
-              </div>
+
+          <div class="bp-body">
+            <div class="bp-tabs" role="tablist" aria-label="Site details">
+              <button type="button" role="tab" data-view="overview" aria-selected="true" onclick="bpShowTab('overview')">Overview</button>
+              <button type="button" role="tab" data-view="species" aria-selected="false" onclick="bpShowTab('species')">Species</button>
+              <button type="button" role="tab" data-view="monitoring" aria-selected="false" onclick="bpShowTab('monitoring')">Monitoring</button>
             </div>
 
-            <div class="stat-row">
-              <span class="stat-label">Target seedlings</span>
-              <span>${b.total_target.toLocaleString()}</span>
-            </div>
-            <div class="stat-row">
-              <span class="stat-label">Actually planted</span>
-              <span>${b.total_actual.toLocaleString()}</span>
-            </div>
-
-            <div class="brgy-hint">
-              <button class="back-link" style="margin:0;"
-                      onclick="showBarangayRecommendations('${b.municipality}', '${b.barangay}')">
-                See recommended species for ${b.barangay}
-              </button>
-            </div>
-
-            <p class="info-title">Sites</p>
-            ${b.sites
-              .map(
-                (s) => `
-              <div class="site-card" id="site-card-${s.site_id}">
-                <div class="site-card-title">${escBoundary(s.site_name)}</div>
-                <div class="stat-row">
-                  <span class="stat-label">Site Code</span>
-                  <span>${s.site_code || "—"}</span>
-                </div>
-                <div class="stat-row">
-                  <span class="stat-label">Zone</span>
-                  <span>${s.zone_type || "—"}</span>
-                </div>
-                <div class="stat-row">
-                  <span class="stat-label">Year</span>
-                  <span>${s.year_contracted || "—"}</span>
-                </div>
-                <div class="stat-row">
-                  <span class="stat-label">Area</span>
-                  <span>${s.area_size_ha} ha</span>
-                </div>
-                <div class="stat-row">
-                  <span class="stat-label">Target</span>
-                  <span>${s.target_trees.toLocaleString()}</span>
-                </div>
-                <div class="stat-row">
-                  <span class="stat-label">Planted</span>
-                  <span>${s.actual_trees.toLocaleString()}</span>
-                </div>
-                <div style="margin-top:.5rem; padding-top:.5rem;
-                            border-top:1px solid var(--line);">
-                  <button type="button" class="back-link" style="margin:0;"
-                          onclick="showSiteHistory(${s.site_id})">
-                    View monitoring history
-                  </button>
-                  ${googleMapsButton(b.lat, b.lon, b.exact, "back-link")}
-                  ${window.reqMode ? reqMode.adoptButton(s, b.municipality, b.barangay) : ""}
-                </div>
-              </div>
-            `,
-              )
-              .join("")}
+            <div id="bp-tab"></div>
           </div>
         `;
+        bpOverview();
       }
 
       loadSiteMarkers();

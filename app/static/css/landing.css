@@ -450,8 +450,7 @@ html:has(> body.landing-page)::-webkit-scrollbar {
 .landing-hero-media img { width: 100%; height: 100%; object-fit: cover; object-position: 60% 50%; }
 
 /* The fade: solid ground behind the copy, easing into the photograph
-   across the middle, plus a short fade at the bottom into the section
-   below. */
+   across the middle. The photograph runs to the bottom edge unfaded. */
 .landing-hero-scrim {
     position: absolute;
     inset: 0;
@@ -462,8 +461,7 @@ html:has(> body.landing-page)::-webkit-scrollbar {
             var(--hero-ground) 40%,
             rgba(227, 246, 232, 0.88) 50%,
             rgba(227, 246, 232, 0.35) 63%,
-            rgba(227, 246, 232, 0) 76%),
-        linear-gradient(to top, rgba(227, 246, 232, 0.7) 0%, rgba(227, 246, 232, 0) 4%);
+            rgba(227, 246, 232, 0) 76%);
 }
 
 /* The copy keeps a gutter of about a tenth of the screen from the left
@@ -952,14 +950,11 @@ html:has(> body.landing-page)::-webkit-scrollbar {
 .landing-mini svg { width: 17px; height: 17px; }
 
 /* ---------- Features ----------
-   A centred header, then four features along a green route that is drawn
-   behind them as the page scrolls. The mockups are always shown; only the
-   copy beside each one comes in as it is reached.
-   Each feature is copy on one side and its mockup on the other, the sides
-   alternating; the route runs from mockup to mockup behind them. Then
-   the "More features" pills under a soft dome. */
+   A centred header, then four features. Each is copy on one side and its
+   mockup on the other, the sides alternating, and both slide in from
+   their own side as they are reached. Then the "More features" pills
+   under a soft dome. */
 .lf {
-    --route-progress: 0;
     position: relative;
     overflow: hidden;
     padding-block: 0;
@@ -1038,59 +1033,10 @@ html:has(> body.landing-page)::-webkit-scrollbar {
     text-transform: uppercase;
 }
 
-/* the route */
 .lf-timeline {
     position: relative;
     width: min(1240px, calc(100% - 48px));
     margin: 0 auto;
-}
-.lf-route {
-    position: absolute;
-    z-index: 0;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    overflow: visible;
-    pointer-events: none;
-}
-/* The branch: a bark-brown stroke drawn by its dash offset, after the
-   usual "plant growing" technique (stem drawn with stroke-dashoffset,
-   leaves scaled in from their base as it passes). No glow -- a plain
-   stroke and flat leaves read as drawn, not generated. */
-.lf-route-progress {
-    fill: none;
-    stroke: url(#lf-bark);
-    stroke-width: 4.5;
-    stroke-linecap: round;
-    vector-effect: non-scaling-stroke;
-    stroke-dasharray: 1;
-    stroke-dashoffset: calc(1 - var(--route-progress));
-}
-
-/* Each leaf is drawn with its stalk at the group origin, so scaling the
-   group from 0 0 grows it out of the branch. */
-.lf-leaf {
-    transform: scale(0);
-    transform-box: view-box;
-    transform-origin: 0 0;
-    transition: transform 520ms cubic-bezier(0.34, 1.45, 0.64, 1);
-}
-.lf-leaf.is-out { transform: scale(1); }
-.lf-twig {
-    fill: none;
-    stroke: #6e5236;
-    stroke-width: 1.8;
-    stroke-linecap: round;
-}
-.lf-vein {
-    fill: none;
-    stroke: rgba(255, 255, 255, 0.38);
-    stroke-width: 0.9;
-    stroke-linecap: round;
-}
-@media (prefers-reduced-motion: reduce) {
-    .lf-leaf { transition: none; }
 }
 
 /* one feature */
@@ -1110,15 +1056,28 @@ html:has(> body.landing-page)::-webkit-scrollbar {
 .lf-copy {
     position: relative;
     max-width: 500px;
-    padding-left: 42px;
+}
+
+/* the step number in a small white disc, with the label beside it */
+.lf-label {
+    display: flex;
+    align-items: center;
+    gap: 0.9rem;
 }
 .lf-num {
-    position: absolute;
-    top: -8px;
-    left: 0;
+    display: grid;
+    place-items: center;
+    flex: none;
+    width: 2.6rem;
+    height: 2.6rem;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.85);
+    border: 1px solid rgba(255, 255, 255, 0.9);
+    box-shadow: 0 4px 14px rgba(16, 74, 50, 0.08);
     font-size: 0.8125rem;
-    font-weight: 800;
-    color: rgba(12, 118, 70, 0.28);
+    font-weight: 700;
+    color: var(--ink);
+    font-variant-numeric: tabular-nums;
 }
 .lf-copy h3 {
     margin: 15px 0 18px;
@@ -1226,20 +1185,18 @@ html:has(> body.landing-page)::-webkit-scrollbar {
         min-height: auto;
         grid-template-columns: 1fr;
         gap: 38px;
-        padding: 78px 0 88px 48px;
+        padding: 78px 0 88px;
     }
     .lf-row.lf-reverse .lf-copy,
     .lf-row.lf-reverse .lf-visual { order: initial; }
     .lf-row.lf-reverse .lf-copy { justify-self: start; }
-    .lf-copy { padding-left: 36px; }
 }
 
 @media (max-width: 560px) {
     .lf-head::before { width: 420px; }
     .lf-timeline { width: calc(100% - 24px); }
     .lf-row,
-    .lf-row.lf-reverse { gap: 24px; padding: 70px 0 70px 24px; }
-    .lf-copy { padding-left: 26px; }
+    .lf-row.lf-reverse { gap: 24px; padding: 70px 0; }
     .lf-more { padding: 100px 18px 110px; }
     .lf-pills { flex-direction: column; align-items: stretch; }
 }
@@ -1402,6 +1359,11 @@ html:has(> body.landing-page)::-webkit-scrollbar {
     color: var(--on-lime);
     padding-block: var(--sp-8) var(--sp-4);
     font-size: var(--fs-base);
+    /* rounded top corners; the footer tucks up over the section above by
+       the radius, so that section's colour shows in the corners */
+    border-radius: 16px 16px 0 0;
+    margin-top: -16px;
+    z-index: 1;
 }
 .landing-footer-grid {
     display: grid;
@@ -1651,6 +1613,34 @@ html:has(> body.landing-page)::-webkit-scrollbar {
         margin-left: 0;
         white-space: normal;
     }
-    .landing-footer-grid { grid-template-columns: minmax(0, 1fr); gap: var(--sp-4); }
-    .landing-footer-bottom { flex-direction: column; }
+    /* Phone footer: the brand across the top, the three link groups side
+       by side under it, everything a size down -- one stacked column of
+       nine links ran a full screen and a half. */
+    .landing-footer {
+        padding-block: var(--sp-4) var(--sp-3);
+        font-size: var(--fs-sm);
+    }
+    .landing-footer-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: var(--sp-3) var(--sp-2);
+    }
+    .landing-footer-grid > :first-child { grid-column: 1 / -1; }
+    .landing-footer-brand { font-size: var(--fs-lg); }
+    .landing-footer-brand img { width: 24px; }
+    .landing-footer .tagline { margin-top: 0.4rem; max-width: none; }
+    .landing-footer h4 { margin-bottom: 0.6rem; font-size: 0.6875rem; letter-spacing: 0.1em; }
+    .landing-footer ul { gap: 0.5rem; }
+    .landing-footer-bottom {
+        flex-direction: column;
+        margin-top: var(--sp-4);
+        padding-top: var(--sp-2);
+        font-size: var(--fs-xs);
+    }
+
+    /* More features: on a narrow screen a 50% radius made the backdrop a
+       tall pointed arch; a fixed-height ellipse keeps it a low dome. */
+    .lf-more::before {
+        inset: 45px -40% 0;
+        border-radius: 50% 50% 0 0 / 110px 110px 0 0;
+    }
 }

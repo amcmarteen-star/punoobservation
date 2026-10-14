@@ -41,7 +41,8 @@
         try {
           var w = parseInt(localStorage.getItem("sidebarWidth"), 10);
           if (w) {
-            w = Math.max(64, Math.min(w, 320));
+            // two states only: the 64px icon rail or the 240px full rail
+            w = w < 150 ? 64 : 240;
             var root = document.documentElement;
             root.style.setProperty("--sidebar-init-w", w + "px");
             if (w < 150) root.classList.add("sidebar-init-collapsed");
@@ -84,32 +85,6 @@
             />
             <span class="logo-text">PuNoObservation</span>
           </a>
-
-          <!-- One-click version of the drag handle on the right edge. The
-               handle still works; this is here so narrowing the rail does not
-               require aiming at a 6px target. -->
-          <button
-            type="button"
-            class="sidebar-toggle"
-            id="sidebarToggle"
-            aria-label="Collapse sidebar"
-            aria-expanded="true"
-            title="Collapse sidebar"
-          >
-            <svg
-              class="sidebar-toggle-icon"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            >
-              <rect width="18" height="18" x="3" y="3" rx="2" />
-              <path d="M9 3v18" />
-              <path id="sidebarToggleChevron" d="m16 15-3-3 3-3" />
-            </svg>
-          </button>
 
           <!-- Phones get the sidebar as a slide-in drawer; this closes it.
                Hidden on wider screens, where the rail is always shown. -->
@@ -534,12 +509,32 @@
         </a>
         {% endif %}
 
-        <div
-          class="sidebar-resize-handle"
-          id="sidebarResizeHandle"
-          aria-hidden="true"
-        ></div>
       </aside>
+
+      <!-- Collapse / expand. A round button sitting on the rail's right edge.
+           It lives outside the sidebar because the sidebar clips its own
+           overflow, and follows the rail's width through --sidebar-w. -->
+      <button
+        type="button"
+        class="sidebar-toggle"
+        id="sidebarToggle"
+        aria-label="Collapse sidebar"
+        aria-expanded="true"
+        title="Collapse sidebar"
+      >
+        <svg
+          class="sidebar-toggle-icon"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2.25"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"
+        >
+          <path id="sidebarToggleChevron" d="m15 18-6-6 6-6" />
+        </svg>
+      </button>
 
       <!-- Dims the page behind the open drawer on phones; tapping it closes
            the drawer. -->
@@ -662,7 +657,11 @@
           {% if messages %}
           <div class="flash-messages">
             {% for category, message in messages %}
-            <div class="um-alert um-alert-{{ category }}">{{ message }}</div>
+            <div class="um-alert um-alert-{{ category }} is-dismissible" role="status">
+              <span class="um-alert-text">{{ message }}</span>
+              <button type="button" class="alert-close" aria-label="Dismiss message" title="Dismiss"
+                      onclick="dismissAlert(this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
+            </div>
             {% endfor %}
           </div>
           {% endif %} {% endwith %} {% block content %}{% endblock %}
@@ -740,32 +739,24 @@
       // so it still runs even on pages (like GIS_map) that override extra_scripts
       // with their own script.
 
-      // Sidebar width. Two ways in: drag the right edge, or click the toggle
-      // in the header. Below COLLAPSE_THRESHOLD the nav labels hide and only
-      // icons show (links keep working, they're still real <a> tags).
+      // Sidebar width. Two states, switched only by the round button on the
+      // rail's edge: the full 240px rail, or the 64px icon rail where nav
+      // labels hide and only icons show (links still work as real <a> tags).
       (function () {
         const sidebar = document.querySelector(".sidebar");
-        const handle = document.getElementById("sidebarResizeHandle");
         const toggleBtn = document.getElementById("sidebarToggle");
         const chevron = document.getElementById("sidebarToggleChevron");
-        const CHEVRON_COLLAPSE = "m16 15-3-3 3-3";
-        const CHEVRON_EXPAND = "m14 9 3 3-3 3";
-        const MIN_WIDTH = 64;
-        const MAX_WIDTH = 320;
-        const DEFAULT_WIDTH = 240;
-        const COLLAPSE_THRESHOLD = 150;
+        const CHEVRON_COLLAPSE = "m15 18-6-6 6-6";
+        const CHEVRON_EXPAND = "m9 18 6-6-6-6";
+        const COLLAPSED_WIDTH = 64;
+        const EXPANDED_WIDTH = 240;
 
-        function applyWidth(px) {
-          const clamped = Math.max(MIN_WIDTH, Math.min(px, MAX_WIDTH));
-          sidebar.style.width = clamped + "px";
-          sidebar.classList.toggle("collapsed", clamped < COLLAPSE_THRESHOLD);
-          syncToggle();
-        }
-
-        // The button points the way it will move the rail, so it has to be
-        // redrawn after a drag too, not only after a click.
-        function syncToggle() {
-          const collapsed = sidebar.classList.contains("collapsed");
+        function setCollapsed(collapsed) {
+          const px = collapsed ? COLLAPSED_WIDTH : EXPANDED_WIDTH;
+          sidebar.style.width = px + "px";
+          sidebar.classList.toggle("collapsed", collapsed);
+          // the edge button follows the rail
+          document.documentElement.style.setProperty("--sidebar-w", px + "px");
           const label = collapsed ? "Expand sidebar" : "Collapse sidebar";
           chevron.setAttribute("d", collapsed ? CHEVRON_EXPAND : CHEVRON_COLLAPSE);
           toggleBtn.setAttribute("aria-expanded", collapsed ? "false" : "true");
@@ -773,63 +764,25 @@
           toggleBtn.setAttribute("title", label);
         }
 
-        // Restoring a saved width is not a user action, so it should not
+        // Restoring the saved state is not a user action, so it should not
         // animate -- .resizing switches the width transition off, and reading
         // offsetWidth forces the new width to land before it comes back on.
-        const saved = parseInt(localStorage.getItem("sidebarWidth"), 10);
+        let saved = NaN;
+        try { saved = parseInt(localStorage.getItem("sidebarWidth"), 10); } catch (e) {}
         sidebar.classList.add("resizing");
-        applyWidth(saved || DEFAULT_WIDTH);
+        setCollapsed(saved > 0 && saved < 150);
         // the rail now carries its own state; the pre-paint hint can go
         document.documentElement.classList.remove("sidebar-init-collapsed");
         void sidebar.offsetWidth;
         sidebar.classList.remove("resizing");
 
-        let dragging = false;
-
-        handle.addEventListener("mousedown", function (e) {
-          dragging = true;
-          sidebar.classList.add("resizing");
-          document.body.style.userSelect = "none";
-          e.preventDefault();
-        });
-
-        document.addEventListener("mousemove", function (e) {
-          if (!dragging) return;
-          applyWidth(e.clientX);
-        });
-
-        document.addEventListener("mouseup", function () {
-          if (!dragging) return;
-          dragging = false;
-          sidebar.classList.remove("resizing");
-          document.body.style.userSelect = "";
-          rememberWidth();
-        });
-
-        // Expanding restores the last width the user actually chose rather
-        // than snapping back to the default, so a deliberately wide or narrow
-        // rail survives a collapse.
-        function rememberWidth() {
-          const px = parseInt(sidebar.style.width, 10);
-          localStorage.setItem("sidebarWidth", px);
-          if (!sidebar.classList.contains("collapsed")) {
-            localStorage.setItem("sidebarExpandedWidth", px);
-          }
-        }
-
         toggleBtn.addEventListener("click", function () {
-          if (sidebar.classList.contains("collapsed")) {
-            const restore = parseInt(
-              localStorage.getItem("sidebarExpandedWidth"),
-              10,
-            );
-            applyWidth(
-              restore >= COLLAPSE_THRESHOLD ? restore : DEFAULT_WIDTH,
-            );
-          } else {
-            applyWidth(MIN_WIDTH);
-          }
-          rememberWidth();
+          const collapse = !sidebar.classList.contains("collapsed");
+          setCollapsed(collapse);
+          try {
+            localStorage.setItem("sidebarWidth", collapse ? COLLAPSED_WIDTH : EXPANDED_WIDTH);
+            localStorage.removeItem("sidebarExpandedWidth");
+          } catch (e) {}
         });
       })();
 
@@ -877,6 +830,18 @@
           if (!e.matches) setOpen(false);
         });
       })();
+
+      // The X on a flash message: fades it, then removes it
+      function dismissAlert(btn) {
+        var box = btn.closest(".is-dismissible");
+        if (!box) return;
+        box.classList.add("is-leaving");
+        setTimeout(function () {
+          var wrap = box.parentElement;
+          box.remove();
+          if (wrap && wrap.classList.contains("flash-messages") && !wrap.children.length) wrap.remove();
+        }, 180);
+      }
 
       function updateThemeToggle() {
         var dark =
@@ -1336,6 +1301,8 @@
 
     <!-- frozen header row + first columns on wide tables (data-freeze) -->
     <script src="{{ url_for('static', filename='js/table-freeze.js', v=asset_v) }}"></script>
+    <!-- drop zones on file fields, and the progress card for uploads -->
+    <script src="{{ url_for('static', filename='js/upload.js', v=asset_v) }}"></script>
 
     {% block extra_scripts %}{% endblock %}
   </body>

@@ -11,7 +11,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@100..125,400..800&family=Inter+Tight:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-    <link rel="preload" as="image" href="{{ url_for('static', filename='images/landing/hero-hillside.jpg') }}">
+    <link rel="preload" as="image" href="{{ url_for('static', filename='images/landing/hero-hillside.jpg', v=asset_v) }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/landing.css', v=asset_v) }}">
 </head>
 <script>document.documentElement.classList.add("has-js");</script>
@@ -40,13 +40,13 @@
 
     <header class="landing-hero">
         <div class="landing-hero-media">
-            <img src="{{ url_for('static', filename='images/landing/hero-hillside.jpg') }}" alt="Volunteers spread out along a grassy ridge, planting seedlings, with forested hills behind" width="1359" height="640" fetchpriority="high" decoding="async">
+            <img src="{{ url_for('static', filename='images/landing/hero-hillside.jpg', v=asset_v) }}" alt="Volunteers spread out along a grassy ridge, planting seedlings, with forested hills behind" width="1359" height="640" fetchpriority="high" decoding="async">
         </div>
         <div class="landing-hero-scrim"></div>
 
         <div class="landing-hero-inner">
             <div class="landing-hero-copy">
-                <span class="landing-hero-kicker landing-reveal landing-rise"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 20h10"/><path d="M10 20c5.5-2.5.8-6.4 3-10"/><path d="M9.5 9.4c1.1.8 1.8 2.2 2.3 3.7-2 .4-3.5.4-4.8-.3-1.2-.6-2.3-1.9-3-4.2 2.8-.5 4.4 0 5.5.8z"/><path d="M14.1 6a7 7 0 0 0-1.1 4c1.9-.1 3.3-.6 4.3-1.4 1-1 1.6-2.3 1.7-4.6-2.7.1-4 1-4.9 2z"/></svg> Tanim tayo, ano tara?</span>
+                <span class="landing-hero-kicker landing-reveal landing-rise">Tanim tayo, ano tara?</span>
                 <h1 class="landing-reveal landing-rise" style="--reveal-delay: 60ms">Empowering Reforestation <span>through Data </span> <span class="accent">Driven Decisions</span></h1>
                 <p class="landing-lead landing-reveal landing-rise" style="--reveal-delay: 180ms">
                     Monitor Reforestation initiatives, visualize planting sites,
@@ -178,7 +178,7 @@
         </div>
     </section>
 
-    <section class="landing-section lf" id="features" data-route>
+    <section class="landing-section lf" id="features">
         <div class="lf-head landing-reveal">
             <p class="lf-kicker">One connected platform</p>
             <h2>Integrated features for<br> reforestation management</h2>
@@ -196,33 +196,16 @@
         </div>
 
         <div class="lf-timeline">
-            {# A branch behind the four features, grown as the page scrolls.
-               landing.js lays it through the centre of each mockup, first to
-               last, keeps its tip level with the middle of the screen, and
-               puts leaves along it that open as the tip passes them. #}
-            <svg class="lf-route" aria-hidden="true">
-                <defs>
-                    <linearGradient id="lf-bark" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0" stop-color="#8a6a45"/>
-                        <stop offset=".5" stop-color="#6e5236"/>
-                        <stop offset="1" stop-color="#57402b"/>
-                    </linearGradient>
-                </defs>
-                <path class="lf-route-progress" pathLength="1" d=""/>
-                <g class="lf-leaves"></g>
-            </svg>
-
                 <article class="lf-row">
                     <div class="lf-copy landing-reveal landing-from-left">
-                        <span class="lf-num">01</span>
-                        <p class="lf-kicker">Mapping</p>
+                        <div class="lf-label"><span class="lf-num">01</span><p class="lf-kicker">Mapping</p></div>
                         <h3>Interactive GIS map and heatmap</h3>
                         <p class="lf-desc">Every planting site across Eastern Pangasinan on one live map, with a density heatmap showing where reforestation activity is concentrated by barangay and municipality.</p>
                         <p class="lf-cta">
                             <a href="{{ url_for('dashboard.gis_map') }}" class="landing-link">Open the map <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></a>
                         </p>
                     </div>
-                    <div class="lf-visual">
+                    <div class="lf-visual landing-reveal landing-from-right" style="--reveal-delay: 140ms">
                         <div class="landing-shot">
                             <img src="{{ url_for('static', filename='images/landing/map.png') }}" width="2219" height="1350" loading="lazy" decoding="async" alt="The GIS map on a laptop, with districts 5 and 6 shaded over Eastern Pangasinan and planting sites marked">
                             <span class="landing-glint" aria-hidden="true" style="--shot-src: url('{{ url_for('static', filename='images/landing/map.png') }}')"></span>
@@ -231,12 +214,11 @@
                 </article>
                 <article class="lf-row lf-reverse">
                     <div class="lf-copy landing-reveal landing-from-right">
-                        <span class="lf-num">02</span>
-                        <p class="lf-kicker">Species matching</p>
+                        <div class="lf-label"><span class="lf-num">02</span><p class="lf-kicker">Species matching</p></div>
                         <h3>Plant the right tree in the right place</h3>
                         <p class="lf-desc">Rank native species by how well they suit a site's soil, elevation, and climate, so every planting plan starts from what the ground can actually support.</p>
                     </div>
-                    <div class="lf-visual">
+                    <div class="lf-visual landing-reveal landing-from-left" style="--reveal-delay: 140ms">
                         <div class="landing-shot">
                             <img src="{{ url_for('static', filename='images/landing/speciesreco2.png') }}" width="2500" height="2444" loading="lazy" decoding="async" alt="The species recommendation screen on a laptop, listing native species ranked by suitability for a barangay">
                             <span class="landing-glint" aria-hidden="true" style="--shot-src: url('{{ url_for('static', filename='images/landing/speciesreco2.png') }}')"></span>
@@ -245,12 +227,11 @@
                 </article>
                 <article class="lf-row">
                     <div class="lf-copy landing-reveal landing-from-left">
-                        <span class="lf-num">03</span>
-                        <p class="lf-kicker">Site requests</p>
+                        <div class="lf-label"><span class="lf-num">03</span><p class="lf-kicker">Site requests</p></div>
                         <h3>Clear requests, accountable decisions</h3>
                         <p class="lf-desc">Anyone can propose a planting site. Administrators review it, and every decision is tracked against the record so nothing is decided off the books.</p>
                     </div>
-                    <div class="lf-visual">
+                    <div class="lf-visual landing-reveal landing-from-right" style="--reveal-delay: 140ms">
                         <div class="landing-shot">
                             <img src="{{ url_for('static', filename='images/landing/requestsite2.png') }}" width="1597" height="1350" loading="lazy" decoding="async" alt="The site request screen on a laptop, with the new request form open">
                             <span class="landing-glint" aria-hidden="true" style="--shot-src: url('{{ url_for('static', filename='images/landing/requestsite2.png') }}')"></span>
@@ -259,12 +240,11 @@
                 </article>
                 <article class="lf-row lf-reverse">
                     <div class="lf-copy landing-reveal landing-from-right">
-                        <span class="lf-num">04</span>
-                        <p class="lf-kicker">Overview</p>
+                        <div class="lf-label"><span class="lf-num">04</span><p class="lf-kicker">Overview</p></div>
                         <h3>A dashboard built for action</h3>
                         <p class="lf-desc">See sites, contracted area, seedlings planted, and delivery rates for Districts 5 and 6 at a glance, with clear charts that turn field data into next steps.</p>
                     </div>
-                    <div class="lf-visual">
+                    <div class="lf-visual landing-reveal landing-from-left" style="--reveal-delay: 140ms">
                         <div class="landing-shot">
                             <img src="{{ url_for('static', filename='images/landing/dashboard.png') }}" width="2406" height="2384" loading="lazy" decoding="async" alt="The overview dashboard on a laptop, showing reforestation totals and charts of area contracted per year">
                             <span class="landing-glint" aria-hidden="true" style="--shot-src: url('{{ url_for('static', filename='images/landing/dashboard.png') }}')"></span>
