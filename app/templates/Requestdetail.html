@@ -8,366 +8,567 @@
 {% block extra_head %}
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <style>
-  .rq-panel {
-    background:var(--surface-1); border:1px solid var(--line); border-radius:10px;
-    box-shadow:var(--sh-sm);
-    padding:1.15rem 1.25rem; margin-bottom:1.25rem;
+  /* ---- Request review ----
+     The request on the left, read top to bottom; the decision on the
+     right, held in view while the request is read, so the reviewer never
+     has to scroll to the bottom of the page to act on it. */
+  .rd-back {
+    display: inline-flex; align-items: center; gap: 0.35rem;
+    font-size: 0.82rem; font-weight: 600; color: var(--text-2); text-decoration: none;
   }
-  .rq-panel h5 {
-    margin:0 0 .9rem; font-weight:700; color:var(--brand-deep-text); font-size:1rem;
-    padding-bottom:.5rem; border-bottom:1px solid var(--line);
+  .rd-back:hover { color: var(--brand-text); }
+  .rd-back svg { width: 1rem; height: 1rem; }
+
+  .rd-head { margin: 0.75rem 0 1.5rem; }
+  .rd-title-row { display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem; }
+  .rd-title-row h2 { margin: 0; font-size: 1.75rem; font-weight: 800; letter-spacing: -0.02em; color: var(--text-heading); }
+  .rd-meta { margin: 0.35rem 0 0; font-size: 0.88rem; color: var(--text-2); }
+  .rd-meta strong { color: var(--text-heading); font-weight: 600; }
+  .rd-chips { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.9rem; }
+  .rd-chip {
+    display: inline-flex; align-items: center; gap: 0.4rem;
+    padding: 0.35rem 0.75rem; border: 1px solid var(--line); border-radius: 999px;
+    background: var(--surface-1); font-size: 0.8rem; font-weight: 600; color: var(--text-body);
+  }
+  .rd-chip svg { width: 0.95rem; height: 0.95rem; color: var(--brand-text); }
+
+  /* status pill with a dot, used in the header and the related list */
+  .rd-status {
+    display: inline-flex; align-items: center; gap: 0.4rem;
+    padding: 0.25rem 0.7rem; border-radius: 999px;
+    font-size: 0.75rem; font-weight: 700; white-space: nowrap;
+  }
+  .rd-status::before { content: ""; width: 0.45rem; height: 0.45rem; border-radius: 50%; background: currentColor; }
+  .st-submitted    { background: var(--info-bg); color: var(--info-strong); }
+  .st-under-review { background: var(--warn-bg); color: var(--warn-strong); }
+  .st-approved     { background: var(--ok-bg); color: var(--ok-text); }
+  .st-rejected     { background: var(--danger-bg); color: var(--danger-strong); }
+
+  .rd-grid {
+    display: grid; grid-template-columns: minmax(0, 1fr) minmax(19rem, 24rem);
+    gap: 1.25rem; align-items: start;
+  }
+  .rd-main, .rd-side { display: grid; gap: 1.25rem; min-width: 0; }
+  .rd-side { position: sticky; top: 1rem; }
+
+  .rd-card {
+    padding: 1.25rem 1.35rem; border: 1px solid var(--line); border-radius: 14px;
+    background: var(--surface-1); box-shadow: var(--sh-sm);
+  }
+  .rd-card-head { display: flex; align-items: center; gap: 0.65rem; margin-bottom: 1rem; }
+  .rd-card-icon {
+    flex: none; display: grid; place-items: center; width: 2.1rem; height: 2.1rem;
+    border-radius: 10px; background: var(--ok-bg); color: var(--brand-text);
+  }
+  .rd-card-icon svg { width: 1.05rem; height: 1.05rem; }
+  .rd-card-head h3 { margin: 0; font-size: 1rem; font-weight: 700; color: var(--text-heading); }
+  .rd-card-head .rd-count {
+    margin-left: auto; padding: 0.1rem 0.55rem; border-radius: 999px;
+    background: var(--surface-3); font-size: 0.75rem; font-weight: 700; color: var(--text-body);
   }
 
-  .rq-line { display:flex; justify-content:space-between;
-             padding:.4rem 0; border-bottom:1px solid var(--surface-3); font-size:.88rem; }
-  .rq-line:last-child { border-bottom:none; }
-  .rq-line .lbl { color:var(--text-2); }
-  .rq-line .val { font-weight:600; text-align:right; }
+  /* request fields: label over value, two to a row */
+  .rd-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.65rem; margin: 0; }
+  .rd-field { padding: 0.75rem 0.9rem; border: 1px solid var(--line); border-radius: 10px; background: var(--surface-2); }
+  .rd-field dt { margin: 0 0 0.2rem; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-2); }
+  .rd-field dd { margin: 0; font-size: 0.92rem; font-weight: 600; color: var(--text-heading); overflow-wrap: anywhere; }
+  .rd-field dd.is-empty { font-weight: 500; color: var(--text-3); font-style: italic; }
+  .rd-field dd a { color: var(--brand-text); }
+  .rd-sub { display: block; margin-top: 0.15rem; font-size: 0.75rem; font-weight: 400; color: var(--text-2); font-style: normal; }
+  .rd-field.is-wide { grid-column: 1 / -1; }
 
-  .rq-status { display:inline-block; padding:3px 10px; border-radius:12px;
-               font-size:.75rem; font-weight:600; }
-  .st-submitted    { background:var(--info-bg); color:var(--info-strong); }
-  .st-under-review { background:var(--warn-bg); color:var(--warn-strong); }
-  .st-approved     { background:var(--ok-bg); color:#15803d; }
-  .st-rejected     { background:var(--danger-bg); color:var(--danger-strong); }
-
-  .rq-docs { display:grid; grid-template-columns:repeat(auto-fill,minmax(10rem,1fr));
-             gap:.9rem; }
-  .rq-doc { border:1px solid var(--line); border-radius:8px; overflow:hidden;
-            background:var(--surface-2); text-decoration:none; color:inherit; display:block; }
-  .rq-doc:hover { border-color:#16a34a; color:inherit; }
-  .rq-doc img { width:100%; height:130px; object-fit:cover; display:block; }
-  .rq-doc .pdf-tile {
-    height:130px; display:flex; align-items:center; justify-content:center;
-    background:var(--danger-bg); color:var(--danger-strong); font-weight:700; font-size:1.1rem;
+  .rd-desc { margin-top: 1rem; }
+  .rd-desc h4 { margin: 0 0 0.4rem; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-2); }
+  .rd-desc p {
+    margin: 0; padding: 0.85rem 1rem; border-left: 3px solid var(--ok-solid); border-radius: 0 10px 10px 0;
+    background: var(--surface-2); font-size: 0.9rem; line-height: 1.65; color: var(--text-body); white-space: pre-line;
   }
-  .rq-doc .doc-meta { padding:.45rem .6rem; font-size:.72rem; color:var(--text-body);
-                      word-break:break-all; }
 
-  .rq-empty { text-align:center; padding:2rem 1rem; color:var(--text-3);
-              font-size:.85rem; }
+  /* map */
+  .rd-map { height: 340px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface-2); }
+  .rd-map-legend { display: flex; flex-wrap: wrap; gap: 0.4rem 1.25rem; margin-top: 0.7rem; font-size: 0.8rem; color: var(--text-body); }
+  .rd-map-legend a { color: var(--brand-text); font-weight: 600; }
 
-  .rq-sub { display:block; font-size:.75rem; font-weight:400; color:var(--text-2); }
+  /* empty states */
+  .rd-empty { display: grid; justify-items: center; gap: 0.45rem; padding: 1.5rem 1rem; text-align: center; }
+  .rd-empty-icon { display: grid; place-items: center; width: 2.75rem; height: 2.75rem; border-radius: 50%; background: var(--surface-3); color: var(--text-2); }
+  .rd-empty-icon svg { width: 1.25rem; height: 1.25rem; }
+  .rd-empty p { margin: 0; max-width: 28rem; font-size: 0.85rem; color: var(--text-2); }
 
-  .rq-map { height:360px; border:1px solid var(--line); border-radius:8px;
-            background:var(--surface-2); }
-  .rq-map-legend { display:flex; flex-wrap:wrap; gap:.35rem 1.25rem; margin-top:.6rem;
-                   font-size:.8rem; color:var(--text-body); }
-  .rq-map-legend a { color:var(--brand-text); }
+  /* documents */
+  .rd-docs { display: grid; grid-template-columns: repeat(auto-fill, minmax(10rem, 1fr)); gap: 0.85rem; }
+  .rd-doc {
+    display: block; overflow: hidden; border: 1px solid var(--line); border-radius: 10px;
+    background: var(--surface-2); color: inherit; text-decoration: none;
+    transition: border-color 150ms ease, transform 150ms ease;
+  }
+  .rd-doc:hover { border-color: var(--ok-solid); transform: translateY(-2px); color: inherit; }
+  .rd-doc img { display: block; width: 100%; height: 130px; object-fit: cover; }
+  .rd-doc .rd-pdf {
+    display: grid; place-items: center; gap: 0.25rem; height: 130px;
+    background: var(--danger-bg); color: var(--danger-strong); font-size: 0.8rem; font-weight: 700;
+  }
+  .rd-doc .rd-pdf svg { width: 2rem; height: 2rem; }
+  .rd-doc-meta { padding: 0.5rem 0.65rem; font-size: 0.74rem; color: var(--text-body); word-break: break-all; }
+  .rd-doc-meta span { display: block; margin-top: 0.15rem; color: var(--text-2); }
+
+  /* context */
+  .rd-note { margin: 0 0 0.75rem; font-size: 0.86rem; color: var(--text-body); }
+  .rd-list { margin: 0; padding: 0; list-style: none; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+  .rd-list li {
+    display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+    padding: 0.6rem 0.85rem; font-size: 0.85rem; color: var(--text-body);
+  }
+  .rd-list li + li { border-top: 1px solid var(--line); }
+  .rd-list li strong { color: var(--text-heading); font-weight: 600; }
+  .rd-list .rd-dim { color: var(--text-2); white-space: nowrap; }
+  .rd-subhead { margin: 1.1rem 0 0.5rem; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-2); }
+
+  .rd-btn, .rd-btn-ghost {
+    display: inline-flex; align-items: center; justify-content: center; gap: 0.45rem;
+    padding: 0.6rem 1rem; border-radius: 9px; font: inherit; font-size: 0.86rem; font-weight: 600;
+    text-decoration: none; cursor: pointer; transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease;
+  }
+  .rd-btn { border: 1px solid transparent; background: var(--brand-solid); color: #fff; }
+  .rd-btn:hover { background: var(--ok-solid); color: #fff; }
+  .rd-btn:disabled { opacity: 0.55; cursor: not-allowed; }
+  .rd-btn-ghost { border: 1px solid var(--line-strong); background: var(--surface-1); color: var(--brand-text); }
+  .rd-btn-ghost:hover { border-color: var(--ok-solid); background: var(--ok-bg); color: var(--brand-text); }
+  .rd-btn svg, .rd-btn-ghost svg { width: 1rem; height: 1rem; }
+  .rd-actions { display: flex; flex-wrap: wrap; gap: 0.6rem; margin-top: 1rem; }
+
+  /* decision */
+  .rd-current { margin-bottom: 1rem; padding: 0.85rem 0.95rem; border-radius: 10px; background: var(--surface-2); border: 1px solid var(--line); }
+  .rd-current-row { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
+  .rd-current small { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-2); }
+  .rd-current p { margin: 0.5rem 0 0; font-size: 0.8rem; line-height: 1.5; color: var(--text-body); }
+  .rd-current blockquote {
+    margin: 0.5rem 0 0; padding: 0.5rem 0.7rem; border-left: 3px solid var(--line-strong);
+    font-size: 0.82rem; color: var(--text-body); background: var(--surface-1); border-radius: 0 8px 8px 0;
+  }
+
+  .rd-options { display: grid; gap: 0.5rem; margin: 0; padding: 0; border: 0; }
+  .rd-options legend { margin-bottom: 0.45rem; padding: 0; font-size: 0.82rem; font-weight: 700; color: var(--text-strong); }
+  .rd-option { position: relative; display: block; cursor: pointer; }
+  .rd-option input { position: absolute; opacity: 0; pointer-events: none; }
+  .rd-option-box {
+    display: flex; align-items: center; gap: 0.7rem; padding: 0.7rem 0.85rem;
+    border: 1px solid var(--line); border-radius: 10px; background: var(--surface-1);
+    transition: border-color 150ms ease, background-color 150ms ease, box-shadow 150ms ease;
+  }
+  .rd-option:hover .rd-option-box { border-color: var(--line-strong); }
+  .rd-option-icon { flex: none; display: grid; place-items: center; width: 2rem; height: 2rem; border-radius: 50%; }
+  .rd-option-icon svg { width: 1rem; height: 1rem; }
+  .rd-option strong { display: block; font-size: 0.88rem; color: var(--text-heading); }
+  .rd-option span.rd-option-text small { display: block; font-size: 0.74rem; color: var(--text-2); }
+  .rd-option.is-review .rd-option-icon { background: var(--warn-bg); color: var(--warn-strong); }
+  .rd-option.is-approve .rd-option-icon { background: var(--ok-bg); color: var(--ok-text); }
+  .rd-option.is-reject .rd-option-icon { background: var(--danger-bg); color: var(--danger-strong); }
+  .rd-option.is-review input:checked + .rd-option-box { border-color: var(--warn-strong); box-shadow: 0 0 0 3px var(--warn-bg); }
+  .rd-option.is-approve input:checked + .rd-option-box { border-color: var(--ok-solid); box-shadow: 0 0 0 3px var(--ok-bg); }
+  .rd-option.is-reject input:checked + .rd-option-box { border-color: var(--danger-solid); box-shadow: 0 0 0 3px var(--danger-bg); }
+  .rd-option input:focus-visible + .rd-option-box { outline: 2px solid var(--brand-text); outline-offset: 2px; }
+
+  .rd-note-field { margin-top: 1rem; }
+  .rd-note-field label { display: flex; justify-content: space-between; gap: 0.5rem; margin-bottom: 0.35rem; font-size: 0.82rem; font-weight: 700; color: var(--text-strong); }
+  .rd-note-field label span { font-weight: 500; color: var(--text-2); }
+  .rd-note-field label span.is-required { color: var(--danger-strong); font-weight: 700; }
+  .rd-note-field textarea {
+    width: 100%; min-height: 5.5rem; padding: 0.65rem 0.8rem; resize: vertical;
+    border: 1px solid var(--line); border-radius: 9px; background: var(--surface-1);
+    font: inherit; font-size: 0.86rem; color: var(--text-strong); outline: none;
+    transition: border-color 150ms ease, box-shadow 150ms ease;
+  }
+  .rd-note-field textarea:focus { border-color: var(--brand-text); box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.12); }
+  .rd-submit { width: 100%; margin-top: 1rem; padding: 0.75rem 1rem; }
+  .rd-submit.is-reject { background: var(--danger-solid); }
+  .rd-foot { margin: 0.75rem 0 0; font-size: 0.75rem; color: var(--text-2); text-align: center; }
+
+  @media (max-width: 1100px) {
+    .rd-grid { grid-template-columns: 1fr; }
+    .rd-side { position: static; }
+  }
+  @media (max-width: 640px) {
+    .rd-fields { grid-template-columns: 1fr; }
+    .rd-card { padding: 1.05rem; }
+    .rd-title-row h2 { font-size: 1.45rem; }
+  }
 </style>
 {% endblock %}
 
 {% block content %}
+{% set st_class = 'st-' ~ (req.status|lower|replace(' ','-')) %}
 
-<a href="{{ url_for('admin.review_requests') }}" class="text-secondary small">
-  &larr; Back to all requests
+<a href="{{ url_for('admin.review_requests') }}" class="rd-back">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
+  All requests
 </a>
 
-<div class="page-header mt-2 mb-4">
-  <h2 class="fw-bold text-dark">
-    Request #{{ req.request_id }}
-    <span class="rq-status st-{{ req.status|lower|replace(' ','-') }}">
-      {{ req.status }}
-    </span>
-  </h2>
-  <p class="text-secondary mb-0">
-    Submitted by {{ req.requester.username if req.requester else 'unknown' }}
+<header class="rd-head">
+  <div class="rd-title-row">
+    <h2>Request #{{ req.request_id }}</h2>
+    <span class="rd-status {{ st_class }}">{{ req.status }}</span>
+  </div>
+  <p class="rd-meta">
+    Submitted by <strong>{{ req.requester.username if req.requester else 'unknown' }}</strong>
     on {{ req.date_submitted.strftime('%d %b %Y, %I:%M %p') }}
   </p>
-</div>
+  <div class="rd-chips">
+    <span class="rd-chip">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></svg>
+      {{ req.request_type }}
+    </span>
+    {% if req.location %}
+    <span class="rd-chip">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/></svg>
+      {{ req.location.barangay }}, {{ req.location.municipality }}
+    </span>
+    {% endif %}
+    {% if req.proposed_area_ha %}
+    <span class="rd-chip">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><rect width="10" height="8" x="7" y="8" rx="1"/></svg>
+      {{ req.proposed_area_ha }} ha
+    </span>
+    {% endif %}
+  </div>
+</header>
 
-<!-- ===== REQUEST ===== -->
-<div class="rq-panel">
-  <h5>Request</h5>
+<div class="rd-grid">
+  <div class="rd-main">
 
-  <div class="rq-line">
-    <span class="lbl">Type</span>
-    <span class="val">{{ req.request_type }}</span>
-  </div>
-  <div class="rq-line">
-    <span class="lbl">Location</span>
-    <span class="val">
-      {% if req.location %}
-        {{ req.location.barangay }}, {{ req.location.municipality }}
-      {% else %}&mdash;{% endif %}
-    </span>
-  </div>
-  {% if req.adopted_site %}
-  <div class="rq-line">
-    <span class="lbl">Site to adopt</span>
-    <span class="val">
-      {{ req.adopted_site.site_name }}
-      <span class="rq-sub">existing site{% if req.adopted_site.area_size_ha %}, {{ req.adopted_site.area_size_ha }} ha recorded{% endif %}</span>
-    </span>
-  </div>
-  {% endif %}
-  <div class="rq-line">
-    <span class="lbl">Proposed area</span>
-    <span class="val">
-      {% if req.proposed_area_ha %}{{ req.proposed_area_ha }} ha
-        {% if req.boundary_area_ha %}<span class="rq-sub">measured from the drawn area</span>{% endif %}
-      {% else %}not stated{% endif %}
-    </span>
-  </div>
-  <div class="rq-line">
-    <span class="lbl">Land ownership</span>
-    <span class="val">{{ req.land_ownership or 'not stated' }}</span>
-  </div>
-  <div class="rq-line">
-    <span class="lbl">On the land now</span>
-    <span class="val">{{ req.land_cover or 'not stated' }}</span>
-  </div>
-  <div class="rq-line">
-    <span class="lbl">Planting density</span>
-    <span class="val">
-      {% if req.planting_density_per_ha %}{{ "{:,}".format(req.planting_density_per_ha) }} per ha
-      {% else %}not stated{% endif %}
-    </span>
-  </div>
-  <div class="rq-line">
-    <span class="lbl">Estimated seedlings</span>
-    <span class="val">
-      {% if req.estimated_seedlings %}{{ "{:,}".format(req.estimated_seedlings) }}
-        <span class="rq-sub">planning estimate, no allowance for replanting</span>
-      {% else %}not estimated{% endif %}
-    </span>
-  </div>
-  <div class="rq-line">
-    <span class="lbl">Contact</span>
-    <span class="val">
-      {% if req.contact_name %}{{ req.contact_name }}<br>{% endif %}
-      {{ req.contact_number or '—' }}
-      {% if req.contact_email %}<br><a href="mailto:{{ req.contact_email }}">{{ req.contact_email }}</a>{% endif %}
-    </span>
-  </div>
-  {% if req.requester and req.requester.organization %}
-  <div class="rq-line">
-    <span class="lbl">Organisation</span>
-    <span class="val">
-      {{ req.requester.organization.organization_name }}
-    </span>
-  </div>
-  {% endif %}
+    <!-- ===== REQUEST ===== -->
+    <section class="rd-card" aria-labelledby="rd-request-title">
+      <div class="rd-card-head">
+        <span class="rd-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M12 11h4"/><path d="M12 16h4"/><path d="M8 11h.01"/><path d="M8 16h.01"/></svg></span>
+        <h3 id="rd-request-title">Request details</h3>
+      </div>
 
-  {% if req.description %}
-  <div class="mt-3">
-    <div class="lbl text-secondary small text-uppercase">Description</div>
-    <p class="mb-0" style="white-space: pre-line;">{{ req.description }}</p>
-  </div>
-  {% endif %}
-</div>
+      <dl class="rd-fields">
+        <div class="rd-field">
+          <dt>Type</dt>
+          <dd>{{ req.request_type }}</dd>
+        </div>
+        <div class="rd-field">
+          <dt>Location</dt>
+          {% if req.location %}
+          <dd>{{ req.location.barangay }}, {{ req.location.municipality }}</dd>
+          {% else %}<dd class="is-empty">&mdash;</dd>{% endif %}
+        </div>
+        {% if req.adopted_site %}
+        <div class="rd-field is-wide">
+          <dt>Site to adopt</dt>
+          <dd>
+            {{ req.adopted_site.site_name }}
+            <span class="rd-sub">existing site{% if req.adopted_site.area_size_ha %}, {{ req.adopted_site.area_size_ha }} ha recorded{% endif %}</span>
+          </dd>
+        </div>
+        {% endif %}
+        <div class="rd-field">
+          <dt>Proposed area</dt>
+          {% if req.proposed_area_ha %}
+          <dd>{{ req.proposed_area_ha }} ha
+            {% if req.boundary_area_ha %}<span class="rd-sub">measured from the drawn area</span>{% endif %}
+          </dd>
+          {% else %}<dd class="is-empty">not stated</dd>{% endif %}
+        </div>
+        <div class="rd-field">
+          <dt>Land ownership</dt>
+          <dd{% if not req.land_ownership %} class="is-empty"{% endif %}>{{ req.land_ownership or 'not stated' }}</dd>
+        </div>
+        <div class="rd-field">
+          <dt>On the land now</dt>
+          <dd{% if not req.land_cover %} class="is-empty"{% endif %}>{{ req.land_cover or 'not stated' }}</dd>
+        </div>
+        <div class="rd-field">
+          <dt>Planting density</dt>
+          {% if req.planting_density_per_ha %}
+          <dd>{{ "{:,}".format(req.planting_density_per_ha) }} per ha</dd>
+          {% else %}<dd class="is-empty">not stated</dd>{% endif %}
+        </div>
+        <div class="rd-field">
+          <dt>Estimated seedlings</dt>
+          {% if req.estimated_seedlings %}
+          <dd>{{ "{:,}".format(req.estimated_seedlings) }}
+            <span class="rd-sub">planning estimate, no allowance for replanting</span>
+          </dd>
+          {% else %}<dd class="is-empty">not estimated</dd>{% endif %}
+        </div>
+        <div class="rd-field">
+          <dt>Contact</dt>
+          <dd>
+            {% if req.contact_name %}{{ req.contact_name }}<br>{% endif %}
+            {{ req.contact_number or '—' }}
+            {% if req.contact_email %}<br><a href="mailto:{{ req.contact_email }}">{{ req.contact_email }}</a>{% endif %}
+          </dd>
+        </div>
+        {% if req.requester and req.requester.organization %}
+        <div class="rd-field">
+          <dt>Organisation</dt>
+          <dd>{{ req.requester.organization.organization_name }}</dd>
+        </div>
+        {% endif %}
+      </dl>
 
-<!-- ===== SITE ON THE MAP ===== -->
-<div class="rq-panel">
-  <h5>Site on the map</h5>
-
-  {% if req.latitude is not none or site_boundary %}
-    <div id="rq-map" class="rq-map" role="img"
-         aria-label="Map of the requested site"></div>
-    <div class="rq-map-legend">
-      {% if req.latitude is not none %}
-        <span>Pin: {{ "%.6f"|format(req.latitude) }}, {{ "%.6f"|format(req.longitude) }}</span>
-        <a href="https://www.google.com/maps?q={{ req.latitude }},{{ req.longitude }}"
-           target="_blank" rel="noopener noreferrer">Open in Google Maps</a>
+      {% if req.description %}
+      <div class="rd-desc">
+        <h4>Description</h4>
+        <p>{{ req.description }}</p>
+      </div>
       {% endif %}
-      {% if req.boundary_area_ha %}
-        <span>Drawn area (green): {{ "%.2f"|format(req.boundary_area_ha) }} ha</span>
-      {% endif %}
-      {% if barangay_geometry %}
-        <span>Dashed line: {{ req.location.barangay }} outline (approximate)</span>
-      {% endif %}
-    </div>
-  {% else %}
-    <div class="rq-empty">
-      The requester did not mark the site on the map.
-    </div>
-  {% endif %}
-</div>
+    </section>
 
-<!-- ===== DOCUMENTS ===== -->
-<div class="rq-panel">
-  <h5>Indicative Management Plan/Supporting Documents ({{ req.attachments | length }})</h5>
+    <!-- ===== SITE ON THE MAP ===== -->
+    <section class="rd-card" aria-labelledby="rd-map-title">
+      <div class="rd-card-head">
+        <span class="rd-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.106 5.553a2 2 0 0 0 1.788 0l3.659-1.83A1 1 0 0 1 21 4.619v12.764a1 1 0 0 1-.553.894l-4.553 2.277a2 2 0 0 1-1.788 0l-4.212-2.106a2 2 0 0 0-1.788 0l-3.659 1.83A1 1 0 0 1 3 19.381V6.618a1 1 0 0 1 .553-.894l4.553-2.277a2 2 0 0 1 1.788 0z"/><path d="M15 5.764v15"/><path d="M9 3.236v15"/></svg></span>
+        <h3 id="rd-map-title">Site on the map</h3>
+      </div>
 
-  {% if req.attachments %}
-    <div class="rq-docs">
-      {% for a in req.attachments %}
-        <a class="rq-doc" target="_blank"
-           href="{{ url_for('static', filename=a.file_url) }}">
-          {% if a.mime_type == 'application/pdf' %}
-            <div class="pdf-tile">PDF</div>
-          {% else %}
-            <img src="{{ url_for('static', filename=a.file_url) }}"
-                 alt="{{ a.original_name }}">
+      {% if req.latitude is not none or site_boundary %}
+        <div id="rq-map" class="rd-map" role="img" aria-label="Map of the requested site"></div>
+        <div class="rd-map-legend">
+          {% if req.latitude is not none %}
+            <span>Pin: {{ "%.6f"|format(req.latitude) }}, {{ "%.6f"|format(req.longitude) }}</span>
+            <a href="https://www.google.com/maps?q={{ req.latitude }},{{ req.longitude }}"
+               target="_blank" rel="noopener noreferrer">Open in Google Maps</a>
           {% endif %}
-          <div class="doc-meta">
-            {{ a.original_name or 'document' }}<br>
-            <span class="text-secondary">
-              {{ a.uploaded_at|datetime_ph }}
-            </span>
-          </div>
-        </a>
-      {% endfor %}
-    </div>
-  {% else %}
-    <div class="rq-empty">
-      No documents attached. The requester did not upload a letter or
-      endorsement.
-    </div>
-  {% endif %}
-</div>
-
-<!-- ===== CONTEXT ===== -->
-<div class="rq-panel">
-  <h5>Context for this barangay</h5>
-
-  {% if existing_sites %}
-    <p class="text-secondary small">
-      {{ existing_sites | length }} reforestation site(s) already recorded
-      here:
-    </p>
-    {% for s in existing_sites %}
-      <div class="rq-line">
-        <span class="lbl">{{ s.site_name }}</span>
-        <span class="val">{{ s.area_size_ha }} ha, {{ s.year_contracted or '—' }}</span>
-      </div>
-    {% endfor %}
-  {% else %}
-    <p class="text-secondary small mb-0">
-      No reforestation site is recorded in this barangay. This would be
-      the first.
-    </p>
-  {% endif %}
-
-  {% if req.location %}
-    <a href="{{ url_for('dashboard.recommendations',
-                        municipality=req.location.municipality,
-                        barangay=req.location.barangay) }}"
-       class="btn btn-outline-success btn-sm mt-3">
-      See recommended species for {{ req.location.barangay }}
-    </a>
-  {% endif %}
-
-  {% if related %}
-    <p class="info-title text-secondary small fw-semibold mt-3 mb-1">
-      OTHER REQUESTS FROM THIS BARANGAY
-    </p>
-    {% for r in related %}
-      <div class="rq-line">
-        <span class="lbl">
-          #{{ r.request_id }} &middot; {{ r.request_type }}
-          &middot; {{ r.date_submitted|datetime_ph }}
-        </span>
-        <span class="val">
-          <span class="rq-status st-{{ r.status|lower|replace(' ','-') }}">
-            {{ r.status }}
-          </span>
-        </span>
-      </div>
-    {% endfor %}
-  {% endif %}
-</div>
-
-<!-- ===== REFORESTATION SITE ===== -->
-{% if req.request_type in site_request_types %}
-<div class="rq-panel">
-  <h5>Reforestation site</h5>
-
-  {% if created_site %}
-    <div class="rq-line">
-      <span class="lbl">Site</span>
-      <span class="val">
-        {{ created_site.site_name }}
-        {% if created_site.site_code %}<span class="rq-sub">{{ created_site.site_code }}</span>{% endif %}
-      </span>
-    </div>
-    <div class="rq-line">
-      <span class="lbl">Established</span>
-      <span class="val">{{ created_site.date_established.strftime('%d %b %Y') }}</span>
-    </div>
-    <div class="rq-line">
-      <span class="lbl">Boundary</span>
-      <span class="val">
-        {% if created_site.boundary_published %}Published GPS boundary
-        {% elif created_site.boundary_geojson %}GPS boundary captured, not yet published
-        {% else %}No GPS boundary yet{% endif %}
-      </span>
-    </div>
-    <p class="text-secondary small mt-3 mb-0">
-      {% if created_site.boundary_published %}
-        The published GPS boundary has replaced the requester's drawn area.
+          {% if req.boundary_area_ha %}
+            <span>Drawn area (green): {{ "%.2f"|format(req.boundary_area_ha) }} ha</span>
+          {% endif %}
+          {% if barangay_geometry %}
+            <span>Dashed line: {{ req.location.barangay }} outline (approximate)</span>
+          {% endif %}
+        </div>
       {% else %}
-        Until the province publishes a GPS boundary, the requester's drawn
-        area shows on the site as a proposed area. It never appears on the
-        GIS map.
+        <div class="rd-empty">
+          <span class="rd-empty-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12.75 7.09a3 3 0 0 1 2.16 2.16"/><path d="M17.072 17.072c-1.634 2.17-3.527 3.912-4.471 4.727a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 1.432-4.568"/><path d="m2 2 20 20"/><path d="M8.475 2.818A8 8 0 0 1 20 10c0 1.183-.31 2.377-.81 3.533"/><path d="M9.13 9.13a3 3 0 0 0 3.74 3.74"/></svg></span>
+          <p>The requester did not mark the site on the map.</p>
+        </div>
       {% endif %}
-    </p>
-    <a href="{{ url_for('dashboard.Reforestation_sites') }}"
-       class="btn btn-outline-success btn-sm mt-3">Open Reforestation Sites</a>
+    </section>
 
-  {% elif req.status == 'Approved' %}
-    <p class="text-secondary small">
-      This request is approved. Create the reforestation site so field
-      officers can start monitoring it.
-    </p>
-    <a href="{{ url_for('admin.create_site_from_request', request_id=req.request_id) }}"
-       class="btn btn-success btn-sm">Create site from this request</a>
+    <!-- ===== DOCUMENTS ===== -->
+    <section class="rd-card" aria-labelledby="rd-docs-title">
+      <div class="rd-card-head">
+        <span class="rd-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg></span>
+        <h3 id="rd-docs-title">Indicative Management Plan/Supporting Documents</h3>
+        <span class="rd-count">{{ req.attachments | length }}</span>
+      </div>
 
-  {% else %}
-    <p class="text-secondary small mb-0">
-      Approve the request first. A site can then be created from it.
-    </p>
-  {% endif %}
+      {% if req.attachments %}
+        <div class="rd-docs">
+          {% for a in req.attachments %}
+            <a class="rd-doc" target="_blank" rel="noopener"
+               href="{{ url_for('static', filename=a.file_url) }}">
+              {% if a.mime_type == 'application/pdf' %}
+                <div class="rd-pdf">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/></svg>
+                  PDF
+                </div>
+              {% else %}
+                <img src="{{ url_for('static', filename=a.file_url) }}"
+                     alt="{{ a.original_name }}" loading="lazy">
+              {% endif %}
+              <div class="rd-doc-meta">
+                {{ a.original_name or 'document' }}
+                <span>{{ a.uploaded_at|datetime_ph }}</span>
+              </div>
+            </a>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="rd-empty">
+          <span class="rd-empty-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="m9.5 12.5 5 5"/><path d="m14.5 12.5-5 5"/></svg></span>
+          <p>No documents attached. The requester did not upload a letter or endorsement.</p>
+        </div>
+      {% endif %}
+    </section>
+
+    <!-- ===== CONTEXT ===== -->
+    <section class="rd-card" aria-labelledby="rd-context-title">
+      <div class="rd-card-head">
+        <span class="rd-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 10v.2A3 3 0 0 1 8.9 16H5a3 3 0 0 1-1-5.8V10a3 3 0 0 1 6 0Z"/><path d="M7 16v6"/><path d="M13 19v3"/><path d="M12 19h8.3a1 1 0 0 0 .7-1.7L18 14h.3a1 1 0 0 0 .7-1.7L16 9h.2a1 1 0 0 0 .8-1.7L13 3l-1.4 1.5"/></svg></span>
+        <h3 id="rd-context-title">Context for this barangay</h3>
+      </div>
+
+      {% if existing_sites %}
+        <p class="rd-note">{{ existing_sites | length }} reforestation site(s) already recorded here:</p>
+        <ul class="rd-list">
+          {% for s in existing_sites %}
+          <li><strong>{{ s.site_name }}</strong><span class="rd-dim">{{ s.area_size_ha }} ha, {{ s.year_contracted or '—' }}</span></li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p class="rd-note">No reforestation site is recorded in this barangay. This would be the first.</p>
+      {% endif %}
+
+      {% if related %}
+        <p class="rd-subhead">Other requests from this barangay</p>
+        <ul class="rd-list">
+          {% for r in related %}
+          <li>
+            <span>#{{ r.request_id }} &middot; {{ r.request_type }} &middot; <span class="rd-dim">{{ r.date_submitted|datetime_ph }}</span></span>
+            <span class="rd-status st-{{ r.status|lower|replace(' ','-') }}">{{ r.status }}</span>
+          </li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+
+      {% if req.location %}
+      <div class="rd-actions">
+        <a href="{{ url_for('dashboard.recommendations',
+                            municipality=req.location.municipality,
+                            barangay=req.location.barangay) }}"
+           class="rd-btn-ghost">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/></svg>
+          See recommended species for {{ req.location.barangay }}
+        </a>
+      </div>
+      {% endif %}
+    </section>
+  </div>
+
+  <aside class="rd-side">
+    <!-- ===== DECISION ===== -->
+    <section class="rd-card" aria-labelledby="rd-decision-title">
+      <div class="rd-card-head">
+        <span class="rd-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m16 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="m2 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="M7 21h10"/><path d="M12 3v18"/><path d="M3 7h2c2 0 5-1 7-2 2 1 5 2 7 2h2"/></svg></span>
+        <h3 id="rd-decision-title">Decision</h3>
+      </div>
+
+      {% if req.status not in ['Submitted'] %}
+      <div class="rd-current">
+        <div class="rd-current-row">
+          <small>Current status</small>
+          <span class="rd-status {{ st_class }}">{{ req.status }}</span>
+        </div>
+        <p>
+          {% if req.reviewer %}Set by <strong>{{ req.reviewer.username }}</strong>{% endif %}
+          {% if req.date_reviewed %} on {{ req.date_reviewed|datetime_ph }}{% endif %}.
+          Setting a new status will replace this.
+        </p>
+        {% if req.review_note %}<blockquote>{{ req.review_note }}</blockquote>{% endif %}
+      </div>
+      {% endif %}
+
+      <form method="POST" id="rd-form"
+            action="{{ url_for('admin.review_request', request_id=req.request_id) }}">
+        <fieldset class="rd-options">
+          <legend>Set a new status</legend>
+          <label class="rd-option is-review">
+            <input type="radio" name="status" value="Under Review" required>
+            <span class="rd-option-box">
+              <span class="rd-option-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></span>
+              <span class="rd-option-text"><strong>Under Review</strong><small>Still being checked</small></span>
+            </span>
+          </label>
+          <label class="rd-option is-approve">
+            <input type="radio" name="status" value="Approved">
+            <span class="rd-option-box">
+              <span class="rd-option-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></span>
+              <span class="rd-option-text"><strong>Approve</strong><small>A site can then be created</small></span>
+            </span>
+          </label>
+          <label class="rd-option is-reject">
+            <input type="radio" name="status" value="Rejected">
+            <span class="rd-option-box">
+              <span class="rd-option-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></span>
+              <span class="rd-option-text"><strong>Reject</strong><small>A reason is required</small></span>
+            </span>
+          </label>
+        </fieldset>
+
+        <div class="rd-note-field">
+          <label for="rd-note">Note <span id="rd-note-hint">required to reject</span></label>
+          <textarea id="rd-note" name="review_note"
+                    placeholder="Reason, or a note for the requester">{{ req.review_note or '' }}</textarea>
+        </div>
+
+        <button type="submit" class="rd-btn rd-submit" id="rd-submit" disabled>Choose a status</button>
+      </form>
+
+      <p class="rd-foot">The requester is notified whenever the status changes.</p>
+    </section>
+
+    <!-- ===== REFORESTATION SITE ===== -->
+    {% if req.request_type in site_request_types %}
+    <section class="rd-card" aria-labelledby="rd-site-title">
+      <div class="rd-card-head">
+        <span class="rd-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m17 14 3 3.3a1 1 0 0 1-.7 1.7H4.7a1 1 0 0 1-.7-1.7L7 14h-.3a1 1 0 0 1-.7-1.7L9 9h-.2A1 1 0 0 1 8 7.3L12 3l4 4.3a1 1 0 0 1-.8 1.7H15l3 3.3a1 1 0 0 1-.7 1.7H17Z"/><path d="M12 22v-3"/></svg></span>
+        <h3 id="rd-site-title">Reforestation site</h3>
+      </div>
+
+      {% if created_site %}
+        <ul class="rd-list">
+          <li><span class="rd-dim">Site</span>
+              <strong style="text-align:right;">{{ created_site.site_name }}{% if created_site.site_code %}<span class="rd-sub">{{ created_site.site_code }}</span>{% endif %}</strong></li>
+          <li><span class="rd-dim">Established</span><strong>{{ created_site.date_established.strftime('%d %b %Y') }}</strong></li>
+          <li><span class="rd-dim">Boundary</span>
+              <strong style="text-align:right;">
+                {% if created_site.boundary_published %}Published GPS boundary
+                {% elif created_site.boundary_geojson %}GPS boundary captured, not yet published
+                {% else %}No GPS boundary yet{% endif %}
+              </strong></li>
+        </ul>
+        <p class="rd-note" style="margin:0.75rem 0 0; font-size:0.8rem;">
+          {% if created_site.boundary_published %}
+            The published GPS boundary has replaced the requester's drawn area.
+          {% else %}
+            Until the province publishes a GPS boundary, the requester's drawn
+            area shows on the site as a proposed area. It never appears on the
+            GIS map.
+          {% endif %}
+        </p>
+        <div class="rd-actions">
+          <a href="{{ url_for('dashboard.Reforestation_sites') }}" class="rd-btn-ghost">Open Reforestation Sites</a>
+        </div>
+
+      {% elif req.status == 'Approved' %}
+        <p class="rd-note">This request is approved. Create the reforestation site so field officers can start monitoring it.</p>
+        <a href="{{ url_for('admin.create_site_from_request', request_id=req.request_id) }}"
+           class="rd-btn" style="width:100%;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+          Create site from this request
+        </a>
+
+      {% else %}
+        <div class="rd-empty" style="padding:0.75rem 0.5rem;">
+          <span class="rd-empty-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span>
+          <p>Approve the request first. A site can then be created from it.</p>
+        </div>
+      {% endif %}
+    </section>
+    {% endif %}
+  </aside>
 </div>
-{% endif %}
 
-<!-- ===== DECISION ===== -->
-<div class="rq-panel">
-  <h5>Decision</h5>
-
-  {% if req.status not in ['Submitted'] %}
-    <div class="alert alert-info">
-      Currently {{ req.status|lower }}
-      {% if req.reviewer %}, set by {{ req.reviewer.username }}{% endif %}
-      {% if req.date_reviewed %}
-        on {{ req.date_reviewed|datetime_ph }}
-      {% endif %}.
-      {% if req.review_note %}<br>Note: {{ req.review_note }}{% endif %}
-      <br><br>
-      Setting a new status will replace this.
-    </div>
-  {% endif %}
-
-  <form method="POST"
-        action="{{ url_for('admin.review_request', request_id=req.request_id) }}"
-        class="row g-3 align-items-end">
-    <div class="col-md-3">
-      <label class="form-label fw-semibold">Status</label>
-      <select name="status" class="form-select" required>
-        <option value="">Choose</option>
-        <option value="Under Review">Under Review</option>
-        <option value="Approved">Approve</option>
-        <option value="Rejected">Reject</option>
-      </select>
-    </div>
-
-    <div class="col-md-6">
-      <label class="form-label fw-semibold">
-        Note <span class="text-secondary small">(required to reject)</span>
-      </label>
-      <input type="text" name="review_note" class="form-control"
-             value="{{ req.review_note or '' }}"
-             placeholder="Reason, or a note for the requester">
-    </div>
-
-    <div class="col-md-3">
-      <button type="submit" class="btn btn-success w-100">Save decision</button>
-    </div>
-  </form>
-
-  <p class="text-secondary small mt-3 mb-0">
-    The requester is notified whenever the status changes.
-  </p>
-</div>
+<script>
+  /* The submit button names the action, and a rejection asks for its
+     reason before the form goes; the server checks the same rule. */
+  (function () {
+    const form = document.getElementById("rd-form");
+    if (!form) return;
+    const btn = document.getElementById("rd-submit");
+    const note = document.getElementById("rd-note");
+    const hint = document.getElementById("rd-note-hint");
+    const LABELS = {
+      "Under Review": "Mark as under review",
+      "Approved": "Approve request",
+      "Rejected": "Reject request",
+    };
+    form.addEventListener("change", function () {
+      const picked = form.querySelector('input[name="status"]:checked');
+      if (!picked) return;
+      const reject = picked.value === "Rejected";
+      btn.disabled = false;
+      btn.textContent = LABELS[picked.value];
+      btn.classList.toggle("is-reject", reject);
+      note.required = reject;
+      hint.textContent = reject ? "required" : "optional";
+      hint.classList.toggle("is-required", reject);
+    });
+  })();
+</script>
 
 {% if req.latitude is not none or site_boundary %}
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>

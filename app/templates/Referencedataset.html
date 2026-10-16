@@ -90,6 +90,189 @@
 
   .row-bad { background: var(--danger-bg); }
 
+  /* hidden parts stay hidden whatever display their class sets */
+  .up-drop[hidden],
+  .up-file[hidden],
+  .up-actions[hidden] { display: none; }
+
+  /* ---- last-import banner ---- */
+  .ds-banner {
+    display: flex; align-items: center; gap: 1rem;
+    margin: 0 0 1.4rem; padding: 1rem 1.25rem;
+    border: 1px solid var(--ok-line); border-radius: 14px;
+    background: var(--ok-bg);
+  }
+  .ds-banner[hidden] { display: none; }
+  .ds-banner-icon {
+    flex: none; display: grid; place-items: center;
+    width: 2.4rem; height: 2.4rem; border-radius: 50%;
+    background: rgba(22, 163, 74, 0.16); color: var(--ok-text);
+  }
+  .ds-banner-icon svg { width: 1.1rem; height: 1.1rem; }
+  .ds-banner-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 0.15rem; }
+  .ds-banner-text strong { color: var(--text-heading); font-size: 0.95rem; }
+  .ds-banner-text span { color: var(--text-body); font-size: 0.85rem; }
+  .ds-banner-time { font-size: 0.78rem; color: var(--text-2); white-space: nowrap; }
+
+  /* ---- steps ---- */
+  .ds-steps {
+    display: flex; align-items: center; gap: 1rem;
+    max-width: 56rem; margin: 0 auto 1.4rem; padding: 0; list-style: none;
+  }
+  .ds-steps li { display: flex; align-items: center; gap: 0.75rem; flex: 1; color: var(--text-3); }
+  /* the last step has no connector line, so it takes only its own width
+     and the row sits centred instead of leaving a gap on the right */
+  .ds-steps li:last-child { flex: none; }
+  .ds-steps li:not(:last-child)::after {
+    content: ""; flex: 1; height: 1px; margin-left: 0.5rem; background: var(--line);
+  }
+  .ds-steps li > span:last-child { display: flex; flex-direction: column; white-space: nowrap; }
+  .ds-steps strong { font-size: 0.85rem; }
+  .ds-steps small { font-size: 0.72rem; }
+  .ds-step-num {
+    flex: none; display: grid; place-items: center;
+    width: 2.1rem; height: 2.1rem; border-radius: 50%;
+    border: 1px solid var(--line); font-size: 0.8rem; font-weight: 600;
+  }
+  .ds-steps li.is-current { color: var(--text-heading); }
+  .ds-steps li.is-current .ds-step-num { border-color: var(--ok-solid); color: var(--ok-text); box-shadow: 0 0 0 4px var(--ok-bg); }
+  .ds-steps li.is-done { color: var(--text-body); }
+  .ds-steps li.is-done .ds-step-num { background: var(--ok-solid); border-color: var(--ok-solid); color: #fff; }
+  .ds-steps li.is-current small, .ds-steps li.is-done small { color: var(--text-2); }
+
+  /* ---- upload card + side panel ---- */
+  .ds-grid {
+    display: grid; grid-template-columns: minmax(0, 1.9fr) minmax(0, 1fr);
+    gap: 1.25rem; align-items: stretch;
+  }
+  #dsForm.upload-form { display: block; margin: 0; }
+  .ds-card.up-card {
+    max-width: none; height: 100%; padding: 1.5rem;
+    border-radius: 18px; display: flex; flex-direction: column;
+  }
+  .ds-card-head { display: flex; align-items: flex-start; gap: 0.9rem; margin-bottom: 1.25rem; }
+  .ds-card-head h3 { margin: 0; font-size: 1.25rem; color: var(--text-heading); }
+  .ds-card-head p { margin: 0.2rem 0 0; font-size: 0.8rem; color: var(--text-2); }
+  .ds-card-head > div { flex: 1; }
+  .ds-card-icon, .ds-checks li > span {
+    flex: none; display: grid; place-items: center;
+    width: 2.6rem; height: 2.6rem; border-radius: 10px;
+    background: var(--ok-bg); border: 1px solid var(--ok-line); color: var(--ok-text);
+  }
+  .ds-card-icon svg { width: 1.15rem; height: 1.15rem; }
+  .ds-status {
+    padding: 0.3rem 0.65rem; border-radius: 999px;
+    background: var(--surface-2); border: 1px solid var(--line);
+  }
+  .ds-card .up-body { padding: 0; border: 0; background: none; flex: 1; display: flex; flex-direction: column; }
+  .ds-card .up-drop { flex: 1; min-height: 15rem; justify-content: center; border-radius: 14px; }
+  .ds-card .up-drop-icon { width: 3.4rem; height: 3.4rem; border-radius: 14px; background: var(--ok-bg); border: 1px solid var(--ok-line); color: var(--ok-text); }
+  .ds-card .up-drop-text { font-size: 1.05rem; margin-top: 0.4rem; }
+  .ds-card .up-drop-sub { color: var(--text-2); font-size: 0.9rem; }
+  .ds-card .up-browse { font-weight: 600; }
+  .ds-card .up-drop-hint { margin-top: 0.6rem; font-family: inherit; font-size: 0.78rem; }
+  .ds-card .up-file { flex: 1; padding: 1.25rem; border: 1px solid var(--line); border-radius: 14px; background: var(--surface-2); }
+
+  .ds-ticks {
+    display: flex; flex-wrap: wrap; gap: 0.5rem 1.5rem;
+    margin: 1rem 0 0; padding: 0 0 1.1rem; list-style: none;
+    border-bottom: 1px solid var(--line);
+    font-size: 0.8rem; color: var(--text-2);
+  }
+  .ds-ticks li { display: inline-flex; align-items: center; gap: 0.4rem; }
+  .ds-ticks svg { width: 0.85rem; height: 0.85rem; color: var(--ok-text); }
+
+  .ds-card-foot { display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 1.1rem; }
+  .ds-btn {
+    display: inline-flex; align-items: center; gap: 0.5rem;
+    min-height: 2.9rem; padding: 0 1.25rem; border-radius: 10px;
+    font: inherit; font-size: 0.875rem; font-weight: 600; cursor: pointer;
+    transition: background-color 150ms ease, border-color 150ms ease, opacity 150ms ease;
+  }
+  .ds-btn svg { width: 1rem; height: 1rem; }
+  .ds-btn-ghost { background: var(--surface-1); border: 1px solid var(--line); color: var(--text-heading); }
+  .ds-btn-ghost:hover:not(:disabled) { background: var(--surface-3); }
+  .ds-btn-primary { background: var(--brand-solid); border: 1px solid var(--brand-solid); color: #fff; }
+  .ds-btn-primary:hover:not(:disabled) { background: var(--ok-solid); }
+  .ds-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+  .ds-aside {
+    padding: 1.6rem; border: 1px solid var(--line); border-radius: 18px;
+    background: var(--surface-1);
+  }
+  .ds-kicker {
+    margin: 0; font-size: 0.7rem; font-weight: 700;
+    letter-spacing: 0.14em; text-transform: uppercase; color: var(--ok-text);
+  }
+  .ds-aside h3 { margin: 0.7rem 0 0.5rem; font-size: 1.35rem; color: var(--text-heading); }
+  .ds-aside-lead { margin: 0 0 1.25rem; font-size: 0.85rem; color: var(--text-2); }
+  .ds-checks { margin: 0 0 1.25rem; padding: 0; list-style: none; display: grid; gap: 1.1rem; }
+  .ds-checks li { display: flex; gap: 0.85rem; }
+  .ds-checks li > span { width: 2rem; height: 2rem; border-radius: 8px; }
+  .ds-checks li > span svg { width: 0.9rem; height: 0.9rem; }
+  .ds-checks strong, .ds-note strong { display: block; font-size: 0.85rem; color: var(--text-heading); }
+  .ds-checks small, .ds-note small { display: block; margin-top: 0.15rem; font-size: 0.78rem; color: var(--text-2); }
+  .ds-note {
+    display: flex; gap: 0.75rem; padding: 0.9rem 1rem;
+    border: 1px solid var(--warn-line); border-radius: 12px; background: var(--warn-bg);
+  }
+  .ds-note svg { flex: none; width: 1.1rem; height: 1.1rem; color: var(--warn-text); }
+  .ds-note strong { color: var(--warn-text); }
+  .ds-details { margin-top: 1rem; font-size: 0.82rem; color: var(--text-body); }
+  .ds-details summary { cursor: pointer; font-weight: 600; color: var(--text-heading); }
+  .ds-details ul { margin: 0.6rem 0 0; padding-left: 1.1rem; display: grid; gap: 0.3rem; }
+  .ds-details p { margin: 0.6rem 0 0; color: var(--text-2); }
+
+  /* ---- recent imports ---- */
+  .ds-recent {
+    margin-top: 1.25rem; padding: 1.6rem;
+    border: 1px solid var(--line); border-radius: 18px; background: var(--surface-1);
+  }
+  .ds-recent-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 1rem; margin-bottom: 1rem; }
+  .ds-recent-head h3 { margin: 0.6rem 0 0; font-size: 1.35rem; color: var(--text-heading); }
+  .ds-link { display: inline-flex; align-items: center; gap: 0.4rem; font-size: 0.85rem; font-weight: 600; color: var(--ok-text); text-decoration: none; }
+  .ds-link svg { width: 1rem; height: 1rem; }
+  .ds-link:hover { text-decoration: underline; }
+  .ds-table-wrap { overflow-x: auto; }
+  .ds-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+  .ds-table th {
+    padding: 0.7rem 1rem; text-align: left; font-size: 0.7rem; font-weight: 600;
+    letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-2);
+    border-bottom: 1px solid var(--line);
+  }
+  .ds-table td { padding: 0.95rem 1rem; border-bottom: 1px solid var(--line); color: var(--text-body); }
+  .ds-table tr:last-child td { border-bottom: 0; }
+  .ds-file { display: inline-flex; align-items: center; gap: 0.6rem; font-weight: 600; color: var(--text-heading); }
+  .ds-file svg { width: 1rem; height: 1rem; color: var(--text-2); }
+  .ds-pill {
+    display: inline-flex; align-items: center; gap: 0.4rem;
+    padding: 0.3rem 0.7rem; border-radius: 999px;
+    background: var(--ok-bg); border: 1px solid var(--ok-line);
+    font-size: 0.75rem; font-weight: 600; color: var(--ok-text);
+  }
+  .ds-pill i { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+  .ds-pill.is-warn { background: var(--warn-bg); border-color: var(--warn-line); color: var(--warn-text); }
+  .ds-empty { text-align: center; color: var(--text-2); padding: 1.5rem; }
+
+  @media (max-width: 980px) {
+    .ds-grid { grid-template-columns: minmax(0, 1fr); }
+    .ds-steps small { display: none; }
+  }
+  @media (max-width: 640px) {
+    .ds-steps { gap: 0.5rem; }
+    .ds-steps li > span:last-child { display: none; }
+    .ds-steps li.is-current > span:last-child { display: flex; }
+    .ds-card.up-card, .ds-aside, .ds-recent { padding: 1.1rem; }
+    .ds-card-foot { flex-direction: column-reverse; }
+    .ds-btn { justify-content: center; }
+    .ds-banner { flex-wrap: wrap; }
+    .ds-banner-time { order: 3; flex-basis: 100%; padding-left: 3.4rem; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .up-status i, .up-bar span { animation: none !important; transition: none; }
+  }
+
   .preview-actions {
     display: flex;
     gap: 0.6rem;
@@ -101,35 +284,280 @@
 {% endblock %}
 {% block extra_scripts %}
 <script>
+  /* ---------------- upload card ----------------
+     Validates the file before anything is sent (type and size), then
+     sends it with XMLHttpRequest so the bar can follow real upload
+     progress. Preview gets JSON back; the import gets the page the server
+     redirects to, which is written in place so its messages still show. */
+  const MAX_MB = 10;                 // DENR contract-profile workbooks are well under this
+  const MAX_BYTES = MAX_MB * 1024 * 1024;
+  const SEGMENTS = 24;
+  const up = {
+    card: document.getElementById("upCard"),
+    input: document.getElementById("upInput"),
+    drop: document.getElementById("upDrop"),
+    file: document.getElementById("upFile"),
+    error: document.getElementById("upError"),
+    bar: document.getElementById("upBar"),
+    status: document.querySelector("#upStatus span"),
+    xhr: null,
+  };
+  document.getElementById("upMaxLabel").textContent = MAX_MB + " MB";
+  up.bar.innerHTML = "<span></span>".repeat(SEGMENTS);
+
+  function fmtBytes(n) {
+    if (n < 1024) return n + " B";
+    if (n < 1024 * 1024) return (n / 1024).toFixed(1) + " KB";
+    return (n / 1024 / 1024).toFixed(1) + " MB";
+  }
+
+  // the step strip follows the upload: choosing, reviewing, importing
+  function setStep(n) {
+    document.querySelectorAll("#dsSteps li").forEach(function (li, i) {
+      li.classList.toggle("is-done", i + 1 < n);
+      li.classList.toggle("is-current", i + 1 === n);
+    });
+  }
+
+  function setState(state, label) {
+    up.card.dataset.state = state;
+    up.status.textContent = label;
+    setStep(state === "ready" || state === "error" ? 1 : (up.importing ? 3 : 2));
+    const busy = state === "uploading" || state === "processing";
+    const ok = state === "selected";
+    document.getElementById("previewBtn").disabled = !ok;
+    document.getElementById("directImportBtn").disabled = !ok;
+    up.drop.hidden = !(state === "ready");
+    up.file.hidden = !(ok || busy || state === "done");
+    up.error.hidden = state !== "error";
+    document.getElementById("upActions").hidden = !busy;
+  }
+
+  function setProgress(sent, total, startedAt) {
+    const pct = total ? sent / total : 0;
+    document.getElementById("upPct").textContent = Math.floor(pct * 100) + "%";
+    const exact = pct * SEGMENTS;
+    up.bar.querySelectorAll("span").forEach(function (seg, i) {
+      seg.classList.toggle("is-on", i < Math.floor(exact));
+      seg.classList.toggle("is-part", i === Math.floor(exact) && exact % 1 > 0.05);
+    });
+    document.getElementById("upBytes").textContent = fmtBytes(sent) + " / " + fmtBytes(total);
+    const secs = (performance.now() - startedAt) / 1000;
+    if (secs > 0.15 && sent > 0) {
+      const rate = sent / secs;                               // bytes per second
+      const left = Math.max(0, Math.ceil((total - sent) / rate));
+      document.getElementById("upLeft").textContent = left + "s left";
+      document.getElementById("upSpeed").textContent = (rate * 8 / 1e6).toFixed(1) + "Mbps";
+    }
+  }
+
+  function showError(title, text) {
+    document.getElementById("upErrorTitle").textContent = title;
+    document.getElementById("upErrorText").textContent = text;
+    setState("error", title.indexOf("large") !== -1 ? "Too large" : "Not allowed");
+  }
+
+  function reset() {
+    if (up.xhr) up.xhr.abort();
+    up.xhr = null;
+    up.input.value = "";
+    setState("ready", "Ready");
+  }
+
+  function useFile(file) {
+    if (!file) return reset();
+    if (!/\.(xlsx|xls)$/i.test(file.name)) {
+      up.input.value = "";
+      return showError("This file type is not accepted",
+        file.name + " is not an Excel workbook. Choose a .xlsx or .xls file.");
+    }
+    if (file.size > MAX_BYTES) {
+      up.input.value = "";
+      return showError("File is too large",
+        file.name + " is " + fmtBytes(file.size) + ". The limit is " + MAX_MB +
+        " MB -- remove unused sheets or split the workbook, then try again.");
+    }
+    document.getElementById("upName").textContent = file.name;
+    document.getElementById("upBytes").textContent = fmtBytes(file.size);
+    document.getElementById("upLeft").textContent = "";
+    document.getElementById("upSpeed").textContent = "";
+    setState("selected", "Selected");
+  }
+
+  up.input.addEventListener("change", function () { useFile(up.input.files[0]); });
+  ["dragenter", "dragover"].forEach(function (t) {
+    up.drop.addEventListener(t, function (e) { e.preventDefault(); up.drop.classList.add("is-over"); });
+  });
+  ["dragleave", "drop"].forEach(function (t) {
+    up.drop.addEventListener(t, function () { up.drop.classList.remove("is-over"); });
+  });
+  up.drop.addEventListener("drop", function (e) {
+    e.preventDefault();
+    const f = e.dataTransfer.files[0];
+    if (!f) return;
+    const dt = new DataTransfer();
+    dt.items.add(f);
+    up.input.files = dt.files;          // the form submits what the input holds
+    useFile(f);
+  });
+  document.getElementById("upRemove").addEventListener("click", reset);
+  document.getElementById("upRetry").addEventListener("click", function () { reset(); up.input.click(); });
+  document.getElementById("upCancel").addEventListener("click", function () {
+    if (up.xhr) up.xhr.abort();
+  });
+
+  // send the chosen file; resolves with the XHR once the server answers
+  function send(url, opts) {
+    const file = up.input.files[0];
+    return new Promise(function (resolve, reject) {
+      const fd = new FormData();
+      fd.append("excel_file", file);
+      const xhr = new XMLHttpRequest();
+      up.xhr = xhr;
+      const started = performance.now();
+      setState("uploading", "Uploading");
+      setProgress(0, file.size, started);
+      xhr.upload.onprogress = function (e) {
+        if (e.lengthComputable) setProgress(e.loaded, e.total, started);
+      };
+      xhr.upload.onload = function () {
+        setProgress(file.size, file.size, started);
+        setState("processing", "Processing");
+        document.getElementById("upLeft").textContent = opts.processing;
+        document.getElementById("upSpeed").textContent = "";
+      };
+      xhr.onload = function () { up.xhr = null; resolve(xhr); };
+      xhr.onerror = function () { up.xhr = null; reject(new Error("The connection failed.")); };
+      xhr.onabort = function () {
+        up.xhr = null;
+        setState("selected", "Cancelled");
+        reject(new Error("cancelled"));
+      };
+      xhr.open("POST", url);
+      xhr.send(fd);
+    });
+  }
+
+  function importDataset() {
+    up.importing = true;
+    send(document.getElementById("dsForm").action, { processing: "Importing rows..." })
+      .then(function (xhr) {
+        // the server answers with the page it redirects to; show it in place
+        if (xhr.responseURL) history.replaceState(null, "", xhr.responseURL);
+        document.open();
+        document.write(xhr.responseText);
+        document.close();
+      })
+      .catch(function (err) {
+        up.importing = false;
+        if (err.message !== "cancelled") showError("Upload failed", err.message);
+        else setState("selected", "Cancelled");
+      });
+  }
+
+  /* The server reports an import as two flash messages. They are turned
+     into the banner and the side note here, and taken out of the list. */
+  (function lastImportBanner() {
+    const alerts = document.querySelectorAll(".flash-messages .um-alert");
+    alerts.forEach(function (box) {
+      const text = box.textContent.replace(/\s+/g, " ").trim();
+      const done = text.match(/^Import done\..*?Sites created: (\d+), updated: (\d+)\. Reforestation records created: (\d+)\. Rows skipped: (\d+)/);
+      const ignored = text.match(/^Ignored \(not contract-profile format\): (.+)$/);
+      if (done) {
+        const [, created, updated, records, skipped] = done.map(Number);
+        const parts = [];
+        if (created) parts.push(created + " site" + (created === 1 ? "" : "s") + " created");
+        if (updated) parts.push(updated + " site" + (updated === 1 ? "" : "s") + " updated");
+        parts.push(records + " reforestation record" + (records === 1 ? "" : "s") + " created");
+        let line = parts.length > 1
+          ? parts.slice(0, -1).join(", ") + " and " + parts[parts.length - 1] + "."
+          : parts[0] + ".";
+        line += skipped ? " " + skipped + " row" + (skipped === 1 ? " was" : "s were") + " skipped."
+                        : " No rows were skipped.";
+        document.getElementById("dsBannerText").textContent = line;
+        document.getElementById("dsBannerTime").textContent =
+          "Today, " + new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+        document.getElementById("dsBanner").hidden = false;
+        box.remove();
+      } else if (ignored) {
+        document.getElementById("dsIgnored").textContent = ignored[1];
+        box.remove();
+      }
+    });
+    const wrap = document.querySelector(".flash-messages");
+    if (wrap && !wrap.children.length) wrap.remove();
+  })();
+
+  /* Recent imports, read from the audit log (every import is recorded
+     there with its file name and counts). */
+  (async function recentImports() {
+    const body = document.getElementById("dsRecent");
+    const FILE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></svg>';
+    const esc = (v) => String(v).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+    try {
+      const res = await fetch("{{ url_for('admin.audit_log', action='import_dataset', days='all') }}");
+      if (!res.ok) throw new Error(res.status);
+      const doc = new DOMParser().parseFromString(await res.text(), "text/html");
+      const rows = Array.from(doc.querySelectorAll("table.um-table tbody tr")).slice(0, 5);
+      if (!rows.length) {
+        body.innerHTML = '<tr><td colspan="4" class="ds-empty">No imports yet.</td></tr>';
+        return;
+      }
+      const today = new Date().toDateString();
+      body.innerHTML = rows.map(function (tr) {
+        const td = tr.querySelectorAll("td");
+        const day = td[0].childNodes[0].textContent.trim();         // "12 Oct 2026"
+        const time = (td[0].querySelector(".al-role") || {}).textContent || "";
+        const when = new Date(day).toDateString() === today
+          ? "Today, " + time.replace(/^0/, "").replace(/:\d\d (AM|PM)$/, " $1")
+          : day + ", " + time.replace(/^0/, "").replace(/:\d\d (AM|PM)$/, " $1");
+        const detail = td[3].textContent.replace(/\s+/g, " ").trim();
+        const name = (detail.match(/Imported '(.+?)'/) || [, "Workbook"])[1];
+        const n = (re) => Number((detail.match(re) || [, 0])[1]);
+        const created = n(/(\d+) site\(s\) created/), updated = n(/(\d+) updated/);
+        const records = n(/(\d+) record\(s\)/), skipped = n(/(\d+) row\(s\) skipped/);
+        const result = [created && created + " created", updated && updated + " updated",
+                        records && records + " records"].filter(Boolean).join(" · ") || "No changes";
+        const pill = skipped
+          ? '<span class="ds-pill is-warn"><i></i>' + skipped + ' skipped</span>'
+          : '<span class="ds-pill"><i></i>Completed</span>';
+        return '<tr><td><span class="ds-file">' + FILE + esc(name) + '</span></td>' +
+               '<td>' + esc(when) + '</td><td>' + esc(result) + '</td><td>' + pill + '</td></tr>';
+      }).join("");
+    } catch (err) {
+      body.innerHTML = '<tr><td colspan="4" class="ds-empty">Recent imports could not be loaded.</td></tr>';
+    }
+  })();
+
+  document.getElementById("dsForm").addEventListener("submit", function (e) {
+    e.preventDefault();
+    if (up.card.dataset.state === "selected") importDataset();
+  });
+
   async function previewDataset() {
-    const form = document.querySelector('form[action*="import"]');
-    const fileInput = form.querySelector('input[type="file"]');
     const panel = document.getElementById('previewPanel');
 
-    if (!fileInput.files.length) {
-      alert('Choose a file first.');
+    if (!up.input.files.length) {
+      up.input.click();
+      return;
+    }
+
+    let data;
+    try {
+      const xhr = await send('/admin/reference-dataset/preview', { processing: "Reading workbook..." });
+      data = JSON.parse(xhr.responseText);
+      setState("selected", "Uploaded");
+    } catch (err) {
+      if (err.message === "cancelled") return;
+      setState("selected", "Selected");
+      panel.style.display = 'block';
+      panel.innerHTML =
+        '<div class="preview-panel warn-box danger">' +
+        '<h6>Preview failed</h6><p>' + err.message + '</p></div>';
       return;
     }
 
     panel.style.display = 'block';
-    panel.innerHTML = '<div class="preview-panel">Reading file...</div>';
-
-    const fd = new FormData();
-    fd.append('excel_file', fileInput.files[0]);
-
-    let data;
-    try {
-      const res = await fetch('/admin/reference-dataset/preview', {
-        method: 'POST',
-        body: fd,
-      });
-      data = await res.json();
-    } catch (err) {
-      panel.innerHTML =
-        '<div class="preview-panel warn-box danger">' +
-        '<h6>Preview failed</h6><p>' + err + '</p></div>';
-      return;
-    }
 
     if (!data.ok) {
       panel.innerHTML =
@@ -246,8 +674,8 @@
   }
 
   function confirmImport() {
-    // submits the SAME file the browser still holds in the input
-    document.querySelector('form[action*="import"]').submit();
+    // imports the SAME file the browser still holds in the input
+    importDataset();
   }
 </script>
 {% endblock %}
@@ -263,43 +691,137 @@
   </div>
 </div>
 
-<div class="um-table-card ref-card">
-    <h3>Upload DENR NGP Excel File</h3>
-    <p class="placeholder-text">
-        Accepted sheets: <strong>2021</strong>, <strong>2022</strong>, <strong>2023</strong>, <strong>Retention Fee</strong>.
-        Other sheets in the file (e.g. Summary) are ignored automatically.
-    </p>
+{# Filled from the "Import done" message the server flashes after an
+   import (see the script below); hidden until there is one. #}
+<div class="ds-banner" id="dsBanner" role="status" hidden>
+    <span class="ds-banner-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></span>
+    <div class="ds-banner-text">
+        <strong>Last import completed successfully</strong>
+        <span id="dsBannerText"></span>
+    </div>
+    <span class="ds-banner-time" id="dsBannerTime"></span>
+    <button type="button" class="alert-close" aria-label="Dismiss" title="Dismiss"
+            onclick="this.closest('.ds-banner').hidden = true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
+</div>
 
-    <form action="{{ url_for('admin.import_denr_data') }}" method="POST" enctype="multipart/form-data" class="upload-form">
-        <input type="file" name="excel_file" accept=".xlsx,.xls" required aria-label="Choose an Excel file to import" class="upload-file-input">
-        <div class="d-flex gap-2">
-            <button type="button" class="um-btn-cancel" onclick="previewDataset()">
-                Preview
-            </button>
-            <button type="submit" class="um-btn-confirm" id="directImportBtn">
-                Import without preview
-            </button>
+<ol class="ds-steps" id="dsSteps" aria-label="Import steps">
+    <li class="is-current"><span class="ds-step-num">1</span><span><strong>Select file</strong><small>Choose an Excel workbook</small></span></li>
+    <li><span class="ds-step-num">2</span><span><strong>Review data</strong><small>Validate sheets and rows</small></span></li>
+    <li><span class="ds-step-num">3</span><span><strong>Complete import</strong><small>Update platform records</small></span></li>
+</ol>
+
+<div class="ds-grid">
+    <form action="{{ url_for('admin.import_denr_data') }}" method="POST" enctype="multipart/form-data" class="upload-form" id="dsForm">
+        <div class="up-card ds-card" id="upCard" data-state="ready">
+            <div class="ds-card-head">
+                <span class="ds-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="m17 8-5-5-5 5"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/></svg></span>
+                <div>
+                    <h3>Upload workbook</h3>
+                    <p>Accepted sheets: 2021, 2022, 2023 and Retention Fee</p>
+                </div>
+                <span class="up-status ds-status" id="upStatus" aria-live="polite"><i></i><span>Ready</span></span>
+            </div>
+
+            <div class="up-body">
+                {# 1. nothing chosen: the drop zone #}
+                <label class="up-drop" id="upDrop">
+                    <input type="file" name="excel_file" accept=".xlsx,.xls" required
+                           aria-label="Choose an Excel file to import" class="up-input" id="upInput">
+                    <span class="up-drop-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="m17 8-5-5-5 5"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/></svg></span>
+                    <span class="up-drop-text">Drop your Excel file here</span><span class="up-drop-sub">or <span class="up-browse">browse your computer</span></span>
+                    <span class="up-drop-hint">Maximum file size <span id="upMaxLabel">10 MB</span> &middot; .xlsx or .xls</span>
+                </label>
+
+                {# 2. a file is chosen, or it is uploading #}
+                <div class="up-file" id="upFile" hidden>
+                    <div class="up-file-row">
+                        <span class="up-file-name"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg><span id="upName"></span></span>
+                        <span class="up-pct" id="upPct"></span>
+                        <button type="button" class="up-remove" id="upRemove" aria-label="Remove file" title="Remove file"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
+                    </div>
+                    <div class="up-bar" id="upBar" aria-hidden="true"></div>
+                    <div class="up-meta">
+                        <span class="up-bytes" id="upBytes"></span>
+                        <span class="up-rate"><span id="upLeft"></span> <span class="up-speed" id="upSpeed"></span></span>
+                    </div>
+                    <div class="up-actions" id="upActions" hidden>
+                        <button type="button" class="up-btn" id="upCancel">Cancel</button>
+                    </div>
+                </div>
+
+                {# 3. the file cannot be used #}
+                <div class="up-error" id="upError" role="alert" hidden>
+                    <span class="up-error-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg></span>
+                    <div>
+                        <strong id="upErrorTitle"></strong>
+                        <p id="upErrorText"></p>
+                    </div>
+                    <button type="button" class="up-btn up-btn-sm" id="upRetry">Choose another file</button>
+                </div>
+            </div>
+
+            <ul class="ds-ticks">
+                <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg> Existing sites are matched by site code</li>
+                <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg> Duplicate records are updated safely</li>
+            </ul>
+
+            <div class="ds-card-foot up-buttons">
+                <button type="button" class="ds-btn ds-btn-ghost" id="previewBtn" onclick="previewDataset()" disabled>
+                    Preview data
+                </button>
+                <button type="submit" class="ds-btn ds-btn-primary" id="directImportBtn" disabled>
+                    Import dataset <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                </button>
+            </div>
         </div>
     </form>
 
-    <!-- preview lands here -->
-    <div id="previewPanel" style="display:none;"></div>
+    <aside class="ds-aside">
+        <p class="ds-kicker">Before you upload</p>
+        <h3>A quick file check</h3>
+        <p class="ds-aside-lead">These checks help prevent mismatched or incomplete records.</p>
+        <ul class="ds-checks">
+            <li><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></span><div><strong>Keep site codes unchanged</strong><small>They connect incoming rows to existing sites.</small></div></li>
+            <li><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></span><div><strong>Use the official template</strong><small>Extra summary sheets will be ignored automatically.</small></div></li>
+            <li><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></span><div><strong>Confirm required columns</strong><small>Dates, areas and contract values must be valid.</small></div></li>
+        </ul>
+        <div class="ds-note">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></svg>
+            <div><strong>Sheets safely ignored</strong><small id="dsIgnored">Sheets outside the contract-profile format, such as Summary, are skipped.</small></div>
+        </div>
+        <details class="ds-details">
+            <summary>What gets imported</summary>
+            <ul>
+                <li>Site Code, Zone Type, LOA/Contract Code, Year Contracted</li>
+                <li>Area Contracted (ha) and Actual Area Planted (ha)</li>
+                <li>Contract execution &amp; expiry dates</li>
+                <li>Project cost, retention fee amount &amp; date paid, land improvement amounts</li>
+                <li>Number of seedlings (target vs actually planted), survival rate, validation date</li>
+                <li>Municipality &amp; Barangay &mdash; added to the locations if not already there</li>
+                <li>Partner/Contractor &mdash; added to the organizations if not already there</li>
+            </ul>
+            <p>Tree species matching is not built yet; imported records are tagged
+               "Unspecified (Pending Match)" until it is.</p>
+        </details>
+    </aside>
 </div>
 
-<div class="um-table-card ref-card">
-    <h3>What Gets Imported</h3>
-    <ul class="import-info-list">
-        <li>Site Code, Zone Type, LOA/Contract Code, Year Contracted</li>
-        <li>Area Contracted (ha) and Actual Area Planted (ha)</li>
-        <li>Contract execution &amp; expiry dates</li>
-        <li>Project cost, retention fee amount &amp; date paid, land improvement amounts</li>
-        <li>Number of seedlings (target vs actually planted), survival rate, validation date</li>
-        <li>Municipality &amp; Barangay -- auto-created in Location table if not already there</li>
-        <li>Partner/Contractor -- auto-created in Organization table if not already there</li>
-    </ul>
-    <p class="placeholder-text" style="margin-top:0.8rem;">
-        Note: tree species matching is not built yet -- imported reforestation records are
-        tagged "Unspecified (Pending Match)" for now and can be updated once that feature is ready.
-    </p>
-</div>
+<!-- preview lands here -->
+<div id="previewPanel" style="display:none;"></div>
+
+<section class="ds-recent">
+    <div class="ds-recent-head">
+        <div>
+            <p class="ds-kicker">Audit trail</p>
+            <h3>Recent imports</h3>
+        </div>
+        <a class="ds-link" href="{{ url_for('admin.audit_log', action='import_dataset', days='all') }}">View all activity <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></a>
+    </div>
+    <div class="ds-table-wrap">
+        <table class="ds-table">
+            <thead><tr><th>File name</th><th>Imported</th><th>Result</th><th>Status</th></tr></thead>
+            <tbody id="dsRecent"><tr><td colspan="4" class="ds-empty">Loading recent imports&hellip;</td></tr></tbody>
+        </table>
+    </div>
+</section>
 {% endblock %}
