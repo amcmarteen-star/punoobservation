@@ -16,3 +16,6 @@ app/static/images/395027085_*
 # The full-size hero original, kept locally in case a different crop is
 # ever wanted. The page loads hero-palms.jpg, which is committed.
 app/static/images/landing/pexels-*
+
+# Run logs from the data scripts (scripts/README.md).
+scripts/data/generated/*.log

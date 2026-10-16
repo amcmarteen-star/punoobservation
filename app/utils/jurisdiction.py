@@ -15,6 +15,8 @@ FAILS OPEN. A user with no CENRO sees everything. See the note in the
 Part 1 document for why.
 """
 
+import re
+
 from flask import session
 from sqlalchemy import or_
 
@@ -193,6 +195,26 @@ def normalize_municipality(name):
     for ch in (" ", ".", "-", "'"):
         key = key.replace(ch, "")
     return MUNICIPALITY_ALIASES.get(key, key)
+
+
+def place_key(municipality, barangay):
+    """
+    One barangay's identity for matching names from different sources.
+
+    The DENR sheet, the map files and the database spell the same place
+    differently: "San Vicente" / "SanVicente", "Sta. Maria East" / "Santa
+    Maria East", "Pozzorubio" / "Pozorrubio". Expands Sta./Sto., then
+    folds the rest the way normalize_municipality() does. Used by the
+    dataset import and its preview, so the preview's "known barangay"
+    means the import will reuse it rather than make a copy.
+    """
+    def expand(s):
+        s = str(s or "").lower()
+        s = re.sub(r"\bsta\b\.?", "santa", s)
+        return re.sub(r"\bsto\b\.?", "santo", s)
+
+    return (normalize_municipality(expand(municipality)),
+            normalize_municipality(expand(barangay)))
 
 
 # Every municipality the province knows about, in the spelling the

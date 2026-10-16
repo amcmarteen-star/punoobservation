@@ -28,9 +28,12 @@ def create_app():
 
     # Map tile sources, from app/config.py. Base.html hands them to every
     # page's JavaScript as MAP_TILES, so no template hard-codes a server.
-    # target_intensity: the sampling intensity target in percent, so no
-    # template hard-codes it either.
-    from app.services.monitoring import TARGET_INTENSITY
+    # sampling_rule / sampling_plan: the DENR survey rule (whole-site count
+    # under 20 ha, otherwise 10% in 100 m plots), so no template
+    # hard-codes it either.
+    from app.services.monitoring import (
+        FULL_COUNT_BELOW_HA, TARGET_INTENSITY, SAMPLE_PLOT_SQM, sampling_plan,
+    )
 
     @app.context_processor
     def _map_tiles():
@@ -54,7 +57,11 @@ def create_app():
                 "attribution": cfg['MAP_STREET_ATTRIBUTION'],
             },
             "satellite": satellite,
-        }, "target_intensity": TARGET_INTENSITY}
+        }, "sampling_rule": {
+            "fullCountBelowHa": FULL_COUNT_BELOW_HA,
+            "targetPct": TARGET_INTENSITY,
+            "plotSqm": SAMPLE_PLOT_SQM,
+        }, "sampling_plan": sampling_plan}
 
     # Register Blueprints
     from app.routes.auth import auth_bp

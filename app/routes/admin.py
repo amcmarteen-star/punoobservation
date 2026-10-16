@@ -1,5 +1,5 @@
 # app/routes/admin.py
-from flask import Blueprint, render_template, request, flash, redirect, url_for, session, jsonify, current_app, send_file
+from flask import Blueprint, render_template, request, flash, redirect, url_for, session, jsonify, current_app, send_file, g
 from app.extensions import db
 from app.models import User, Location, Organization, Site, TreeSpecie, ReforestationRecord, Request, Notification, MonitoringReport, MonitoringPlot, MonitoringPhoto,ReforestationRecord,Site,AuditLog
 from app.utils.decorators import admin_required, superadmin_required
@@ -14,12 +14,12 @@ from app.models import Request as ReforestationRequest
 from app.utils.jurisdiction import (
     scope_sites, scope_locations, allowed_municipalities,
     can_see_municipality, current_cenro, is_superadmin, scope_label,
-    CENRO_LIST, CENRO_MUNICIPALITIES,
+    CENRO_LIST, CENRO_MUNICIPALITIES, place_key,
 )
 from app.utils.decorators import superadmin_required
 from app.services.monitoring import save_species_photo, delete_species_photo
 from app.services.wikipedia import refresh_species_summary, WikipediaUnavailable
-from app.services.request_site import boundary_dict, SITE_REQUEST_TYPES
+from app.services.request_site import boundary_dict, barangay_point, SITE_REQUEST_TYPES
 from app.services.export_report import build_sites_workbook
 from app.utils.timeutil import manila_now
 from app.utils.security import password_problem
@@ -213,23 +213,74 @@ def _get_or_create_location(barangay, municipality):
     if not barangay or not municipality:
         return None
 
-    location = Location.query.filter(
-        db.func.lower(Location.municipality) == municipality.lower(),
-        db.func.lower(Location.barangay) == barangay.lower()
-    ).first()
+    # Matched with place_key(), not on the exact name. An exact match
+    # (lowercase only) turned "SanVicente" and "Sta. Maria East" into
+    # second copies of "San Vicente" and "Santa Maria East", with no map
+    # point and no climate data. The existing record and its spelling win.
+    key = place_key(municipality, barangay)
+    location = _indexed_location(key)
 
-    if location:
-        return location
+    if not location:
+        location = Location(
+            region=DEFAULT_REGION,
+            province=DEFAULT_PROVINCE,
+            municipality=municipality,
+            barangay=barangay
+        )
+        db.session.add(location)
 
-    location = Location(
-        region=DEFAULT_REGION,
-        province=DEFAULT_PROVINCE,
-        municipality=municipality,
-        barangay=barangay
-    )
-    db.session.add(location)
+    _fill_location_point(location)
     db.session.flush()  # get location_id without full commit yet
+    g._location_index[key] = location.location_id
     return location
+
+
+def _indexed_location(key):
+    """
+    The Location for a place_key, or None.
+
+    The index (key -> location_id) is built once per request, so a long
+    import reads the barangay list once instead of once per row. Where two
+    records share a key, the older one wins: the later one is a copy. A
+    record created by a row that then failed was rolled back, so a miss on
+    its id rebuilds the index from the database.
+    """
+    for _ in (1, 2):
+        index = getattr(g, '_location_index', None)
+        if index is None:
+            index = {}
+            for loc in Location.query.order_by(Location.location_id):
+                index.setdefault(place_key(loc.municipality, loc.barangay),
+                                 loc.location_id)
+            g._location_index = index
+        location_id = index.get(key)
+        if location_id is None:
+            return None
+        location = db.session.get(Location, location_id)
+        if location is not None:
+            return location
+        g._location_index = None   # stale after a rollback; rebuild once
+    return None
+
+
+def _fill_location_point(location):
+    """
+    Give a barangay with no coordinates a point from its map outline.
+
+    The map places sites at their barangay's coordinates, and skips a
+    barangay without them. The DENR sheet has no coordinates, so a
+    barangay first created by an import got none and its sites never
+    showed. Existing coordinates are left alone. Returns True if filled.
+    """
+    if location.latitude is not None and location.longitude is not None:
+        return False
+    point = barangay_point(
+        _load_barangay_geometry(location.municipality, location.barangay)
+    )
+    if point is None:
+        return False
+    location.latitude, location.longitude = point
+    return True
 
 
 def _get_or_create_organization(name):
@@ -846,13 +897,6 @@ import re
 # ======================================================================
 
 
-def _norm_name(s):
-    """Lowercase, expand Sta./Sto., strip spaces, dots, dashes."""
-    s = str(s or "").lower()
-    s = s.replace("sta.", "santa").replace("sto.", "santo")
-    return re.sub(r"[\s.\-]", "", s)
-
-
 @admin_bp.route('/reference-dataset/preview', methods=['POST'])
 @superadmin_required
 def preview_denr_data():
@@ -875,7 +919,7 @@ def preview_denr_data():
     # every known barangay, indexed by normalised municipality + barangay
     known = set()
     for loc in Location.query.all():
-        known.add((_norm_name(loc.municipality), _norm_name(loc.barangay)))
+        known.add(place_key(loc.municipality, loc.barangay))
 
     # site codes already in the database - these will be UPDATED not created
     existing_codes = {
@@ -929,7 +973,8 @@ def preview_denr_data():
             sheet_rows += 1
             total_rows += 1
 
-            key = (_norm_name(municipality), _norm_name(barangay))
+            # the same rule the import uses, so "known" here means reused there
+            key = place_key(municipality, barangay)
             is_known = key in known
 
             if not is_known:

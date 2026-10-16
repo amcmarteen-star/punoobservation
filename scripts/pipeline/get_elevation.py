@@ -1,29 +1,27 @@
 """
-Fetch real elevation for all 478 barangays.
+Pipeline step 2. Fetch elevation for every barangay.
 
 WHAT IT NEEDS:
-  - barangay_coords.csv   (in the same folder as this script)
+  - data/generated/barangay_coords.csv   (step 1, make_coords)
 
 WHAT IT MAKES:
-  - barangay_elevation.csv
+  - data/generated/barangay_elevation.csv
 
-HOW TO RUN:
-  pip install requests
-  python get_elevation.py
+HOW TO RUN (from the project root):
+  python -m scripts.pipeline.get_elevation
 
 Source: SRTM 30m DEM via OpenTopoData public API.
 Limits: 100 locations per request, 1 call per second, 1000 calls per day.
-478 barangays = 5 requests. Well inside the limit.
+1,365 barangays = 14 requests. Well inside the limit.
 """
 
 import csv
 import time
+
 import requests
 
-import os
-HERE = os.path.dirname(os.path.abspath(__file__))
-IN_FILE = os.path.join(HERE, "barangay_coords.csv")
-OUT_FILE = os.path.join(HERE, "barangay_elevation.csv")
+from scripts.common import COORDS_CSV as IN_FILE, ELEVATION_CSV as OUT_FILE
+
 BATCH = 100
 # --- 1. read the coordinates -------------------------------------------
 with open(IN_FILE, newline="", encoding="utf-8") as f:

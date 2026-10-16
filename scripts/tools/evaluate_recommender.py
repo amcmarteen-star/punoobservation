@@ -2,7 +2,7 @@
 Evaluate the recommendation engine using Precision@K and NDCG@K.
 
 RUN FROM PROJECT ROOT:
-    python scripts/evaluate_recommender.py
+    python -m scripts.tools.evaluate_recommender
 
 WHAT THESE METRICS NEED
 -----------------------
@@ -27,12 +27,8 @@ with published ecology. Source B tests whether it reproduces recorded
 practice. A large gap between them is itself a finding.
 """
 
-import os
 import sys
 
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
-from app import create_app
 from app.extensions import db
 from app.models import Location, TreeSpecie, Site, ReforestationRecord
 from app.services.recommender import (
@@ -44,6 +40,7 @@ from app.services.recommender import (
 # this script and the species detail panel in the web interface cannot
 # report different figures for the same data.
 from app.services.recommender_eval import precision_at_k, ndcg_at_k
+from scripts.common import app_context
 
 K_VALUES = [1, 3, 5]
 
@@ -174,8 +171,7 @@ def relevance_summary(locations, species_list):
 
 
 if __name__ == "__main__":
-    app = create_app()
-    with app.app_context():
+    with app_context():
 
         species_list = TreeSpecie.query.filter_by(is_reference=True).all()
         locations = Location.query.filter(

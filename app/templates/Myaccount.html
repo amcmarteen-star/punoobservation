@@ -313,4 +313,76 @@
   </div>
 </div>
 
+{# Not over a failed attempt: every password error is flashed as
+   "danger", and the pop-up would hide it. The server decides this, not
+   the browser, so nothing is left behind for the next account to sign
+   in on the same tab. get_flashed_messages() is cached per request, so
+   asking here does not take the messages away from Base.html. #}
+{% if must_change and not get_flashed_messages(category_filter=['danger']) %}
+<!-- ============ TEMPORARY PASSWORD ============ -->
+{# Every other page sends a user with a temporary password here (the
+   _enforce_password_change hook), so this is where they are told. #}
+<div class="um-modal-overlay" id="tempPasswordModal">
+  <div class="um-modal" role="alertdialog" aria-modal="true"
+       aria-labelledby="tempPasswordTitle" aria-describedby="tempPasswordText">
+    <div class="um-modal-head">
+      <h3 id="tempPasswordTitle">Change your temporary password</h3>
+      <button type="button" class="um-modal-close" aria-label="Close dialog" data-temp-pw-close>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>
+      </button>
+    </div>
+    <div class="um-modal-body">
+      <p class="um-modal-text" id="tempPasswordText">
+        You signed in with a temporary password from an administrator.
+        Set your own password to keep your account safe.
+        <br /><br />
+        The rest of the system stays locked until you do.
+      </p>
+    </div>
+    <div class="um-modal-foot">
+      <a href="{{ url_for('auth.logout') }}" class="um-btn-cancel"
+         style="text-align:center; text-decoration:none;">Sign out</a>
+      <button type="button" class="um-btn-confirm" id="tempPasswordGo">Change password</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  (function () {
+    const modal = document.getElementById("tempPasswordModal");
+    const field = document.getElementById("current_password");
+    if (!modal) return;
+
+    // An earlier version kept a "form sent" note in the tab, and a note
+    // left over after a successful change hid this pop-up from the next
+    // account signed in on that tab. Clear any that remain.
+    try { sessionStorage.removeItem("tempPwFormSent"); } catch (e) {}
+
+    function close(goToForm) {
+      modal.classList.remove("open");
+      if (goToForm && field) {
+        field.scrollIntoView({ behavior: "smooth", block: "center" });
+        field.focus({ preventScroll: true });
+      }
+    }
+
+    document.getElementById("tempPasswordGo").addEventListener("click", function () {
+      close(true);
+    });
+    modal.querySelectorAll("[data-temp-pw-close]").forEach(function (btn) {
+      btn.addEventListener("click", function () { close(true); });
+    });
+    modal.addEventListener("click", function (e) {
+      if (e.target === modal) close(true);
+    });
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape" && modal.classList.contains("open")) close(true);
+    });
+
+    modal.classList.add("open");
+    document.getElementById("tempPasswordGo").focus();
+  })();
+</script>
+{% endif %}
+
 {% endblock %}

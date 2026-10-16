@@ -1,0 +1,1366 @@
+municipality,barangay,district,lat,lon
+Alcala,Anulid,5,15.8479,120.50105
+Alcala,Atainan,5,15.861267,120.509017
+Alcala,Bersamin,5,15.837625,120.554212
+Alcala,Canarvacanan,5,15.841114,120.540286
+Alcala,Caranglaan,5,15.858829,120.498186
+Alcala,Curareng,5,15.8638,120.522233
+Alcala,Gualsic,5,15.87096,120.53908
+Alcala,Kasikis,5,15.85285,120.544167
+Alcala,Laoac,5,15.84218,120.51332
+Alcala,Macayo,5,15.87914,120.55634
+Alcala,Pindangan Centro,5,15.862686,120.5499
+Alcala,Pindangan East,5,15.86336,120.55856
+Alcala,Pindangan West,5,15.86882,120.5512
+Alcala,Poblacion East,5,15.8475,120.524571
+Alcala,Poblacion West,5,15.84815,120.528937
+Alcala,San Juan,5,15.83908,120.52136
+Alcala,San Nicolas,5,15.85454,120.5325
+Alcala,San Pedro Apartado,5,15.8492,120.56177
+Alcala,San Pedro Ili,5,15.85472,120.53864
+Alcala,San Vicente,5,15.85475,120.516175
+Alcala,Vacante,5,15.843429,120.568429
+Asingan,Ariston Este,6,16.039,120.69976
+Asingan,Ariston Weste,6,16.031715,120.694769
+Asingan,Bantog,6,16.00277,120.684944
+Asingan,Baro,6,16.000788,120.665987
+Asingan,Bobonan,6,16.0401,120.6385
+Asingan,Cabalitian,6,15.980733,120.653367
+Asingan,Calepaan,6,16.026044,120.621267
+Asingan,Carosucan Norte,6,15.979357,120.638829
+Asingan,Carosucan Sur,6,15.96051,120.63873
+Asingan,Coldit,6,16.0387,120.64692
+Asingan,Domanpot,6,16.001543,120.643914
+Asingan,Dupac,6,16.029814,120.679436
+Asingan,Macalong,6,16.01705,120.65456
+Asingan,Palaris,6,16.035983,120.631283
+Asingan,Poblacion East,6,16.010838,120.672363
+Asingan,Poblacion West,6,16.009167,120.663333
+Asingan,San Vicente Este,6,16.037267,120.669433
+Asingan,San Vicente Weste,6,16.031492,120.6546
+Asingan,Sanchez,6,15.989911,120.663578
+Asingan,Sobol,6,16.01492,120.63005
+Asingan,Toboy,6,16.028746,120.637646
+Balungao,Angayan Norte,6,15.911458,120.695
+Balungao,Angayan Sur,6,15.90045,120.687892
+Balungao,Capulaan,6,15.91538,120.65932
+Balungao,Esmeralda,6,15.872327,120.709787
+Balungao,Kita-Kita,6,15.89685,120.658475
+Balungao,Mabini,6,15.859441,120.714159
+Balungao,Mauban,6,15.8999,120.718029
+Balungao,Poblacion,6,15.90165,120.66475
+Balungao,Pugaro,6,15.895045,120.672755
+Balungao,Rajal,6,15.910554,120.703369
+Balungao,San Andres,6,15.865917,120.675075
+Balungao,San Aurelio 1st,6,15.902922,120.678267
+Balungao,San Aurelio 2nd,6,15.893562,120.6835
+Balungao,San Aurelio 3rd,6,15.9173,120.68485
+Balungao,San Joaquin,6,15.940943,120.70345
+Balungao,San Julian,6,15.9371,120.671417
+Balungao,San Leon,6,15.92285,120.710383
+Balungao,San Marcelino,6,15.936125,120.655012
+Balungao,San Miguel,6,15.9276,120.65869
+Balungao,San Raymundo,6,15.926543,120.685443
+Bautista,Artacho,5,15.82542,120.55934
+Bautista,Baluyot,5,15.806614,120.474443
+Bautista,Cabuaan,5,15.809444,120.480122
+Bautista,Cacandongan,5,15.828487,120.490687
+Bautista,Diaz,5,15.80404,120.510033
+Bautista,Ketegan,5,15.82368,120.49276
+Bautista,Nandacan,5,15.81924,120.48736
+Bautista,Nibaliw Norte,5,15.8168,120.468983
+Bautista,Nibaliw Sur,5,15.8119,120.47082
+Bautista,Palisoc,5,15.819143,120.500271
+Bautista,Poblacion East,5,15.814113,120.485687
+Bautista,Poblacion West,5,15.813863,120.477375
+Bautista,Pogo,5,15.82454,120.50955
+Bautista,Poponto,5,15.776871,120.537057
+Bautista,Primicias,5,15.805289,120.549844
+Bautista,Sinabaan,5,15.8202,120.472883
+Bautista,Vacante,5,15.801264,120.492136
+Bautista,Villanueva,5,15.822413,120.543262
+Binalonan,Balangobong,5,16.02684,120.60524
+Binalonan,Bued,5,16.04544,120.5784
+Binalonan,Bugayong,5,16.088786,120.567114
+Binalonan,Camangaan,5,16.100983,120.585167
+Binalonan,Canarvacanan,5,16.06075,120.580462
+Binalonan,Capas,5,16.05885,120.610283
+Binalonan,Cili,5,16.08097,120.5827
+Binalonan,Dumayat,5,16.067583,120.572483
+Binalonan,Linmansangan,5,16.055356,120.573944
+Binalonan,Mangcasuy,5,16.077392,120.620783
+Binalonan,Moreno,5,16.109587,120.616263
+Binalonan,Pasileng Norte,5,16.041062,120.593238
+Binalonan,Pasileng Sur,5,16.03302,120.60294
+Binalonan,Poblacion,5,16.050267,120.587917
+Binalonan,San Felipe Central,5,16.049486,120.6271
+Binalonan,San Felipe Sur,5,16.051045,120.603
+Binalonan,San Pablo,5,16.03578,120.61882
+Binalonan,Santa Catalina,5,16.096712,120.620118
+Binalonan,Santa Maria Norte,5,16.069067,120.587489
+Binalonan,Santiago,5,16.04622,120.5712
+Binalonan,Santo Niño,5,16.061925,120.593437
+Binalonan,Sumabnit,5,16.030617,120.573333
+Binalonan,Tabuyoc,5,16.026162,120.587963
+Binalonan,Vacante,5,16.075214,120.569993
+Laoac,Anis,5,16.037138,120.56035
+Laoac,Balligi,5,16.060614,120.557843
+Laoac,Banuar,5,16.059367,120.537083
+Laoac,Botique,5,16.076333,120.553183
+Laoac,Caaringayan,5,16.03872,120.5523
+Laoac,Cabilaoan West,5,16.023143,120.5419
+Laoac,Cabulalaan,5,16.071222,120.542033
+Laoac,Calaoagan,5,16.06424,120.5325
+Laoac,Calmay,5,16.035136,120.5117
+Laoac,Casampagaan,5,16.0512,120.551617
+Laoac,Casanestebanan,5,16.0473,120.523786
+Laoac,Casantiagoan,5,16.02328,120.56504
+Laoac,Domingo Alarcio,5,16.023383,120.55195
+Laoac,Inmanduyan,5,16.04702,120.50936
+Laoac,Lebueg,5,16.028525,120.561337
+Laoac,Maraboc,5,16.062956,120.521489
+Laoac,Nanbagatan,5,16.039675,120.5306
+Laoac,Panaga,5,16.0816,120.547255
+Laoac,Poblacion,5,16.062333,120.5482
+Laoac,Talogtog,5,16.057771,120.529643
+Laoac,Turko,5,16.074367,120.531508
+Laoac,Yatyat,5,16.013517,120.557417
+Natividad,Barangobong,6,16.047371,120.780914
+Natividad,Batchelor East,6,16.0514,120.814783
+Natividad,Batchelor West,6,16.049067,120.806367
+Natividad,Burgos,6,16.028643,120.7789
+Natividad,Cacandungan,6,16.060467,120.834967
+Natividad,Calapugan,6,16.037378,120.812667
+Natividad,Canarem,6,16.037571,120.781371
+Natividad,Luna,6,16.0139,120.787238
+Natividad,Poblacion East,6,16.04176,120.79306
+Natividad,Poblacion West,6,16.04678,120.79798
+Natividad,Rizal,6,16.042729,120.779243
+Natividad,Salud,6,16.053383,120.790067
+Natividad,San Eugenio,6,16.074025,120.829775
+Natividad,San Macario Norte,6,16.053092,120.84245
+Natividad,San Macario Sur,6,16.035614,120.8279
+Natividad,San Maximo,6,16.040156,120.803522
+Natividad,San Miguel,6,16.0219,120.79655
+Natividad,Silag,6,16.011586,120.782686
+Pozorrubio,Alipangpang,5,16.112171,120.553243
+Pozorrubio,Amagbagan,5,16.09131,120.53622
+Pozorrubio,Balacag,5,16.13625,120.4776
+Pozorrubio,Banding,5,16.1039,120.54356
+Pozorrubio,Bantugan,5,16.107988,120.52075
+Pozorrubio,Batakil,5,16.150457,120.516643
+Pozorrubio,Bobonan,5,16.140322,120.5203
+Pozorrubio,Buneg,5,16.126175,120.56195
+Pozorrubio,Cablong,5,16.12784,120.53274
+Pozorrubio,Casanfernandoan,5,16.124829,120.477243
+Pozorrubio,Castaño,5,16.114736,120.506436
+Pozorrubio,Dilan,5,16.088471,120.520557
+Pozorrubio,Don Benito,5,16.141843,120.497871
+Pozorrubio,Haway,5,16.114767,120.481917
+Pozorrubio,Imbalbalatong,5,16.128771,120.549471
+Pozorrubio,Inoman,5,16.150243,120.529286
+Pozorrubio,Laoac,5,16.14382,120.50617
+Pozorrubio,Maambal,5,16.10248,120.4878
+Pozorrubio,Malasin,5,16.10045,120.51985
+Pozorrubio,Malokiat,5,16.127514,120.496329
+Pozorrubio,Manaol,5,16.118883,120.510183
+Pozorrubio,Nama,5,16.137325,120.534125
+Pozorrubio,Nantangalan,5,16.092491,120.503209
+Pozorrubio,Palacpalac,5,16.13195,120.52365
+Pozorrubio,Palguyod,5,16.128929,120.5124
+Pozorrubio,Poblacion I,5,16.11972,120.53428
+Pozorrubio,Poblacion II,5,16.115617,120.534817
+Pozorrubio,Poblacion III,5,16.12086,120.54196
+Pozorrubio,Poblacion IV,5,16.11468,120.54258
+Pozorrubio,Rosario,5,16.10018,120.56152
+Pozorrubio,Sugcong,5,16.148117,120.546817
+Pozorrubio,Talogtog,5,16.10945,120.534633
+Pozorrubio,Tulnac,5,16.117529,120.525029
+Pozorrubio,Villegas,5,16.141614,120.554571
+Rosales,Acop,6,15.86822,120.65452
+Rosales,Bakitbakit,6,15.8806,120.6515
+Rosales,Balingcanaway,6,15.896867,120.651517
+Rosales,Cabalaoangan Norte,6,15.885,120.627157
+Rosales,Cabalaoangan Sur,6,15.879786,120.634929
+Rosales,Calanutan,6,15.86538,120.63548
+Rosales,Camangaan,6,15.848967,120.634317
+Rosales,Capitan Tomas,6,15.909583,120.6458
+Rosales,Carmay East,6,15.91566,120.64044
+Rosales,Carmay West,6,15.913167,120.624417
+Rosales,Carmen East,6,15.88938,120.60206
+Rosales,Carmen West,6,15.88992,120.5942
+Rosales,Casanicolasan,6,15.927971,120.641871
+Rosales,Coliling,6,15.85408,120.62198
+Rosales,Don Antonio Village,6,15.898567,120.623
+Rosales,Guiling,6,15.84982,120.6235
+Rosales,Palakipak,6,15.864083,120.617833
+Rosales,Pangaoan,6,15.83765,120.643483
+Rosales,Rabago,6,15.85694,120.63296
+Rosales,Rizal,6,15.924167,120.630889
+Rosales,Salvacion,6,15.84498,120.66118
+Rosales,San Angel,6,15.8614,120.6575
+Rosales,San Antonio,6,15.85452,120.66194
+Rosales,San Bartolome,6,15.877,120.613937
+Rosales,San Isidro,6,15.83744,120.62604
+Rosales,San Luis,6,15.84218,120.65192
+Rosales,San Pedro East,6,15.894833,120.64655
+Rosales,San Pedro West,6,15.89378,120.63666
+Rosales,San Vicente,6,15.84742,120.67394
+Rosales,Station District,6,15.89274,120.62038
+Rosales,Tomana East,6,15.893543,120.612914
+Rosales,Tomana West,6,15.892029,120.608743
+Rosales,Zone I,6,15.888375,120.624075
+Rosales,Zone II,6,15.897429,120.628114
+Rosales,Zone III,6,15.9049,120.620167
+Rosales,Zone IV,6,15.90526,120.62972
+Rosales,Zone V,6,15.8898,120.63062
+San Manuel,Cabacaraan,6,16.05634,120.67174
+San Manuel,Cabaritan,6,16.051075,120.658713
+San Manuel,Flores,6,16.068733,120.6855
+San Manuel,Guiset Norte,6,16.07238,120.66876
+San Manuel,Guiset Sur,6,16.065029,120.666714
+San Manuel,Lapalo,6,16.144,120.631117
+San Manuel,Nagsaag,6,16.06525,120.6565
+San Manuel,Narra,6,16.099693,120.698064
+San Manuel,San Antonio-Arzadon,6,16.057914,120.689343
+San Manuel,San Bonifacio,6,16.083056,120.679278
+San Manuel,San Juan,6,16.04944,120.67488
+San Manuel,San Roque,6,16.153538,120.682758
+San Manuel,San Vicente,6,16.062945,120.710409
+San Manuel,Santo Domingo,6,16.055129,120.6444
+San Nicolas,Bensican,6,16.159717,120.785383
+San Nicolas,Cabitnongan,6,16.07854,120.77106
+San Nicolas,Caboloan,6,16.08765,120.73284
+San Nicolas,Cacabugaoan,6,16.107175,120.839363
+San Nicolas,Calanutian,6,16.134363,120.68725
+San Nicolas,Calaocan,6,16.080433,120.78185
+San Nicolas,Camanggaan,6,16.0953,120.73158
+San Nicolas,Camindoroan,6,16.117686,120.702914
+San Nicolas,Casaratan,6,16.070667,120.7584
+San Nicolas,Dalumpinas,6,16.143956,120.790278
+San Nicolas,Fianza,6,16.1511,120.810767
+San Nicolas,Lungao,6,16.085114,120.761486
+San Nicolas,Malico,6,16.143675,120.829375
+San Nicolas,Malilion,6,16.107267,120.745183
+San Nicolas,Nagkaysa,6,16.06784,120.76056
+San Nicolas,Nining,6,16.06404,120.7898
+San Nicolas,Poblacion East,6,16.074275,120.762375
+San Nicolas,Poblacion West,6,16.074267,120.75725
+San Nicolas,Salingcob,6,16.110563,120.776525
+San Nicolas,Salpad,6,16.18376,120.76676
+San Nicolas,San Felipe East,6,16.173607,120.706553
+San Nicolas,San Felipe West,6,16.148975,120.7008
+San Nicolas,San Isidro,6,16.116886,120.758243
+San Nicolas,San Jose,6,16.057067,120.774167
+San Nicolas,San Rafael Centro,6,16.0757,120.734117
+San Nicolas,San Rafael East,6,16.073867,120.749167
+San Nicolas,San Rafael West,6,16.063025,120.7324
+San Nicolas,San Roque,6,16.060889,120.752922
+San Nicolas,Santa Maria East,6,16.1137,120.8093
+San Nicolas,Santa Maria West,6,16.09686,120.79538
+San Nicolas,Santo Tomas,6,16.099786,120.7175
+San Nicolas,Siblot,6,16.069962,120.776913
+San Nicolas,Sobol,6,16.0579,120.7426
+San Quintin,Alac,6,16.00235,120.798
+San Quintin,Baligayan,6,15.95046,120.7222
+San Quintin,Bantog,6,15.962786,120.813643
+San Quintin,Bolintaguen,6,15.98075,120.782086
+San Quintin,Cabalaoangan,6,15.9811,120.809014
+San Quintin,Cabangaran,6,16.01865,120.85517
+San Quintin,Calomboyan,6,15.98305,120.821517
+San Quintin,Carayacan,6,15.969754,120.827385
+San Quintin,Casantamarian,6,16.008445,120.864073
+San Quintin,Gonzalo,6,15.991667,120.865656
+San Quintin,Labuan,6,15.9487,120.73175
+San Quintin,Lagasit,6,15.997458,120.790825
+San Quintin,Lumayao,6,15.96647,120.74172
+San Quintin,Mabini,6,16.028263,120.855238
+San Quintin,Mantacdang,6,15.958912,120.758682
+San Quintin,Nangapugan,6,15.98223,120.87086
+San Quintin,Poblacion Zone I,6,15.98915,120.80515
+San Quintin,Poblacion Zone II,6,15.98806,120.81588
+San Quintin,Poblacion Zone III,6,15.99424,120.81232
+San Quintin,San Pedro,6,15.969482,120.799636
+San Quintin,Ungib,6,15.978483,120.797767
+Santa Maria,Bal-Loy,6,15.98052,120.72016
+Santa Maria,Bantog,6,15.96855,120.694417
+Santa Maria,Caboluan,6,15.9653,120.72146
+Santa Maria,Cal-Litang,6,15.948025,120.651612
+Santa Maria,Capandanan,6,15.96148,120.6765
+Santa Maria,Cauplasan,6,15.96159,120.66668
+Santa Maria,Dalayap,6,15.960257,120.697671
+Santa Maria,Libsong,6,15.9594,120.72216
+Santa Maria,Namagbagan,6,15.954523,120.683238
+Santa Maria,Paitan,6,15.977086,120.671457
+Santa Maria,Pataquid,6,15.969889,120.728856
+Santa Maria,Pilar,6,15.963073,120.650391
+Santa Maria,Poblacion East,6,15.981,120.69622
+Santa Maria,Poblacion West,6,15.98098,120.69246
+Santa Maria,Pugot,6,15.981488,120.741825
+Santa Maria,Samon,6,15.94137,120.63935
+Santa Maria,San Alejandro,6,15.978583,120.698217
+Santa Maria,San Mariano,6,15.98695,120.711567
+Santa Maria,San Pablo,6,15.9476,120.701983
+Santa Maria,San Patricio,6,15.988543,120.692357
+Santa Maria,San Vicente,6,15.996433,120.703233
+Santa Maria,Santa Cruz,6,15.959933,120.7092
+Santa Maria,Santa Rosa,6,15.98146,120.68564
+Santo Tomas,La Luna,5,15.87796,120.57042
+Santo Tomas,Poblacion East,5,15.87785,120.578467
+Santo Tomas,Poblacion West,5,15.88046,120.57138
+Santo Tomas,Salvacion,5,15.885967,120.58405
+Santo Tomas,San Agustin,5,15.87832,120.5811
+Santo Tomas,San Antonio,5,15.868183,120.563483
+Santo Tomas,San Jose,5,15.871317,120.565317
+Santo Tomas,San Marcos,5,15.8758,120.56836
+Santo Tomas,Santo Domingo,5,15.866967,120.576133
+Santo Tomas,Santo Niño,5,15.87658,120.5621
+Sison,Agat,5,16.211391,120.502936
+Sison,Alibeng,5,16.135789,120.613189
+Sison,Amagbagan,5,16.17132,120.48238
+Sison,Artacho,5,16.1978,120.49812
+Sison,Asan Norte,5,16.19168,120.52068
+Sison,Asan Sur,5,16.1587,120.5194
+Sison,Bantay Insik,5,16.187225,120.463025
+Sison,Bila,5,16.183429,120.5134
+Sison,Binmeckeg,5,16.207287,120.475887
+Sison,Bulaoen East,5,16.19356,120.46962
+Sison,Bulaoen West,5,16.179443,120.463914
+Sison,Cabaritan,5,16.194317,120.479733
+Sison,Calunetan,5,16.158371,120.596329
+Sison,Camangaan,5,16.1559,120.49035
+Sison,Cauringan,5,16.189486,120.4981
+Sison,Dungon,5,16.226417,120.51705
+Sison,Esperanza,5,16.201225,120.489025
+Sison,Inmalog,5,16.196567,120.551917
+Sison,Killo,5,16.119163,120.575437
+Sison,Labayug,5,16.182656,120.592789
+Sison,Paldit,5,16.170625,120.5182
+Sison,Pindangan,5,16.176883,120.471317
+Sison,Pinmilapil,5,16.203871,120.4551
+Sison,Poblacion Central,5,16.17415,120.49775
+Sison,Poblacion Norte,5,16.180117,120.4913
+Sison,Poblacion Sur,5,16.166543,120.504914
+Sison,Sagunto,5,16.203888,120.51255
+Sison,Tara-Tara,5,16.157843,120.476829
+Tayug,Agno,6,16.021992,120.719992
+Tayug,Amistad,6,16.033462,120.733675
+Tayug,Barangay A,6,16.031843,120.744371
+Tayug,Barangay B,6,16.028867,120.743567
+Tayug,Barangay C,6,16.03116,120.73876
+Tayug,Barangay D,6,16.026243,120.739771
+Tayug,Barangobong,6,16.008789,120.719278
+Tayug,C. Lichauco,6,15.983891,120.767073
+Tayug,Carriedo,6,16.03884,120.75762
+Tayug,Evangelista,6,16.010583,120.739733
+Tayug,Guzon,6,16.031683,120.709089
+Tayug,Lawak,6,15.99591,120.75107
+Tayug,Legaspi,6,16.049688,120.737088
+Tayug,Libertad,6,16.022614,120.759314
+Tayug,Magallanes,6,16.01881,120.73012
+Tayug,Panganiban,6,16.0084,120.768575
+Tayug,Saleng,6,15.99514,120.75916
+Tayug,Santo Domingo,6,15.997383,120.73975
+Tayug,Toketec,6,16.014489,120.763667
+Tayug,Trenchera,6,16.0292,120.758217
+Tayug,Zamora,6,15.99795,120.775967
+Umingan,Abot Molina,6,15.90409,120.83282
+Umingan,Alo-O,6,15.903155,120.885264
+Umingan,Amaronan,6,15.948667,120.829144
+Umingan,Annam,6,15.947818,120.859364
+Umingan,Bantug,6,15.914314,120.846557
+Umingan,Baracbac,6,15.848754,120.851142
+Umingan,Barat,6,15.943936,120.810782
+Umingan,Buenavista,6,15.938517,120.789533
+Umingan,Cabalitian,6,15.927117,120.747283
+Umingan,Cabangaran,6,15.876975,120.870087
+Umingan,Cabaruan,6,15.901563,120.740138
+Umingan,Cabatuan,6,15.90125,120.852663
+Umingan,Cadiz,6,15.864057,120.749043
+Umingan,Calitlitan,6,15.962063,120.863875
+Umingan,Capas,6,15.91285,120.826392
+Umingan,Carayungan Sur,6,15.889178,120.842633
+Umingan,Carosalesan,6,15.887321,120.865407
+Umingan,Casilan,6,15.88294,120.77689
+Umingan,Caurdanetaan,6,15.924825,120.847737
+Umingan,Concepcion,6,15.85781,120.77099
+Umingan,Decreto,6,15.931643,120.724186
+Umingan,Del Rosario,6,15.913428,120.799461
+Umingan,Diaz,6,15.838085,120.824763
+Umingan,Diket,6,15.9432,120.889753
+Umingan,Don Justo Abalos,6,15.9331,120.858857
+Umingan,Don Montano,6,15.917867,120.864067
+Umingan,Esperanza,6,15.941264,120.799391
+Umingan,Evangelista,6,15.949725,120.844667
+Umingan,Flores,6,15.935822,120.778189
+Umingan,Fulgosino,6,15.900705,120.795967
+Umingan,Gonzales,6,15.919069,120.752175
+Umingan,La Paz,6,15.917262,120.736537
+Umingan,Labuan,6,15.94004,120.73552
+Umingan,Lauren,6,15.938487,120.830925
+Umingan,Lubong,6,15.92115,120.80891
+Umingan,Luna Este,6,15.843488,120.806788
+Umingan,Luna Weste,6,15.863714,120.78535
+Umingan,Mantacdang,6,15.944671,120.763471
+Umingan,Maseil-Seil,6,15.910573,120.879373
+Umingan,Nampalcan,6,15.902041,120.820894
+Umingan,Nancalabasaan,6,15.9313,120.82938
+Umingan,Pangangaan,6,15.880553,120.815753
+Umingan,Papallasen,6,15.928414,120.738557
+Umingan,Pemienta,6,15.921364,120.826464
+Umingan,Poblacion East,6,15.924,120.83936
+Umingan,Poblacion West,6,15.92582,120.83406
+Umingan,Prado,6,15.898269,120.769977
+Umingan,Resurreccion,6,15.889138,120.736712
+Umingan,Ricos,6,15.873677,120.845085
+Umingan,San Andres,6,15.9028,120.74565
+Umingan,San Juan,6,15.846791,120.7852
+Umingan,San Leon,6,15.908729,120.730271
+Umingan,San Pablo,6,15.8533,120.756267
+Umingan,San Vicente,6,15.876944,120.771775
+Umingan,Santa Maria,6,15.914922,120.779611
+Umingan,Santa Rosa,6,15.87836,120.74549
+Umingan,Sinabaan,6,15.929462,120.758363
+Umingan,Tanggal Sawang,6,15.9428,120.75196
+Urdaneta City,Anonas,5,16.001314,120.577886
+Urdaneta City,Bactad East,5,15.98535,120.626817
+Urdaneta City,Bayaoas,5,15.977457,120.579443
+Urdaneta City,Bolaoen,5,15.99705,120.6132
+Urdaneta City,Cabaruan,5,15.9476,120.520683
+Urdaneta City,Cabuloan,5,15.97556,120.5997
+Urdaneta City,Camanang,5,15.962029,120.585157
+Urdaneta City,Camantiles,5,15.999229,120.545095
+Urdaneta City,Casantaan,5,15.991557,120.6122
+Urdaneta City,Catablan,5,15.980508,120.493342
+Urdaneta City,Cayambanan,5,16.006733,120.586933
+Urdaneta City,Consolacion,5,15.96005,120.61695
+Urdaneta City,Dilan Paurido,5,15.982975,120.584862
+Urdaneta City,Dr. Pedro T. Orata,5,15.982133,120.614633
+Urdaneta City,Labit Proper,5,15.961967,120.533333
+Urdaneta City,Labit West,5,15.960729,120.507143
+Urdaneta City,Mabanogbog,5,15.985571,120.550257
+Urdaneta City,Macalong,5,15.966733,120.617183
+Urdaneta City,Nancalobasaan,5,16.00953,120.60469
+Urdaneta City,Nancamaliran East,5,15.978833,120.558017
+Urdaneta City,Nancamaliran West,5,15.975814,120.547871
+Urdaneta City,Nancayasan,5,15.961167,120.573378
+Urdaneta City,Oltama,5,15.938817,120.506367
+Urdaneta City,Palina East,5,15.954467,120.560583
+Urdaneta City,Palina West,5,15.95975,120.545587
+Urdaneta City,Pinmaludpod,5,15.993575,120.523992
+Urdaneta City,Poblacion,5,15.9788,120.56842
+Urdaneta City,San Jose,5,15.993071,120.501857
+Urdaneta City,San Vicente,5,15.989957,120.568386
+Urdaneta City,Santa Lucia,5,15.96884,120.55522
+Urdaneta City,Santo Domingo,5,15.96472,120.56184
+Urdaneta City,Sugcong,5,15.944443,120.541043
+Urdaneta City,Tipuso,5,15.974929,120.620657
+Urdaneta City,Tulong,5,16.005777,120.561831
+Villasis,Amamperez,5,15.889357,120.537971
+Villasis,Bacag,5,15.94225,120.586733
+Villasis,Barangobong,5,15.8893,120.560333
+Villasis,Barraca,5,15.918445,120.571791
+Villasis,Capulaan,5,15.9044,120.541167
+Villasis,Caramutan,5,15.926743,120.615186
+Villasis,La Paz,5,15.9178,120.51852
+Villasis,Labit,5,15.93212,120.53218
+Villasis,Lipay,5,15.903943,120.605343
+Villasis,Lomboy,5,15.917533,120.59255
+Villasis,Piaz,5,15.942733,120.630389
+Villasis,Puelay,5,15.896544,120.5858
+Villasis,San Blas,5,15.91576,120.60112
+Villasis,San Nicolas,5,15.922929,120.587429
+Villasis,Tombod,5,15.9424,120.55932
+Villasis,Unzad,5,15.919429,120.538629
+Villasis,Zone I,5,15.90652,120.59052
+Villasis,Zone II,5,15.9035,120.58634
+Villasis,Zone III,5,15.90428,120.58448
+Villasis,Zone IV,5,15.90622,120.58328
+Villasis,Zone V,5,15.90906,120.5876
+Aguilar,Bayaoas,2,15.830798,120.277002
+Aguilar,Baybay,2,15.897102,120.250778
+Aguilar,Bocacliw,2,15.830492,120.229833
+Aguilar,Bocboc East,2,15.885458,120.259454
+Aguilar,Bocboc West,2,15.885086,120.25137
+Aguilar,Buer,2,15.810349,120.21078
+Aguilar,Calsib,2,15.839396,120.277828
+Aguilar,Laoag,2,15.872873,120.256605
+Aguilar,Manlocboc,2,15.890616,120.229099
+Aguilar,Ninoy,2,15.846732,120.240032
+Aguilar,Panacol,2,15.847723,120.292068
+Aguilar,Poblacion,2,15.873615,120.218538
+Aguilar,Pogomboa,2,15.854902,120.220856
+Aguilar,Pogonsili,2,15.784636,120.212012
+Aguilar,San Jose,2,15.860757,120.286188
+Aguilar,Tampac,2,15.873454,120.268115
+Basista,Anambongan,2,15.856174,120.397858
+Basista,Bayoyong,2,15.868238,120.391853
+Basista,Cabeldatan,2,15.885975,120.405775
+Basista,Dumpay,2,15.884293,120.394764
+Basista,Malimpec East,2,15.848956,120.416052
+Basista,Mapolopolo,2,15.8791,120.38715
+Basista,Nalneran,2,15.852818,120.432004
+Basista,Navatat,2,15.853537,120.404799
+Basista,Obong,2,15.86906,120.416021
+Basista,Osmena Sr.,2,15.84641,120.405473
+Basista,Palma,2,15.875554,120.406643
+Basista,Patacbo,2,15.860872,120.424684
+Basista,Poblacion,2,15.855751,120.410432
+Binmaley,Amancoro,2,15.995738,120.284703
+Binmaley,Balagan,2,15.982473,120.305559
+Binmaley,Balogo,2,15.986569,120.288145
+Binmaley,Basing,2,15.982573,120.278354
+Binmaley,Baybay Lopez,2,16.03799,120.260521
+Binmaley,Baybay Polong,2,16.03154,120.262553
+Binmaley,Biec,2,16.0195,120.278136
+Binmaley,Buenlag,2,16.047866,120.286485
+Binmaley,Calit,2,16.00818,120.321111
+Binmaley,Caloocan Dupo,2,16.038461,120.301129
+Binmaley,Caloocan Norte,2,16.037558,120.280408
+Binmaley,Caloocan Sur,2,16.030705,120.28725
+Binmaley,Camaley,2,15.993478,120.300505
+Binmaley,Canaoalan,2,16.030566,120.304374
+Binmaley,Dulag,2,15.992142,120.274386
+Binmaley,Gayaman,2,16.011882,120.310849
+Binmaley,Linoc,2,16.0199,120.302439
+Binmaley,Lomboy,2,16.014439,120.266248
+Binmaley,Malindong,2,16.023753,120.261435
+Binmaley,Manat,2,16.014495,120.281594
+Binmaley,Nagpalangan,2,16.00397,120.273577
+Binmaley,Naguilayan,2,16.005819,120.295488
+Binmaley,Pallas,2,15.974225,120.309272
+Binmaley,Papagueyan,2,15.978347,120.32349
+Binmaley,Parayao,2,15.96613,120.311663
+Binmaley,Poblacion,2,16.026526,120.272709
+Binmaley,Pototan,2,15.966247,120.289253
+Binmaley,Sabangan,2,16.05207,120.295635
+Binmaley,Salapingao,2,16.042705,120.294771
+Binmaley,San Isidro Norte,2,16.04327,120.274251
+Binmaley,San Isidro Sur,2,16.034854,120.27242
+Binmaley,Santa Rosa,2,15.999767,120.313519
+Binmaley,Tombor,2,15.989697,120.318461
+Bugallon,Angarian,2,15.976675,120.238279
+Bugallon,Asinan,2,15.991942,120.200339
+Bugallon,Bacabac,2,15.966566,120.222788
+Bugallon,Banaga,2,15.98392,120.23237
+Bugallon,Bolaoen,2,15.926884,120.241604
+Bugallon,Buenlag,2,15.980255,120.198195
+Bugallon,Cabayaoasan,2,15.950658,120.240602
+Bugallon,Cayanga,2,15.916387,120.226768
+Bugallon,Gueset,2,15.963653,120.182514
+Bugallon,Hacienda,2,15.901888,120.168191
+Bugallon,Laguit Centro,2,15.939273,120.206299
+Bugallon,Laguit Padilla,2,15.93547,120.176492
+Bugallon,Magtaking,2,15.982681,120.190307
+Bugallon,Pangascasan,2,15.925623,120.261292
+Bugallon,Pantal,2,15.994758,120.215562
+Bugallon,Poblacion,2,15.947976,120.221267
+Bugallon,Polong,2,15.969692,120.207015
+Bugallon,Portic,2,15.913399,120.200467
+Bugallon,Salasa,2,15.957131,120.222513
+Bugallon,Salomague Norte,2,15.885164,120.182745
+Bugallon,Salomague Sur,2,15.85048,120.176355
+Bugallon,Samat,2,15.981673,120.206575
+Bugallon,San Francisco,2,15.954144,120.205481
+Bugallon,Umanday,2,15.929694,120.221531
+Labrador,Bolo,2,15.960129,120.156694
+Labrador,Bongalon,2,15.97635,120.144444
+Labrador,Dulig,2,15.99772,120.185041
+Labrador,Laois,2,16.004244,120.121602
+Labrador,Magsaysay,2,16.00254,120.169879
+Labrador,Poblacion,2,16.015084,120.144445
+Labrador,San Gonzalo,2,15.985177,120.131976
+Labrador,San Jose,2,16.024192,120.141948
+Labrador,Tobuan,2,16.036177,120.103922
+Labrador,Uyong,2,16.015476,120.109564
+Lingayen,Aliwekwek,2,15.976322,120.250151
+Lingayen,Baay,2,16.017548,120.227833
+Lingayen,Balangobong,2,16.025024,120.20741
+Lingayen,Balococ,2,16.002177,120.228998
+Lingayen,Bantayan,2,15.984465,120.221401
+Lingayen,Basing,2,15.977371,120.264761
+Lingayen,Capandanan,2,16.035384,120.203317
+Lingayen,Domalandan Center,2,16.00827,120.200751
+Lingayen,Domalandan East,2,16.00929,120.210902
+Lingayen,Domalandan West,2,16.011172,120.187393
+Lingayen,Dorongan,2,16.023089,120.215536
+Lingayen,Dulag,2,15.991893,120.260931
+Lingayen,Estanza,2,16.023359,120.173908
+Lingayen,Lasip,2,15.964363,120.257344
+Lingayen,Libsong East,2,16.035216,120.248659
+Lingayen,Libsong West,2,16.033653,120.241569
+Lingayen,Malawa,2,15.965532,120.273617
+Lingayen,Malimpuec,2,16.030344,120.193079
+Lingayen,Maniboc,2,16.034801,120.221074
+Lingayen,Matalava,2,16.009905,120.253928
+Lingayen,Naguelguel,2,16.001984,120.256607
+Lingayen,Namolan,2,16.019115,120.248776
+Lingayen,Pangapisan North,2,16.0359,120.210733
+Lingayen,Pangapisan Sur,2,16.032053,120.217422
+Lingayen,Poblacion,2,16.027867,120.233012
+Lingayen,Quibaol,2,16.008024,120.238719
+Lingayen,Rosario,2,15.947383,120.267324
+Lingayen,Sabangan,2,16.030629,120.155291
+Lingayen,Talogtog,2,15.998843,120.24357
+Lingayen,Tonton,2,16.026287,120.252092
+Lingayen,Tumbar,2,15.98904,120.248464
+Lingayen,Wawa,2,15.967423,120.243381
+Mangatarem,Andangin,2,15.721839,120.33994
+Mangatarem,Arellano Street,2,15.781603,120.297605
+Mangatarem,Bantay,2,15.764588,120.225821
+Mangatarem,Bantocaling,2,15.779726,120.257894
+Mangatarem,Baracbac,2,15.724111,120.348798
+Mangatarem,Bogtong Bolo,2,15.739525,120.3327
+Mangatarem,Bogtong Bunao,2,15.744941,120.348949
+Mangatarem,Bogtong Centro,2,15.749265,120.3376
+Mangatarem,Bogtong Niog,2,15.756122,120.350004
+Mangatarem,Bogtong Silag,2,15.8107,120.29076
+Mangatarem,Buaya,2,15.772497,120.378829
+Mangatarem,Buenlag,2,15.780848,120.234315
+Mangatarem,Bueno,2,15.773489,120.321006
+Mangatarem,Bunagan,2,15.733288,120.238159
+Mangatarem,Bunlalacao,2,15.819813,120.29145
+Mangatarem,Burgos Street,2,15.783226,120.305609
+Mangatarem,Cabaluyan 1st,2,15.704065,120.345638
+Mangatarem,Cabaluyan 2nd,2,15.665545,120.29587
+Mangatarem,Cabarabuan,2,15.710844,120.334138
+Mangatarem,Cabaruan,2,15.744254,120.326077
+Mangatarem,Cabayaoasan,2,15.768916,120.389801
+Mangatarem,Cabayugan,2,15.745277,120.358995
+Mangatarem,Cacaoiten,2,15.643867,120.287239
+Mangatarem,Calumboyan Norte,2,15.839108,120.295345
+Mangatarem,Calumboyan Sur,2,15.723668,120.288837
+Mangatarem,Calvo,2,15.78557,120.304115
+Mangatarem,Casilagan,2,15.728881,120.332508
+Mangatarem,Catarataraan,2,15.717165,120.297958
+Mangatarem,Caturay Norte,2,15.779558,120.365763
+Mangatarem,Caturay Sur,2,15.775008,120.371553
+Mangatarem,Caviernesan,2,15.76276,120.292226
+Mangatarem,Dorongan Ketaket,2,15.797918,120.330399
+Mangatarem,Dorongan Linmansangan,2,15.83499,120.304911
+Mangatarem,Dorongan Punta,2,15.809963,120.325142
+Mangatarem,Dorongan Sawat,2,15.785422,120.344318
+Mangatarem,Dorongan Valerio,2,15.819555,120.317079
+Mangatarem,General Luna,2,15.7788,120.298235
+Mangatarem,Historia,2,15.78409,120.325643
+Mangatarem,Lawak Langka,2,15.67067,120.279154
+Mangatarem,Linmansangan,2,15.83013,120.290768
+Mangatarem,Lopez,2,15.771731,120.289777
+Mangatarem,Mabini,2,15.773732,120.296878
+Mangatarem,Macarang,2,15.724927,120.354868
+Mangatarem,Malabobo,2,15.684533,120.276823
+Mangatarem,Malibong,2,15.771695,120.278563
+Mangatarem,Malunec,2,15.810496,120.272052
+Mangatarem,Maravilla,2,15.784334,120.297002
+Mangatarem,Maravilla-Arellano Ext.,2,15.782158,120.288479
+Mangatarem,Muelang,2,15.748933,120.228709
+Mangatarem,Naguilayan East,2,15.760139,120.31338
+Mangatarem,Naguilayan West,2,15.753319,120.295198
+Mangatarem,Nancasalan,2,15.740804,120.363778
+Mangatarem,Niog-Cabison-Bulaney,2,15.798274,120.304927
+Mangatarem,Olegario-Caoile,2,15.775555,120.302622
+Mangatarem,Olo Cacamposan,2,15.760001,120.332543
+Mangatarem,Olo Cafabrosan,2,15.765871,120.326775
+Mangatarem,Olo Cagarlitan,2,15.7686,120.346102
+Mangatarem,Osmeña,2,15.776411,120.288553
+Mangatarem,Pacalat,2,15.70885,120.248025
+Mangatarem,Pampano,2,15.760841,120.363597
+Mangatarem,Parian,2,15.779958,120.276485
+Mangatarem,Paul,2,15.788063,120.317542
+Mangatarem,Peania Pedania,2,15.757414,120.375934
+Mangatarem,Pogon-Aniat,2,15.777502,120.331271
+Mangatarem,Pogon-Lomboy,2,15.778532,120.310721
+Mangatarem,Ponglo-Baleg,2,15.800146,120.272021
+Mangatarem,Ponglo-Muelag,2,15.791529,120.276756
+Mangatarem,Quetegan,2,15.819757,120.278706
+Mangatarem,Quezon,2,15.775774,120.296768
+Mangatarem,Salavante,2,15.779021,120.358055
+Mangatarem,Sapang,2,15.698048,120.275431
+Mangatarem,Sonson Ongkit,2,15.768395,120.312992
+Mangatarem,Suaco,2,15.739146,120.31535
+Mangatarem,Tagac,2,15.74881,120.30825
+Mangatarem,Takipan,2,15.731217,120.345809
+Mangatarem,Talogtog,2,15.754018,120.335289
+Mangatarem,Tococ Barikir,2,15.73245,120.301309
+Mangatarem,Torre 1st,2,15.78992,120.299566
+Mangatarem,Torre 2nd,2,15.800083,120.31222
+Mangatarem,Torres Bugallon,2,15.771449,120.296346
+Mangatarem,Umangan,2,15.80049,120.294564
+Mangatarem,Zamora,2,15.780267,120.305567
+Urbiztondo,Angatel,2,15.802683,120.354117
+Urbiztondo,Balangay,2,15.84981,120.370497
+Urbiztondo,Batangcaoa,2,15.828292,120.386368
+Urbiztondo,Baug,2,15.817583,120.387666
+Urbiztondo,Bayaoas,2,15.827931,120.36765
+Urbiztondo,Bituag,2,15.838249,120.390209
+Urbiztondo,Camambugan,2,15.813929,120.372851
+Urbiztondo,Dalangiring,2,15.840841,120.343453
+Urbiztondo,Duplac,2,15.8365,120.376004
+Urbiztondo,Galarin,2,15.790892,120.389025
+Urbiztondo,Gueteb,2,15.848064,120.359604
+Urbiztondo,Malaca,2,15.841352,120.382255
+Urbiztondo,Malayo,2,15.822153,120.355344
+Urbiztondo,Malibong,2,15.836161,120.322416
+Urbiztondo,Pasibi East,2,15.849631,120.387108
+Urbiztondo,Pasibi West,2,15.856784,120.380995
+Urbiztondo,Pisuac,2,15.805067,120.395168
+Urbiztondo,Poblacion,2,15.818923,120.340359
+Urbiztondo,Real,2,15.810071,120.358936
+Urbiztondo,Salavante,2,15.793022,120.358749
+Urbiztondo,Sawat,2,15.804212,120.342302
+Bayambang,Alinggan,3,15.830331,120.427852
+Bayambang,Amamperez,3,15.83333,120.435739
+Bayambang,Amancosiling Norte,3,15.783357,120.462842
+Bayambang,Amancosiling Sur,3,15.777118,120.463985
+Bayambang,Ambayat I,3,15.766754,120.425291
+Bayambang,Ambayat II,3,15.768179,120.411847
+Bayambang,Apalen,3,15.798075,120.435733
+Bayambang,Asin,3,15.823212,120.455409
+Bayambang,Ataynan,3,15.838192,120.487117
+Bayambang,Bacnono,3,15.831932,120.480344
+Bayambang,Balaybuaya,3,15.835572,120.401418
+Bayambang,Banaban,3,15.843669,120.431664
+Bayambang,Bani,3,15.825961,120.446886
+Bayambang,Batangcawa,3,15.813897,120.405801
+Bayambang,Beleng,3,15.822463,120.402655
+Bayambang,Bical Norte,3,15.816443,120.444765
+Bayambang,Bical Sur,3,15.80474,120.448274
+Bayambang,Bongato East,3,15.826072,120.48457
+Bayambang,Bongato West,3,15.822545,120.479009
+Bayambang,Buayaen,3,15.787726,120.455574
+Bayambang,Buenlag 1st,3,15.844893,120.476821
+Bayambang,Buenlag 2nd,3,15.846716,120.486734
+Bayambang,Cadre Site,3,15.814481,120.452651
+Bayambang,Carungay,3,15.775345,120.431318
+Bayambang,Caturay,3,15.782107,120.414892
+Bayambang,Darawey,3,15.768972,120.453112
+Bayambang,Duera,3,15.844697,120.444188
+Bayambang,Dusoc,3,15.779783,120.446816
+Bayambang,Hermoza,3,15.783055,120.421247
+Bayambang,Idong,3,15.789678,120.409418
+Bayambang,Inanlorenzana,3,15.799284,120.419538
+Bayambang,Inirangan,3,15.789984,120.427039
+Bayambang,Iton,3,15.771815,120.473461
+Bayambang,Langiran,3,15.834685,120.417646
+Bayambang,Ligue,3,15.817761,120.432654
+Bayambang,M. H. Del Pilar,3,15.800263,120.460866
+Bayambang,Macayocayo,3,15.817145,120.416533
+Bayambang,Magsaysay,3,15.804675,120.455595
+Bayambang,Maigpa,3,15.80676,120.406218
+Bayambang,Malimpec,3,15.841942,120.415917
+Bayambang,Malioer,3,15.778109,120.408714
+Bayambang,Managos,3,15.760248,120.437792
+Bayambang,Manambong Norte,3,15.794713,120.473299
+Bayambang,Manambong Parte,3,15.783027,120.493435
+Bayambang,Manambong Sur,3,15.779066,120.479715
+Bayambang,Mangayao,3,15.854502,120.478027
+Bayambang,Nalsian Norte,3,15.849298,120.45691
+Bayambang,Nalsian Sur,3,15.839536,120.462955
+Bayambang,Pangdel,3,15.77114,120.44301
+Bayambang,Pantol,3,15.765881,120.514135
+Bayambang,Paragos,3,15.754279,120.47448
+Bayambang,Poblacion Sur,3,15.803064,120.464952
+Bayambang,Pugo,3,15.765733,120.464468
+Bayambang,Reynado,3,15.790222,120.418609
+Bayambang,San Gabriel 1st,3,15.766355,120.474454
+Bayambang,San Gabriel 2nd,3,15.751698,120.49259
+Bayambang,San Vicente,3,15.755654,120.457823
+Bayambang,Sangcagulis,3,15.794369,120.448503
+Bayambang,Sanlibo,3,15.798064,120.406874
+Bayambang,Sapang,3,15.83496,120.447912
+Bayambang,Tamaro,3,15.832573,120.467072
+Bayambang,Tambac,3,15.826488,120.467645
+Bayambang,Tampog,3,15.744352,120.469088
+Bayambang,Tanolong,3,15.808883,120.418588
+Bayambang,Tatarao,3,15.782831,120.430424
+Bayambang,Telbang,3,15.792576,120.463756
+Bayambang,Tococ East,3,15.825361,120.420872
+Bayambang,Tococ West,3,15.826982,120.41246
+Bayambang,Warding,3,15.758155,120.449146
+Bayambang,Wawa,3,15.768081,120.459934
+Bayambang,Zone I,3,15.807461,120.464265
+Bayambang,Zone II,3,15.810359,120.464068
+Bayambang,Zone III,3,15.8144,120.4616
+Bayambang,Zone IV,3,15.815672,120.464197
+Bayambang,Zone V,3,15.823526,120.469571
+Bayambang,Zone VI,3,15.808383,120.458153
+Bayambang,Zone VII,3,15.816717,120.457901
+Calasiao,Ambonao,3,16.026517,120.373579
+Calasiao,Ambuetel,3,15.98212,120.338784
+Calasiao,Banaoang,3,16.013081,120.335898
+Calasiao,Bued,3,16.018441,120.387426
+Calasiao,Buenlag,3,15.989549,120.379101
+Calasiao,Cabilocaan,3,16.024094,120.382438
+Calasiao,Dinalaoan,3,15.995346,120.346108
+Calasiao,Doyong,3,15.970291,120.363106
+Calasiao,Gabon,3,16.013293,120.366624
+Calasiao,Lasip,3,16.004961,120.360341
+Calasiao,Longos,3,15.981905,120.358144
+Calasiao,Lumbang,3,15.990514,120.339924
+Calasiao,Macabito,3,15.969118,120.38837
+Calasiao,Malabago,3,15.972459,120.373597
+Calasiao,Mancup,3,15.994726,120.365502
+Calasiao,Nagsaing,3,15.971477,120.341554
+Calasiao,Nalsian,3,16.016873,120.351667
+Calasiao,Poblacion East,3,16.011379,120.360846
+Calasiao,Poblacion West,3,16.009686,120.355444
+Calasiao,Quesban,3,16.012053,120.380357
+Calasiao,San Miguel,3,16.020147,120.360748
+Calasiao,San Vicente,3,16.003109,120.336176
+Calasiao,Songkoy,3,15.971433,120.382667
+Calasiao,Talibaew,3,16.000467,120.383488
+Malasiqui,Abonagan,3,15.934914,120.448895
+Malasiqui,Agdao,3,15.933797,120.464189
+Malasiqui,Alacan,3,15.911365,120.412155
+Malasiqui,Aliaga,3,15.895097,120.448979
+Malasiqui,Amacalan,3,15.897099,120.441298
+Malasiqui,Anolid,3,15.896559,120.41109
+Malasiqui,Apaya,3,15.89056,120.426756
+Malasiqui,Asin Este,3,15.967453,120.489616
+Malasiqui,Asin Weste,3,15.963617,120.475191
+Malasiqui,Bacundao Este,3,15.930751,120.500079
+Malasiqui,Bacundao Weste,3,15.931812,120.492049
+Malasiqui,Bakitiw,3,15.884823,120.466663
+Malasiqui,Balite,3,15.956799,120.480948
+Malasiqui,Banawang,3,15.920652,120.428147
+Malasiqui,Barang,3,15.936966,120.428242
+Malasiqui,Bawer,3,15.916254,120.459104
+Malasiqui,Binalay,3,15.912757,120.436678
+Malasiqui,Bobon,3,15.931751,120.439483
+Malasiqui,Bolaoit,3,15.932487,120.434868
+Malasiqui,Bongar,3,15.892124,120.50457
+Malasiqui,Butao,3,15.906828,120.46225
+Malasiqui,Cabatling,3,15.922614,120.438794
+Malasiqui,Cabueldatan,3,15.888348,120.415512
+Malasiqui,Calbueg,3,15.95419,120.471626
+Malasiqui,Canan Norte,3,15.91194,120.482949
+Malasiqui,Canan Sur,3,15.904201,120.483388
+Malasiqui,Cawayan Bogtong,3,15.942392,120.408611
+Malasiqui,Don Pedro,3,15.885984,120.437562
+Malasiqui,Gatang,3,15.87017,120.48114
+Malasiqui,Goliman,3,15.860858,120.457893
+Malasiqui,Gomez,3,15.911198,120.426736
+Malasiqui,Guilig,3,15.916109,120.411833
+Malasiqui,Ican,3,15.949353,120.423667
+Malasiqui,Ingalagala,3,15.904664,120.438211
+Malasiqui,Lareg-Lareg,3,15.914575,120.504572
+Malasiqui,Lasip,3,15.905423,120.448286
+Malasiqui,Lepa,3,15.886009,120.452135
+Malasiqui,Loqueb Este,3,15.950672,120.459775
+Malasiqui,Loqueb Norte,3,15.948715,120.443736
+Malasiqui,Loqueb Sur,3,15.942504,120.44507
+Malasiqui,Lunec,3,15.960148,120.49236
+Malasiqui,Mabulitec,3,15.879056,120.428591
+Malasiqui,Malimpec,3,15.895613,120.463379
+Malasiqui,Manggan-Dampay,3,15.951521,120.493403
+Malasiqui,Nalsian Norte,3,15.862,120.44282
+Malasiqui,Nalsian Sur,3,15.856251,120.446309
+Malasiqui,Nancapian,3,15.905284,120.508058
+Malasiqui,Nansangaan,3,15.918525,120.47041
+Malasiqui,Olea,3,15.878771,120.518974
+Malasiqui,Pacuan,3,15.872284,120.493461
+Malasiqui,Palapar Norte,3,15.890305,120.48052
+Malasiqui,Palapar Sur,3,15.887397,120.492729
+Malasiqui,Palong,3,15.874808,120.456
+Malasiqui,Pamaranum,3,15.899484,120.493712
+Malasiqui,Pasima,3,15.930159,120.407962
+Malasiqui,Payar,3,15.90243,120.418115
+Malasiqui,Poblacion,3,15.921309,120.420876
+Malasiqui,Polong Norte,3,15.902837,120.431064
+Malasiqui,Polong Sur,3,15.893975,120.435292
+Malasiqui,Potiocan,3,15.956149,120.443132
+Malasiqui,San Julian,3,15.875816,120.444182
+Malasiqui,Tabo-Sili,3,15.929385,120.481815
+Malasiqui,Talospatang,3,15.923551,120.449597
+Malasiqui,Taloy,3,15.920989,120.407222
+Malasiqui,Taloyan,3,15.94585,120.479491
+Malasiqui,Tambac,3,15.932055,120.418384
+Malasiqui,Tobor,3,15.894338,120.516886
+Malasiqui,Tolonguat,3,15.960399,120.460985
+Malasiqui,Tomling,3,15.867479,120.450383
+Malasiqui,Umando,3,15.869959,120.468202
+Malasiqui,Viado,3,15.9137,120.447075
+Malasiqui,Waig,3,15.876006,120.50484
+Malasiqui,Warey,3,15.868701,120.437236
+Mapandan,Amanoaoac,3,16.020668,120.451154
+Mapandan,Apaya,3,16.030309,120.445403
+Mapandan,Aserda,3,16.025398,120.439346
+Mapandan,Baloling,3,16.042027,120.454607
+Mapandan,Coral,3,16.034114,120.450897
+Mapandan,Golden,3,16.02324,120.443908
+Mapandan,Jimenez,3,16.017492,120.461453
+Mapandan,Lambayan,3,16.003405,120.477772
+Mapandan,Luyan,3,16.025177,120.474736
+Mapandan,Nilombot,3,16.028865,120.428786
+Mapandan,Pias,3,16.037877,120.442291
+Mapandan,Poblacion,3,16.029989,120.456189
+Mapandan,Primicias,3,16.009214,120.485722
+Mapandan,Santa Maria,3,16.034954,120.465346
+Mapandan,Torres,3,16.018352,120.469046
+San Carlos City,Abanon,3,15.875868,120.342621
+San Carlos City,Agdao,3,15.89781,120.335019
+San Carlos City,Anando,3,15.879946,120.324689
+San Carlos City,Ano,3,15.946259,120.394531
+San Carlos City,Antipangol,3,15.914315,120.269638
+San Carlos City,Aponit,3,15.896524,120.294471
+San Carlos City,Bacnar,3,15.88642,120.354747
+San Carlos City,Balaya,3,15.911729,120.286722
+San Carlos City,Balayong,3,15.951763,120.350134
+San Carlos City,Baldog,3,15.907791,120.328162
+San Carlos City,Balite Sur,3,15.889941,120.369503
+San Carlos City,Balococ,3,15.912566,120.304164
+San Carlos City,Bani,3,15.890287,120.273923
+San Carlos City,Bega,3,15.939943,120.36382
+San Carlos City,Bocboc,3,15.87839,120.276956
+San Carlos City,Bogaoan,3,15.89675,120.267379
+San Carlos City,Bolingit,3,15.958287,120.348453
+San Carlos City,Bolosan,3,15.902491,120.354386
+San Carlos City,Bonifacio,3,15.921241,120.349619
+San Carlos City,Buenglat,3,15.908223,120.317924
+San Carlos City,Bugallon-Posadas Street,3,15.925677,120.353143
+San Carlos City,Burgos Padlan,3,15.922883,120.348144
+San Carlos City,Cacaritan,3,15.930043,120.346458
+San Carlos City,Caingal,3,15.907971,120.350455
+San Carlos City,Calobaoan,3,15.869343,120.367715
+San Carlos City,Calomboyan,3,15.937815,120.290631
+San Carlos City,Caoayan-Kiling,3,15.861169,120.340988
+San Carlos City,Capataan,3,15.947644,120.3083
+San Carlos City,Cobol,3,15.905796,120.399408
+San Carlos City,Coliling,3,15.92134,120.383258
+San Carlos City,Cruz,3,15.963516,120.348968
+San Carlos City,Doyong,3,15.958693,120.357405
+San Carlos City,Gamata,3,15.921013,120.312937
+San Carlos City,Guelew,3,15.858729,120.323943
+San Carlos City,Ilang,3,15.920175,120.362948
+San Carlos City,Inerangan,3,15.961029,120.364407
+San Carlos City,Isla,3,15.880166,120.30884
+San Carlos City,Libas,3,15.870671,120.321811
+San Carlos City,Lilimasan,3,15.932602,120.395155
+San Carlos City,Longos,3,15.932319,120.377506
+San Carlos City,Lucban,3,15.926863,120.348811
+San Carlos City,M. Soriano,3,15.919582,120.355071
+San Carlos City,Mabalbalino,3,15.90446,120.266399
+San Carlos City,Mabini,3,15.925898,120.360453
+San Carlos City,Magtaking,3,15.910459,120.367698
+San Carlos City,Malacañang,3,15.876204,120.333876
+San Carlos City,Maliwara,3,15.888012,120.327505
+San Carlos City,Mamarlao,3,15.926345,120.336333
+San Carlos City,Manzon,3,15.940148,120.352644
+San Carlos City,Matagdem,3,15.952043,120.366713
+San Carlos City,Mestizo Norte,3,15.901259,120.343798
+San Carlos City,Naguilayan,3,15.963756,120.335919
+San Carlos City,Nilentap,3,15.954927,120.380521
+San Carlos City,Padilla-Gomez,3,15.915235,120.35176
+San Carlos City,Pagal,3,15.942537,120.343344
+San Carlos City,Paitan-Panoypoy,3,15.909438,120.355413
+San Carlos City,Palaming,3,15.939716,120.329805
+San Carlos City,Palaris,3,15.921492,120.352707
+San Carlos City,Palospos,3,15.881929,120.37294
+San Carlos City,Pangalangan,3,15.951062,120.325139
+San Carlos City,Pangoloan,3,15.924408,120.325675
+San Carlos City,Pangpang,3,15.933136,120.308989
+San Carlos City,Parayao,3,15.962505,120.316274
+San Carlos City,Payapa,3,15.903968,120.388025
+San Carlos City,Payar,3,15.889418,120.317204
+San Carlos City,Perez Boulevard,3,15.923844,120.361145
+San Carlos City,Pnr Station Site,3,15.934482,120.364353
+San Carlos City,Polo,3,15.90147,120.331042
+San Carlos City,Quezon Boulevard,3,15.927106,120.360129
+San Carlos City,Quintong,3,15.958717,120.319961
+San Carlos City,Rizal,3,15.92917,120.356352
+San Carlos City,Roxas Boulevard,3,15.928067,120.354307
+San Carlos City,Salinap,3,15.878591,120.292212
+San Carlos City,San Juan,3,15.913945,120.337118
+San Carlos City,San Pedro-Taloy,3,15.918452,120.347033
+San Carlos City,Sapinit,3,15.911685,120.381312
+San Carlos City,Supo,3,15.850934,120.31097
+San Carlos City,Talang,3,15.902082,120.308572
+San Carlos City,Tamayo,3,15.861422,120.30352
+San Carlos City,Tandang Sora,3,15.930331,120.359715
+San Carlos City,Tandoc,3,15.957639,120.337921
+San Carlos City,Tarece,3,15.942076,120.379872
+San Carlos City,Tarectec,3,15.894095,120.39673
+San Carlos City,Tayambani,3,15.897622,120.316998
+San Carlos City,Tebag,3,15.889074,120.338014
+San Carlos City,Turac,3,15.897108,120.379109
+Santa Barbara,Alibago,3,16.007635,120.395288
+Santa Barbara,Balingueo,3,15.961562,120.412293
+Santa Barbara,Banaoang,3,15.993765,120.437785
+Santa Barbara,Banzal,3,16.01227,120.451286
+Santa Barbara,Botao,3,15.973152,120.462668
+Santa Barbara,Cablong,3,15.96896,120.450961
+Santa Barbara,Carusocan,3,15.982011,120.448246
+Santa Barbara,Dalongue,3,16.000924,120.397655
+Santa Barbara,Erfe,3,16.002701,120.456016
+Santa Barbara,Gueguesangen,3,16.024062,120.409199
+Santa Barbara,Leet,3,15.996903,120.47185
+Santa Barbara,Malanay,3,16.014914,120.408751
+Santa Barbara,Maningding,3,15.994488,120.423939
+Santa Barbara,Maronong,3,15.980969,120.412383
+Santa Barbara,Maticmatic,3,15.99247,120.455286
+Santa Barbara,Minien East,3,15.97851,120.48935
+Santa Barbara,Minien West,3,15.978681,120.481347
+Santa Barbara,Nilombot,3,16.014853,120.430711
+Santa Barbara,Patayac,3,15.965855,120.43616
+Santa Barbara,Payas,3,15.978321,120.428434
+Santa Barbara,Poblacion Norte,3,16.004067,120.405199
+Santa Barbara,Poblacion Sur,3,16.000405,120.408624
+Santa Barbara,Primicias,3,16.001399,120.423182
+Santa Barbara,Sapang,3,15.993846,120.412037
+Santa Barbara,Sonquil,3,15.982178,120.397563
+Santa Barbara,Tebag East,3,15.978638,120.473271
+Santa Barbara,Tebag West,3,15.986235,120.465611
+Santa Barbara,Tuliao,3,16.018603,120.396856
+Santa Barbara,Ventinilla,3,16.004411,120.428052
+Dagupan City,Bacayao Norte,4,16.033746,120.344977
+Dagupan City,Bacayao Sur,4,16.025707,120.343796
+Dagupan City,Barangay I,4,16.046324,120.335477
+Dagupan City,Barangay II,4,16.043778,120.337465
+Dagupan City,Barangay IV,4,16.042426,120.333812
+Dagupan City,Bolosan,4,16.051079,120.365115
+Dagupan City,Bonuan Binloc,4,16.098639,120.375519
+Dagupan City,Bonuan Boquig,4,16.077049,120.361521
+Dagupan City,Bonuan Gueset,4,16.072474,120.342544
+Dagupan City,Calmay,4,16.046414,120.322944
+Dagupan City,Carael,4,16.038356,120.316173
+Dagupan City,Caranglaan,4,16.030503,120.352387
+Dagupan City,Herrero,4,16.049619,120.339928
+Dagupan City,Lasip Chico,4,16.026329,120.3401
+Dagupan City,Lasip Grande,4,16.029133,120.344917
+Dagupan City,Lomboy,4,16.050652,120.321777
+Dagupan City,Lucao,4,16.02465,120.326523
+Dagupan City,Malued,4,16.028736,120.333787
+Dagupan City,Mamalingling,4,16.061396,120.359174
+Dagupan City,Mangin,4,16.041306,120.364862
+Dagupan City,Mayombo,4,16.042057,120.345211
+Dagupan City,Pantal,4,16.055531,120.334855
+Dagupan City,Poblacion Oeste,4,16.044082,120.328518
+Dagupan City,Pogo Chico,4,16.038605,120.337626
+Dagupan City,Pogo Grande,4,16.033014,120.340904
+Dagupan City,Pugaro Suit,4,16.058063,120.31221
+Dagupan City,Salapingao,4,16.051964,120.315799
+Dagupan City,Salisay,4,16.037783,120.373128
+Dagupan City,Tambac,4,16.055236,120.350244
+Dagupan City,Tapuac,4,16.039213,120.327353
+Dagupan City,Tebeng,4,16.039449,120.354843
+Manaoag,Babasit,4,16.062626,120.472428
+Manaoag,Baguinay,4,16.013263,120.504629
+Manaoag,Baritao,4,16.047253,120.469051
+Manaoag,Bisal,4,16.055009,120.459677
+Manaoag,Bucao,4,16.050584,120.456067
+Manaoag,Cabanbanan,4,16.028005,120.499362
+Manaoag,Calaocan,4,16.05594,120.494469
+Manaoag,Inamotan,4,16.015162,120.526429
+Manaoag,Lelemaan,4,16.020848,120.510568
+Manaoag,Licsi,4,16.044876,120.493213
+Manaoag,Lipit Norte,4,16.077763,120.517329
+Manaoag,Lipit Sur,4,16.071883,120.510946
+Manaoag,Matolong,4,16.013992,120.495237
+Manaoag,Mermer,4,16.026467,120.48526
+Manaoag,Nalsian,4,16.03715,120.495776
+Manaoag,Oraan East,4,16.020606,120.497022
+Manaoag,Oraan West,4,16.026269,120.493051
+Manaoag,Pantal,4,16.036987,120.483841
+Manaoag,Pao,4,16.057513,120.50542
+Manaoag,Parian,4,16.021175,120.490038
+Manaoag,Poblacion,4,16.051789,120.485302
+Manaoag,Pugaro,4,16.072618,120.491042
+Manaoag,San Ramon,4,16.037758,120.477474
+Manaoag,Santa Ines,4,16.027425,120.52384
+Manaoag,Sapang,4,16.064723,120.502993
+Manaoag,Tebuel,4,16.049507,120.496936
+Mangaldan,Alitaya,4,16.032959,120.401002
+Mangaldan,Amansabina,4,16.042582,120.418482
+Mangaldan,Anolid,4,16.046037,120.386004
+Mangaldan,Banaoang,4,16.061696,120.410887
+Mangaldan,Bantayan,4,16.087025,120.393246
+Mangaldan,Bari,4,16.059301,120.401755
+Mangaldan,Bateng,4,16.085966,120.37862
+Mangaldan,Buenlag,4,16.051949,120.412687
+Mangaldan,David,4,16.040993,120.43266
+Mangaldan,Embarcadero,4,16.071586,120.424049
+Mangaldan,Gueguesangen,4,16.033688,120.42004
+Mangaldan,Guesang,4,16.047353,120.438746
+Mangaldan,Guiguilonen,4,16.070942,120.414302
+Mangaldan,Guilig,4,16.073035,120.402129
+Mangaldan,Inlambo,4,16.089029,120.415943
+Mangaldan,Lanas,4,16.074116,120.389023
+Mangaldan,Landas,4,16.049456,120.428849
+Mangaldan,Maasin,4,16.063637,120.382629
+Mangaldan,Macayug,4,16.081337,120.420187
+Mangaldan,Malabago,4,16.049555,120.397741
+Mangaldan,Navaluan,4,16.063979,120.419104
+Mangaldan,Nibaliw,4,16.077354,120.411267
+Mangaldan,Osiem,4,16.058844,120.425568
+Mangaldan,Palua,4,16.089438,120.404758
+Mangaldan,Poblacion,4,16.067375,120.405619
+Mangaldan,Pogo,4,16.094824,120.393622
+Mangaldan,Salaan,4,16.086369,120.407257
+Mangaldan,Salay,4,16.07989,120.398377
+Mangaldan,Talogtog,4,16.07556,120.379516
+Mangaldan,Tebag,4,16.08144,120.40846
+San Fabian,Alacan,4,16.178635,120.432156
+San Fabian,Ambalangan-Dalin,4,16.157468,120.463577
+San Fabian,Angio,4,16.116964,120.430012
+San Fabian,Anonang,4,16.110922,120.446613
+San Fabian,Aramal,4,16.122886,120.442192
+San Fabian,Bigbiga,4,16.200298,120.433042
+San Fabian,Binday,4,16.133362,120.458712
+San Fabian,Bolaoen,4,16.18408,120.456784
+San Fabian,Bolasi,4,16.149007,120.431657
+San Fabian,Cabaruan,4,16.121731,120.415201
+San Fabian,Cayanga,4,16.115881,120.399561
+San Fabian,Colisao,4,16.146446,120.466111
+San Fabian,Gomot,4,16.199566,120.444538
+San Fabian,Inmalog,4,16.169473,120.453133
+San Fabian,Inmalog Norte,4,16.180767,120.446529
+San Fabian,Lekep-Butao,4,16.105647,120.418518
+San Fabian,Lipit-Tomeeng,4,16.157919,120.44575
+San Fabian,Longos,4,16.103539,120.400079
+San Fabian,Longos-Amangonan-Parac-Parac Fab,4,16.106698,120.388943
+San Fabian,Longos Proper,4,16.105299,120.393911
+San Fabian,Mabilao,4,16.165877,120.432413
+San Fabian,Nibaliw Central,4,16.12799,120.40192
+San Fabian,Nibaliw East,4,16.134009,120.403935
+San Fabian,Nibaliw Magliba,4,16.12346,120.39269
+San Fabian,Nibaliw Narvarte,4,16.118092,120.388516
+San Fabian,Nibaliw Vidal,4,16.127279,120.395657
+San Fabian,Palapad,4,16.140807,120.448662
+San Fabian,Poblacion,4,16.123221,120.406309
+San Fabian,Rabon,4,16.201576,120.421796
+San Fabian,Sagud-Bahley,4,16.120133,120.395763
+San Fabian,Sobol,4,16.143236,120.412839
+San Fabian,Tempra-Guilig,4,16.131376,120.411866
+San Fabian,Tiblong,4,16.188912,120.42474
+San Fabian,Tocok,4,16.137079,120.424746
+San Jacinto,Awai,4,16.094823,120.477845
+San Jacinto,Bagong Pag-asa,4,16.069383,120.434193
+San Jacinto,Bolo,4,16.118283,120.460485
+San Jacinto,Capaoay,4,16.076674,120.438477
+San Jacinto,Casibong,4,16.061592,120.43553
+San Jacinto,Guibel,4,16.072439,120.448205
+San Jacinto,Imelda,4,16.052668,120.446739
+San Jacinto,Labney,4,16.107051,120.462104
+San Jacinto,Lobong,4,16.089257,120.462201
+San Jacinto,Macayug,4,16.094351,120.433979
+San Jacinto,Magsaysay,4,16.065954,120.43258
+San Jacinto,San Guillermo,4,16.074191,120.432843
+San Jacinto,San Jose,4,16.087475,120.445067
+San Jacinto,San Juan,4,16.077771,120.471123
+San Jacinto,San Roque,4,16.054998,120.439272
+San Jacinto,San Vicente,4,16.081897,120.432729
+San Jacinto,Santa Cruz,4,16.12336,120.461388
+San Jacinto,Santa Maria,4,16.06111,120.453332
+San Jacinto,Santo Tomas,4,16.078793,120.427212
+Agno,Allabon,1,16.053741,119.797427
+Agno,Aloleng,1,16.117186,119.778683
+Agno,Bangan-Oda,1,16.112767,119.837353
+Agno,Baruan,1,16.028673,119.782168
+Agno,Boboy,1,16.147915,119.783598
+Agno,Cayungnan,1,16.137208,119.839375
+Agno,Dangley,1,16.112179,119.791821
+Agno,Gayusan,1,16.049835,119.778227
+Agno,Macaboboni,1,16.182489,119.773153
+Agno,Magsaysay,1,16.094533,119.788375
+Agno,Namatucan,1,16.075035,119.795483
+Agno,Patar,1,16.157266,119.80611
+Agno,Poblacion East,1,16.120132,119.813078
+Agno,Poblacion West,1,16.122775,119.802165
+Agno,San Juan,1,16.082694,119.824938
+Agno,Tupa,1,16.064866,119.770191
+Agno,Viga,1,16.130255,119.868209
+Alaminos City,Alos,1,16.098184,119.949935
+Alaminos City,Amandiego,1,16.145458,119.95397
+Alaminos City,Amangbangan,1,16.148841,119.922605
+Alaminos City,Balangobong,1,16.120325,119.991268
+Alaminos City,Balayang,1,16.11758,119.947891
+Alaminos City,Baleyadaan,1,16.197915,119.986897
+Alaminos City,Bisocol,1,16.132257,119.955079
+Alaminos City,Bolaney,1,16.120199,119.972174
+Alaminos City,Bued,1,16.164123,120.00441
+Alaminos City,Cabatuan,1,16.114607,120.004976
+Alaminos City,Cayucay,1,16.193464,119.970999
+Alaminos City,Dulacac,1,16.122745,119.914377
+Alaminos City,Inerangan,1,16.183718,119.936111
+Alaminos City,Landoc,1,16.169985,119.939819
+Alaminos City,Linmansangan,1,16.085105,119.976481
+Alaminos City,Lucap,1,16.183603,119.992554
+Alaminos City,Maawi,1,16.104874,119.936523
+Alaminos City,Macatiw,1,16.097995,119.985819
+Alaminos City,Magsaysay,1,16.164465,119.985941
+Alaminos City,Mona,1,16.211264,119.969482
+Alaminos City,Palamis,1,16.140606,119.975333
+Alaminos City,Pandan,1,16.162591,120.024533
+Alaminos City,Pangapisan,1,16.227615,119.949317
+Alaminos City,Poblacion,1,16.158829,119.975701
+Alaminos City,Pocalpocal,1,16.148133,120.020239
+Alaminos City,Pogo,1,16.163046,119.960185
+Alaminos City,Polo,1,16.198519,119.949134
+Alaminos City,Quibuar,1,16.089438,119.961428
+Alaminos City,Sabangan,1,16.161723,120.017464
+Alaminos City,San Antonio,1,16.172885,119.949776
+Alaminos City,San Jose,1,16.181384,119.962082
+Alaminos City,San Roque,1,16.160333,119.943986
+Alaminos City,San Vicente,1,16.134613,120.005567
+Alaminos City,Santa Maria,1,16.136019,119.920174
+Alaminos City,Tanaytay,1,16.146972,119.994984
+Alaminos City,Tangcarang,1,16.10624,119.979196
+Alaminos City,Tawintawin,1,16.163248,119.924991
+Alaminos City,Telbang,1,16.175608,120.036881
+Alaminos City,Victoria,1,16.16098,120.045226
+Anda,Awag,1,16.322543,119.945995
+Anda,Awile,1,16.269185,119.968888
+Anda,Batiarao,1,16.243868,120.00579
+Anda,Cabungan,1,16.331787,119.988792
+Anda,Carot,1,16.343915,119.976494
+Anda,Dolaoan,1,16.329549,119.97164
+Anda,Imbo,1,16.314998,119.989689
+Anda,Macaleeng,1,16.255891,119.998531
+Anda,Macandocandong,1,16.251656,119.980698
+Anda,Mal-Ong,1,16.29925,119.931234
+Anda,Namagbagan,1,16.300089,119.982219
+Anda,Poblacion,1,16.297429,119.952436
+Anda,Roxas,1,16.281756,119.9621
+Anda,Sablig,1,16.281434,119.987809
+Anda,San Jose,1,16.312404,119.967222
+Anda,Siapar,1,16.35902,119.953751
+Anda,Tondol,1,16.305398,120.006066
+Anda,Toritori,1,16.234216,119.997762
+Bani,Ambabaay,1,16.180361,119.872493
+Bani,Aporao,1,16.23439,119.910808
+Bani,Arwas,1,16.214174,119.839109
+Bani,Ballag,1,16.145968,119.888881
+Bani,Banog Norte,1,16.202175,119.905996
+Bani,Banog Sur,1,16.164757,119.891816
+Bani,Calabeng,1,16.230659,119.825705
+Bani,Centro Toma,1,16.239604,119.785868
+Bani,Colayo,1,16.260953,119.782843
+Bani,Dacap Norte,1,16.23756,119.806144
+Bani,Dacap Sur,1,16.219418,119.783351
+Bani,Garrita,1,16.180625,119.91155
+Bani,Luac,1,16.228745,119.889017
+Bani,Macabit,1,16.25703,119.807969
+Bani,Masidem,1,16.198785,119.86469
+Bani,Poblacion,1,16.19661,119.838183
+Bani,Quinaoayanan,1,16.173935,119.832708
+Bani,Ranao,1,16.202928,119.807966
+Bani,Ranom Iloco,1,16.162879,119.872476
+Bani,San Jose,1,16.234585,119.841884
+Bani,San Miguel,1,16.205678,119.929594
+Bani,San Simon,1,16.20545,119.787751
+Bani,San Vicente,1,16.163669,119.906593
+Bani,Tiep,1,16.247562,119.859344
+Bani,Tipor,1,16.156513,119.862239
+Bani,Tugui Grande,1,16.212407,119.871418
+Bani,Tugui Norte,1,16.229598,119.865296
+Bolinao,Arnedo,1,16.383215,119.877389
+Bolinao,Balingasay,1,16.356674,119.868089
+Bolinao,Binabalian,1,16.41574,119.926434
+Bolinao,Cabuyao,1,16.355036,119.890387
+Bolinao,Catuday,1,16.286628,119.799167
+Bolinao,Catungi,1,16.280694,119.902625
+Bolinao,Concordia,1,16.383431,119.889806
+Bolinao,Culang,1,16.317858,119.898076
+Bolinao,Dewey,1,16.317646,119.795624
+Bolinao,Estanza,1,16.333855,119.845122
+Bolinao,Germinal,1,16.388777,119.889504
+Bolinao,Goyoden,1,16.402381,119.94084
+Bolinao,Ilogmalino,1,16.343084,119.8165
+Bolinao,Lambes,1,16.252804,119.903047
+Bolinao,Liwa-liwa,1,16.371318,119.885897
+Bolinao,Lucero,1,16.397473,119.919151
+Bolinao,Luciente 1.0,1,16.383963,119.899497
+Bolinao,Luciente 2.0,1,16.369853,119.913717
+Bolinao,Luna,1,16.339453,119.906457
+Bolinao,Patar,1,16.372963,119.957934
+Bolinao,Pilar,1,16.377072,119.95418
+Bolinao,Salud,1,16.387821,119.940393
+Bolinao,Samang Norte,1,16.30735,119.858902
+Bolinao,Samang Sur,1,16.271843,119.857737
+Bolinao,Sampaloc,1,16.268212,119.891111
+Bolinao,San Roque,1,16.285917,119.832944
+Bolinao,Tara,1,16.296976,119.892537
+Bolinao,Tupa,1,16.36056,119.837154
+Bolinao,Victory,1,16.387881,119.955815
+Bolinao,Zaragoza,1,16.257198,119.889958
+Burgos,Anapao,1,16.076256,119.873302
+Burgos,Cacayasen,1,16.058303,119.836708
+Burgos,Concordia,1,15.992283,119.794819
+Burgos,Don Matias,1,16.051742,119.869308
+Burgos,Ilio-ilio,1,15.963803,119.763737
+Burgos,Papallasen,1,16.030813,119.86386
+Burgos,Poblacion,1,16.054191,119.861406
+Burgos,Pogoruac,1,16.000834,119.779251
+Burgos,San Miguel,1,16.036899,119.910777
+Burgos,San Pascual,1,16.032323,119.87984
+Burgos,San Vicente,1,16.073857,119.854173
+Burgos,Sapa Grande,1,16.032496,119.839795
+Burgos,Sapa Pequeña,1,16.03633,119.812848
+Burgos,Tambacan,1,16.060232,119.888904
+Dasol,Alilao,1,15.970103,119.879512
+Dasol,Amalbalan,1,15.953356,119.886315
+Dasol,Bobonot,1,16.006429,119.869161
+Dasol,Eguia,1,15.901726,119.899805
+Dasol,Gais-Guipe,1,15.973214,119.859948
+Dasol,Hermosa,1,15.955538,119.86339
+Dasol,Macalang,1,15.891429,119.948317
+Dasol,Magsaysay,1,16.001668,119.843967
+Dasol,Malacapas,1,15.983664,119.827219
+Dasol,Malimpin,1,15.987827,119.917046
+Dasol,Osmeña,1,15.954578,119.794759
+Dasol,Petal,1,15.924028,119.88807
+Dasol,Poblacion,1,15.990205,119.878387
+Dasol,San Vicente,1,15.978383,119.883455
+Dasol,Tambac,1,15.925786,119.91705
+Dasol,Tambobong,1,15.936821,119.782593
+Dasol,Uli,1,15.971043,119.807757
+Dasol,Viga,1,15.942632,119.966519
+Infanta,Babuyan,1,15.841784,120.084143
+Infanta,Bamban,1,15.853829,119.990021
+Infanta,Batang,1,15.846076,119.936291
+Infanta,Bayambang,1,15.863146,119.930944
+Infanta,Cato,1,15.83377,119.93859
+Infanta,Doliman,1,15.810856,119.977755
+Infanta,Fatima,1,15.822779,119.942451
+Infanta,Maya,1,15.810387,119.931811
+Infanta,n. a,1,15.823004,119.908268
+Infanta,Nangalisan,1,15.812963,119.950537
+Infanta,Nayom,1,15.804959,119.914619
+Infanta,Pita,1,15.88336,120.083401
+Infanta,Poblacion,1,15.813208,119.923824
+Infanta,Potol,1,15.79884,119.962131
+Mabini,Bacnit,1,16.046549,119.940005
+Mabini,Barlo,1,16.004048,119.959228
+Mabini,Caabiangaan,1,16.091178,119.92878
+Mabini,Cabanaetan,1,16.111362,119.895419
+Mabini,Cabinuangan,1,16.077226,119.911657
+Mabini,Calzada,1,16.080003,119.932412
+Mabini,Caranglaan,1,16.092233,119.884214
+Mabini,De Guzman,1,16.034597,119.967325
+Mabini,Luna,1,16.102277,119.921479
+Mabini,Magalong,1,16.094163,119.91217
+Mabini,Nibaliw,1,16.060725,119.944722
+Mabini,Patar,1,16.062987,119.926238
+Mabini,Poblacion,1,16.069465,119.938454
+Mabini,San Pedro,1,16.025963,119.936743
+Mabini,Tagudin,1,16.070858,119.956449
+Mabini,Villacorta,1,15.962799,120.047836
+Sual,Baquioen,1,16.087626,120.094216
+Sual,Baybay Norte,1,16.154428,120.076963
+Sual,Baybay Sur,1,16.139121,120.062214
+Sual,Bolaoen,1,16.110596,120.042435
+Sual,Cabalitian,1,16.114964,120.116527
+Sual,Calumbuyan,1,16.047028,120.03021
+Sual,Camagsingalan,1,16.072238,120.001914
+Sual,Caoayan,1,16.061269,120.058462
+Sual,Capantolan,1,16.090921,120.05518
+Sual,Macaycayawan,1,16.089789,120.075252
+Sual,Paitan East,1,16.088738,120.034489
+Sual,Paitan West,1,16.095634,120.012723
+Sual,Pangascasan,1,16.117304,120.076587
+Sual,Poblacion,1,16.067112,120.085729
+Sual,Santo Domingo,1,16.072587,120.033918
+Sual,Seselangen,1,16.109043,120.01848
+Sual,Sioasio East,1,16.038304,120.08839
+Sual,Sioasio West,1,16.018307,120.066436
+Sual,Victoria,1,16.126998,120.04258

@@ -153,43 +153,85 @@ def check_timestamp(taken, monitoring_date, max_days=60):
 # 2. SURVIVAL RATE FROM SAMPLING PLOTS
 # ======================================================================
 #
-# DENR assesses survival by laying out fixed-size plots across a site,
-# counting surviving seedlings in each, and extrapolating the density to
-# the full area. The 85 percent threshold governs whether a contractor
-# is paid.
+# The DENR rule depends on the size of the site:
 #
-# Worked example:
-#     site 25 ha, 400 sqm plots, 31 plots, 1,178 counted alive
-#     area sampled   31 x 0.04 ha            = 1.24 ha
-#     intensity      1.24 / 25               = 4.96 %
-#     mean per plot  1178 / 31               = 38.0
-#     density        38.0 / 0.04             = 950 per ha
-#     survivors      950 x 25                = 23,750
-#     planted                                  27,500
-#     survival       23750 / 27500            = 86.4 %
+#   under 20 ha       the whole site is counted: every surviving seedling.
+#                     Nothing is extrapolated. Sampling intensity 100%.
+#   20 ha and over    100 m x 100 m plots (1 ha each) covering 10% of the
+#                     site. The density in the plots is extrapolated to
+#                     the whole area.
+#
+# The 85 percent threshold governs whether a contractor is paid.
+#
+# Worked example, plots:
+#     site 25 ha -> 10% = 2.5 ha -> 3 plots of 1 ha
+#     counted alive  1,020 + 980 + 1,100      = 3,100
+#     area sampled   3 x 1 ha                 = 3 ha
+#     intensity      3 / 25                   = 12 %
+#     mean per plot  3100 / 3                 = 1,033.3
+#     density        1,033.3 / 1 ha           = 1,033.3 per ha
+#     survivors      1,033.3 x 25             = 25,833
+#     planted                                   27,500
+#     survival       25833 / 27500            = 93.9 %
+#
+# Worked example, whole site:
+#     site 12 ha, counted in 2 sections: 6,400 + 5,100 = 11,500 alive
+#     survivors      11,500 (no extrapolation)
+#     planted        13,200
+#     survival       11500 / 13200            = 87.1 %
 
 
 SQM_PER_HA = 10000.0
 DENR_THRESHOLD = 85.0
-TARGET_INTENSITY = 10.0
+
+# The sampling rule. Templates read these too (app/__init__.py), so the
+# numbers are written here only.
+FULL_COUNT_BELOW_HA = 20.0   # under this area, the whole site is counted
+TARGET_INTENSITY = 10.0      # from that area up: plots cover 10% of it
+SAMPLE_PLOT_SQM = SQM_PER_HA  # each plot 100 m x 100 m
 
 
-def compute_survival(plot_counts, plot_size_sqm, site_area_ha,
-                     seedlings_planted):
+def sampling_plan(site_area_ha):
     """
-    Turn raw plot counts into a survival rate.
+    How a site of this size is surveyed.
 
-    plot_counts        list of ints, one per plot
-    plot_size_sqm      area of a single plot
+    Returns {"method": "full" | "plots", "target_pct": 100 | 10,
+    "plot_size_sqm": None | 10000, "plots_needed": n}, or None when the
+    site has no usable area.
+    """
+    if not site_area_ha or site_area_ha <= 0:
+        return None
+    if site_area_ha < FULL_COUNT_BELOW_HA:
+        return {"method": "full", "target_pct": 100.0,
+                "plot_size_sqm": None, "plots_needed": 1}
+    needed_ha = site_area_ha * TARGET_INTENSITY / 100.0
+    plot_ha = SAMPLE_PLOT_SQM / SQM_PER_HA
+    return {"method": "plots", "target_pct": TARGET_INTENSITY,
+            "plot_size_sqm": SAMPLE_PLOT_SQM,
+            # tolerance: 2.0000001 plots is 2 plots, not 3
+            "plots_needed": max(1, math.ceil(needed_ha / plot_ha - 1e-9))}
+
+
+def compute_survival(plot_counts, site_area_ha, seedlings_planted):
+    """
+    Turn raw counts into a survival rate, by the rule for the site's size.
+
+    plot_counts        list of ints. Under 20 ha: one per section of the
+                       site counted (summed). Otherwise one per plot.
     site_area_ha       contracted area of the site
     seedlings_planted  actual planted, from the reforestation record
 
-    Returns a dict of every intermediate value, so the form can show its
-    working and an admin can recompute the result by hand.
+    The plot size is not an input: sampling_plan() fixes it from the site
+    area. Returns a dict of every intermediate value, so the form can show
+    its working and an admin can recompute the result by hand.
     """
     out = {
         "ok": False,
         "reason": None,
+        "method": None,
+        "target_pct": None,
+        "plots_needed": None,
+        "plot_size_sqm": None,
         "plots_recorded": 0,
         "total_counted": 0,
         "mean_per_plot": None,
@@ -207,46 +249,62 @@ def compute_survival(plot_counts, plot_size_sqm, site_area_ha,
     counts = [c for c in plot_counts if c is not None]
 
     if not counts:
-        out["reason"] = "No plot counts entered."
+        out["reason"] = "No counts entered."
         return out
 
-    if not plot_size_sqm or plot_size_sqm <= 0:
-        out["reason"] = "Plot size must be greater than zero."
-        return out
-
-    if not site_area_ha or site_area_ha <= 0:
+    plan = sampling_plan(site_area_ha)
+    if plan is None:
         out["reason"] = "This site has no recorded area."
         return out
 
     n = len(counts)
     total = sum(counts)
-    mean = total / n
-
-    # population standard deviation. Sample sd is undefined for n = 1,
-    # and these plots are the whole set that was measured, not a sample
-    # drawn from a larger set of plots.
-    variance = sum((c - mean) ** 2 for c in counts) / n
-    stdev = math.sqrt(variance)
-
-    plot_ha = plot_size_sqm / SQM_PER_HA
-    sampled_ha = plot_ha * n
-    intensity = (sampled_ha / site_area_ha) * 100.0
-
-    density = mean / plot_ha
-    survivors = density * site_area_ha
-
     out.update({
-        "ok": True,
-        "plots_recorded": n,
-        "total_counted": total,
-        "mean_per_plot": round(mean, 2),
-        "stdev_per_plot": round(stdev, 2),
-        "plot_size_ha": round(plot_ha, 4),
-        "area_sampled_ha": round(sampled_ha, 3),
-        "sampling_intensity": round(intensity, 2),
-        "density_per_ha": round(density, 1),
-        "estimated_survivors": int(round(survivors)),
+        "method": plan["method"],
+        "target_pct": plan["target_pct"],
+        "plots_needed": plan["plots_needed"],
+        "plot_size_sqm": plan["plot_size_sqm"],
     })
+
+    if plan["method"] == "full":
+        # Every seedling on the site was counted, in one or more
+        # sections. The count is the number of survivors.
+        intensity = 100.0
+        survivors = total
+        out.update({
+            "ok": True,
+            "plots_recorded": n,
+            "total_counted": total,
+            "area_sampled_ha": round(site_area_ha, 3),
+            "sampling_intensity": intensity,
+            "density_per_ha": round(total / site_area_ha, 1),
+            "estimated_survivors": total,
+        })
+    else:
+        mean = total / n
+        # population standard deviation. Sample sd is undefined for
+        # n = 1, and these plots are the whole set that was measured,
+        # not a sample drawn from a larger set of plots.
+        stdev = math.sqrt(sum((c - mean) ** 2 for c in counts) / n)
+
+        plot_ha = plan["plot_size_sqm"] / SQM_PER_HA
+        sampled_ha = plot_ha * n
+        intensity = (sampled_ha / site_area_ha) * 100.0
+        density = mean / plot_ha
+        survivors = density * site_area_ha
+
+        out.update({
+            "ok": True,
+            "plots_recorded": n,
+            "total_counted": total,
+            "mean_per_plot": round(mean, 2),
+            "stdev_per_plot": round(stdev, 2),
+            "plot_size_ha": round(plot_ha, 4),
+            "area_sampled_ha": round(sampled_ha, 3),
+            "sampling_intensity": round(intensity, 2),
+            "density_per_ha": round(density, 1),
+            "estimated_survivors": int(round(survivors)),
+        })
 
     if seedlings_planted and seedlings_planted > 0:
         rate = (survivors / seedlings_planted) * 100.0
@@ -261,28 +319,26 @@ def compute_survival(plot_counts, plot_size_sqm, site_area_ha,
 
     # --- quality warnings. None of these block a submission. ---
 
-    if intensity < TARGET_INTENSITY:
-        out["warnings"].append(
-            f"Sampling intensity is {intensity:.2f}%, below the "
-            f"{TARGET_INTENSITY:g}% DENR "
-            f"reference. Roughly "
-            f"{math.ceil((site_area_ha * TARGET_INTENSITY / 100) / plot_ha)} "
-            f"plots of this size would be needed to reach "
-            f"{TARGET_INTENSITY:g}%."
-        )
+    if plan["method"] == "plots":
+        if n < plan["plots_needed"]:
+            out["warnings"].append(
+                f"{n} of {plan['plots_needed']} plots recorded. A site of "
+                f"{site_area_ha:g} ha needs {plan['plots_needed']} plots of "
+                f"100 m x 100 m to reach the {TARGET_INTENSITY:g}% DENR "
+                f"sampling intensity (now {intensity:.2f}%)."
+            )
 
-    if n < 3:
-        out["warnings"].append(
-            "Fewer than 3 plots. Variation between plots cannot be "
-            "assessed meaningfully."
-        )
-
-    if mean > 0 and stdev / mean > 0.5:
-        out["warnings"].append(
-            f"Counts vary widely between plots (mean {mean:.1f}, "
-            f"standard deviation {stdev:.1f}). Survival may not be even "
-            f"across the site."
-        )
+        if n < 2:
+            out["warnings"].append(
+                "Only one plot. Variation between plots cannot be "
+                "assessed."
+            )
+        elif mean > 0 and stdev / mean > 0.5:
+            out["warnings"].append(
+                f"Counts vary widely between plots (mean {mean:.1f}, "
+                f"standard deviation {stdev:.1f}). Survival may not be "
+                f"even across the site."
+            )
 
     if out["survival_rate"] is not None and out["survival_rate"] > 100:
         out["warnings"].append(

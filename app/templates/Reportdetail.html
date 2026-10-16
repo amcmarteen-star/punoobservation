@@ -109,6 +109,11 @@
 </div>
 
 <!-- ============ CALCULATION ============ -->
+{# A whole-site count (sites under 20 ha) stores no plot size: there are
+   no plots, and nothing is estimated. Older reports always have one.
+   plan is the rule for this site's size today (sampling_plan). #}
+{% set full_count = report.plot_size_sqm is none %}
+{% set plan = sampling_plan(report.site.area_size_ha) if report.site else none %}
 <div class="um-panel">
   <div class="um-panel-head">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="16" height="20" x="4" y="2" rx="2"/><line x1="8" x2="16" y1="6" y2="6"/><line x1="16" x2="16" y1="14" y2="18"/><path d="M16 10h.01"/><path d="M12 10h.01"/><path d="M8 10h.01"/><path d="M12 14h.01"/><path d="M8 14h.01"/><path d="M12 18h.01"/><path d="M8 18h.01"/></svg>
@@ -116,27 +121,41 @@
   </div>
 
   <div class="rep-calc-line">
-    <span class="lbl">Plots recorded</span>
-    <span class="val">{{ report.plots_recorded }}</span>
+    <span class="lbl">Method</span>
+    <span class="val val-sm">
+      {% if full_count %}Whole site counted{% else %}Sampling plots{% endif %}
+    </span>
   </div>
   <div class="rep-calc-line">
-    <span class="lbl">Plot size</span>
-    <span class="val">{{ report.plot_size_sqm }} m&sup2;</span>
+    <span class="lbl">{{ 'Parts counted' if full_count else 'Plots recorded' }}</span>
+    <span class="val">
+      {{ report.plots_recorded }}{% if not full_count and plan and plan.method == 'plots' %} of {{ plan.plots_needed }}{% endif %}
+    </span>
   </div>
+  {% if not full_count %}
+  <div class="rep-calc-line">
+    <span class="lbl">Plot size</span>
+    <span class="val">{{ '%g'|format(report.plot_size_sqm) }} m&sup2;</span>
+  </div>
+  {% endif %}
   <div class="rep-calc-line">
     <span class="lbl">Total counted alive</span>
     <span class="val">{{ "{:,}".format(report.total_counted or 0) }}</span>
   </div>
+  {% if not full_count %}
   <div class="rep-calc-line">
     <span class="lbl">Mean per plot</span>
     <span class="val">{{ report.mean_per_plot }} (sd {{ report.stdev_per_plot }})</span>
   </div>
+  {% endif %}
   <div class="rep-calc-line">
     <span class="lbl">Sampling intensity</span>
     <span class="val">
       {{ report.sampling_intensity }}%
-      {% if report.sampling_intensity and report.sampling_intensity < target_intensity %}
-        <span class="rep-badge-flag">below {{ '%g'|format(target_intensity) }}% reference</span>
+      {# against the rule for this site's size: 100% under 20 ha, else 10% #}
+      {% if plan and report.sampling_intensity is not none
+            and report.sampling_intensity < plan.target_pct %}
+        <span class="rep-badge-flag">below {{ '%g'|format(plan.target_pct) }}% required for this site</span>
       {% endif %}
     </span>
   </div>
@@ -145,7 +164,7 @@
     <span class="val">{{ "{:,.0f}".format(report.density_per_ha or 0) }} per ha</span>
   </div>
   <div class="rep-calc-line">
-    <span class="lbl">Estimated survivors</span>
+    <span class="lbl">{{ 'Survivors counted' if full_count else 'Estimated survivors' }}</span>
     <span class="val">{{ "{:,}".format(report.estimated_survivors or 0) }}</span>
   </div>
 
@@ -161,7 +180,7 @@
 <div class="um-panel">
   <div class="um-panel-head">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h.01"/><path d="M3 18h.01"/><path d="M3 6h.01"/><path d="M8 12h13"/><path d="M8 18h13"/><path d="M8 6h13"/></svg>
-    <h3>Plot counts</h3>
+    <h3>{{ 'Counts by part' if full_count else 'Plot counts' }}</h3>
   </div>
 
   <div class="um-table-card">
@@ -171,7 +190,7 @@
       <table class="um-table" data-freeze="1">
         <thead>
           <tr>
-            <th>Plot</th>
+            <th>{{ 'Part' if full_count else 'Plot' }}</th>
             <th class="text-end">Alive</th>
             <th style="width: 180px;">Relative to mean</th>
             <th>Notes</th>
@@ -203,10 +222,12 @@
     {% endif %}
   </div>
 
+  {% if not full_count %}
   <p class="text-secondary small mt-2 mb-0">
     Amber bars mark plots below half the mean. Wide variation suggests survival
     is uneven across the site.
   </p>
+  {% endif %}
 </div>
 
 <!-- ============ BOUNDARY ============ -->

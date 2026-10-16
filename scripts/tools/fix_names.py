@@ -2,8 +2,8 @@
 Normalise barangay and municipality names.
 
 RUN FROM PROJECT ROOT:
-    python scripts/fix_names.py --dry-run     # show what would change
-    python scripts/fix_names.py               # apply
+    python -m scripts.tools.fix_names --dry-run     # show what would change
+    python -m scripts.tools.fix_names               # apply
 
 WHAT IT FIXES
 -------------
@@ -19,13 +19,13 @@ WHAT IT CHANGES
 ---------------
 1. location.municipality      6 names
 2. location.barangay          about 134 names
-3. scripts/barangay_climate.csv
-4. scripts/barangay_soil.csv
+3. scripts/data/generated/barangay_climate.csv
+4. scripts/data/generated/barangay_soil.csv
 
 The CSVs matter. Without them, the next seed run recreates the old
 names.
 
-IT DOES NOT TOUCH barangay.geojson. The map matches through
+IT DOES NOT TOUCH the barangay map files. The map matches through
 normalizeName() in JavaScript, which strips spaces on both sides, so the
 geojson can keep GADM's spelling safely.
 
@@ -43,17 +43,10 @@ import argparse
 import csv
 import os
 import re
-import sys
 
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
-from app import create_app
 from app.extensions import db
 from app.models import Location
-
-HERE = os.path.dirname(os.path.abspath(__file__))
-CLIMATE = os.path.join(HERE, "barangay_climate.csv")
-SOIL = os.path.join(HERE, "barangay_soil.csv")
+from scripts.common import CLIMATE_CSV as CLIMATE, SOIL_CSV as SOIL, app_context
 
 
 # ======================================================================
@@ -151,7 +144,7 @@ def fix_database(dry_run):
 # ======================================================================
 #
 # These feed the seed script. Leaving them unchanged means the next
-# `python scripts/seed_reference_data.py` writes the old names back.
+# `python -m scripts.pipeline.seed_reference_data` writes the old names back.
 
 def fix_csv(path, dry_run):
     if not os.path.exists(path):
@@ -226,8 +219,7 @@ if __name__ == "__main__":
         print("DRY RUN - nothing will be written")
         print()
 
-    app = create_app()
-    with app.app_context():
+    with app_context():
         fix_database(args.dry_run)
         print()
         print("=== CSV FILES ===")

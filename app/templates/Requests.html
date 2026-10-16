@@ -799,7 +799,7 @@ endblock %} {% set active_page = 'requests' %} {% block extra_head %}
           </div>
 
           <div class="um-field">
-            <label for="attachments">Indicative Management Plan</label>
+            <label for="attachments">Indicative Management Plan/Supporting Documents</label>
             <input
               type="file"
               name="attachments"
@@ -810,7 +810,7 @@ endblock %} {% set active_page = 'requests' %} {% block extra_head %}
               data-max-files="{{ app_limits.maxRequestFiles }}"
             />
             <div class="req-help">
-              Photograph or scan of your Indicative Management Plan (IMP).
+              Photograph or scan of your Indicative Management Plan (IMP)/Supporting Documents.
               Images or PDF, up to {{ app_limits.maxRequestFiles }} files of
               {{ app_limits.maxFileMb }} MB each. Optional, but a request with
               an IMP is reviewed faster.

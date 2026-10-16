@@ -2,7 +2,7 @@
 Evaluation metrics for the species recommendation engine.
 
 This module holds the metric mathematics in ONE place. Both the offline
-script (scripts/evaluate_recommender.py) and the species detail panel in
+script (scripts/tools/evaluate_recommender.py) and the species detail panel in
 the web interface import from here, so the figure a panel member sees on
 screen is produced by the same code that produced the figure in the
 paper. They cannot drift apart.

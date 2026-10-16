@@ -1,32 +1,30 @@
 """
-Fetch temperature and rainfall for all 478 barangays.
+Pipeline step 3. Fetch temperature and rainfall for every barangay.
 
 SAFE TO RE-RUN. If it stops, just run it again.
 It saves progress after every barangay and skips ones already done.
 
 WHAT IT NEEDS:
-  - barangay_elevation.csv   (same folder)
+  - data/generated/barangay_elevation.csv   (step 2, get_elevation)
 
 WHAT IT MAKES:
-  - barangay_climate.csv     (written as it goes, not at the end)
+  - data/generated/barangay_climate.csv     (written as it goes)
 
-HOW TO RUN:
-  cd scripts
-  python get_climate.py
+HOW TO RUN (from the project root):
+  python -m scripts.pipeline.get_climate
 
 Source: ERA5 reanalysis via Open-Meteo Archive API. CC BY 4.0.
-Takes about 40 minutes. Leave it running.
+About 12 seconds per barangay not yet done. Leave it running.
 """
 
 import csv
 import os
 import time
-import requests
 from statistics import mean
 
-HERE = os.path.dirname(os.path.abspath(__file__))
-IN_FILE = os.path.join(HERE, "barangay_elevation.csv")
-OUT_FILE = os.path.join(HERE, "barangay_climate.csv")
+import requests
+
+from scripts.common import ELEVATION_CSV as IN_FILE, CLIMATE_CSV as OUT_FILE
 
 START = "2014-01-01"
 END = "2023-12-31"
@@ -67,34 +65,42 @@ def save():
 
 
 def fetch(lat, lon):
-    """One API call, with backoff if rate limited."""
+    """
+    One API call, with backoff when rate limited or the connection fails.
+
+    A dropped connection or a timeout is retried like a rate limit: on a
+    long run the service now and then closes a connection mid-request,
+    and one of those used to stop the whole run.
+    """
     wait = 30
     for attempt in range(6):
-        resp = requests.get(
-            "https://archive-api.open-meteo.com/v1/archive",
-            params={
-                "latitude": lat,
-                "longitude": lon,
-                "start_date": START,
-                "end_date": END,
-                "daily": "temperature_2m_mean,precipitation_sum",
-                "timezone": "Asia/Manila",
-            },
-            timeout=90,
-        )
+        try:
+            resp = requests.get(
+                "https://archive-api.open-meteo.com/v1/archive",
+                params={
+                    "latitude": lat,
+                    "longitude": lon,
+                    "start_date": START,
+                    "end_date": END,
+                    "daily": "temperature_2m_mean,precipitation_sum",
+                    "timezone": "Asia/Manila",
+                },
+                timeout=90,
+            )
+        except (requests.ConnectionError, requests.Timeout) as e:
+            problem = f"connection failed ({type(e).__name__})"
+        else:
+            if resp.status_code != 429:
+                resp.raise_for_status()
+                return resp.json()["daily"]
+            problem = "rate limited"
 
-        if resp.status_code == 429:
-            print(f"    rate limited, waiting {wait}s "
-                  f"(attempt {attempt + 1} of 6)")
-            time.sleep(wait)
-            wait = min(wait * 2, 600)      # 30, 60, 120, 240, 480, 600
-            continue
-
-        resp.raise_for_status()
-        return resp.json()["daily"]
+        print(f"    {problem}, waiting {wait}s (attempt {attempt + 1} of 6)")
+        time.sleep(wait)
+        wait = min(wait * 2, 600)      # 30, 60, 120, 240, 480, 600
 
     raise SystemExit(
-        "Still rate limited after 6 tries.\n"
+        "Still failing after 6 tries (rate limit or connection).\n"
         "Progress is saved. Wait an hour, then run this script again."
     )
 

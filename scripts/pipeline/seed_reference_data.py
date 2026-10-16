@@ -1,13 +1,15 @@
 """
 Load barangay site characteristics and tree species into the database.
 
-RUN FROM PROJECT ROOT:
-    python scripts/seed_reference_data.py
+Pipeline step 5, the last one.
 
-FILES NEEDED (all in scripts/):
-    barangay_climate.csv
-    barangay_soil.csv
-    Philippine_Tree_main_species_Database.xlsx
+RUN FROM PROJECT ROOT:
+    python -m scripts.pipeline.seed_reference_data
+
+FILES NEEDED:
+    scripts/data/generated/barangay_climate.csv   (step 3, get_climate)
+    scripts/data/generated/barangay_soil.csv      (step 4, get_soil)
+    scripts/data/source/Philippine_Tree_main_species_Database.xlsx
 
 SAFE TO RE-RUN. Updates existing rows instead of duplicating.
 """
@@ -15,20 +17,15 @@ SAFE TO RE-RUN. Updates existing rows instead of duplicating.
 import csv
 import os
 import re
-import sys
 
 import pandas as pd
 
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
-from app import create_app
 from app.extensions import db
 from app.models import Location, TreeSpecie
-
-HERE = os.path.dirname(os.path.abspath(__file__))
-CLIMATE = os.path.join(HERE, "barangay_climate.csv")
-SOIL = os.path.join(HERE, "barangay_soil.csv")
-SPECIES = os.path.join(HERE, "Philippine_Tree_main_species_Database.xlsx")
+from scripts.common import (
+    CLIMATE_CSV as CLIMATE, SOIL_CSV as SOIL, SPECIES_XLSX as SPECIES,
+    app_context,
+)
 
 REGION = "Region I"
 PROVINCE = "Pangasinan"
@@ -504,8 +501,7 @@ def report():
 
 
 if __name__ == "__main__":
-    app = create_app()
-    with app.app_context():
+    with app_context():
         seed_barangays()
         seed_species()
         report()

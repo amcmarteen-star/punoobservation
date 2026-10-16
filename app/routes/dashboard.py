@@ -1639,13 +1639,13 @@ def api_preview_survival():
             continue
  
     try:
-        plot_size = float(data.get('plot_size_sqm') or 0)
         area = float(data.get('site_area_ha') or 0)
         planted = int(data.get('seedlings_planted') or 0)
     except (TypeError, ValueError):
         return jsonify({"ok": False, "reason": "Invalid numbers."})
  
-    return jsonify(compute_survival(counts, plot_size, area, planted))
+    # the plot size follows from the site area (sampling_plan)
+    return jsonify(compute_survival(counts, area, planted))
  
  
 @dashboard_bp.route('/reports/submit', methods=['POST'])
@@ -1706,15 +1706,8 @@ def submit_report():
         return redirect(url_for('dashboard.reports_page'))
  
     # ---------- 2. plots ----------
-    try:
-        plot_size = float(request.form.get('plot_size_sqm') or 0)
-    except ValueError:
-        plot_size = 0
- 
-    if plot_size <= 0:
-        flash("Plot size must be greater than zero.", "danger")
-        return redirect(url_for('dashboard.reports_page'))
- 
+    # No plot size from the form: the site's area decides it
+    # (sampling_plan in app/services/monitoring.py).
     raw_counts = request.form.getlist('plot_count')
     raw_notes = request.form.getlist('plot_note')
  
@@ -1734,11 +1727,11 @@ def submit_report():
         counts.append(n)
  
     if not counts:
-        flash("Enter at least one plot count.", "danger")
+        flash("Enter at least one count.", "danger")
         return redirect(url_for('dashboard.reports_page'))
  
     calc = compute_survival(
-        counts, plot_size, site.area_size_ha, record.actual_quantity_planted
+        counts, site.area_size_ha, record.actual_quantity_planted
     )
  
     if not calc['ok']:
@@ -1761,7 +1754,8 @@ def submit_report():
         monitoring_date=monitoring_date,
         survival_rate=calc['survival_rate'] or 0.0,
         plots_recorded=calc['plots_recorded'],
-        plot_size_sqm=plot_size,
+        # None for a whole-site count: there are no plots
+        plot_size_sqm=calc['plot_size_sqm'],
         total_counted=calc['total_counted'],
         mean_per_plot=calc['mean_per_plot'],
         stdev_per_plot=calc['stdev_per_plot'],
@@ -1949,6 +1943,24 @@ def _barangay_files(cenro):
     ]
 
 
+# Parsed barangay files by path, each kept until the file changes on
+# disk. An import looks up one outline per row, and re-reading several
+# files for every row made a large import slow. Callers must not change
+# the geometries they get back: they are shared.
+_BARANGAY_FILE_CACHE = {}
+
+
+def _read_barangay_file(path):
+    mtime = os.path.getmtime(path)
+    cached = _BARANGAY_FILE_CACHE.get(path)
+    if cached and cached[0] == mtime:
+        return cached[1]
+    with open(path, encoding='utf-8') as fh:
+        data = json.load(fh)
+    _BARANGAY_FILE_CACHE[path] = (mtime, data)
+    return data
+
+
 def _load_barangay_geometry(municipality, barangay):
     """
     Pull one barangay's polygon out of its CENRO's barangay files.
@@ -1978,8 +1990,7 @@ def _load_barangay_geometry(municipality, barangay):
     for name in files:
         path = os.path.join(current_app.static_folder, name)
         try:
-            with open(path, encoding='utf-8') as fh:
-                data = json.load(fh)
+            data = _read_barangay_file(path)
         except Exception:
             current_app.logger.warning(
                 "Barangay outlines could not be read from %s", path,

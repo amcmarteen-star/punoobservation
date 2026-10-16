@@ -324,6 +324,65 @@ def geometry_bbox(geojson_text):
     return [min(lats), min(lngs), max(lats), max(lngs)]
 
 
+def _ring_centroid(ring):
+    """(lng, lat, area) of one ring by the shoelace formula, or None."""
+    a = cx = cy = 0.0
+    for (x1, y1), (x2, y2) in zip(ring, ring[1:] + ring[:1]):
+        cross = x1 * y2 - x2 * y1
+        a += cross
+        cx += (x1 + x2) * cross
+        cy += (y1 + y2) * cross
+    if abs(a) < 1e-15:
+        return None
+    return cx / (3 * a), cy / (3 * a), abs(a) / 2
+
+
+def barangay_point(geometry):
+    """
+    (latitude, longitude) for a barangay's map marker, inside its outline.
+
+    The area centre of its largest polygon. A C- or L-shaped barangay can
+    have its centre outside itself, so then the point moves to the middle
+    of the widest stretch of the barangay along that latitude. Accepts a
+    GeoJSON Polygon or MultiPolygon (a dict). None when nothing usable.
+    """
+    if not isinstance(geometry, dict):
+        return None
+    coords = geometry.get("coordinates") or []
+    if geometry.get("type") == "Polygon":
+        polys = [coords]
+    elif geometry.get("type") == "MultiPolygon":
+        polys = coords
+    else:
+        return None
+
+    best = None
+    for poly in polys:
+        if not poly or len(poly[0]) < 4:
+            continue
+        ring = [tuple(p[:2]) for p in poly[0][:-1]]
+        c = _ring_centroid(ring)
+        if c and (best is None or c[2] > best[1][2]):
+            best = (poly, c, ring)
+    if best is None:
+        return None
+
+    poly, (lng, lat, _), ring = best
+    if not point_in_geojson(lng, lat, {"type": "Polygon", "coordinates": poly}):
+        # where this latitude crosses the outline, paired up into the
+        # stretches that lie inside it; the widest one wins
+        xs = sorted(
+            x1 + (lat - y1) * (x2 - x1) / (y2 - y1)
+            for (x1, y1), (x2, y2) in zip(ring, ring[1:] + ring[:1])
+            if (y1 > lat) != (y2 > lat)
+        )
+        spans = list(zip(xs[0::2], xs[1::2]))
+        if spans:
+            left, right = max(spans, key=lambda s: s[1] - s[0])
+            lng = (left + right) / 2
+    return round(lat, 6), round(lng, 6)
+
+
 def site_position(site):
     """
     Where a site's own map marker goes, as (lat, lon, placed_by), or None.
