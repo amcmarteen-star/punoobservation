@@ -1,0 +1,132 @@
+{# Phone layout for the dashboard. Included once from Dashboard.html, after the
+   main chart script. Below 640px it makes the KPI tiles two across, tightens
+   the cards, and turns the municipality bar charts sideways so every name is
+   readable without tilting. Wider screens are not touched. #}
+<style>
+  @media (max-width: 640px) {
+    .page-header h2 { font-size: 1.4rem; }
+    .page-header-row { gap: 0.75rem; }
+
+    #kpiStrip { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.6rem; margin-bottom: 1.25rem; }
+    #kpiStrip .kpi { padding: 0.75rem; gap: 0.5rem; }
+    #kpiStrip .kpi .num { font-size: 1.25rem; overflow-wrap: anywhere; }
+    #kpiStrip .kpi .lbl { font-size: 0.6875rem; letter-spacing: 0.04em; }
+    #kpiStrip .kpi .sub { font-size: 0.6875rem; }
+    #kpiStrip .kpi-icon { display: none; }
+
+    .chart-card { padding: 1rem 0.85rem; }
+    .chart-card h5 { font-size: 1rem; }
+    .chart-card .takeaway { font-size: 0.8125rem; line-height: 1.55; }
+    .chart-box { height: 260px; }
+    .chart-box.tall { height: 380px; }
+    .chart-key { gap: 0.35rem 0.9rem; font-size: 0.75rem; }
+    .finding { font-size: 0.8125rem; }
+
+    .plant-next-count { font-size: 2.1rem; }
+    .plant-next-table summary { display: flex; align-items: center; min-height: 44px; }
+
+    /* Four columns need room: scroll sideways inside the card, the page itself never does. */
+    .table-freeze-wrap { -webkit-overflow-scrolling: touch; }
+    .table-freeze-wrap table { min-width: 30rem; }
+  }
+  @media (max-width: 340px) {
+    #kpiStrip { grid-template-columns: 1fr; }
+  }
+</style>
+<script>
+  (function () {
+    if (typeof buildChart !== "function" || typeof Chart === "undefined") { return; }
+
+    var PHONE = window.matchMedia("(max-width: 640px)");
+    var SIDEWAYS = { chartAchievement: 1, chartSurvival: 1, chartCost: 1 };
+    var resized = [];   // chart boxes whose height this script set
+
+    function setBox(canvas, prop, px) {
+      var box = canvas.parentElement;
+      box.style[prop] = px + "px";
+      if (resized.indexOf(box) < 0) { resized.push(box); }
+    }
+    function clearBoxes() {
+      resized.forEach(function (b) { b.style.height = ""; b.style.minHeight = ""; });
+      resized = [];
+    }
+
+    /* The reference lines (85% threshold, average) were drawn across a
+       vertical chart. Turned sideways they become vertical lines. */
+    function lineAt(id, value, colour) {
+      return {
+        id: id,
+        afterDraw: function (chart) {
+          var x = chart.scales.x.getPixelForValue(value()), a = chart.chartArea, ctx = chart.ctx;
+          ctx.save();
+          ctx.strokeStyle = colour();
+          ctx.setLineDash([5, 4]);
+          ctx.lineWidth = 1.5;
+          ctx.beginPath();
+          ctx.moveTo(x, a.top);
+          ctx.lineTo(x, a.bottom);
+          ctx.stroke();
+          ctx.restore();
+        },
+      };
+    }
+    function sideways(plugin, ds) {
+      if (plugin.id === "line85") {
+        return lineAt("line85", function () { return 85; }, function () { return "#b91c1c"; });
+      }
+      if (plugin.id === "averageLine") {
+        return lineAt("averageLine", function () {
+          return ds.data.reduce(function (a, v) { return a + v; }, 0) / (ds.data.length || 1);
+        }, function () { return typeof INK === "string" ? INK : "#5f6f66"; });
+      }
+      return plugin;
+    }
+
+    function adapt(canvas, config) {
+      var o = (config.options = config.options || {});
+      var horizontal = o.indexAxis === "y";
+      var rows = (config.data.labels || []).length;
+
+      if (SIDEWAYS[canvas.id] && !horizontal && config.type === "bar") {
+        var s = o.scales || {};
+        var value = s.y || {};
+        var ds = config.data.datasets[0];
+        value.ticks = Object.assign({}, value.ticks, { maxTicksLimit: 5 });
+        o.indexAxis = "y";
+        o.scales = { x: value, y: { grid: { display: false }, ticks: { autoSkip: false } } };
+        ds.borderSkipped = "start";
+        ds.maxBarThickness = 22;
+        config.plugins = (config.plugins || []).map(function (p) { return sideways(p, ds); });
+
+        // the cost tooltip reads parsed.y; sideways the value is parsed.x
+        var cb = o.plugins && o.plugins.tooltip && o.plugins.tooltip.callbacks;
+        if (cb && cb.label) {
+          var original = cb.label;
+          cb.label = function (c) {
+            return original(Object.assign({}, c, { parsed: { x: c.parsed.y, y: c.parsed.x } }));
+          };
+        }
+        setBox(canvas, "height", rows * 28 + 64);
+        horizontal = true;
+      }
+      if (canvas.id === "chartSpecies") { setBox(canvas, "minHeight", rows * 28 + 64); }
+
+      // a finger is wider than a bar: respond anywhere along the row or column
+      o.interaction = { mode: "nearest", axis: horizontal ? "y" : "x", intersect: false };
+      return config;
+    }
+
+    var build = buildChart;
+    window.buildChart = function (canvas, config) {
+      return build(canvas, PHONE.matches ? adapt(canvas, config) : config);
+    };
+
+    function setFonts() { Chart.defaults.font.size = PHONE.matches ? 10 : 11; }
+    setFonts();
+
+    // rotating the phone, or resizing a window across the breakpoint, rebuilds the charts
+    function onChange() { setFonts(); clearBoxes(); loadDashboard(); }
+    if (PHONE.addEventListener) { PHONE.addEventListener("change", onChange); }
+    else if (PHONE.addListener) { PHONE.addListener(onChange); }
+  })();
+</script>

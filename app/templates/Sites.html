@@ -2,6 +2,125 @@
 {% block title %}Reforestation Sites{% endblock %}
 {% block content_class %}page-content-wide{% endblock %}
 {% set active_page = 'sites' %}
+{% block extra_head %}
+<style>
+  /* Phone-only elements: hidden on PC */
+  .site-more { display: none; }
+  .site-actions { display: none; }
+
+  @media (max-width: 720px) {
+
+    /* ---------- Header + toolbar ---------- */
+    .um-header { flex-wrap: wrap; gap: 0.75rem; }
+    .um-header h2 { font-size: 1.25rem; }
+    .um-header .um-btn-add { width: 100%; justify-content: center; }
+
+    .dt-toolbar { flex-direction: column; align-items: stretch; gap: 0.6rem; }
+    .um-filter-wrap, .um-filter-btn { width: 100%; }
+    .um-filter-btn { justify-content: space-between; min-height: 44px; }
+    .um-filter-menu { left: 0; right: 0; width: auto; max-height: 50dvh; overflow-y: auto; }
+    .um-filter-menu button { min-height: 44px; }
+
+    .um-search-group { flex-wrap: wrap; width: 100%; }
+    .um-search-wrap { flex: 1 1 100%; }
+    .um-search-input { font-size: 16px; min-height: 44px; } /* stops iOS zoom */
+    .dt-count { width: 100%; }
+
+    /* ---------- Table becomes cards ---------- */
+    .sites-scroll-wrap {
+      max-height: none !important;
+      overflow: visible !important;
+    }
+    .sites-scroll-wrap::before,
+    .sites-scroll-wrap::after { display: none !important; }
+
+    .sites-table,
+    .sites-table tbody {
+      display: block !important;
+      width: 100% !important;
+      min-width: 0 !important;
+    }
+    .sites-table thead { display: none !important; }
+
+    .sites-table tbody tr {
+      display: flex; flex-direction: column;
+      height: auto !important; min-height: 0 !important; max-height: none !important;
+      overflow: visible !important;
+      content-visibility: visible !important; contain: none !important;
+      margin: 0 0 0.75rem; padding: 0.35rem 0.9rem 0.6rem;
+      border: 1px solid var(--line); border-radius: 12px;
+      background: var(--surface-1);
+    }
+
+    .sites-table tbody td {
+      display: flex; justify-content: space-between; align-items: baseline;
+      flex: 0 0 auto !important;
+      gap: 1rem;
+      height: auto !important; min-height: 0 !important; max-height: none !important;
+      min-width: 0 !important; max-width: none !important;
+      overflow: visible !important; text-overflow: clip !important;
+      padding: 0.45rem 0; border: 0; border-top: 1px solid var(--line);
+      box-shadow: none !important;
+      font-size: 0.875rem; line-height: 1.4;
+      text-align: right; white-space: normal !important; word-break: break-word;
+      position: static !important; left: auto !important; z-index: auto !important;
+      background: transparent !important;
+    }
+    .sites-table tbody td::after { content: none !important; }
+    .sites-table tbody td::before {
+      content: attr(data-label);
+      flex: none; max-width: 45%;
+      font-size: 0.72rem; font-weight: 600; letter-spacing: 0.04em;
+      text-transform: uppercase; text-align: left; color: var(--text-2);
+    }
+
+    /* Name on top */
+    .sites-table td.sites-name-cell {
+      order: -3; display: block; text-align: left;
+      border-top: 0; padding-top: 0.6rem;
+      font-size: 1rem; font-weight: 700; color: var(--text-heading);
+    }
+    .sites-table td.sites-name-cell::before { display: none; }
+
+    /* The original Map cell is hidden: its button now lives in the bottom row */
+    .sites-table td.site-map { display: none !important; }
+
+    /* Extra columns sit behind the toggle */
+    .sites-table tbody tr:not(.is-open) td.site-extra { display: none; }
+
+    /* Actual Planted cell: label and value on top, buttons underneath */
+    .sites-table td.has-more { flex-wrap: wrap; }
+
+    .site-actions {
+      display: flex; flex: 0 0 100%; gap: 0.5rem; margin-top: 0.6rem;
+    }
+    .site-actions .um-btn-row,
+    .site-actions .site-more {
+      flex: 1 1 0; min-width: 0; min-height: 44px;
+      display: inline-flex; align-items: center; justify-content: center;
+      gap: 0.35rem; margin: 0; padding: 0.4rem 0.6rem;
+      font: inherit; font-size: 0.8rem; font-weight: 600;
+      text-align: center; text-transform: none; letter-spacing: normal;
+      white-space: nowrap; cursor: pointer;
+    }
+    .site-actions .site-more {
+      border: 1px solid var(--line-strong); border-radius: 8px;
+      background: var(--surface-1); color: var(--brand-text);
+    }
+
+    .dt-footer { text-align: center; }
+
+    /* Confirmation dialog */
+    .um-modal { width: calc(100vw - 1.5rem); max-width: 480px; }
+    .um-modal-close { width: 44px; height: 44px; }
+    .um-modal-foot {
+      flex-direction: column-reverse; gap: 0.5rem;
+      padding-bottom: calc(1rem + env(safe-area-inset-bottom));
+    }
+    .um-modal-foot button { width: 100%; min-height: 44px; }
+  }
+</style>
+{% endblock %}
 {% block content %}
 
 {% set ns = namespace(sites=[]) %}
@@ -252,8 +371,58 @@
     var totalRows = allRows.length;
 
     var currentMunicipality = 'all';
+/* ---- phone card labels ----
+   Copies each column header onto its cells so the card layout can show
+   "BARANGAY", "AREA (HA)" etc. in front of every value. */
+var KEY_COLUMNS = ['Site Name', 'Map', 'Municipality', 'Barangay', 'Zone',
+                   'Area (ha)', 'Target Seedlings', 'Actual Planted'];
 
-    /* ---- one render pass: filter, sort, slice ---- */
+function decorateRows() {
+    var heads = Array.prototype.map.call(table.tHead.rows[0].cells, function (th) {
+        return th.textContent.trim();
+    });
+
+    allRows.forEach(function (row) {
+        var actualCell = null;
+        var mapCell = null;
+
+        Array.prototype.forEach.call(row.cells, function (td, i) {
+            var label = heads[i] || '';
+            td.setAttribute('data-label', label);
+            if (label === 'Map') { td.classList.add('site-map'); mapCell = td; }
+            if (KEY_COLUMNS.indexOf(label) === -1) td.classList.add('site-extra');
+            if (label === 'Actual Planted') actualCell = td;
+        });
+
+        if (!actualCell) return;
+        actualCell.classList.add('has-more');
+
+        // One row of buttons at the bottom of the card
+        var actions = document.createElement('div');
+        actions.className = 'site-actions';
+
+        // Copy of the View button (the original stays in the table for PC).
+        // cloneNode keeps the data-site-id/name and the onclick handler.
+        var viewBtn = mapCell && mapCell.querySelector('.um-btn-row');
+        if (viewBtn) actions.appendChild(viewBtn.cloneNode(true));
+
+        var btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'site-more';
+        btn.textContent = 'Show all details';
+        btn.setAttribute('aria-expanded', 'false');
+        btn.addEventListener('click', function () {
+            var open = row.classList.toggle('is-open');
+            btn.textContent = open ? 'Hide details' : 'Show all details';
+            btn.setAttribute('aria-expanded', String(open));
+        });
+        actions.appendChild(btn);
+
+        actualCell.appendChild(actions);
+    });
+}
+decorateRows();
+   /* ---- one render pass: filter, sort, slice ---- */
     function render() {
         var q = (document.getElementById('site-search-input').value || '').trim().toLowerCase();
 
@@ -324,23 +493,23 @@
        rows is shown. Each pinned column's `left` is therefore measured from
        the header cells after every render rather than hard-coded. */
     function layoutPinnedColumns() {
-        var headCells = table.tHead.rows[0].cells;
-        var offset = 0;
+    var headCells = table.tHead.rows[0].cells;
+    var offset = 0;
 
-        Array.prototype.forEach.call(headCells, function (th) {
-            if (!th.classList.contains('dt-pin')) return;
-            var index = th.cellIndex;
-            var left = offset + 'px';
+    Array.prototype.forEach.call(headCells, function (th) {
+        if (!th.classList.contains('dt-pin')) return;
+        var index = th.cellIndex;
+        var left = offset + 'px';
 
-            th.style.left = left;
-            allRows.forEach(function (row) {
-                var cell = row.cells[index];
-                if (cell) cell.style.left = left;
-            });
-
-            offset += th.getBoundingClientRect().width;
+        th.style.left = left;
+        allRows.forEach(function (row) {
+            var cell = row.cells[index];
+            if (cell) cell.style.left = left;
         });
-    }
+
+        offset += th.getBoundingClientRect().width;
+    });
+}
 
     document.addEventListener('click', function (e) {
         var wrap = document.querySelector('.um-filter-wrap');
