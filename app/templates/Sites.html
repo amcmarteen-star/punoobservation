@@ -156,7 +156,6 @@
                     {{ th('Commodity') }}
                     {{ th('Year', 'num') }}
                     {{ th('Area (ha)', 'num', true) }}
-                    {{ th('Contracted (ha)', 'num', true) }}
                     {{ th('Duration') }}
                     {% if session.role in ['admin', 'superadmin'] %}
                         {{ th('Project Cost (3yr)', 'num', true) }}
@@ -165,8 +164,7 @@
                         {{ th('Land Improvement', 'num', true) }}
                         {{ th('CIP Amount', 'num', true) }}
                     {% endif %}
-                    {{ th('Target Seedlings', 'num', true) }}
-                    {{ th('Actual Planted', 'num', true) }}
+                    {{ th('Planted Seedlings', 'num', true) }}
                 </tr>
             </thead>
             <tbody>
@@ -220,7 +218,6 @@
                     <td>{{ s.commodity or '—' }}</td>
                     <td>{{ s.year_contracted or '—' }}</td>
                     <td class="num-cell">{{ s.area_size_ha }}</td>
-                    <td class="num-cell">{{ s.area_contracted_ha or '—' }}</td>
                     {{ duration_cell(s.date_contract_executed, s.date_contract_expiry) }}
                     {% if session.role in ['admin', 'superadmin'] %}
                         <td class="num-cell">{% if s.project_cost_3yr %}₱{{ "{:,.2f}".format(s.project_cost_3yr) }}{% else %}—{% endif %}</td>
@@ -229,9 +226,6 @@
                         <td class="num-cell">{% if s.amount_under_land_improvement %}₱{{ "{:,.2f}".format(s.amount_under_land_improvement) }}{% else %}—{% endif %}</td>
                         <td class="num-cell">{% if s.amount_still_in_cip %}₱{{ "{:,.2f}".format(s.amount_still_in_cip) }}{% else %}—{% endif %}</td>
                     {% endif %}
-                    <td class="num-cell sites-fw-semibold">
-                        {{ "{:,}".format(site_totals.get(s.site_id).target_total) if site_totals.get(s.site_id) and site_totals.get(s.site_id).target_total else '—' }}
-                    </td>
                     <td class="num-cell sites-fw-semibold sites-actual">
                         {{ "{:,}".format(site_totals.get(s.site_id).actual_total) if site_totals.get(s.site_id) and site_totals.get(s.site_id).actual_total else '—' }}
                     </td>

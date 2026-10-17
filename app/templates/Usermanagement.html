@@ -282,6 +282,14 @@ active_page = 'users' %} {% block extra_head %}
                 Reactivate account
               </button>
               {% endif %}
+              <button
+                type="button"
+                role="menuitem"
+                class="is-danger"
+                onclick="umCloseRowMenu(); umOpenDeleteAccount('{{ u.username|e }}', '{{ u.role|replace('_', ' ')|title }}', '{{ url_for('admin.delete_user', user_id=u.user_id) }}')"
+              >
+                Delete account&hellip;
+              </button>
               {% endif %}
             </div>
           </div>
@@ -380,6 +388,66 @@ active_page = 'users' %} {% block extra_head %}
       <button type="submit" class="um-btn-confirm-danger" id="um-del-confirm">
         Yes, Deactivate
       </button>
+    </form>
+  </div>
+</div>
+
+<!-- Permanent delete confirmation. The button stays disabled until the
+     username is typed exactly; admin.delete_user checks it again and
+     refuses accounts that have reports, requests or boundaries. -->
+<div class="um-modal-overlay" id="um-erase-modal">
+  <div class="um-modal">
+    <div class="um-modal-head">
+      <h3>Delete Account</h3>
+      <button
+        type="button"
+        class="um-modal-close"
+        aria-label="Close dialog"
+        onclick="umClose('um-erase-modal')"
+      >
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>
+      </button>
+    </div>
+    <form method="POST" id="um-erase-form" autocomplete="off">
+      <div class="um-modal-body">
+        <div class="um-warn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3" /><path d="M12 9v4" /><path d="M12 17h.01" /></svg>
+          <span>
+            Permanently delete <strong id="um-erase-name"></strong>
+            (<span id="um-erase-role"></span>)? This cannot be undone.
+            Accounts with reports, requests or published boundaries cannot
+            be deleted &mdash; deactivate those instead. Audit log entries
+            are kept.
+          </span>
+        </div>
+
+        <div class="um-field">
+          <label for="um-erase-confirm-input">
+            Type <strong id="um-erase-name-2"></strong> to confirm
+          </label>
+          <input
+            type="text"
+            name="confirm_username"
+            id="um-erase-confirm-input"
+            autocomplete="off"
+            autocapitalize="none"
+            spellcheck="false"
+            required
+          />
+        </div>
+      </div>
+      <div class="um-modal-foot">
+        <button
+          type="button"
+          class="um-btn-cancel"
+          onclick="umClose('um-erase-modal')"
+        >
+          Cancel
+        </button>
+        <button type="submit" class="um-btn-confirm-danger" id="um-erase-submit" disabled>
+          Delete Permanently
+        </button>
+      </div>
     </form>
   </div>
 </div>
@@ -618,6 +686,22 @@ active_page = 'users' %} {% block extra_head %}
     document.getElementById("um-reset-name").textContent = name;
     document.getElementById("um-reset-pw").value = "";
     umOpen("um-reset-modal");
+  }
+
+  function umOpenDeleteAccount(name, role, action) {
+    const input = document.getElementById("um-erase-confirm-input");
+    const submit = document.getElementById("um-erase-submit");
+    document.getElementById("um-erase-form").action = action;
+    document.getElementById("um-erase-name").textContent = name;
+    document.getElementById("um-erase-name-2").textContent = name;
+    document.getElementById("um-erase-role").textContent = role;
+    input.value = "";
+    submit.disabled = true;
+    input.oninput = function () {
+      submit.disabled = input.value.trim() !== name;
+    };
+    umOpen("um-erase-modal");
+    input.focus();
   }
 
   // One dialog for both directions.

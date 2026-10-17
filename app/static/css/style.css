@@ -3425,6 +3425,12 @@ a.um-btn-confirm {
     background-color: var(--danger-solid);
 }
 
+/* Delete Account waits for the username to be typed. */
+.um-btn-confirm-danger:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
 .um-btn-confirm {
     padding: 0.65rem 1rem;
     border: none;

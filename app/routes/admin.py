@@ -354,9 +354,10 @@ def user_management():
     )
 
 # ======================================================================
-# Accounts are deactivated, never deleted.
+# Accounts are deactivated, not deleted - with one narrow exception,
+# delete_user() below, for accounts that have no work attached.
 #
-# WHY THERE IS NO DELETE ROUTE
+# WHY DEACTIVATING IS THE NORMAL WAY OUT
 #
 # Eight foreign keys point at users.user_id: audit_log.user_id,
 # notification.user_id, monitoring_report.user_id / reviewed_by /
@@ -441,6 +442,93 @@ def deactivate_user(user_id):
 def reactivate_user(user_id):
     """Let a deactivated account sign in again."""
     return _set_user_active(user_id, True)
+
+
+def _user_work_counts(user):
+    """
+    Official records that point at this account, by kind. Any of these
+    makes the account undeletable (see the note above deactivation).
+    Notifications and audit rows are not counted: delete_user() handles
+    both without losing anything.
+    """
+    uid = user.user_id
+    counts = {
+        "monitoring reports submitted": MonitoringReport.query.filter_by(user_id=uid).count(),
+        "monitoring reports reviewed": MonitoringReport.query.filter_by(reviewed_by=uid).count(),
+        "monitoring reports published": MonitoringReport.query.filter_by(published_by=uid).count(),
+        "requests submitted": ReforestationRequest.query.filter_by(user_id=uid).count(),
+        "requests reviewed": ReforestationRequest.query.filter_by(reviewed_by=uid).count(),
+        "site boundaries published": Site.query.filter_by(boundary_published_by=uid).count(),
+    }
+    return {k: v for k, v in counts.items() if v}
+
+
+@admin_bp.route('/users/<int:user_id>/delete', methods=['POST'])
+@superadmin_required
+def delete_user(user_id):
+    """
+    Permanently remove an account that has no work attached - a test
+    account, a duplicate, one created by mistake.
+
+    Anything with reports, requests or published boundaries is refused
+    and pointed at Deactivate instead, so no official record loses the
+    person behind it.
+
+    What happens to the rest:
+      notifications  deleted - they were this user's own inbox
+      audit log      kept. Each row already holds the username, role and
+                     CENRO as text (see app/utils/audit.py), so only the
+                     link to the account is cleared and the log reads
+                     exactly as before.
+    """
+    if user_id == session.get('user_id'):
+        flash("You cannot delete your own account.", "danger")
+        return redirect(url_for('admin.user_management'))
+
+    user = User.query.get_or_404(user_id)
+
+    # The typed name is the confirmation; the dialog only enables the
+    # button once it matches, and this repeats the check for a hand-posted
+    # form.
+    if (request.form.get('confirm_username') or '').strip() != user.username:
+        flash("The username typed did not match, so nothing was deleted.",
+              "danger")
+        return redirect(url_for('admin.user_management'))
+
+    if user.role == 'superadmin':
+        remaining = User.query.filter(
+            User.role == 'superadmin',
+            User.is_active.is_(True),
+            User.user_id != user.user_id,
+        ).count()
+        if remaining == 0:
+            flash("That is the last active system administrator and cannot "
+                  "be deleted.", "danger")
+            return redirect(url_for('admin.user_management'))
+
+    work = _user_work_counts(user)
+    if work:
+        listed = ", ".join(f"{n} {kind}" for kind, n in work.items())
+        flash(f"'{user.username}' cannot be deleted: the account has "
+              f"{listed}. Deactivate it instead - that stops it signing in "
+              "and keeps those records intact.", "danger")
+        return redirect(url_for('admin.user_management'))
+
+    username, role, cenro = user.username, user.role, user.cenro
+
+    Notification.query.filter_by(user_id=user_id).delete(
+        synchronize_session=False)
+    AuditLog.query.filter_by(user_id=user_id).update(
+        {AuditLog.user_id: None}, synchronize_session=False)
+    db.session.delete(user)
+
+    log_action('delete_user', 'users', user_id,
+               f"Deleted {role} '{username}'"
+               + (f" ({cenro})" if cenro else ""))
+    db.session.commit()
+
+    flash(f"Deleted the account '{username}'.", "success")
+    return redirect(url_for('admin.user_management'))
 
 
 @admin_bp.route('/users/<int:user_id>/reset-password', methods=['POST'])
