@@ -294,6 +294,22 @@ html:has(> body.lg-body) { height: 100%; scrollbar-gutter: auto; }
     .lg-tag, .lg-foot { text-align: center; }
     .lg-foot { display: none; }
     .lg-form-side { padding: 2rem 1.5rem 2.25rem; }
+
+    /* The white band with the logo stays put while the page scrolls, and
+       the form slides up over it. overflow: clip (not hidden) keeps the
+       rounded corners without making the card a scroll box, which would
+       stop the band from sticking. */
+    .lg-card { overflow: clip; }
+    .lg-art {
+        position: sticky;
+        top: 0;
+        z-index: 0;
+    }
+    .lg-form-side {
+        background: #10302a;
+        border-radius: 24px 24px 0 0;
+        box-shadow: 0 -12px 28px rgba(0, 0, 0, 0.25);
+    }
 }
 @media (prefers-reduced-motion: no-preference) {
     .lg-card { animation: lg-in 420ms cubic-bezier(.2, .7, .2, 1) both; }
@@ -391,7 +407,7 @@ html:has(> body.lg-body) { height: 100%; scrollbar-gutter: auto; }
 .lg-steps li.is-done span { border-color: #4cb27a; color: #7fd0a2; }
 
 .lg-step-actions { display: grid; grid-template-columns: auto 1fr; gap: 0.75rem; align-items: center; }
-.lg-back {
+.lg-step-back {
     height: 3.5rem;
     margin-top: 0.6rem;
     padding: 0 1.4rem;
@@ -403,4 +419,4 @@ html:has(> body.lg-body) { height: 100%; scrollbar-gutter: auto; }
     font-weight: 700;
     cursor: pointer;
 }
-.lg-back:hover { background: rgba(255, 255, 255, 0.08); }
+.lg-step-back:hover { background: rgba(255, 255, 255, 0.08); }

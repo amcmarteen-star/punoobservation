@@ -1644,3 +1644,32 @@ html:has(> body.landing-page)::-webkit-scrollbar {
         border-radius: 50% 50% 0 0 / 110px 110px 0 0;
     }
 }
+
+/* Attribution for the Philippine photographs in the coverage strip. */
+.landing-photo-credits {
+    max-width: 62rem;
+    margin: 18px auto 0;
+    padding: 0 24px;
+    text-align: center;
+    font-size: 0.72rem;
+    line-height: 1.6;
+    color: var(--mute);
+}
+.landing-photo-credits a { color: inherit; text-decoration: underline; text-underline-offset: 2px; }
+.landing-photo-credits a:hover { color: var(--accent); }
+
+/* Native species strip: scientific name above the local name. */
+.landing-slide-body .landing-slide-sci {
+    margin: 0 0 4px;
+    font-family: Georgia, 'Times New Roman', serif;
+    font-style: italic;
+    font-size: 0.85rem;
+    opacity: 0.85;
+}
+.landing-carousel-lead {
+    max-width: 36rem;
+    margin: 12px auto 0;
+    text-align: center;
+    color: var(--body);
+    line-height: 1.6;
+}
