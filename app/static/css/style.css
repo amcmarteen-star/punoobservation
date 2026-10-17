@@ -280,6 +280,9 @@
    between them and right-anchored art appears to shift. */
 html {
     scrollbar-gutter: stable;
+    /* --text-scale is the Text size setting on My Account (set in
+       Base.html before first paint). 1 when nothing is chosen. */
+    font-size: calc(100% * var(--text-scale, 1));
 }
 
 /* Desktop scale. Everything in the interface is sized in rem, so the root
@@ -289,7 +292,7 @@ html {
    size still gets their larger text. Phones keep the full size. */
 @media (min-width: 861px) {
     html {
-        font-size: 80%;
+        font-size: calc(80% * var(--text-scale, 1));
     }
 }
 
@@ -3583,6 +3586,11 @@ a.um-btn-confirm {
 
 .sites-fw-semibold {
     font-weight: 600;
+}
+
+/* Duration on one line, with its date range kept on one line beneath. */
+.sites-duration-cell {
+    white-space: nowrap;
 }
 
 .sites-actual {

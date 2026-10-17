@@ -88,6 +88,89 @@
     margin: 0.35rem 0 0;
   }
 
+  /* Text size picker: real radios, styled as a segmented control, so it
+     works with the keyboard (arrow keys) and screen readers for free. */
+  .acct-size-field {
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
+  }
+
+  .acct-size-field legend {
+    padding: 0;
+    margin-bottom: 0.5rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--text-strong);
+  }
+
+  .acct-size {
+    position: relative;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+    margin: 0;
+    padding: 0.25rem;
+    width: fit-content;
+    max-width: 100%;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background-color: var(--surface-2);
+  }
+
+  .acct-size input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .acct-size label {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.2rem;
+    min-width: 5.5rem;
+    padding: 0.55rem 0.9rem;
+    border: 1px solid transparent;
+    border-radius: 9px;
+    color: var(--text-2);
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 160ms var(--ease), color 160ms var(--ease);
+  }
+
+  .acct-size label:hover {
+    color: var(--text-heading);
+  }
+
+  /* The "Aa" sample is in px on purpose, so each option shows its own
+     size rather than all growing together with the setting. */
+  .acct-size .sample {
+    font-weight: 700;
+    line-height: 1;
+  }
+
+  .acct-size input:checked + label {
+    background-color: var(--surface-1);
+    border-color: var(--line);
+    color: var(--text-heading);
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
+  }
+
+  .acct-size input:checked + label .sample {
+    color: var(--brand-text);
+  }
+
+  .acct-size input:focus-visible + label {
+    outline: 2px solid var(--brand-solid);
+    outline-offset: 2px;
+  }
+
   .acct-activity {
     width: 100%;
     border-collapse: collapse;
@@ -204,6 +287,37 @@
       {% endif %}
     </div>
   </div>
+</div>
+
+<!-- ============ DISPLAY SETTINGS ============ -->
+{# Saved in this browser only (localStorage), the same as the theme
+   toggle; Base.html applies it before each page paints. #}
+<div class="um-panel">
+  <div class="um-panel-head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v16"/><path d="M4 7V5a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v2"/><path d="M9 20h6"/></svg>
+    <h3>Display settings</h3>
+  </div>
+
+  <fieldset class="acct-size-field">
+    <legend>Text size</legend>
+    <div class="acct-size" id="textSizePicker">
+      <input type="radio" name="text_scale" id="ts-small" value="0.9" />
+      <label for="ts-small"><span class="sample" style="font-size: 13px;">Aa</span>Small</label>
+
+      <input type="radio" name="text_scale" id="ts-default" value="1" />
+      <label for="ts-default"><span class="sample" style="font-size: 16px;">Aa</span>Default</label>
+
+      <input type="radio" name="text_scale" id="ts-large" value="1.15" />
+      <label for="ts-large"><span class="sample" style="font-size: 19px;">Aa</span>Large</label>
+
+      <input type="radio" name="text_scale" id="ts-xlarge" value="1.3" />
+      <label for="ts-xlarge"><span class="sample" style="font-size: 22px;">Aa</span>Extra large</label>
+    </div>
+    <p class="acct-hint">
+      Changes the size of text and controls on every page. Saved on this
+      device.
+    </p>
+  </fieldset>
 </div>
 
 <div class="acct-columns">
@@ -385,4 +499,41 @@
 </script>
 {% endif %}
 
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  (function () {
+    var KEY = "pno-text-scale";
+    var root = document.documentElement;
+    var radios = document.querySelectorAll('#textSizePicker input[name="text_scale"]');
+
+    var current = "1";
+    try {
+      current = localStorage.getItem(KEY) || "1";
+    } catch (e) {}
+
+    radios.forEach(function (r) {
+      // compare as numbers so "1" and "1.0" match
+      r.checked = parseFloat(r.value) === parseFloat(current);
+      r.addEventListener("change", function () {
+        if (!r.checked) return;
+        root.style.setProperty("--text-scale", r.value);
+        try {
+          if (r.value === "1") localStorage.removeItem(KEY);
+          else localStorage.setItem(KEY, r.value);
+        } catch (e) {
+          /* applies for this page view only */
+        }
+        // Charts draw on canvas and size their own text, so let them redraw.
+        window.dispatchEvent(new Event("resize"));
+      });
+    });
+
+    // Nothing matched (an old or hand-edited value): show Default.
+    if (!document.querySelector('#textSizePicker input:checked')) {
+      document.getElementById("ts-default").checked = true;
+    }
+  })();
+</script>
 {% endblock %}

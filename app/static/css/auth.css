@@ -143,6 +143,27 @@ html:has(> body.lg-body) { height: 100%; scrollbar-gutter: auto; }
 }
 .lg-sub { margin: 0 0 1.75rem; font-size: 0.95rem; color: rgba(238, 247, 241, 0.7); }
 
+/* Back to the landing page, above the heading. justify-self keeps it from
+   stretching across the grid; the negative margin lines the arrow up with
+   the heading text. */
+.lg-back {
+    justify-self: start;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin: 0 0 1.25rem -0.55rem;
+    padding: 0.4rem 0.7rem 0.4rem 0.55rem;
+    border-radius: 999px;
+    color: rgba(238, 247, 241, 0.7);
+    font-size: 0.88rem;
+    font-weight: 600;
+    text-decoration: none;
+    transition: color 0.15s ease, background-color 0.15s ease;
+}
+.lg-back svg { width: 1.1rem; height: 1.1rem; flex: none; }
+.lg-back:hover,
+.lg-back:focus-visible { color: #7fd0a2; background: rgba(255, 255, 255, 0.07); }
+
 .lg-field { margin-bottom: 1.15rem; }
 .lg-field label {
     display: block;
