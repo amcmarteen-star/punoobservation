@@ -205,6 +205,12 @@
     font-size: 0.85rem;
   }
 
+  /* On a phone the activity table scrolls inside its own box instead of
+     widening the page. */
+  @media (max-width: 640px) {
+    .acct-activity { display: block; overflow-x: auto; }
+  }
+
   .acct-activity th,
   .acct-activity td {
     padding: 0.55rem 0.6rem;

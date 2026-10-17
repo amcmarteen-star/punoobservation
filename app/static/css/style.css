@@ -5454,8 +5454,15 @@ table[data-freeze="2"].is-scrolled-x th:nth-child(2) {
 }
 .up-input {
   position: absolute;
-  width: 1px;
-  height: 1px;
+  top: 0;
+  left: 0;
+  /* !important: form rules such as .um-field input set width: 100%,
+     which stretched this hidden input past the right edge of the page */
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  border: 0 !important;
+  overflow: hidden;
   opacity: 0;
   pointer-events: none;
 }

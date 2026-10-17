@@ -11,7 +11,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@100..125,400..800&family=Inter+Tight:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-    <link rel="preload" as="image" href="{{ url_for('static', filename='images/landing/hero-hillside.jpg', v=asset_v) }}">
+    <link rel="preload" as="image" href="{{ url_for('static', filename='images/landing/hero-kalahan.jpg', v=asset_v) }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/landing.css', v=asset_v) }}">
 </head>
 <script>document.documentElement.classList.add("has-js");</script>
@@ -30,6 +30,7 @@
                 <a href="#about">About</a>
                 <a href="#species">Species</a>
                 <a href="#features">Features</a>
+                <a href="#more">More</a>
             </div>
             <div class="landing-nav-actions">
                 <a href="{{ url_for('auth.login') }}" class="landing-nav-login">Log in</a>
@@ -40,7 +41,7 @@
 
     <header class="landing-hero">
         <div class="landing-hero-media">
-            <img src="{{ url_for('static', filename='images/landing/hero-hillside.jpg', v=asset_v) }}" alt="Volunteers spread out along a grassy ridge, planting seedlings, with forested hills behind" width="1359" height="640" fetchpriority="high" decoding="async">
+            <img src="{{ url_for('static', filename='images/landing/hero-kalahan.jpg', v=asset_v) }}" alt="Forested mountain ridges above Malico, Nueva Vizcaya, where alder has been planted to reforest the slopes" width="2400" height="1600" fetchpriority="high" decoding="async">
         </div>
         <div class="landing-hero-scrim"></div>
 
@@ -129,12 +130,13 @@
                     Native species
                 </span>
                 <h2>Native trees the platform recommends</h2>
-                <p class="landing-carousel-lead">Five of the 58 species in the reference dataset, with the elevation, rainfall and soil each one suits.</p>
+                <p class="landing-carousel-lead">Ten of the 58 species in the reference dataset, with the elevation, rainfall and soil each one suits. Click a photo to see it larger.</p>
             </div>
 
             <div class="landing-marquee landing-reveal" data-marquee>
                 <div class="landing-track" role="group" aria-label="Native tree species">
-                    <article class="landing-slide">
+                    <article class="landing-slide" data-index="0" tabindex="0" role="button" aria-label="View Narra photo"
+                             data-credit-author="Ping an Chang" data-credit-license="CC BY-SA 4.0" data-credit-url="https://commons.wikimedia.org/wiki/File:%E5%8D%B0%E5%BA%A6%E7%B4%AB%E6%AA%80_Pterocarpus_indicus_20200807191221_09.jpg">
                         <img src="{{ url_for('static', filename='images/landing/sp-narra.jpg') }}" alt="Narra (Pterocarpus indicus) in flower" width="900" height="1200" loading="lazy" decoding="async">
                         <div class="landing-slide-body">
                             <p class="landing-slide-sci">Pterocarpus indicus</p>
@@ -143,7 +145,8 @@
                         </div>
                     </article>
 
-                    <article class="landing-slide">
+                    <article class="landing-slide" data-index="1" tabindex="0" role="button" aria-label="View Molave photo"
+                             data-credit-author="Forest and Kim Starr" data-credit-license="CC BY 3.0 us" data-credit-url="https://commons.wikimedia.org/wiki/File:Starr-091104-9126-Vitex_parviflora-flowers_and_leaves-Kahanu_Gardens_NTBG_Kaeleku_Hana-Maui_(24895355111).jpg">
                         <img src="{{ url_for('static', filename='images/landing/sp-molave.jpg') }}" alt="Molave (Vitex parviflora) flowers and leaves" width="900" height="1200" loading="lazy" decoding="async">
                         <div class="landing-slide-body">
                             <p class="landing-slide-sci">Vitex parviflora</p>
@@ -152,7 +155,8 @@
                         </div>
                     </article>
 
-                    <article class="landing-slide">
+                    <article class="landing-slide" data-index="2" tabindex="0" role="button" aria-label="View Kamagong photo"
+                             data-credit-author="Bella Lin" data-credit-license="CC BY 4.0" data-credit-url="https://commons.wikimedia.org/wiki/File:Diospyros_blancoi_304743369.jpg">
                         <img src="{{ url_for('static', filename='images/landing/sp-kamagong.jpg') }}" alt="Kamagong (Diospyros blancoi) fruit on the tree" width="900" height="1200" loading="lazy" decoding="async">
                         <div class="landing-slide-body">
                             <p class="landing-slide-sci">Diospyros blancoi</p>
@@ -161,7 +165,8 @@
                         </div>
                     </article>
 
-                    <article class="landing-slide">
+                    <article class="landing-slide" data-index="3" tabindex="0" role="button" aria-label="View Ipil photo"
+                             data-credit-author="Denis.prévôt" data-credit-license="CC BY-SA 3.0" data-credit-url="https://commons.wikimedia.org/wiki/File:Intsia_bijuga.jpg">
                         <img src="{{ url_for('static', filename='images/landing/sp-ipil.jpg') }}" alt="A tall Ipil tree (Intsia bijuga)" width="900" height="1200" loading="lazy" decoding="async">
                         <div class="landing-slide-body">
                             <p class="landing-slide-sci">Intsia bijuga</p>
@@ -170,7 +175,8 @@
                         </div>
                     </article>
 
-                    <article class="landing-slide">
+                    <article class="landing-slide" data-index="4" tabindex="0" role="button" aria-label="View Bakawan Lalake photo"
+                             data-credit-author="Bernard DUPONT" data-credit-license="CC BY-SA 2.0" data-credit-url="https://commons.wikimedia.org/wiki/File:Tall-stilt_mangrove_(Rhizophora_apiculata)_flower.jpg">
                         <img src="{{ url_for('static', filename='images/landing/sp-bakawan.jpg') }}" alt="Bakawan lalake (Rhizophora apiculata) flower" width="1200" height="900" loading="lazy" decoding="async">
                         <div class="landing-slide-body">
                             <p class="landing-slide-sci">Rhizophora apiculata</p>
@@ -178,11 +184,86 @@
                             <p>0–5 m elevation &middot; 1,500–4,500 mm rain &middot; silt loam, silty clay loam</p>
                         </div>
                     </article>
+
+                    <article class="landing-slide" data-index="5" tabindex="0" role="button" aria-label="View Banaba photo"
+                             data-credit-author="Lokenrc" data-credit-license="CC BY 2.5" data-credit-url="https://commons.wikimedia.org/wiki/File:Jarul.jpg">
+                        <img src="{{ url_for('static', filename='images/landing/sp-banaba.jpg') }}" alt="Purple Banaba (Lagerstroemia speciosa) flowers" width="800" height="600" loading="lazy" decoding="async">
+                        <div class="landing-slide-body">
+                            <p class="landing-slide-sci">Lagerstroemia speciosa</p>
+                            <h3>Banaba</h3>
+                            <p>0–800 m elevation &middot; 1,300–3,500 mm rain &middot; silt loam, clay loam</p>
+                        </div>
+                    </article>
+
+                    <article class="landing-slide" data-index="6" tabindex="0" role="button" aria-label="View Katmon photo"
+                             data-credit-author="wlcutler" data-credit-license="CC BY 2.0" data-credit-url="https://commons.wikimedia.org/wiki/File:Dillenia_philippinensis_1.jpg">
+                        <img src="{{ url_for('static', filename='images/landing/sp-katmon.jpg') }}" alt="Katmon (Dillenia philippinensis) flower among broad leaves" width="800" height="600" loading="lazy" decoding="async">
+                        <div class="landing-slide-body">
+                            <p class="landing-slide-sci">Dillenia philippinensis</p>
+                            <h3>Katmon</h3>
+                            <p>0–1,000 m elevation &middot; 1,800–4,000 mm rain &middot; clay loam, silt loam</p>
+                        </div>
+                    </article>
+
+                    <article class="landing-slide" data-index="7" tabindex="0" role="button" aria-label="View Bitaog photo"
+                             data-credit-author="Forest &amp; Kim Starr" data-credit-license="CC BY 3.0" data-credit-url="https://commons.wikimedia.org/wiki/File:Starr_010309-0546_Calophyllum_inophyllum.jpg">
+                        <img src="{{ url_for('static', filename='images/landing/sp-bitaog.jpg') }}" alt="White Bitaog (Calophyllum inophyllum) flowers" width="800" height="600" loading="lazy" decoding="async">
+                        <div class="landing-slide-body">
+                            <p class="landing-slide-sci">Calophyllum inophyllum</p>
+                            <h3>Bitaog</h3>
+                            <p>0–200 m elevation &middot; 1,200–4,000 mm rain &middot; sand</p>
+                        </div>
+                    </article>
+
+                    <article class="landing-slide" data-index="8" tabindex="0" role="button" aria-label="View Bagtikan photo"
+                             data-credit-author="Bernard DUPONT" data-credit-license="CC BY-SA 2.0" data-credit-url="https://commons.wikimedia.org/wiki/File:White_Seraya_(Parashorea_malaanonan)_(Dipterocarpaceae)_(8080071153).jpg">
+                        <img src="{{ url_for('static', filename='images/landing/sp-bagtikan.jpg') }}" alt="A tall Bagtikan tree (Parashorea malaanonan) against the sky" width="800" height="600" loading="lazy" decoding="async">
+                        <div class="landing-slide-body">
+                            <p class="landing-slide-sci">Parashorea malaanonan</p>
+                            <h3>Bagtikan</h3>
+                            <p>0–700 m elevation &middot; 2,000–5,000 mm rain &middot; sandy loam, silt loam, clay loam</p>
+                        </div>
+                    </article>
+
+                    <article class="landing-slide" data-index="9" tabindex="0" role="button" aria-label="View Benguet Pine photo"
+                             data-credit-author="Patrickroque01" data-credit-license="CC BY-SA 4.0" data-credit-url="https://commons.wikimedia.org/wiki/File:Pine_trees_along_Staunton_Road_(Sagada,_Mountain_Province;_12-02-2022).jpg">
+                        <img src="{{ url_for('static', filename='images/landing/sp-benguet-pine.jpg') }}" alt="Benguet pine (Pinus kesiya) forest along a mountain road" width="800" height="600" loading="lazy" decoding="async">
+                        <div class="landing-slide-body">
+                            <p class="landing-slide-sci">Pinus kesiya</p>
+                            <h3>Benguet Pine</h3>
+                            <p>300–2,700 m elevation &middot; 1,500–3,500 mm rain &middot; sandy loam, sand</p>
+                        </div>
+                    </article>
                 </div>
             </div>
         </div>
-        <p class="landing-photo-credits">Photos from Wikimedia Commons. Narra: <a href="https://commons.wikimedia.org/wiki/File:%E5%8D%B0%E5%BA%A6%E7%B4%AB%E6%AA%80_Pterocarpus_indicus_20200807191221_09.jpg" target="_blank" rel="noopener">Ping an Chang</a> (CC BY-SA 4.0), Molave: <a href="https://commons.wikimedia.org/wiki/File:Starr-091104-9126-Vitex_parviflora-flowers_and_leaves-Kahanu_Gardens_NTBG_Kaeleku_Hana-Maui_(24895355111).jpg" target="_blank" rel="noopener">Forest and Kim Starr</a> (CC BY 3.0 us), Kamagong: <a href="https://commons.wikimedia.org/wiki/File:Diospyros_blancoi_304743369.jpg" target="_blank" rel="noopener">Bella Lin</a> (CC BY 4.0), Ipil: <a href="https://commons.wikimedia.org/wiki/File:Intsia_bijuga.jpg" target="_blank" rel="noopener">Denis.prévôt</a> (CC BY-SA 3.0), Bakawan Lalake: <a href="https://commons.wikimedia.org/wiki/File:Tall-stilt_mangrove_(Rhizophora_apiculata)_flower.jpg" target="_blank" rel="noopener">Bernard DUPONT</a> (CC BY-SA 2.0). Ranges from the World Agroforestry Centre (ICRAF).</p>
+        <p class="landing-photo-credits">Photos from Wikimedia Commons. Narra: <a href="https://commons.wikimedia.org/wiki/File:%E5%8D%B0%E5%BA%A6%E7%B4%AB%E6%AA%80_Pterocarpus_indicus_20200807191221_09.jpg" target="_blank" rel="noopener">Ping an Chang</a> (CC BY-SA 4.0), Molave: <a href="https://commons.wikimedia.org/wiki/File:Starr-091104-9126-Vitex_parviflora-flowers_and_leaves-Kahanu_Gardens_NTBG_Kaeleku_Hana-Maui_(24895355111).jpg" target="_blank" rel="noopener">Forest and Kim Starr</a> (CC BY 3.0 us), Kamagong: <a href="https://commons.wikimedia.org/wiki/File:Diospyros_blancoi_304743369.jpg" target="_blank" rel="noopener">Bella Lin</a> (CC BY 4.0), Ipil: <a href="https://commons.wikimedia.org/wiki/File:Intsia_bijuga.jpg" target="_blank" rel="noopener">Denis.prévôt</a> (CC BY-SA 3.0), Bakawan Lalake: <a href="https://commons.wikimedia.org/wiki/File:Tall-stilt_mangrove_(Rhizophora_apiculata)_flower.jpg" target="_blank" rel="noopener">Bernard DUPONT</a> (CC BY-SA 2.0), Banaba: <a href="https://commons.wikimedia.org/wiki/File:Jarul.jpg" target="_blank" rel="noopener">Lokenrc</a> (CC BY 2.5), Katmon: <a href="https://commons.wikimedia.org/wiki/File:Dillenia_philippinensis_1.jpg" target="_blank" rel="noopener">wlcutler</a> (CC BY 2.0), Bitaog: <a href="https://commons.wikimedia.org/wiki/File:Starr_010309-0546_Calophyllum_inophyllum.jpg" target="_blank" rel="noopener">Forest &amp; Kim Starr</a> (CC BY 3.0), Bagtikan: <a href="https://commons.wikimedia.org/wiki/File:White_Seraya_(Parashorea_malaanonan)_(Dipterocarpaceae)_(8080071153).jpg" target="_blank" rel="noopener">Bernard DUPONT</a> (CC BY-SA 2.0), Benguet Pine: <a href="https://commons.wikimedia.org/wiki/File:Pine_trees_along_Staunton_Road_(Sagada,_Mountain_Province;_12-02-2022).jpg" target="_blank" rel="noopener">Patrickroque01</a> (CC BY-SA 4.0). Ranges from the World Agroforestry Centre (ICRAF).</p>
     </section>
+    <!-- Larger view of a species photo, opened by clicking a card in the strip above. -->
+    <dialog class="landing-lightbox" id="species-lightbox" aria-labelledby="lightbox-name">
+        <button class="lightbox-close" type="button" aria-label="Close" data-lightbox-close>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+        </button>
+        <figure>
+            <div class="lightbox-media">
+                <img class="lightbox-img" alt="">
+                <button class="lightbox-nav prev" type="button" aria-label="Previous species" data-lightbox-step="-1">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>
+                </button>
+                <button class="lightbox-nav next" type="button" aria-label="Next species" data-lightbox-step="1">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg>
+                </button>
+            </div>
+            <figcaption>
+                <p class="landing-slide-sci lightbox-sci"></p>
+                <h3 id="lightbox-name"></h3>
+                <p class="lightbox-ranges"></p>
+                <p class="lightbox-credit">Photo: <a target="_blank" rel="noopener"></a> <span></span>, Wikimedia Commons</p>
+                <p class="lightbox-count" aria-live="polite"></p>
+            </figcaption>
+        </figure>
+    </dialog>
+
 
     <section class="landing-section lf" id="features">
         <div class="lf-head landing-reveal">
@@ -301,7 +382,7 @@
         </div>
     </section>
 
-    <footer class="landing-footer">
+    <footer class="landing-footer" id="more">
         <div class="landing-shell">
             <div class="landing-footer-grid">
                 <div>
