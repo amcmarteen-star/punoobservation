@@ -12,11 +12,15 @@ From the project root, with the project's virtual environment active:
 pip install -r scripts/requirements.txt
 ```
 
-Every script runs as a module **from the project root**:
+Run a script either way:
 
-```
-python -m scripts.pipeline.get_climate
-```
+- open it in VS Code and press the **Run** button, or
+- from the project root: `python -m scripts.pipeline.get_climate`
+
+**To run the whole pipeline at once**, run `scripts/pipeline/run_all.py`
+(Run button, or `python -m scripts.pipeline.run_all`). It does steps 1
+to 5 in order. Safe to run again: every step keeps the work already
+done, so after a failure it carries on where it stopped.
 
 The scripts read `.env` themselves, so they use the same database as
 the web app.

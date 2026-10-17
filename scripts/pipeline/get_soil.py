@@ -20,6 +20,15 @@ HOW TO RUN (from the project root):
     python -m scripts.pipeline.get_soil
 """
 
+# Lets the file run with VS Code's Run button (python path/to/file.py)
+# as well as with python -m scripts....: puts the project root on the
+# path, and imports `scripts` so .env is loaded before the app is.
+if __package__ in (None, ""):
+    import os as _os, sys as _sys
+    _sys.path.insert(0, _os.path.dirname(_os.path.dirname(_os.path.dirname(
+        _os.path.abspath(__file__)))))
+    import scripts  # noqa: F401
+
 import csv
 import os
 

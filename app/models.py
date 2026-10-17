@@ -196,6 +196,30 @@ class TreeSpecie(db.Model):
     reforestation_records = db.relationship('ReforestationRecord', backref='species', lazy=True)
 
 
+class SpeciesCategory(db.Model):
+    """
+    One CENRO use category for one species (Timber, Agroforestry, ...).
+
+    A row per pair, so a species can be in several. The allowed names
+    are SPECIES_CATEGORIES in app/services/recommender.py; rows are
+    loaded by scripts/tools/load_species_categories.py.
+    """
+    __tablename__ = 'species_category'
+
+    id = db.Column(db.Integer, primary_key=True)
+    species_id = db.Column(
+        db.Integer,
+        db.ForeignKey('tree_specie.tree_id', ondelete='CASCADE'),
+        nullable=False, index=True,
+    )
+    category = db.Column(db.String(50), nullable=False)
+
+    __table_args__ = (
+        db.UniqueConstraint('species_id', 'category',
+                            name='uq_species_category'),
+    )
+
+
 class ReforestationRecord(db.Model):
     __tablename__ = 'reforestation_record'
     

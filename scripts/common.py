@@ -19,6 +19,8 @@ STATIC_DIR = os.path.join(PROJECT_ROOT, "app", "static")
 SOURCE_DIR = os.path.join(SCRIPTS_DIR, "data", "source")
 SOIL_SHAPEFILE = os.path.join(SOURCE_DIR, "soil", "PhilSoilSeries.shp")
 SPECIES_XLSX = os.path.join(SOURCE_DIR, "Philippine_Tree_main_species_Database.xlsx")
+# CENRO use category per species, filled in by hand (tools/load_species_categories)
+SPECIES_CATEGORIES_CSV = os.path.join(SOURCE_DIR, "species_categories.csv")
 
 # Written by the pipeline, in the order the steps run.
 GENERATED_DIR = os.path.join(SCRIPTS_DIR, "data", "generated")

@@ -1,5 +1,5 @@
 # app/routes/dashboard.py
-from flask import Blueprint, render_template, session, jsonify, redirect, url_for, request, flash, current_app
+from flask import Blueprint, render_template, session, jsonify, redirect, url_for, request, flash, current_app, abort
 from app.extensions import db
 from app.utils.decorators import login_required
 from app.models import (
@@ -13,7 +13,10 @@ from collections import defaultdict
 import math
 from datetime import datetime
 from zoneinfo import ZoneInfo
-from app.services.recommender import recommend_for_location, _fmt, SALINITY_LABELS
+from app.services.recommender import (
+    recommend_for_location, _fmt, SALINITY_LABELS,
+    SPECIES_CATEGORIES, PURPOSE_ALL, check_purpose,
+)
 from app.services.wikipedia import (
     refresh_species_summary, WikipediaUnavailable, LICENSE_NAME, LICENSE_URL,
 )
@@ -499,6 +502,13 @@ def recommendations():
  
     selected_muni = request.args.get('municipality', '')
     selected_brgy = request.args.get('barangay', '')
+    # Purpose filter: which CENRO category to score (default: all species).
+    # An unknown value is refused, not ignored.
+    selected_purpose = request.args.get('purpose') or PURPOSE_ALL
+    try:
+        check_purpose(selected_purpose)
+    except ValueError as e:
+        abort(400, description=str(e))
  
     barangays = []
     if selected_muni:
@@ -519,7 +529,8 @@ def recommendations():
             .first()
         )
         if location:
-            result = recommend_for_location(location, top_k=5)
+            result = recommend_for_location(location, top_k=5,
+                                            purpose=selected_purpose)
  
     return render_template(
         'Recommendations.html',
@@ -528,6 +539,9 @@ def recommendations():
         barangays=barangays,
         selected_muni=selected_muni,
         selected_brgy=selected_brgy,
+        species_categories=SPECIES_CATEGORIES,
+        purpose_all=PURPOSE_ALL,
+        selected_purpose=selected_purpose,
         result=result,
     )
  

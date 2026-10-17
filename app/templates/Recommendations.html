@@ -709,7 +709,14 @@
       }
     }
 
+    // The chosen purpose rides along on every URL, so it survives a
+    // reload, a new barangay and Back / Forward. "All" is left out.
+    const PURPOSE_ALL = "{{ purpose_all }}";
+
     function urlFor(params) {
+      if (form.purpose.value && form.purpose.value !== PURPOSE_ALL) {
+        params.purpose = form.purpose.value;
+      }
       const url = new URL(form.action || window.location.href, window.location.href);
       url.search = new URLSearchParams(params).toString();
       return url.pathname + url.search;
@@ -720,6 +727,16 @@
       load(urlFor({ municipality: f.municipality.value }), {
         loadingText: "Loading barangays…",
       });
+    };
+
+    // a new purpose redraws the results straight away once a barangay is
+    // chosen; before that it is just remembered for when one is
+    window.recPickPurpose = function (f) {
+      if (!f.barangay.value) return;
+      load(urlFor({
+        municipality: f.municipality.value,
+        barangay: f.barangay.value,
+      }), { loadingText: "Loading…" });
     };
 
     form.addEventListener("submit", function (e) {
@@ -735,6 +752,7 @@
     window.addEventListener("popstate", function () {
       const q = new URLSearchParams(window.location.search);
       form.municipality.value = q.get("municipality") || "";
+      form.purpose.value = q.get("purpose") || PURPOSE_ALL;
       load(window.location.pathname + window.location.search, { push: false });
     });
   })();
@@ -790,6 +808,21 @@
       </select>
     </div>
 
+    {# Purpose filter. Options come from SPECIES_CATEGORIES
+       (app/services/recommender.py); "All" scores every species. #}
+    <div class="um-field">
+      <label for="purpose">Purpose</label>
+      <select name="purpose" id="purpose" onchange="recPickPurpose(this.form)">
+        <option value="{{ purpose_all }}"
+                {% if selected_purpose == purpose_all %}selected{% endif %}>All</option>
+        {% for c in species_categories %}
+          <option value="{{ c }}" {% if c == selected_purpose %}selected{% endif %}>
+            {{ c }}
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+
     <div class="um-field rec-show-field">
       <button type="submit" class="um-btn-confirm rec-show-btn" id="rec-show-btn"
               {% if not selected_brgy %}disabled{% endif %}>
@@ -840,14 +873,32 @@
     Soil series: {{ result.site_profile.soil_type or 'not recorded' }}
   </p>
 
+  {# "Timber species" when a purpose is chosen, plain "species" for All #}
+  {% set kind = (selected_purpose ~ ' ') if selected_purpose != purpose_all else '' %}
+
+  {% if not result.all_scores %}
+  {# A purpose with no species tagged yet: say so, no empty table. #}
+  <div class="um-empty mt-3">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22v-7"/><path d="M9 6a3 3 0 0 1 6 0c2 0 4 2 4 4.5S17 15 15 15H9c-2 0-4-2-4-4.5S7 6 9 6z"/></svg>
+    <strong>No {{ selected_purpose }} species tagged yet.</strong>
+    <p>Choose "All" under Purpose to see every species for this barangay.</p>
+  </div>
+  {% else %}
+
   <!-- ============ RESULTS HEADER + TOGGLE ============ -->
   <div class="results-bar">
     <span class="results-bar-label" id="resultCount">
-      Showing top 5 of {{ result.total_species }} species
+      {% if result.total_species > 5 %}
+        Showing top 5 of {{ result.total_species }} {{ kind }}species
+      {% else %}
+        Showing all {{ result.total_species }} {{ kind }}species
+      {% endif %}
     </span>
+    {% if result.total_species > 5 %}
     <button type="button" id="toggleAll" class="um-btn-ghost">
-      Show all {{ result.total_species }} species
+      Show all {{ result.total_species }} {{ kind }}species
     </button>
+    {% endif %}
   </div>
 
   <!-- ============ RESULTS TABLE ============ -->
@@ -976,7 +1027,7 @@
     Site characteristics are encoded and normalised to a common scale, then
     compared against each species' published ecological profile using
     <strong>{{ result.method }}</strong>. Species are ranked in descending
-    order of similarity. All {{ result.total_species }} species in the
+    order of similarity. All {{ result.total_species }} {{ kind }}species in the
     reference dataset are scored; the top 5 are shown by default.
     <br><br>
     <strong>Within published ranges</strong> is a separate check. It reports
@@ -993,6 +1044,7 @@
       Species data source: {{ result.all_scores[0].source }}.
     {% endif %}
   </div>
+  {% endif %}{# /result.all_scores #}
 
   <!-- ============ EVALUATION MODAL ============ -->
   <div class="um-modal-overlay" id="rec-eval-modal">
@@ -1246,9 +1298,7 @@
             : null;
           if (problem) {
             input.value = '';
-            alert('This photo was not uploaded.
-
-' + problem);
+            alert('This photo was not uploaded.' + problem);
             return;
           }
           if (window.PNOUpload) {
@@ -1469,6 +1519,8 @@
       const label = document.getElementById('resultCount');
       const rows = document.querySelectorAll('tr.beyond-top');
       const total = {{ result.total_species }};
+      const kind = "{{ kind }}";
+      if (!btn) return;
 
       let expanded = false;
 
@@ -1481,10 +1533,10 @@
 
         if (expanded) {
           btn.textContent = 'Show top 5 only';
-          label.textContent = 'Showing all ' + total + ' species';
+          label.textContent = 'Showing all ' + total + ' ' + kind + 'species';
         } else {
-          btn.textContent = 'Show all ' + total + ' species';
-          label.textContent = 'Showing top 5 of ' + total + ' species';
+          btn.textContent = 'Show all ' + total + ' ' + kind + 'species';
+          label.textContent = 'Showing top 5 of ' + total + ' ' + kind + 'species';
         }
       });
     })();

@@ -32,7 +32,34 @@ Only the source of the reference vectors differs.
 import math
 
 from app.extensions import db
-from app.models import Location, TreeSpecie
+from app.models import Location, SpeciesCategory, TreeSpecie
+
+
+# ----------------------------------------------------------------------
+# Purpose filter - CENRO tree categories
+# ----------------------------------------------------------------------
+#
+# CENRO groups trees by use. A species can be in several (Narra is
+# Timber and Agroforestry), tagged in the species_category table.
+#
+# The ONLY place the category names are written. The purpose check
+# below, the recommendation page's dropdown and the CSV loader
+# (scripts/tools/load_species_categories.py) all read this list. Adding
+# Fuel wood or Bamboo later is one line here, then tagging species in
+# the CSV.
+SPECIES_CATEGORIES = ["Timber", "Agroforestry"]
+
+# The default: every reference species, exactly as before the filter.
+PURPOSE_ALL = "all"
+
+
+def check_purpose(purpose):
+    """Raise ValueError unless purpose is PURPOSE_ALL or a known category."""
+    if purpose != PURPOSE_ALL and purpose not in SPECIES_CATEGORIES:
+        raise ValueError(
+            f"Unknown purpose '{purpose}'. Use '{PURPOSE_ALL}' or one of: "
+            + ", ".join(SPECIES_CATEGORIES) + "."
+        )
 
 
 # ----------------------------------------------------------------------
@@ -242,12 +269,18 @@ def cosine_similarity(vec_a, vec_b):
 # Step 5 - rank
 # ----------------------------------------------------------------------
 
-def recommend_for_location(location, top_k=5):
+def recommend_for_location(location, top_k=5, purpose=PURPOSE_ALL):
     """
     Ranked species recommendations for one barangay.
 
     'found' is False when the barangay has no characteristic data.
+
+    purpose narrows WHICH species are scored, never how: PURPOSE_ALL
+    scores every reference species (the original behaviour); a category
+    from SPECIES_CATEGORIES scores only the species tagged with it. An
+    unknown purpose raises ValueError rather than being ignored.
     """
+    check_purpose(purpose)
     bounds = get_scale_bounds()
     sv = site_vector(location, bounds)
 
@@ -259,7 +292,12 @@ def recommend_for_location(location, top_k=5):
             "barangay": location.barangay,
         }
 
-    species_list = TreeSpecie.query.filter_by(is_reference=True).all()
+    candidates = TreeSpecie.query.filter_by(is_reference=True)
+    if purpose != PURPOSE_ALL:
+        candidates = candidates.join(
+            SpeciesCategory, SpeciesCategory.species_id == TreeSpecie.tree_id
+        ).filter(SpeciesCategory.category == purpose)
+    species_list = candidates.all()
 
     results = []
     for sp in species_list:
@@ -310,6 +348,7 @@ def recommend_for_location(location, top_k=5):
         "site_vector": {k: (round(v, 4) if v is not None else None)
                         for k, v in sv.items()},
         "method": "cosine similarity",
+        "purpose": purpose,
         "total_species": len(results),
         "recommendations": results[:top_k],
         "all_scores": results,
