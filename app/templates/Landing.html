@@ -22,13 +22,13 @@
     <div class="landing-nav-wrap">
         <nav class="landing-nav" aria-label="Main">
             <a href="{{ url_for('dashboard.home') }}" class="landing-brand">
-                <img src="{{ url_for('static', filename='images/logo-mark.png', v=asset_v) }}" alt="" width="145" height="145">
+                <img src="{{ url_for('static', filename='images/finallogo.png', v=asset_v) }}" alt="" width="249" height="311">
                 <span>PuNo<span class="accent">Observation</span></span>
             </a>
             <div class="landing-nav-links">
                 <a href="#top" aria-current="page">Home</a>
                 <a href="#about">About</a>
-                <a href="#coverage">Coverage</a>
+                <a href="#species">Species</a>
                 <a href="#features">Features</a>
             </div>
             <div class="landing-nav-actions">
@@ -122,60 +122,66 @@
         </div>
     </section>
 
-    <section class="landing-section landing-section-alt" id="coverage">
+    <section class="landing-section landing-section-alt" id="species">
         <div class="landing-shell">
             <div class="landing-carousel-head landing-reveal">
                 <span class="landing-tag">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/></svg>
-                    Coverage
+                    Native species
                 </span>
-                <h2>The ground the platform covers</h2>
+                <h2>Native trees the platform recommends</h2>
+                <p class="landing-carousel-lead">Five of the 58 species in the reference dataset, with the elevation, rainfall and soil each one suits.</p>
             </div>
 
             <div class="landing-marquee landing-reveal" data-marquee>
-                <div class="landing-track" role="group" aria-label="Landscapes across the surveyed area">
+                <div class="landing-track" role="group" aria-label="Native tree species">
                     <article class="landing-slide">
-                        <img src="{{ url_for('static', filename='images/landing/tropical-foliage.jpg') }}" alt="Dense tropical palm and broadleaf foliage in lowland forest" width="1600" height="1067" loading="lazy" decoding="async">
+                        <img src="{{ url_for('static', filename='images/landing/sp-narra.jpg') }}" alt="Narra (Pterocarpus indicus) in flower" width="900" height="1200" loading="lazy" decoding="async">
                         <div class="landing-slide-body">
-                            <h3>Lowland growth</h3>
-                            <p>Elevation is a model input, so a lowland site and an upland site never rank the same.</p>
+                            <p class="landing-slide-sci">Pterocarpus indicus</p>
+                            <h3>Narra</h3>
+                            <p>0–600 m elevation &middot; 900–4,000 mm rain &middot; sandy loam, clay loam</p>
                         </div>
                     </article>
 
                     <article class="landing-slide">
-                        <img src="{{ url_for('static', filename='images/landing/aerial-road.jpg') }}" alt="Aerial view of an unbroken forest canopy split by a single road" width="1600" height="1067" loading="lazy" decoding="async">
+                        <img src="{{ url_for('static', filename='images/landing/sp-molave.jpg') }}" alt="Molave (Vitex parviflora) flowers and leaves" width="900" height="1200" loading="lazy" decoding="async">
                         <div class="landing-slide-body">
-                            <h3>Canopy from above</h3>
-                            <p>The heatmap shows where planting activity concentrates, by barangay and by municipality.</p>
+                            <p class="landing-slide-sci">Vitex parviflora</p>
+                            <h3>Molave</h3>
+                            <p>0–700 m elevation &middot; 800–2,500 mm rain &middot; clay loam</p>
                         </div>
                     </article>
 
                     <article class="landing-slide">
-                        <img src="{{ url_for('static', filename='images/landing/planting-rows.jpg') }}" alt="Aerial view of established planting rows at low sun" width="1600" height="1067" loading="lazy" decoding="async">
+                        <img src="{{ url_for('static', filename='images/landing/sp-kamagong.jpg') }}" alt="Kamagong (Diospyros blancoi) fruit on the tree" width="900" height="1200" loading="lazy" decoding="async">
                         <div class="landing-slide-body">
-                            <h3>Existing plantations</h3>
-                            <p>Imported DENR NGP records show what has already been planted, and where.</p>
+                            <p class="landing-slide-sci">Diospyros blancoi</p>
+                            <h3>Kamagong</h3>
+                            <p>0–800 m elevation &middot; 1,600–3,000 mm rain &middot; clay loam, silt loam</p>
                         </div>
                     </article>
 
                     <article class="landing-slide">
-                        <img src="{{ url_for('static', filename='images/landing/nursery-grid.jpg') }}" alt="Rows of potted seedlings viewed from directly above" width="1600" height="1067" loading="lazy" decoding="async">
+                        <img src="{{ url_for('static', filename='images/landing/sp-ipil.jpg') }}" alt="A tall Ipil tree (Intsia bijuga)" width="900" height="1200" loading="lazy" decoding="async">
                         <div class="landing-slide-body">
-                            <h3>Nursery stock</h3>
-                            <p>Every species the platform recommends is native to the region.</p>
+                            <p class="landing-slide-sci">Intsia bijuga</p>
+                            <h3>Ipil</h3>
+                            <p>0–600 m elevation &middot; 1,500–3,000 mm rain &middot; sandy loam, sand</p>
                         </div>
                     </article>
 
                     <article class="landing-slide">
-                        <img src="{{ url_for('static', filename='images/landing/aerial-water.jpg') }}" alt="Aerial view of forest meeting open water along a shoreline" width="1600" height="1067" loading="lazy" decoding="async">
+                        <img src="{{ url_for('static', filename='images/landing/sp-bakawan.jpg') }}" alt="Bakawan lalake (Rhizophora apiculata) flower" width="1200" height="900" loading="lazy" decoding="async">
                         <div class="landing-slide-body">
-                            <h3>Changing ground</h3>
-                            <p>Soil type shifts the ranking most where conditions change over a short distance.</p>
+                            <p class="landing-slide-sci">Rhizophora apiculata</p>
+                            <h3>Bakawan Lalake</h3>
+                            <p>0–5 m elevation &middot; 1,500–4,500 mm rain &middot; silt loam, silty clay loam</p>
                         </div>
                     </article>
                 </div>
             </div>
         </div>
+        <p class="landing-photo-credits">Photos from Wikimedia Commons. Narra: <a href="https://commons.wikimedia.org/wiki/File:%E5%8D%B0%E5%BA%A6%E7%B4%AB%E6%AA%80_Pterocarpus_indicus_20200807191221_09.jpg" target="_blank" rel="noopener">Ping an Chang</a> (CC BY-SA 4.0), Molave: <a href="https://commons.wikimedia.org/wiki/File:Starr-091104-9126-Vitex_parviflora-flowers_and_leaves-Kahanu_Gardens_NTBG_Kaeleku_Hana-Maui_(24895355111).jpg" target="_blank" rel="noopener">Forest and Kim Starr</a> (CC BY 3.0 us), Kamagong: <a href="https://commons.wikimedia.org/wiki/File:Diospyros_blancoi_304743369.jpg" target="_blank" rel="noopener">Bella Lin</a> (CC BY 4.0), Ipil: <a href="https://commons.wikimedia.org/wiki/File:Intsia_bijuga.jpg" target="_blank" rel="noopener">Denis.prévôt</a> (CC BY-SA 3.0), Bakawan Lalake: <a href="https://commons.wikimedia.org/wiki/File:Tall-stilt_mangrove_(Rhizophora_apiculata)_flower.jpg" target="_blank" rel="noopener">Bernard DUPONT</a> (CC BY-SA 2.0). Ranges from the World Agroforestry Centre (ICRAF).</p>
     </section>
 
     <section class="landing-section lf" id="features">
@@ -300,7 +306,7 @@
             <div class="landing-footer-grid">
                 <div>
                     <div class="landing-footer-brand">
-                        <img src="{{ url_for('static', filename='images/logo-mark.png', v=asset_v) }}" alt="" width="145" height="145">
+                        <img src="{{ url_for('static', filename='images/finallogo.png', v=asset_v) }}" alt="" width="249" height="311">
                         <span>PuNo<span class="accent">Observation</span></span>
                     </div>
                     <p class="tagline">
@@ -320,7 +326,7 @@
                     <h4>On this page</h4>
                     <ul>
                         <li><a href="#about">About</a></li>
-                        <li><a href="#coverage">Coverage</a></li>
+                        <li><a href="#species">Species</a></li>
                         <li><a href="#features">Features</a></li>
                     </ul>
                 </div>

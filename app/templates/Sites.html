@@ -19,6 +19,42 @@
 <th scope="col" class="{{ 'text-end ' if end else '' }}{{ pin }}">{{ label }}</th>
 {% endmacro %}
 
+{# Contract duration from the executed and expiry dates, as "3 yrs 2 mos",
+   with the two dates underneath. Whole months only: a month counts once
+   its day-of-month is reached, so 15 Jan -> 14 Mar is 1 month. #}
+{% macro duration_cell(start, end) %}
+<td class="sites-duration-cell">
+    {% if start and end and end >= start %}
+        {% set months = (end.year - start.year) * 12 + (end.month - start.month) - (1 if end.day < start.day else 0) %}
+        {% set y = months // 12 %}
+        {% set m = months % 12 %}
+        <span class="sites-fw-semibold">
+            {%- if months == 0 -%}
+                Less than a month
+            {%- else -%}
+                {%- if y %}{{ y }} {{ 'yr' if y == 1 else 'yrs' }}{% endif -%}
+                {%- if y and m %} {% endif -%}
+                {%- if m %}{{ m }} {{ 'mo' if m == 1 else 'mos' }}{% endif -%}
+            {%- endif -%}
+        </span>
+        <div class="text-secondary small fw-normal">
+            {{ start.strftime('%b %d, %Y') }} &ndash; {{ end.strftime('%b %d, %Y') }}
+        </div>
+    {% elif start or end %}
+        {# One date is missing (or they are out of order), so no duration;
+           show whatever was recorded. #}
+        <span class="um-muted">&mdash;</span>
+        <div class="text-secondary small fw-normal">
+            {% if start %}From {{ start.strftime('%b %d, %Y') }}{% endif %}
+            {% if start and end %}&middot;{% endif %}
+            {% if end %}Until {{ end.strftime('%b %d, %Y') }}{% endif %}
+        </div>
+    {% else %}
+        <span class="um-muted">&mdash;</span>
+    {% endif %}
+</td>
+{% endmacro %}
+
 {# "View" button that opens the map on this site, after a confirmation.
    pin takes the same classes as th() when the column is one of the pinned pair. #}
 {% macro map_cell(s, pin='') %}
@@ -112,14 +148,16 @@
                     {{ th('District') }}
                     {{ th('Land Class') }}
                     {{ th('Land Use') }}
-                    {{ th('Contact Person') }}
+                    {# A private person's name: staff only, never public users. #}
+                    {% if session.role in ['admin', 'superadmin', 'field_officer'] %}
+                        {{ th('Contact Person') }}
+                    {% endif %}
                     {{ th('Component') }}
                     {{ th('Commodity') }}
                     {{ th('Year', 'num') }}
                     {{ th('Area (ha)', 'num', true) }}
                     {{ th('Contracted (ha)', 'num', true) }}
-                    {{ th('Executed Date') }}
-                    {{ th('Expiry Date') }}
+                    {{ th('Duration') }}
                     {% if session.role in ['admin', 'superadmin'] %}
                         {{ th('Project Cost (3yr)', 'num', true) }}
                         {{ th('Retention Fee', 'num', true) }}
@@ -175,14 +213,15 @@
                     <td>{{ s.congressional_district or '—' }}</td>
                     <td>{{ s.land_classification or '—' }}</td>
                     <td>{{ s.major_land_use or '—' }}</td>
-                    <td>{{ s.contact_person or '—' }}</td>
+                    {% if session.role in ['admin', 'superadmin', 'field_officer'] %}
+                        <td>{{ s.contact_person or '—' }}</td>
+                    {% endif %}
                     <td>{{ s.component or '—' }}</td>
                     <td>{{ s.commodity or '—' }}</td>
                     <td>{{ s.year_contracted or '—' }}</td>
                     <td class="num-cell">{{ s.area_size_ha }}</td>
                     <td class="num-cell">{{ s.area_contracted_ha or '—' }}</td>
-                    <td>{{ s.date_contract_executed or '—' }}</td>
-                    <td>{{ s.date_contract_expiry or '—' }}</td>
+                    {{ duration_cell(s.date_contract_executed, s.date_contract_expiry) }}
                     {% if session.role in ['admin', 'superadmin'] %}
                         <td class="num-cell">{% if s.project_cost_3yr %}₱{{ "{:,.2f}".format(s.project_cost_3yr) }}{% else %}—{% endif %}</td>
                         <td class="num-cell">{% if s.retention_fee_amount_paid %}₱{{ "{:,.2f}".format(s.retention_fee_amount_paid) }}{% else %}—{% endif %}</td>

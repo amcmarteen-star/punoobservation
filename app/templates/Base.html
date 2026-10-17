@@ -52,6 +52,19 @@
         }
       })();
 
+      /* Text size from My Account. Applied here, before the body renders,
+         so pages do not paint at the default size and then jump. */
+      (function () {
+        try {
+          var s = parseFloat(localStorage.getItem("pno-text-scale"));
+          if (s >= 0.8 && s <= 1.5) {
+            document.documentElement.style.setProperty("--text-scale", s);
+          }
+        } catch (e) {
+          /* storage blocked; default size */
+        }
+      })();
+
       (function () {
         try {
           if (localStorage.getItem("pno-theme") === "dark") {
@@ -79,7 +92,7 @@
         <div class="sidebar-header">
           <a href="{{ url_for('dashboard.index') }}" class="sidebar-logo">
             <img
-              src="{{ url_for('static', filename='images/logo-mark.png', v=asset_v) }}"
+              src="{{ url_for('static', filename='images/finallogo.png', v=asset_v) }}"
               alt="PuNoObservation Logo"
               class="logo-icon"
             />
