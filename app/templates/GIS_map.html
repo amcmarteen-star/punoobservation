@@ -1698,6 +1698,20 @@
     </button>
 
     <div class="layers-pop" id="layersPop" role="group" aria-label="Map layers" hidden>
+      <div id="baseMapGroup" hidden>
+        <p class="layers-pop-heading">Base map</p>
+        <label class="layer-opt">
+          <input type="radio" name="baseMap" value="map" checked
+                 onchange="setBaseMap(this.value)" />
+          <span class="layer-opt-text">Map</span>
+        </label>
+        <label class="layer-opt">
+          <input type="radio" name="baseMap" value="satellite"
+                 onchange="setBaseMap(this.value)" />
+          <span class="layer-opt-text">Satellite</span>
+        </label>
+        <hr />
+      </div>
       <p class="layers-pop-heading">Sites</p>
       <label class="layer-opt">
         <input type="checkbox" id="siteToggle" checked
@@ -1732,6 +1746,14 @@
         <input type="checkbox" id="districtBorderToggle" checked
                onchange="toggleDistrictBorders(this.checked)" />
         <span class="layer-opt-text">District outlines</span>
+      </label>
+
+      <hr />
+      <p class="layers-pop-heading">Labels</p>
+      <label class="layer-opt">
+        <input type="checkbox" id="muniNamesToggle" checked
+               onchange="toggleMuniNames(this.checked)" />
+        <span class="layer-opt-text">Municipality names</span>
       </label>
     </div>
   </div>
@@ -1884,37 +1906,32 @@
   }).addTo(map);
 
   // Satellite photos help people recognise real land, roads and rivers.
-  // Off when MAP_SATELLITE_TILES is set to an empty value.
-  const baseLayers = {};
+  // Off when MAP_SATELLITE_TILES is set to an empty value. The choice
+  // lives in the Layers menu (Base map), not in a box on the map.
+  let satelliteLayer = null;
   if (MAP_TILES.satellite) {
-    const satelliteLayer = L.tileLayer(MAP_TILES.satellite.url, {
+    satelliteLayer = L.tileLayer(MAP_TILES.satellite.url, {
       maxZoom: 19,
       maxNativeZoom: MAP_TILES.satellite.maxNativeZoom,
       attribution: MAP_TILES.satellite.attribution,
     });
-    baseLayers.Map = streetLayer;
-    baseLayers.Satellite = satelliteLayer;
+    document.getElementById("baseMapGroup").hidden = false;
   }
+  window.setBaseMap = function (which) {
+    if (!satelliteLayer) return;
+    const show = which === "satellite" ? satelliteLayer : streetLayer;
+    const hide = which === "satellite" ? streetLayer : satelliteLayer;
+    if (map.hasLayer(hide)) map.removeLayer(hide);
+    if (!map.hasLayer(show)) show.addTo(map);
+    show.bringToBack();
+  };
 
-  // Municipality names switch, under Map / Satellite. The group holds
-  // nothing: it only gives the control a checkbox, and adding or removing
-  // it shows or hides the names (the .muni-label tooltips). Kept apart
-  // from the zoom rule, so names stay hidden when zoomed in either way.
-  const muniNamesSwitch = L.layerGroup()
-    .on("add", function () {
-      map.getContainer().classList.remove("muni-labels-off");
-    })
-    .on("remove", function () {
-      map.getContainer().classList.add("muni-labels-off");
-    })
-    .addTo(map);
-
-  L.control
-    .layers(baseLayers, { "Municipality names": muniNamesSwitch }, {
-      position: "topright",
-      collapsed: false,
-    })
-    .addTo(map);
+  // Municipality names switch, in the Layers menu under Labels. It shows
+  // or hides the names (the .muni-label tooltips). Kept apart from the
+  // zoom rule, so names stay hidden when zoomed in either way.
+  window.toggleMuniNames = function (on) {
+    map.getContainer().classList.toggle("muni-labels-off", !on);
+  };
 
   // Site boundaries get their own pane: above the district, barangay and
   // heat map fills (overlayPane, z-index 400) and below the site markers

@@ -11,94 +11,101 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css', v=asset_v) }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/auth.css', v=asset_v) }}">
 </head>
-<body class="login-page">
-    <div class="login-shell">
-        <aside class="brand-panel">
-            <div class="brand-mesh" aria-hidden="true">
-                <span class="blob blob-1"></span>
-                <span class="blob blob-2"></span>
-                <span class="blob blob-3"></span>
-                <span class="blob blob-4"></span>
+<body class="lg-body">
+    <span class="lg-orb o1" aria-hidden="true"></span>
+    <span class="lg-orb o2" aria-hidden="true"></span>
+    <span class="lg-orb o3" aria-hidden="true"></span>
+    <span class="lg-orb o4" aria-hidden="true"></span>
+
+    <div class="lg-card">
+        <aside class="lg-art">
+            {# White shape with a flowing right edge, drawn past the panel so
+               the curve cuts into the dark form side like the reference. #}
+            <svg class="lg-wave" viewBox="0 0 700 800" preserveAspectRatio="none" aria-hidden="true">
+                <path fill="#ffffff" d="M0 0 H560 C640 70 690 170 690 300 C690 430 575 470 575 560 C575 660 640 720 650 800 H0 Z"/>
+            </svg>
+
+            <a href="{{ url_for('dashboard.home') }}" class="lg-brand">
+                <span style="color:inherit">PuNo</span><span>Observation</span>
+            </a>
+
+            <div class="lg-figure" aria-hidden="true">
+                <span class="lg-dot d1"></span>
+                <span class="lg-dot d2"></span>
+                <span class="lg-dot d3"></span>
+                <span class="lg-dot d4"></span>
+                <div class="lg-ring">
+                    <img src="{{ url_for('static', filename='images/finallogo.png', v=asset_v) }}" alt="" width="249" height="311">
+                </div>
             </div>
 
-            {# One centred stack: large mark, a small tracked label, the
-               name, and a short line about what the platform is. #}
-            <div class="brand-stack">
-                <img src="{{ url_for('static', filename='images/logo-mark.png', v=asset_v) }}" alt="" class="brand-logo" width="145" height="145" />
-                <p class="brand-eyebrow">Reforestation Management Platform</p>
-                <h1 class="brand-heading">PuNoObservation</h1>
-                <p class="brand-lead">
-                    A web-based decision support system for
-                    <strong>tree species recommendation</strong> and
-                    <strong>reforestation management</strong>, with geospatial
-                    visualization across <strong>Eastern Pangasinan</strong>.
-                </p>
-            </div>
+            <p class="lg-tag">Tree species recommendation and reforestation management</p>
+            <p class="lg-foot">&copy; 2026 PuNoObservation &middot; Eastern Pangasinan</p>
         </aside>
 
-        <main class="auth-panel">
-            <div class="auth-wrapper">
-                <h2>Welcome back</h2>
-                <p class="auth-subtitle">Sign in to continue to your dashboard.</p>
+        <main class="lg-form-side">
+            <h1>Login</h1>
+            <p class="lg-sub">Sign in to continue to your dashboard.</p>
 
-                {% if error %}
-                    <p class="form-alert" role="alert">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>
-                        <span>{{ error }}</span>
-                    </p>
+            {% if error %}
+                <p class="form-alert" role="alert">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>
+                    <span>{{ error }}</span>
+                </p>
+            {% endif %}
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <p class="flash-message {{ category }}" role="status">
+                            {% if category == 'success' %}
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21.801 10A10 10 0 1 1 17 3.335"/><path d="m9 11 3 3L22 4"/></svg>
+                            {% else %}
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>
+                            {% endif %}
+                            <span>{{ message }}</span>
+                            <button type="button" class="alert-close" aria-label="Dismiss message" title="Dismiss"
+                                    onclick="this.parentElement.remove()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="width:1rem;height:1rem;margin:0"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
+                        </p>
+                    {% endfor %}
                 {% endif %}
+            {% endwith %}
 
-                {% with messages = get_flashed_messages(with_categories=true) %}
-                    {% if messages %}
-                        {% for category, message in messages %}
-                            <p class="flash-message {{ category }}" role="status">
-                                {% if category == 'success' %}
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21.801 10A10 10 0 1 1 17 3.335"/><path d="m9 11 3 3L22 4"/></svg>
-                                {% else %}
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>
-                                {% endif %}
-                                <span>{{ message }}</span>
-                                <button type="button" class="alert-close" aria-label="Dismiss message" title="Dismiss"
-                                        onclick="this.parentElement.remove()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
-                            </p>
-                        {% endfor %}
-                    {% endif %}
-                {% endwith %}
-
-                <form action="{{ url_for('auth.login', next=request.args.get('next')) }}" method="POST" id="log_in_form" class="login-form">
-                    <div class="field-group">
-                        <label for="username">Username</label>
-                        <div class="input-wrap">
-                            <input type="text" id="username" name="username"
-                                   placeholder="Enter your username"
-                                   autocomplete="username"
-                                   autocapitalize="none" spellcheck="false"
-                                   required>
-                        </div>
+            <form action="{{ url_for('auth.login', next=request.args.get('next')) }}" method="POST" id="log_in_form">
+                <div class="lg-field">
+                    <label for="username">Username</label>
+                    <div class="lg-input">
+                        <input type="text" id="username" name="username"
+                               placeholder="Enter your username"
+                               autocomplete="username"
+                               autocapitalize="none" spellcheck="false"
+                               required>
                     </div>
+                </div>
 
-                    <div class="field-group">
-                        <label for="password">Password</label>
-                        <div class="input-wrap">
-                            <input type="password" id="password" name="password"
-                                   placeholder="Enter your password"
-                                   autocomplete="current-password"
-                                   maxlength="{{ app_limits.passwordMax }}"
-                                   required>
-                            <button type="button" class="field-toggle" data-toggle-password="password"
-                                    aria-label="Show password" aria-pressed="false">
-                                <svg class="icon-eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"/><circle cx="12" cy="12" r="3"/></svg>
-                                <svg class="icon-eye-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.733 5.076a10.744 10.744 0 0 1 11.205 6.575 1 1 0 0 1 0 .696 10.747 10.747 0 0 1-1.444 2.49"/><path d="M14.084 14.158a3 3 0 0 1-4.242-4.242"/><path d="M17.479 17.499a10.75 10.75 0 0 1-15.417-5.151 1 1 0 0 1 0-.696 10.75 10.75 0 0 1 4.446-5.143"/><path d="m2 2 20 20"/></svg>
-                            </button>
-                        </div>
+                <div class="lg-field">
+                    <label for="password">Password</label>
+                    <div class="lg-input">
+                        <input type="password" id="password" name="password" class="has-toggle"
+                               placeholder="Enter your password"
+                               autocomplete="current-password"
+                               maxlength="{{ app_limits.passwordMax }}"
+                               required>
+                        <button type="button" class="field-toggle" data-toggle-password="password"
+                                aria-label="Show password" aria-pressed="false">
+                            <svg class="icon-eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"/><circle cx="12" cy="12" r="3"/></svg>
+                            <svg class="icon-eye-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.733 5.076a10.744 10.744 0 0 1 11.205 6.575 1 1 0 0 1 0 .696 10.747 10.747 0 0 1-1.444 2.49"/><path d="M14.084 14.158a3 3 0 0 1-4.242-4.242"/><path d="M17.479 17.499a10.75 10.75 0 0 1-15.417-5.151 1 1 0 0 1 0-.696 10.75 10.75 0 0 1 4.446-5.143"/><path d="m2 2 20 20"/></svg>
+                        </button>
                     </div>
+                </div>
 
-                    <button type="submit" class="primary-btn">Sign In</button>
-                </form>
+                <button type="submit" class="lg-submit">Sign in</button>
+            </form>
 
-                <p class="register-link">Don't have an account? <a href="{{ url_for('auth.register') }}">Sign up</a></p>
-            </div>
+            <p class="lg-register">Don't have an account? <a href="{{ url_for('auth.register') }}">Sign up</a></p>
+            <p class="lg-note">For DENR CENRO staff, field officers and partner organisations.</p>
         </main>
     </div>
 
