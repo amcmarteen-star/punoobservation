@@ -17,8 +17,180 @@
   the officer can see what was wrong with it.
 #}
 
+
 {% block extra_head %}
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<style>
+  /* ================= PHONE LAYOUT (<= 720px) =================
+     Phone-only. Nothing here applies on larger screens. */
+  @media (max-width: 720px) {
+
+    /* ---------- Header ---------- */
+    .um-header h2 { font-size: 1.25rem; }
+    .um-title-row { flex-wrap: wrap; gap: 0.5rem; }
+    .um-back-link { min-height: 44px; display: inline-flex; align-items: center; }
+
+    /* ---------- Survival headline ---------- */
+    .rep-headline { gap: 0.75rem; padding: 0.9rem 1rem; }
+    .rep-headline .big { font-size: 2rem; }
+
+    /* ---------- Panels ---------- */
+    .um-panel { padding: 1rem 0.9rem; }
+
+    /* Fact tiles: two per row; the location (longest value) takes a full row */
+    .um-fact-grid {
+      display: grid !important;
+      grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+      gap: 0.5rem;
+    }
+    .um-fact { min-width: 0; }
+    .um-fact .val { overflow-wrap: anywhere; }
+    .um-fact-grid .um-fact:first-child { grid-column: 1 / -1; }
+
+    /* ---------- Survival calculation: label left, value right ---------- */
+    .um-panel .rep-calc-line {
+      display: flex; justify-content: space-between; align-items: flex-start;
+      gap: 1rem;
+    }
+    .um-panel .rep-calc-line .lbl { flex: none; max-width: 50%; }
+    .um-panel .rep-calc-line .val {
+      display: flex; flex-direction: column; align-items: flex-end;
+      margin-left: auto; text-align: right; overflow-wrap: anywhere;
+    }
+    .um-panel .rep-calc-line .val .rep-badge-flag { margin-top: 0.3rem; }
+
+    /* ---------- Plot counts: one small card per plot ----------
+       Line 1:  Plot 3                         Alive 46
+       Line 2:  [=====================  bar  ==========]
+       Line 3:  Notes (only when there are some)               */
+    .um-panel .um-table-card {
+      border: 0; background: none; box-shadow: none; padding: 0; overflow: visible;
+    }
+    .um-panel .um-table-card .um-scroll-wrap {
+      max-height: none !important; overflow: visible !important;
+    }
+    .um-panel .um-table-card .um-scroll-wrap::before,
+    .um-panel .um-table-card .um-scroll-wrap::after { display: none !important; }
+
+    #plotsTable,
+    #plotsTable tbody {
+      display: block !important; width: 100% !important; min-width: 0 !important;
+    }
+    #plotsTable thead { display: none !important; }
+
+    #plotsTable tbody tr {
+      display: flex; flex-wrap: wrap; align-items: center;
+      column-gap: 1rem; row-gap: 0.35rem;
+      height: auto !important; min-height: 0 !important; overflow: visible !important;
+      content-visibility: visible !important; contain: none !important;
+      margin: 0 0 0.6rem; padding: 0.65rem 0.85rem;
+      border: 1px solid var(--line); border-radius: 12px;
+      background: var(--surface-1);
+    }
+
+    #plotsTable tbody td {
+  height: auto !important; min-height: 0 !important;
+  min-width: 0 !important; max-width: none !important;
+  padding: 0 !important; border: 0 !important;
+  box-shadow: none !important;
+  background: transparent !important;
+  position: static !important; left: auto !important; z-index: auto !important;
+  text-align: left; white-space: normal !important; overflow: visible !important;
+}
+#plotsTable tbody td::after { content: none !important; }
+
+/* The small title above every value */
+#plotsTable tbody td::before {
+  display: block;
+  margin-bottom: 0.2rem;
+  font-size: 0.68rem; font-weight: 600; letter-spacing: 0.05em;
+  text-transform: uppercase; color: var(--text-2);
+}
+
+/* Line 1 left: PLOT / 3 */
+#plotsTable td[data-label="Plot"] {
+  order: 1; flex: 1 1 0;
+  font-size: 1.15rem; font-weight: 700; color: var(--text-heading);
+}
+#plotsTable td[data-label="Plot"]::before { content: "Plot" !important; }
+
+/* Line 1 right: ALIVE SEEDLINGS / 46 */
+#plotsTable td[data-label="Alive"] {
+  order: 2; flex: 0 0 auto; text-align: right;
+  font-size: 1.15rem; font-weight: 700; color: var(--text-heading);
+}
+#plotsTable td[data-label="Alive"]::before { content: "Alive seedlings" !important; }
+
+/* Line 2: RELATIVE TO MEAN / bar */
+#plotsTable td[data-label="Relative to mean"] { order: 3; flex: 0 0 100%; }
+#plotsTable td[data-label="Relative to mean"]::before {
+  content: "Relative to mean" !important;
+}
+#plotsTable .rep-bar-track { width: 100%; }
+
+/* Line 3: NOTES / text (only when the plot has a note) */
+#plotsTable td[data-label="Notes"] { order: 4; flex: 0 0 100%; }
+#plotsTable td[data-label="Notes"]::before { content: "Notes" !important; }
+#plotsTable td.no-note { display: none !important; }
+    #plotsTable tbody td::before,
+    #plotsTable tbody td::after { content: none !important; }
+
+    #plotsTable td[data-label="Plot"] {
+      order: 1; flex: 1 1 0;
+      font-weight: 700; color: var(--text-heading);
+    }
+    #plotsTable td[data-label="Plot"]::before { content: "Plot " !important; }
+
+    #plotsTable td[data-label="Alive"] {
+      order: 2; flex: 0 0 auto; text-align: right; font-size: 1.1rem;
+    }
+    #plotsTable td[data-label="Alive"]::before {
+      content: "Alive " !important;
+      font-size: 0.72rem; font-weight: 600; letter-spacing: 0.04em;
+      text-transform: uppercase; color: var(--text-2);
+    }
+
+    #plotsTable td[data-label="Relative to mean"] { order: 3; flex: 0 0 100%; }
+    #plotsTable .rep-bar-track { width: 100%; }
+
+    #plotsTable td[data-label="Notes"] { order: 4; flex: 0 0 100%; }
+    #plotsTable td[data-label="Notes"]::before {
+      content: "Notes: " !important;
+      font-weight: 600; color: var(--text-2);
+    }
+    #plotsTable td.no-note { display: none !important; }
+
+    /* ---------- Boundary map ---------- */
+    .rep-map { height: 280px; }
+
+    /* ---------- Photos: two per row ---------- */
+    .rep-photo-grid {
+      display: grid !important;
+      grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+      gap: 0.6rem;
+    }
+    .rep-photo-card { min-width: 0; }
+    .rep-photo-card img { width: 100%; height: auto; }
+    .rep-photo-meta { font-size: 0.72rem; overflow-wrap: anywhere; }
+
+    /* ---------- Decision form: stacked, finger-sized ---------- */
+    .rep-decision-row {
+      display: flex !important; flex-direction: column;
+      align-items: stretch !important; gap: 0.75rem;
+    }
+    .rep-decision-row .um-field { width: 100%; flex: 0 0 auto; }
+    .rep-decision-row select,
+    .rep-decision-row input[type="text"] {
+      width: 100%; min-height: 44px; font-size: 16px; /* no iOS zoom */
+    }
+    .rep-decision-row .um-btn-add {
+      width: 100%; min-height: 48px; justify-content: center;
+    }
+
+    .um-alert { font-size: 0.85rem; line-height: 1.55; }
+  }
+</style>
+
 {% endblock %}
 
 {% block content %}
@@ -168,31 +340,31 @@
     {% if plots %}
     {% set mx = plots | map(attribute='seedlings_alive') | max %}
     <div class="um-scroll-wrap table-freeze-wrap" style="max-height: 320px;">
-      <table class="um-table" data-freeze="1">
-        <thead>
-          <tr>
-            <th>Plot</th>
-            <th class="text-end">Alive</th>
-            <th style="width: 180px;">Relative to mean</th>
-            <th>Notes</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for p in plots %}
-          <tr>
-            <td class="num-cell">{{ p.plot_number }}</td>
-            <td class="num-cell sites-fw-semibold">{{ p.seedlings_alive }}</td>
-            <td>
-              <div class="rep-bar-track">
-                <div class="rep-bar-fill {% if report.mean_per_plot and p.seedlings_alive < report.mean_per_plot * 0.5 %}low{% endif %}"
-                     style="width: {{ (p.seedlings_alive / mx * 100) if mx else 0 }}%;"></div>
-              </div>
-            </td>
-            <td class="text-secondary small">{{ p.plot_notes or '—' }}</td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
+      <table class="um-table" id="plotsTable" data-freeze="1">
+  <thead>
+    <tr>
+      <th>Plot</th>
+      <th class="text-end">Alive</th>
+      <th style="width: 180px;">Relative to mean</th>
+      <th>Notes</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for p in plots %}
+    <tr>
+      <td class="num-cell" data-label="Plot">{{ p.plot_number }}</td>
+      <td class="num-cell sites-fw-semibold" data-label="Alive">{{ p.seedlings_alive }}</td>
+      <td data-label="Relative to mean">
+        <div class="rep-bar-track">
+          <div class="rep-bar-fill {% if report.mean_per_plot and p.seedlings_alive < report.mean_per_plot * 0.5 %}low{% endif %}"
+               style="width: {{ (p.seedlings_alive / mx * 100) if mx else 0 }}%;"></div>
+        </div>
+      </td>
+      <td class="text-secondary small{% if not p.plot_notes %} no-note{% endif %}" data-label="Notes">{{ p.plot_notes or '—' }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
     </div>
     {% else %}
     <div class="um-empty">

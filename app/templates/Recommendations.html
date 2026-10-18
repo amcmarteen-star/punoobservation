@@ -635,6 +635,118 @@
       height: 44px;
     }
   }
+  /* ================= PHONE LAYOUT (<= 720px) =================
+   Everything below applies to phones only. */
+@media (max-width: 720px) {
+
+  /* ---------- Picker ---------- */
+  .rec-picker-row {
+    display: flex !important; flex-direction: column !important;
+    align-items: stretch !important; gap: 0.75rem;
+  }
+  .rec-picker-row .um-field {
+    flex: 0 0 auto !important; width: 100%; margin-left: 0 !important;
+  }
+  .rec-picker-row select { width: 100%; min-height: 44px; font-size: 16px; } /* no iOS zoom */
+
+  /* ---------- Profile chips: two per row ---------- */
+  .profile-strip { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; }
+  .profile-chip { min-width: 0; padding: 0.55rem 0.75rem; }
+  .profile-chip .value { font-size: 1rem; overflow-wrap: anywhere; }
+  .profile-chip:last-child:nth-child(odd) { grid-column: 1 / -1; }
+
+  /* ---------- Results bar ---------- */
+  .results-bar { flex-direction: column; align-items: stretch; }
+  .results-bar .um-btn-ghost { width: 100%; min-height: 44px; }
+
+  /* ---------- Table becomes cards ---------- */
+  #rec-results .um-table-card {
+    border: 0; background: none; box-shadow: none; padding: 0;
+  }
+  #rec-results .sites-scroll-wrap {
+    max-height: none !important; overflow: visible !important;
+  }
+  #rec-results .sites-scroll-wrap::before,
+  #rec-results .sites-scroll-wrap::after { display: none !important; }
+
+  #rec-results .rec-table,
+  #rec-results .rec-table tbody {
+    display: block !important; width: 100% !important; min-width: 0 !important;
+  }
+  #rec-results .rec-table colgroup,
+  #rec-results .rec-table thead { display: none !important; }
+
+  #rec-results .rec-table tbody tr.rec-row {
+    display: grid; grid-template-columns: auto 1fr; column-gap: 0.75rem;
+    height: auto !important; min-height: 0 !important;
+    overflow: visible !important;
+    content-visibility: visible !important; contain: none !important;
+    margin: 0 0 0.75rem; padding: 0.6rem 0.9rem 0.5rem;
+    border: 1px solid var(--line); border-radius: 12px;
+    background: var(--surface-1);
+  }
+  /* keep "show top 5 only" working */
+  #rec-results .rec-table tbody tr.beyond-top.is-hidden { display: none !important; }
+
+  #rec-results .rec-table tbody td {
+    grid-column: 1 / -1;
+    display: flex; justify-content: space-between; align-items: center;
+    gap: 1rem;
+    height: auto !important; min-height: 0 !important; min-width: 0 !important;
+    max-width: none !important; overflow: visible !important;
+    padding: 0.45rem 0 !important;
+    border: 0; border-top: 1px solid var(--line);
+    box-shadow: none !important;
+    font-size: 0.875rem; line-height: 1.4;
+    text-align: right; white-space: normal !important; word-break: break-word;
+    position: static !important; left: auto !important; z-index: auto !important;
+    background: transparent !important;
+  }
+  #rec-results .rec-table tbody td::after { content: none !important; }
+  #rec-results .rec-table tbody td::before {
+    content: attr(data-label);
+    flex: none; max-width: 45%;
+    font-size: 0.72rem; font-weight: 600; letter-spacing: 0.04em;
+    text-transform: uppercase; text-align: left; color: var(--text-2);
+  }
+
+  /* Rank badge + species on the first line, no labels */
+  #rec-results .rec-table td[data-label="Rank"] {
+    grid-column: 1; border-top: 0; padding-top: 0 !important;
+  }
+  #rec-results .rec-table td[data-label="Species"] {
+    grid-column: 2; border-top: 0; padding-top: 0 !important;
+    justify-content: flex-start; text-align: left;
+  }
+  #rec-results .rec-table td[data-label="Rank"]::before,
+  #rec-results .rec-table td[data-label="Species"]::before { display: none; }
+
+  /* Wider hit area for superadmin photo controls */
+  .rec-thumb-upload { width: 30px; height: 30px; right: -8px; bottom: -8px; }
+  .rec-thumb-remove { width: 26px; height: 26px; }
+  .rec-thumb-upload svg { width: 15px; height: 15px; }
+
+  /* Empty-state preview: just rank + species, no empty rows of dashes */
+  #rec-results .rec-row-preview td:nth-child(n+3) { display: none !important; }
+
+  /* ---------- Modals (evaluation + species info) ---------- */
+  .rec-modal {
+    width: calc(100vw - 1rem); max-height: 92dvh;
+  }
+  .rec-modal .um-modal-close { width: 44px; height: 44px; }
+  .rec-modal .um-modal-body { padding-bottom: calc(1rem + env(safe-area-inset-bottom)); }
+
+  /* wide tables scroll sideways inside the modal instead of squeezing */
+  .rec-grid { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .rec-grid th, .rec-grid td { white-space: nowrap; }
+  .rec-cm th.rowhead { white-space: normal; }
+
+  .rec-info-list { grid-template-columns: 1fr; gap: 0.1rem; }
+  .rec-info-list dt { margin-top: 0.5rem; }
+  .rec-wiki-refresh { width: 100%; min-height: 44px; }
+
+  .method-note { font-size: 0.8rem; padding: 0.8rem 0.9rem; }
+}
 </style>
 {% endblock %}
 
@@ -886,13 +998,13 @@
               tabindex="0"
               role="button"
               aria-label="Show evaluation metrics for {{ r.specie_name }}">
-            <td>
-              <span class="rank-badge {% if loop.index > 5 %}muted{% endif %}">
+            <td data-label="Rank">
+                <span class="rank-badge {% if loop.index > 5 %}muted{% endif %}">
                 {{ loop.index }}
               </span>
             </td>
-            <td>
-              <div class="rec-species-cell">
+            <td data-label="Species">
+               <div class="rec-species-cell">
                 <div class="rec-thumb">
                   <button type="button" class="rec-thumb-btn"
                           data-info-id="{{ r.tree_id }}"
@@ -941,8 +1053,8 @@
                 </div>
               </div>
             </td>
-            <td>
-              <div class="d-flex align-items-center gap-2">
+            <td data-label="Similarity">
+               <div class="d-flex align-items-center gap-2">
                 <div class="score-bar-track">
                   <div class="score-bar-fill {% if loop.index > 5 %}muted{% endif %}"
                        style="width: {{ (r.similarity * 100) | round(0) | int }}%;"></div>
@@ -950,18 +1062,18 @@
                 <span class="fw-semibold">{{ r.similarity }}</span>
               </div>
             </td>
-            <td>
+            <td data-label="Within ranges">
               {% if r.within_all_ranges %}
                 <span class="in-range-yes">Yes</span>
               {% else %}
                 <span class="in-range-no">Outside</span>
               {% endif %}
             </td>
-            <td>{{ r.elevation_range }}</td>
-            <td>{{ r.temperature_range }}</td>
-            <td>{{ r.rainfall_range }}</td>
-            <td>{{ r.preferred_soil or '—' }}</td>
-            <td class="num-cell">{{ r.features_used }} of 4</td>
+            <td data-label="Elevation">{{ r.elevation_range }}</td>
+            <td data-label="Temperature">{{ r.temperature_range }}</td>
+            <td data-label="Rainfall">{{ r.rainfall_range }}</td>
+            <td data-label="Preferred soil">{{ r.preferred_soil or '—' }}</td>
+            <td class="num-cell" data-label="Features used">{{ r.features_used }} of 4</td> 
           </tr>
           {% endfor %}
         </tbody>
@@ -1238,7 +1350,21 @@
 
         const input = form.querySelector('input[type="file"]');
         input.addEventListener('change', function () {
-          if (input.files.length) form.submit();
+          const file = input.files[0];
+          if (!file) return;
+          const problem = window.PNOUpload
+            ? PNOUpload.check(file, input.getAttribute('accept'), 5 * 1024 * 1024, 5)
+            : null;
+          if (problem) {
+            input.value = '';
+            alert('This photo was not uploaded.' + problem);
+            return;
+          }
+          if (window.PNOUpload) {
+            PNOUpload.send(form, { title: 'Uploading photo', processing: 'Saving photo...' });
+          } else {
+            form.submit();
+          }
         });
 
         const remove = form.querySelector('.rec-thumb-remove');

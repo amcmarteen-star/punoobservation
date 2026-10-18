@@ -375,6 +375,102 @@ endblock %} {% set active_page = 'reports' %} {% block content %}
     font-size: 0.78rem;
     line-height: 1.5;
     color: #dcfce7;
+    /* ================= PHONE LAYOUT (<= 720px) =================
+   Phone-only. Nothing here applies on larger screens. */
+@media (max-width: 720px) {
+
+  /* ---------- Header ---------- */
+  .um-header { flex-wrap: wrap; gap: 0.75rem; }
+  .um-header h2 { font-size: 1.25rem; }
+  .um-header .um-btn-ghost { width: 100%; justify-content: center; min-height: 44px; }
+  
+
+  /* ---------- Step panels ---------- */
+  #reportForm .um-panel { padding: 1rem 0.9rem; }
+  #reportForm .um-panel-head { gap: 0.6rem; }
+
+  /* ---------- Fields: one per line, finger-sized ---------- */
+  #reportForm .um-field-row {
+    display: flex !important; flex-direction: column;
+    gap: 0.75rem;
+  }
+  #reportForm .um-field-row .um-field,
+  #reportForm .um-field { width: 100%; flex: 0 0 auto; min-width: 0; }
+
+  #reportForm input:not([type="file"]):not([type="checkbox"]),
+  #reportForm select,
+  #reportForm textarea {
+    width: 100%; min-height: 44px;
+    font-size: 16px;               /* stops iOS zooming in on focus */
+  }
+  #reportForm textarea { min-height: 7rem; }
+  #reportForm input[type="file"] {
+    width: 100%; min-height: 44px; font-size: 16px;
+  }
+
+  /* ---------- Site facts: two per row ---------- */
+  #reportForm .um-fact-grid {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 0.5rem;
+  }
+  #reportForm .um-fact { min-width: 0; }
+  #reportForm .um-fact .val { overflow-wrap: anywhere; }
+  #reportForm .site-title { overflow-wrap: anywhere; }
+
+  .rep-proposed-map { height: 200px; }
+
+  /* ---------- Plot plan + live calculation ---------- */
+  #reportForm .rep-calc-line {
+    gap: 1rem; align-items: baseline;
+  }
+  #reportForm .rep-calc-line .val { text-align: right; overflow-wrap: anywhere; }
+  #reportForm .rep-plan-status { line-height: 1.5; }
+
+  #reportForm .um-btn-outline,
+  #reportForm #planAddRows {
+    width: 100%; min-height: 44px;
+    display: inline-flex; align-items: center; justify-content: center; gap: 0.4rem;
+  }
+  #reportForm #planAddRows[hidden] { display: none !important; }
+
+  /* ---------- Plot rows ----------
+     Line 1:  [ # ]  [ Alive count ........ ]  [ x ]
+     Line 2:  [ Notes (optional) ............... ]       */
+  #reportForm .rep-plot-head { display: none !important; }
+
+  #reportForm .rep-plot-row {
+    display: grid !important;
+    grid-template-columns: 2rem minmax(0, 1fr) 44px;
+    grid-template-areas:
+      "num count remove"
+      "note note note";
+    gap: 0.5rem; align-items: center;
+    padding: 0.7rem 0;
+    border-top: 1px solid var(--line);
+  }
+  #reportForm .rep-plot-num { grid-area: num; text-align: center; }
+  #reportForm .rep-plot-row input[name="plot_count"] { grid-area: count; }
+  #reportForm .rep-plot-row input[name="plot_note"]  { grid-area: note; }
+  #reportForm .rep-plot-remove {
+    grid-area: remove; width: 44px; height: 44px;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 1.4rem;
+  }
+
+  /* ---------- Warnings and notes ---------- */
+  #reportForm .um-note,
+  #reportForm .um-note-warn { font-size: 0.85rem; line-height: 1.55; }
+
+  /* ---------- Submit row: button on top, explanation underneath ---------- */
+  #reportForm .d-flex.align-items-center.gap-2.mt-3 {
+    flex-direction: column; align-items: stretch !important; gap: 0.6rem !important;
+  }
+  #reportForm .um-btn-add {
+    width: 100%; min-height: 48px; justify-content: center;
+  }
+  #reportForm .d-flex .text-secondary.small { text-align: center; }
+}
   }
 </style>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -553,8 +649,27 @@ endblock %} {% set active_page = 'reports' %} {% block content %}
   }
 
   function showFacts(s) {
-    document.getElementById("siteTitle").textContent =
-      s.site_name + (s.site_code ? "  ·  " + s.site_code : "");
+    const title = document.getElementById("siteTitle");
+title.textContent = "";
+function titlePart(cls, text) {
+  const el = document.createElement("span");
+  el.className = cls;
+  el.textContent = text;
+  return el;
+}
+title.appendChild(titlePart("st-name", s.site_name));
+if (s.site_code) {
+  title.appendChild(titlePart("st-sep", "  ·  "));
+  title.appendChild(titlePart("st-code", s.site_code));
+}
+const brgyName = document.getElementById("barangay").value;
+const muniName = document.getElementById("municipality").value;
+if (brgyName || muniName) {
+  title.appendChild(titlePart("st-sep", "  ·  "));
+  title.appendChild(
+    titlePart("st-loc", [brgyName, muniName].filter(Boolean).join(", ")),
+  );
+}
     document.getElementById("factArea").textContent = s.area_size_ha + " ha";
     document.getElementById("factTarget").textContent =
       s.target_trees.toLocaleString();

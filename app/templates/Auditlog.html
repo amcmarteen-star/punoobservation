@@ -101,6 +101,160 @@
   .al-empty { text-align:center; padding:3rem 1rem; color:var(--text-2); }
   .al-empty h5 { margin: 0 0 .4rem; font-size: 1rem; color: var(--text-heading); }
   .al-empty p { margin: 0; font-size: .875rem; }
+  /* ================= PHONE LAYOUT (<= 720px) =================
+   Phone-only. Nothing here applies on larger screens. */
+@media (max-width: 720px) {
+
+  /* ---------- Header + filters ---------- */
+  .um-header h2 { font-size: 1.25rem; }
+  .al-search .um-search-input { min-height: 44px; font-size: 16px; } /* no iOS zoom */
+  .al-filters .notif-filter-select { min-height: 44px; font-size: 16px; }
+  .al-clear { width: 100%; justify-content: center; min-height: 44px; align-self: stretch; }
+  .al-shown { width: 100%; }
+
+  /* ---------- Table becomes cards ---------- */
+  .um-table-card { border: 0; background: none; box-shadow: none; padding: 0; overflow: visible; }
+  .um-table-card .um-scroll-wrap {
+    max-height: none !important; overflow: visible !important;
+  }
+  .um-table-card .um-scroll-wrap::before,
+  .um-table-card .um-scroll-wrap::after { display: none !important; }
+
+  .um-table-card .um-scroll-table,
+  .um-table-card .um-scroll-table tbody {
+    display: block !important; width: 100% !important; min-width: 0 !important;
+  }/* ================= PHONE LAYOUT (<= 720px) =================
+   Phone-only. Nothing here applies on larger screens. */
+@media (max-width: 720px) {
+
+  /* ---------- Header + filters ---------- */
+  .um-header h2 { font-size: 1.25rem; }
+  .al-search .um-search-input { min-height: 44px; font-size: 16px; } /* no iOS zoom */
+  .al-filters .notif-filter-select { min-height: 44px; font-size: 16px; }
+  .al-clear { width: 100%; justify-content: center; min-height: 44px; align-self: stretch; }
+  .al-shown { width: 100%; }
+
+  /* ---------- Table becomes cards ---------- */
+  .um-table-card { border: 0; background: none; box-shadow: none; padding: 0; overflow: visible; }
+  .um-table-card .um-scroll-wrap { max-height: none !important; overflow: visible !important; }
+  .um-table-card .um-scroll-wrap::before,
+  .um-table-card .um-scroll-wrap::after { display: none !important; }
+
+  .um-table-card .um-scroll-table,
+  .um-table-card .um-scroll-table tbody {
+    display: block !important; width: 100% !important; min-width: 0 !important;
+  }
+  .um-table-card .um-scroll-table thead { display: none !important; }
+
+  /* Each card is a wrapping flex row: Action + date share the first line,
+     every other field takes a full line under it. */
+  #al-rows tr:not(.al-nomatch) {
+    display: flex; flex-wrap: wrap; align-items: baseline;
+    column-gap: 0.75rem;
+    height: auto !important; min-height: 0 !important; overflow: visible !important;
+    content-visibility: visible !important; contain: none !important;
+    margin: 0 0 0.75rem; padding: 0.35rem 0.9rem 0.5rem;
+    border: 1px solid var(--line); border-radius: 12px;
+    background: var(--surface-1);
+  }
+  /* the search script hides rows with [hidden]; display:flex would override it */
+  #al-rows tr[hidden] { display: none !important; }
+
+  /* Default cell: label on the left, value on the right, full width */
+  #al-rows tr:not(.al-nomatch) td {
+    flex: 0 0 100%;
+    display: flex; justify-content: space-between; align-items: baseline;
+    gap: 1rem;
+    height: auto !important; min-height: 0 !important;
+    min-width: 0 !important; max-width: none !important;
+    overflow: visible !important;
+    padding: 0.5rem 0 !important;
+    border: 0; border-top: 1px solid var(--line);
+    box-shadow: none !important;
+    font-size: 0.875rem; line-height: 1.4;
+    text-align: right; white-space: normal !important; word-break: break-word;
+    position: static !important; left: auto !important; z-index: auto !important;
+    background: transparent !important;
+  }
+  #al-rows tr:not(.al-nomatch) td::after { content: none !important; }
+  #al-rows tr:not(.al-nomatch) td::before {
+    content: attr(data-label);
+    flex: none; max-width: 40%;
+    font-size: 0.72rem; font-weight: 600; letter-spacing: 0.04em;
+    text-transform: uppercase; text-align: left; color: var(--text-2);
+  }
+
+  /* Order: Action, When, Who, Detail, Target, IP (the HTML order differs) */
+  #al-rows tr:not(.al-nomatch) td[data-label="Action"] { order: 1; }
+  #al-rows tr:not(.al-nomatch) td[data-label="When"]   { order: 2; }
+  #al-rows tr:not(.al-nomatch) td[data-label="Who"]    { order: 3; }
+  #al-rows tr:not(.al-nomatch) td[data-label="Detail"] { order: 4; }
+  #al-rows tr:not(.al-nomatch) td[data-label="Target"] { order: 5; }
+  #al-rows tr:not(.al-nomatch) td[data-label="IP"]     { order: 6; }
+
+  /* ---- First line: badge on the left, date and time on the right ---- */
+  #al-rows tr:not(.al-nomatch) td[data-label="Action"] {
+    flex: 1 1 0;                       /* takes the spare width */
+    justify-content: flex-start; text-align: left;
+    border-top: 0; padding-top: 0.6rem !important;
+  }
+  #al-rows tr:not(.al-nomatch) td[data-label="When"] {
+    flex: 0 0 auto;                    /* exactly as wide as the date */
+    min-width: max-content !important; /* never clipped */
+    white-space: nowrap !important;
+    display: block; text-align: right;
+    border-top: 0; padding-top: 0.6rem !important;
+  }
+  #al-rows tr:not(.al-nomatch) td[data-label="When"] .al-role {
+    display: block; text-align: right;
+  }
+  #al-rows tr:not(.al-nomatch) td[data-label="Action"]::before,
+  #al-rows tr:not(.al-nomatch) td[data-label="When"]::before {
+    display: none; content: none;
+  }
+
+  /* ---- Who: label on the left, name over role on the right ---- */
+ /* ---- Who: label on the left, name over role on the right ---- */
+#al-rows tr:not(.al-nomatch) td[data-label="Who"] {
+  display: block;
+  text-align: right;
+}
+#al-rows tr:not(.al-nomatch) td[data-label="Who"]::before {
+  float: left;
+  max-width: none;
+  white-space: nowrap;
+  margin: 0.15rem 1rem 0 0;
+}
+#al-rows tr:not(.al-nomatch) td[data-label="Who"] > div {
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+#al-rows tr:not(.al-nomatch) td[data-label="Who"] .al-role {
+  font-size: 0.75rem;
+}
+
+  /* ---- Detail: label above, full sentence below, left-aligned ---- */
+  #al-rows tr:not(.al-nomatch) td.al-detail {
+    flex-direction: column; align-items: flex-start; gap: 0.25rem;
+    text-align: left;
+  }
+
+  /* ---- Target and IP: same size and colour as the other values ---- */
+  #al-rows tr:not(.al-nomatch) td[data-label="Target"] {
+    color: var(--text-body); font-size: 0.875rem;
+  }
+  #al-rows tr:not(.al-nomatch) td[data-label="IP"] {
+    color: var(--text-body); font-size: 0.8125rem;
+  }
+
+  .al-act { white-space: normal; }
+
+  /* "No entries match your search" row */
+  #al-rows tr.al-nomatch { display: block; }
+  #al-rows tr.al-nomatch td { display: block; padding: 1.5rem 1rem; }
+
+  .al-empty { padding: 2rem 1rem; }
+}
 </style>
 {% endblock %}
 
@@ -208,28 +362,41 @@
       <tbody>
         {% for e in entries %}
         <tr>
-          <td style="white-space:nowrap;">
+          <td data-label="When" style="white-space:nowrap;">
             {{ e.created_at.strftime('%d %b %Y') }}
             <div class="al-role">{{ e.created_at.strftime('%I:%M:%S %p') }}</div>
           </td>
-          <td>
+          <td data-label="Who">
             <div class="fw-semibold">{{ e.username or 'unknown' }}</div>
             <div class="al-role">
               {{ e.role or '—' }}{% if e.cenro %} &middot; {{ e.cenro }}{% endif %}
             </div>
           </td>
-          <td>
+          <td data-label="Action">
             <span class="al-act act-{{ e.action }}">
               {{ e.action|replace('_', ' ') }}
             </span>
           </td>
-          <td class="al-detail">{{ e.detail or '—' }}</td>
-          <td class="al-role">
-            {% if e.entity_type %}
-              {{ e.entity_type }}{% if e.entity_id %} #{{ e.entity_id }}{% endif %}
-            {% else %}—{% endif %}
-          </td>
-          <td class="al-ip">{{ e.ip_address or '—' }}</td>
+           <td class="al-detail" data-label="Detail">{{ e.detail or '—' }}</td>
+            <td class="al-role" data-label="Target">
+  {% if e.entity_type %}
+    {% set labels = {
+      'users': 'User', 'user': 'User',
+      'reports': 'Report', 'report': 'Report',
+      'monitoring_reports': 'Monitoring report',
+      'requests': 'Request', 'request': 'Request',
+      'reforestation_requests': 'Request',
+      'sites': 'Site', 'site': 'Site',
+      'reforestation_sites': 'Site',
+      'locations': 'Barangay', 'location': 'Barangay',
+      'trees': 'Species', 'tree': 'Species',
+      'notifications': 'Notification', 'notification': 'Notification'
+    } %}
+    {% set key = e.entity_type|lower %}
+    {{ labels.get(key, e.entity_type|replace('_', ' ')|capitalize) }}{% if e.entity_id %} #{{ e.entity_id }}{% endif %}
+  {% else %}—{% endif %}
+</td>
+         <td class="al-ip" data-label="IP">{{ e.ip_address or '—' }}</td>
         </tr>
         {% endfor %}
       </tbody>
@@ -239,7 +406,7 @@
   {% if entries|length >= 500 %}
   <p class="text-secondary small p-3 mb-0">
     Showing the 500 most recent entries. Narrow the period or the action
-    to see older records.
+    to see older records.d
   </p>
   {% endif %}
 

@@ -9,6 +9,32 @@ active_page = 'users' %} {% block extra_head %}
   .um-table col.col-status { width: 16%; }
   .um-table col.col-actions { width: 8%; }
 
+  /* Status, Jurisdiction and Role sit together on the right. */
+  .um-filters { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; }
+  .um-filters .um-filter-btn { min-width: 9.5rem; }
+  .um-filters .um-filter-menu { min-width: 14rem; }
+  .um-filters .um-filter-menu button { gap: 0.75rem; white-space: nowrap; }
+  .um-filter-btn.is-set { border-color: var(--ok-line); color: var(--brand-text); }
+  .um-nomatch td { padding: 2.25rem 1rem; text-align: center; color: var(--text-2); }
+  .um-nomatch-icon {
+    display: inline-grid; place-items: center; width: 3rem; height: 3rem;
+    margin-bottom: 0.75rem; border-radius: 50%;
+    background: var(--surface-3); color: var(--text-2);
+  }
+  .um-nomatch-icon svg { width: 1.4rem; height: 1.4rem; }
+  .um-nomatch strong { display: block; margin-bottom: 0.35rem; color: var(--text-strong); }
+  .um-nomatch button {
+    margin-top: 0.6rem; padding: 0.4rem 0.85rem; border: 1px solid var(--line);
+    border-radius: 8px; background: var(--surface-1); color: var(--text-strong);
+    font-size: 0.82rem; font-weight: 600; cursor: pointer;
+  }
+  .um-nomatch button:hover { border-color: var(--line-strong); }
+  @media (max-width: 640px) {
+    .um-filters { width: 100%; }
+    .um-filters .um-filter-wrap { flex: 1 1 9rem; }
+    .um-filters .um-filter-btn { width: 100%; min-width: 0; }
+  }
+
   .um-sr-only {
     position: absolute;
     width: 1px;
@@ -30,6 +56,140 @@ active_page = 'users' %} {% block extra_head %}
   .um-warn.um-warn-soft svg {
     color: #16a34a;
   }
+  /* ================= PHONE LAYOUT (<= 720px) =================
+   Phone-only. Nothing here applies on larger screens. */
+@media (max-width: 720px) {
+
+  /* ---------- Header ---------- */
+  .um-header { flex-wrap: wrap; gap: 0.75rem; }
+  .um-header h2 { font-size: 1.25rem; }
+  .um-header .um-btn-add { width: 100%; justify-content: center; min-height: 44px; }
+
+  /* ---------- Toolbar ---------- */
+  .um-toolbar { flex-direction: column; align-items: stretch; gap: 0.75rem; }
+  .um-search-group { width: 100%; flex-wrap: wrap; }
+  .um-search-group .um-search-wrap { flex: 1 1 100%; }
+  .um-search-input { font-size: 16px; min-height: 44px; } /* stops iOS zoom */
+  .um-search-group .um-btn-ghost { min-height: 44px; display: inline-flex; align-items: center; }
+
+  /* Filters: three buttons that wrap. Menus anchor to the whole row, not to
+     each button, so they can never run off the screen edge. */
+  .um-filters { position: relative; width: 100%; gap: 0.5rem; }
+  .um-filters .um-filter-wrap { position: static; flex: 1 1 9rem; }
+  .um-filters .um-filter-btn { width: 100%; min-width: 0; min-height: 44px; }
+  .um-filters .um-filter-menu,
+  .um-filters .um-filter-menu.um-filter-menu-end {
+    left: 0; right: 0; top: 100%;
+    width: auto; min-width: 0; margin-top: 0.4rem;
+    max-height: 60dvh; overflow-y: auto;
+  }
+  .um-filters .um-filter-menu button { min-height: 44px; }
+
+  /* ---------- Table becomes cards ---------- */
+  .um-table-card {
+    border: 0; background: none; box-shadow: none; padding: 0;
+    overflow: visible;
+  }
+  #um-table,
+  #um-table tbody { display: block !important; width: 100% !important; min-width: 0 !important; }
+  #um-table colgroup,
+  #um-table thead { display: none !important; }
+
+  /* No !important on display here: the page's filter script hides rows with
+     an inline display:none, which has to keep winning. */
+  #um-table tbody tr:not(.um-nomatch) {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    column-gap: 0.5rem;
+    height: auto; min-height: 0; overflow: visible;
+    content-visibility: visible; contain: none;
+    margin: 0 0 0.75rem; padding: 0.35rem 0.9rem 0.5rem;
+    border: 1px solid var(--line); border-radius: 12px;
+    background: var(--surface-1);
+  }
+
+  #um-table tbody tr:not(.um-nomatch) td {
+    grid-column: 1 / -1;
+    display: flex; justify-content: space-between; align-items: center;
+    gap: 1rem;
+    height: auto; min-height: 0; min-width: 0; max-width: none;
+    overflow: visible;
+    padding: 0.5rem 0;
+    border: 0; border-top: 1px solid var(--line);
+    box-shadow: none;
+    font-size: 0.875rem; line-height: 1.4;
+    text-align: right; white-space: normal; word-break: break-word;
+    position: static; left: auto;
+    background: transparent;
+  }
+  #um-table tbody tr:not(.um-nomatch) td::before {
+    content: attr(data-label);
+    flex: none; max-width: 45%;
+    font-size: 0.72rem; font-weight: 600; letter-spacing: 0.04em;
+    text-transform: uppercase; text-align: left; color: var(--text-2);
+  }
+
+ /* Top line: avatar + name on the left, ⋯ menu on the right, no labels */
+#um-table tbody tr:not(.um-nomatch) td[data-label="User"] {
+  grid-column: 1; grid-row: 1;
+  display: flex; justify-content: flex-start; align-items: center;
+  text-align: left;
+  border-top: 0; padding: 0.5rem 0;
+}
+#um-table tbody tr:not(.um-nomatch) td.um-actions-cell {
+  grid-column: 2; grid-row: 1;
+  display: flex; justify-content: flex-end; align-items: center;
+  text-align: right;
+  border-top: 0; padding: 0.25rem 0;
+}
+#um-table tbody tr:not(.um-nomatch) td[data-label="User"]::before,
+#um-table tbody tr:not(.um-nomatch) td.um-actions-cell::before {
+  display: none; content: none;
+}
+
+/* Avatar then username, all left-aligned */
+.um-name-cell {
+  display: flex; align-items: center; justify-content: flex-start;
+  gap: 0.75rem; min-width: 0; width: 100%; text-align: left;
+}
+.um-avatar { flex: none; }
+.um-identity {
+  display: flex; flex-direction: column; align-items: flex-start;
+  min-width: 0; text-align: left;
+}
+.um-name { text-align: left; }
+.um-identity-sub { text-align: left; overflow-wrap: anywhere; }
+
+  /* Action menu: bigger target */
+  .um-kebab { width: 44px; height: 44px; }
+  .um-row-menu { min-width: 12rem; max-width: calc(100vw - 16px); }
+  .um-row-menu button { min-height: 44px; }
+
+  /* "No users match" row */
+  #um-table tbody tr.um-nomatch { display: block; }
+  #um-table tbody tr.um-nomatch[hidden] { display: none; }
+  #um-table tbody tr.um-nomatch td { display: block; }
+  .um-nomatch button { min-height: 44px; width: 100%; }
+
+  /* ---------- Modals: near full-width, scroll inside, buttons stacked ---------- */
+  .um-modal {
+    width: calc(100vw - 1rem); max-width: 480px;
+    max-height: 92dvh;
+    display: flex; flex-direction: column;
+  }
+  .um-modal > form { display: flex; flex-direction: column; min-height: 0; }
+  .um-modal-body { overflow-y: auto; -webkit-overflow-scrolling: touch; min-height: 0; }
+  .um-modal-close { width: 44px; height: 44px; }
+
+  .um-modal-foot {
+    flex-direction: column-reverse; gap: 0.5rem;
+    padding-bottom: calc(1rem + env(safe-area-inset-bottom));
+  }
+  .um-modal-foot button { width: 100%; min-height: 44px; }
+
+  .um-field input,
+  .um-field select { min-height: 44px; font-size: 16px; } /* stops iOS zoom */
+}
 </style>
 {% endblock %}
 
@@ -91,64 +251,53 @@ active_page = 'users' %} {% block extra_head %}
     {% endif %}
   </div>
 
-  <div class="um-filter-wrap">
-    <button type="button" class="um-filter-btn" onclick="umToggleFilterMenu()">
-      <span class="um-filter-btn-label">
-        <svg
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-        >
-          <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
-          <path d="M16 3.128a4 4 0 0 1 0 7.744" />
-          <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
-          <circle cx="9" cy="7" r="4" />
-        </svg>
-        <span id="um-filter-label">Role</span>
-      </span>
-      <svg
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="2"
-        stroke-linecap="round"
-        stroke-linejoin="round"
-      >
-        <path d="m6 9 6 6 6-6" />
-      </svg>
-    </button>
-    <div id="um-filter-menu" class="um-filter-menu um-filter-menu-end">
-      <button
-        type="button"
-        class="active"
-        onclick="umFilterRole('all', 'Role')"
-      >
-        All roles
+  <div class="um-filters">
+    <div class="um-filter-wrap" data-filter="status">
+      <button type="button" class="um-filter-btn" aria-haspopup="menu" aria-expanded="false">
+        <span class="um-filter-btn-label">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10" /><path d="m9 12 2 2 4-4" /></svg>
+          <span class="um-filter-label" data-default="Status">Status</span>
+        </span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6" /></svg>
       </button>
-      <button
-        type="button"
-        onclick="umFilterRole('superadmin', 'System Administrator')"
-      >
-        System Administrator
+      <div class="um-filter-menu um-filter-menu-end" role="menu">
+        <button type="button" role="menuitem" data-value="all" class="active"><span>All statuses</span><span class="um-filter-count"></span></button>
+        <button type="button" role="menuitem" data-value="active"><span>Active</span><span class="um-filter-count"></span></button>
+        <button type="button" role="menuitem" data-value="inactive"><span>Deactivated</span><span class="um-filter-count"></span></button>
+      </div>
+    </div>
+    <div class="um-filter-wrap" data-filter="jur">
+      <button type="button" class="um-filter-btn" aria-haspopup="menu" aria-expanded="false">
+        <span class="um-filter-btn-label">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0" /><circle cx="12" cy="10" r="3" /></svg>
+          <span class="um-filter-label" data-default="Jurisdiction">Jurisdiction</span>
+        </span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6" /></svg>
       </button>
-      <button type="button" onclick="umFilterRole('admin', 'Administrator')">
-        Administrator
+      <div class="um-filter-menu um-filter-menu-end" role="menu">
+        <button type="button" role="menuitem" data-value="all" class="active"><span>All jurisdictions</span><span class="um-filter-count"></span></button>
+        <button type="button" role="menuitem" data-value="penro"><span>PENRO &mdash; Province-wide</span><span class="um-filter-count"></span></button>
+        {% for c in users|map(attribute='cenro')|select|unique|sort %}
+        <button type="button" role="menuitem" data-value="cenro:{{ c }}"><span>CENRO {{ c }}</span><span class="um-filter-count"></span></button>
+        {% endfor %}
+        <button type="button" role="menuitem" data-value="none"><span>No jurisdiction</span><span class="um-filter-count"></span></button>
+      </div>
+    </div>
+    <div class="um-filter-wrap" data-filter="role">
+      <button type="button" class="um-filter-btn" aria-haspopup="menu" aria-expanded="false">
+        <span class="um-filter-btn-label">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><path d="M16 3.128a4 4 0 0 1 0 7.744" /><path d="M22 21v-2a4 4 0 0 0-3-3.87" /><circle cx="9" cy="7" r="4" /></svg>
+          <span class="um-filter-label" data-default="Role">Role</span>
+        </span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6" /></svg>
       </button>
-      <button
-        type="button"
-        onclick="umFilterRole('field_officer', 'Field Officer')"
-      >
-        Field Officer
-      </button>
-      <button
-        type="button"
-        onclick="umFilterRole('normal_user', 'Normal User')"
-      >
-        Normal User
-      </button>
+      <div class="um-filter-menu um-filter-menu-end" role="menu">
+        <button type="button" role="menuitem" data-value="all" class="active"><span>All roles</span><span class="um-filter-count"></span></button>
+        <button type="button" role="menuitem" data-value="superadmin"><span>System Administrator</span><span class="um-filter-count"></span></button>
+        <button type="button" role="menuitem" data-value="admin"><span>Administrator</span><span class="um-filter-count"></span></button>
+        <button type="button" role="menuitem" data-value="field_officer"><span>Field Officer</span><span class="um-filter-count"></span></button>
+        <button type="button" role="menuitem" data-value="normal_user"><span>Normal User</span><span class="um-filter-count"></span></button>
+      </div>
     </div>
   </div>
 </div>
@@ -173,8 +322,10 @@ active_page = 'users' %} {% block extra_head %}
     </thead>
     <tbody>
       {% for u in users %}
-      <tr data-role="{{ u.role }}">
-        <td>
+      <tr data-role="{{ u.role }}"
+          data-status="{{ 'active' if u.is_active else 'inactive' }}"
+          data-jur="{% if u.cenro %}cenro:{{ u.cenro }}{% elif u.role == 'admin' %}penro{% else %}none{% endif %}">
+        <td data-label="User">
           <div class="um-name-cell">
             <span class="um-avatar {% if u.role in ['admin', 'superadmin'] %}av-admin{% elif u.role == 'field_officer' %}av-officer{% endif %}">
               {{ u.username[:2]|upper }}
@@ -188,7 +339,7 @@ active_page = 'users' %} {% block extra_head %}
             </span>
           </div>
         </td>
-        <td>
+        <td data-label="Role">
           {% if u.role == 'superadmin' %}
           <span class="um-role role-admin">System Administrator</span>
           {% elif u.role == 'admin' and u.cenro %}
@@ -201,7 +352,7 @@ active_page = 'users' %} {% block extra_head %}
           <span class="um-role role-user">Normal User</span>
           {% endif %}
         </td>
-        <td>
+        <td data-label="Jurisdiction">
           {% if u.cenro %}
           <span class="um-role role-user">CENRO {{ u.cenro }}</span>
           {% elif u.role == 'admin' %}
@@ -210,7 +361,7 @@ active_page = 'users' %} {% block extra_head %}
           <span class="text-secondary small">&mdash;</span>
           {% endif %}
         </td>
-        <td>
+        <td data-label="Status">
           {% if u.is_active %}
           <span class="um-status um-status-active">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>
@@ -223,7 +374,7 @@ active_page = 'users' %} {% block extra_head %}
           </span>
           {% endif %}
         </td>
-        <td class="um-actions-cell">
+        <td class="um-actions-cell" data-label="Actions">
           <div class="um-menu-wrap">
             <button
               type="button"
@@ -271,6 +422,16 @@ active_page = 'users' %} {% block extra_head %}
         </td>
       </tr>
       {% endfor %}
+      <tr class="um-nomatch" id="um-nomatch" hidden>
+        <td colspan="5">
+          <span class="um-nomatch-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="7" r="4" /><path d="M10.3 15H7a4 4 0 0 0-4 4v2" /><circle cx="17" cy="17" r="3" /><path d="m21 21-1.9-1.9" /></svg>
+          </span>
+          <strong>No users match these filters</strong>
+          Try another status, jurisdiction, or role.<br />
+          <button type="button" onclick="umResetFilters()">Clear filters</button>
+        </td>
+      </tr>
     </tbody>
   </table>
   {% else %}
@@ -411,14 +572,15 @@ active_page = 'users' %} {% block extra_head %}
             type="text"
             name="new_password"
             id="um-reset-pw"
-            minlength="8"
-            placeholder="At least 8 characters"
+            minlength="{{ app_limits.passwordMin }}" maxlength="{{ app_limits.passwordMax }}"
+            pattern="(?=.*[A-Za-z])(?=.*[0-9]).*" title="Use at least one letter and one number."
+            placeholder="{{ app_limits.passwordMin }} to {{ app_limits.passwordMax }} characters"
             autocomplete="off"
             required
           />
           <div class="form-text">
-            Shown as plain text so you can read it out. Give it to them
-            directly, never by email.
+            {{ app_limits.passwordMin }} to {{ app_limits.passwordMax }} characters, with at least one letter and one number. Shown as plain text so you can read it out. Give it
+            to them directly, never by email.
           </div>
         </div>
       </div>
@@ -491,8 +653,11 @@ active_page = 'users' %} {% block extra_head %}
             id="um-password"
             name="password"
             placeholder="Set an initial password"
+            minlength="{{ app_limits.passwordMin }}" maxlength="{{ app_limits.passwordMax }}"
+            pattern="(?=.*[A-Za-z])(?=.*[0-9]).*" title="Use at least one letter and one number."
             required
           />
+          <div class="form-text">{{ app_limits.passwordMin }} to {{ app_limits.passwordMax }} characters, with at least one letter and one number.</div>
         </div>
         <div class="um-field">
           <label for="um-role">Role</label>
@@ -669,30 +834,81 @@ active_page = 'users' %} {% block extra_head %}
   /* Capture phase, so scrolling any ancestor closes it too. */
   window.addEventListener('scroll', umCloseRowMenu, true);
 
-  function umToggleFilterMenu() {
-    document.getElementById("um-filter-menu").classList.toggle("open");
+  /* Status, Jurisdiction and Role filters. Each row carries data-status,
+     data-jur and data-role; a row shows when it matches all three. */
+  var umFilters = { status: "all", jur: "all", role: "all" };
+
+  function umUserRows() {
+    return document.querySelectorAll("#um-table tbody tr:not(.um-nomatch)");
   }
 
-  function umFilterRole(role, label) {
-    document.getElementById("um-filter-label").textContent = label;
-    document.querySelectorAll("#um-filter-menu button").forEach(function (btn) {
-      btn.classList.toggle(
-        "active",
-btn.getAttribute("onclick").includes("umFilterRole('" + role + "'")      );
+  function umCloseFilterMenus(except) {
+    document.querySelectorAll(".um-filter-wrap[data-filter]").forEach(function (wrap) {
+      if (wrap === except) return;
+      wrap.querySelector(".um-filter-menu").classList.remove("open");
+      wrap.querySelector(".um-filter-btn").setAttribute("aria-expanded", "false");
     });
-    document.querySelectorAll("#um-table tbody tr").forEach(function (row) {
-      row.style.display =
-        role === "all" || row.dataset.role === role ? "" : "none";
-    });
-    document.getElementById("um-filter-menu").classList.remove("open");
   }
+
+  function umApplyFilters() {
+    var rows = umUserRows(), shown = 0;
+    rows.forEach(function (row) {
+      var ok = Object.keys(umFilters).every(function (k) {
+        return umFilters[k] === "all" || row.dataset[k] === umFilters[k];
+      });
+      row.style.display = ok ? "" : "none";
+      if (ok) shown++;
+    });
+    var none = document.getElementById("um-nomatch");
+    if (none) none.hidden = shown > 0 || rows.length === 0;
+  }
+
+  function umSetFilter(wrap, value) {
+    umFilters[wrap.dataset.filter] = value;
+    var label = wrap.querySelector(".um-filter-label"), picked = null;
+    wrap.querySelectorAll(".um-filter-menu button").forEach(function (btn) {
+      var on = btn.dataset.value === value;
+      btn.classList.toggle("active", on);
+      if (on) picked = btn;
+    });
+    label.textContent = value === "all" || !picked
+      ? label.dataset.default
+      : picked.querySelector("span").textContent;
+    wrap.querySelector(".um-filter-btn").classList.toggle("is-set", value !== "all");
+    umApplyFilters();
+  }
+
+  function umResetFilters() {
+    document.querySelectorAll(".um-filter-wrap[data-filter]").forEach(function (wrap) {
+      umSetFilter(wrap, "all");
+    });
+  }
+
+  document.querySelectorAll(".um-filter-wrap[data-filter]").forEach(function (wrap) {
+    var key = wrap.dataset.filter, rows = umUserRows();
+    wrap.querySelectorAll(".um-filter-menu button").forEach(function (btn) {
+      var v = btn.dataset.value, n = 0;
+      rows.forEach(function (row) { if (v === "all" || row.dataset[key] === v) n++; });
+      btn.querySelector(".um-filter-count").textContent = n;
+      btn.addEventListener("click", function () {
+        umSetFilter(wrap, v);
+        umCloseFilterMenus();
+      });
+    });
+    wrap.querySelector(".um-filter-btn").addEventListener("click", function () {
+      var menu = wrap.querySelector(".um-filter-menu");
+      var open = !menu.classList.contains("open");
+      umCloseFilterMenus(wrap);
+      menu.classList.toggle("open", open);
+      this.setAttribute("aria-expanded", open ? "true" : "false");
+    });
+  });
 
   document.addEventListener("click", function (e) {
-    var wrap = document.querySelector(".um-filter-wrap");
-    var menu = document.getElementById("um-filter-menu");
-    if (wrap && menu && !wrap.contains(e.target)) {
-      menu.classList.remove("open");
-    }
+    if (!e.target.closest(".um-filter-wrap")) umCloseFilterMenus();
+  });
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape") umCloseFilterMenus();
   });
 
   // close modals when clicking the dark backdrop, or on Escape

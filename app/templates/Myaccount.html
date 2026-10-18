@@ -286,14 +286,14 @@
       {% for entry in recent_activity %}
       <tr>
         <td class="acct-when">
-          {{ entry.created_at.strftime('%d %b %Y, %I:%M %p') if entry.created_at else '&mdash;' }}
+          {{ entry.created_at.strftime('%d %b %Y, %I:%M %p') if entry.created_at else '&mdash;'|safe }}
         </td>
         <td>
           <span class="acct-action">
             {{ entry.action|replace('_', ' ') }}
           </span>
         </td>
-        <td>{{ entry.detail or '&mdash;' }}</td>
+        <td>{{ entry.detail or '&mdash;'|safe }}</td>
       </tr>
       {% endfor %}
     </tbody>
