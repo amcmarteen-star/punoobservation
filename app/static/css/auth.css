@@ -1,0 +1,422 @@
+/* ---- Log in and sign up ----
+   One card on a deep green ground: a white panel on the left with a
+   curved edge, holding the mark, and the form on the dark side. Shared
+   by Log_in.html and Register.html (lg-* classes). */
+/* the page is exactly one window tall, with the card in its middle */
+html:has(> body.lg-body) { height: 100%; scrollbar-gutter: auto; }
+.lg-body {
+    margin: 0;
+    min-height: 100vh;
+    min-height: 100dvh;
+    display: grid;
+    place-items: center;
+    align-content: center;
+    padding: 2rem 1rem;
+    box-sizing: border-box;
+    font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+    color: #eef7f1;
+    background:
+        radial-gradient(60rem 40rem at 85% 110%, rgba(40, 140, 90, 0.28), transparent 60%),
+        radial-gradient(50rem 36rem at 0% 0%, rgba(25, 95, 70, 0.45), transparent 60%),
+        linear-gradient(160deg, #0b2b26 0%, #081d1a 55%, #061412 100%);
+    overflow-x: hidden;
+}
+.lg-orb {
+    position: fixed;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.04);
+    pointer-events: none;
+}
+.lg-orb.o1 { width: 20rem; height: 20rem; top: -6rem; left: 6%; background: rgba(60, 160, 105, 0.12); }
+.lg-orb.o2 { width: 11rem; height: 11rem; top: 18%; right: 4%; }
+.lg-orb.o3 { width: 7rem; height: 7rem; bottom: 10%; left: 3%; }
+.lg-orb.o4 { width: 26rem; height: 26rem; bottom: -14rem; right: 18%; background: rgba(60, 160, 105, 0.08); }
+
+.lg-card {
+    position: relative;
+    /* sized to the window like the reference: about two thirds of its
+       width and most of its height */
+    width: clamp(min(100%, 860px), 64vw, 1225px);
+    min-height: min(83vh, 725px);
+    display: grid;
+    grid-template-columns: 1.08fr 1fr;
+    border-radius: 28px;
+    overflow: hidden;
+    background: #10302a;
+    box-shadow: 0 40px 90px rgba(0, 0, 0, 0.45), inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+}
+
+/* the white side; its curved right edge is the SVG behind it */
+.lg-art {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 2.25rem 2.5rem;
+    color: #10302a;
+}
+.lg-wave {
+    position: absolute;
+    z-index: -1;
+    top: 0;
+    left: 0;
+    width: calc(100% + 5rem);
+    height: 100%;
+}
+.lg-brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    font-size: 1.2rem;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+    color: #10302a;
+    text-decoration: none;
+}
+.lg-brand img { width: 2rem; height: 2rem; object-fit: contain; }
+.lg-brand span { color: #1d8a4e; }
+.lg-brand { gap: 0.6rem; }
+.lg-brand span + span { margin-left: -0.6rem; }
+
+.lg-figure {
+    position: relative;
+    flex: 1;
+    display: grid;
+    place-items: center;
+    margin: 1rem 0;
+}
+.lg-ring {
+    position: relative;
+    display: grid;
+    place-items: center;
+    width: min(25rem, 82%);
+    aspect-ratio: 1.08;
+    border-radius: 48% 52% 46% 54% / 52% 46% 54% 48%;
+    background: #eef8f1;
+}
+.lg-ring::before {
+    content: "";
+    position: absolute;
+    inset: 17%;
+    border-radius: 50%;
+    background: radial-gradient(circle at 50% 45%, #ffffff 0%, #dcf0e3 70%);
+}
+.lg-ring img {
+    position: relative;
+    width: 44%;
+    height: auto;
+    filter: drop-shadow(0 14px 22px rgba(16, 80, 50, 0.22));
+}
+.lg-dot { position: absolute; border-radius: 50%; }
+.lg-dot.d1 { width: 3.2rem; height: 3.2rem; top: 6%; left: 14%; background: #e7f3ea; }
+.lg-dot.d2 { width: 1.9rem; height: 1.9rem; top: 12%; right: 16%; background: #cfe9d7; }
+.lg-dot.d3 { width: 1.4rem; height: 1.4rem; bottom: 14%; left: 12%; background: #cfe9d7; }
+.lg-dot.d4 { width: 2.5rem; height: 2.5rem; bottom: 8%; right: 20%; background: #e7f3ea; }
+
+.lg-tag {
+    margin: 0 0 0.35rem;
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #10302a;
+}
+.lg-foot {
+    margin: 0;
+    font-size: 0.78rem;
+    line-height: 1.5;
+    color: #5a7268;
+}
+
+/* the form side */
+.lg-form-side {
+    position: relative;
+    z-index: 2;
+    display: grid;
+    align-content: center;
+    padding: 3rem 3.5rem 3rem 6.5rem;
+}
+.lg-form-side h1 {
+    margin: 0 0 0.4rem;
+    font-size: clamp(2.2rem, 1.6rem + 1.6vw, 3rem);
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    color: #ffffff;
+}
+.lg-sub { margin: 0 0 1.75rem; font-size: 0.95rem; color: rgba(238, 247, 241, 0.7); }
+
+/* Back to the landing page, above the heading. justify-self keeps it from
+   stretching across the grid; the negative margin lines the arrow up with
+   the heading text. */
+.lg-back {
+    justify-self: start;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin: 0 0 1.25rem -0.55rem;
+    padding: 0.4rem 0.7rem 0.4rem 0.55rem;
+    border-radius: 999px;
+    color: rgba(238, 247, 241, 0.7);
+    font-size: 0.88rem;
+    font-weight: 600;
+    text-decoration: none;
+    transition: color 0.15s ease, background-color 0.15s ease;
+}
+.lg-back svg { width: 1.1rem; height: 1.1rem; flex: none; }
+.lg-back:hover,
+.lg-back:focus-visible { color: #7fd0a2; background: rgba(255, 255, 255, 0.07); }
+
+.lg-field { margin-bottom: 1.15rem; }
+.lg-field label {
+    display: block;
+    margin-bottom: 0.45rem;
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: #ffffff;
+}
+.lg-input {
+    position: relative;
+}
+.lg-input input {
+    width: 100%;
+    box-sizing: border-box;
+    height: 3.4rem;
+    padding: 0 1.1rem;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.06);
+    color: #ffffff;
+    font: inherit;
+    font-size: 1rem;
+    outline: none;
+    transition: border-color 150ms ease, background-color 150ms ease, box-shadow 150ms ease;
+}
+.lg-input input::placeholder { color: rgba(238, 247, 241, 0.5); }
+.lg-input input:focus {
+    border-color: #4cb27a;
+    background: rgba(255, 255, 255, 0.09);
+    box-shadow: 0 0 0 4px rgba(76, 178, 122, 0.18);
+}
+.lg-input .has-toggle { padding-right: 3.2rem; }
+.lg-input .field-toggle {
+    position: absolute;
+    top: 50%;
+    right: 0.6rem;
+    transform: translateY(-50%);
+    display: grid;
+    place-items: center;
+    width: 2.2rem;
+    height: 2.2rem;
+    padding: 0;
+    border: 0;
+    border-radius: 8px;
+    background: none;
+    color: rgba(238, 247, 241, 0.75);
+    cursor: pointer;
+}
+.lg-input .field-toggle:hover { color: #ffffff; background: rgba(255, 255, 255, 0.08); }
+.lg-input .field-toggle svg { width: 1.2rem; height: 1.2rem; }
+
+.lg-submit {
+    width: 100%;
+    height: 3.5rem;
+    margin-top: 0.6rem;
+    border: 0;
+    border-radius: 999px;
+    background: #1d8a4e;
+    color: #ffffff;
+    font: inherit;
+    font-size: 1.05rem;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 10px 24px rgba(10, 60, 35, 0.45);
+    transition: background-color 150ms ease, transform 150ms ease;
+}
+.lg-submit:hover { background: #23a05c; }
+.lg-submit:active { transform: translateY(1px); }
+.lg-submit:focus-visible { outline: 3px solid #a7e3c0; outline-offset: 3px; }
+
+.lg-register {
+    margin: 1.4rem 0 0;
+    text-align: center;
+    font-size: 0.95rem;
+    color: rgba(238, 247, 241, 0.85);
+}
+.lg-register a { color: #7fd0a2; font-weight: 700; text-decoration: none; }
+.lg-register a:hover { text-decoration: underline; }
+.lg-note {
+    margin: 1.6rem 0 0;
+    text-align: center;
+    font-size: 0.78rem;
+    color: rgba(238, 247, 241, 0.5);
+}
+
+/* messages on the dark side */
+.lg-form-side .form-alert,
+.lg-form-side .flash-message {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.55rem;
+    margin: 0 0 1.1rem;
+    padding: 0.75rem 0.9rem;
+    border-radius: 12px;
+    font-size: 0.88rem;
+    line-height: 1.45;
+    background: rgba(220, 70, 70, 0.14);
+    border: 1px solid rgba(240, 120, 120, 0.35);
+    color: #ffd6d6;
+}
+.lg-form-side .flash-message.success {
+    background: rgba(76, 178, 122, 0.14);
+    border-color: rgba(120, 210, 160, 0.4);
+    color: #cdf3dc;
+}
+.lg-form-side .form-alert svg,
+.lg-form-side .flash-message svg { flex: none; width: 1.1rem; height: 1.1rem; margin-top: 0.1rem; }
+.lg-form-side .flash-message span { flex: 1; }
+.lg-form-side .alert-close {
+    display: grid; place-items: center; padding: 0; border: 0; background: none;
+    color: inherit; opacity: 0.75; cursor: pointer;
+}
+.lg-form-side .alert-close:hover { opacity: 1; }
+
+/* Tablets and phones: the art becomes a short white band on top,
+   curved along its bottom edge, and the form sits below it. */
+@media (max-width: 900px) {
+    .lg-body { padding: 1rem; align-items: start; }
+    .lg-card { grid-template-columns: 1fr; min-height: 0; }
+    .lg-art {
+        padding: 1.5rem 1.5rem 2.75rem;
+        background: #ffffff;
+        border-radius: 0 0 50% 50% / 0 0 2.5rem 2.5rem;
+    }
+    .lg-wave { display: none; }
+    .lg-figure { margin: 0.75rem 0 0.25rem; }
+    .lg-ring { width: min(13rem, 60%); }
+    .lg-tag, .lg-foot { text-align: center; }
+    .lg-foot { display: none; }
+    .lg-form-side { padding: 2rem 1.5rem 2.25rem; }
+
+    /* The white band with the logo stays put while the page scrolls, and
+       the form slides up over it. overflow: clip (not hidden) keeps the
+       rounded corners without making the card a scroll box, which would
+       stop the band from sticking. */
+    .lg-card { overflow: clip; }
+    .lg-art {
+        position: sticky;
+        top: 0;
+        z-index: 0;
+    }
+    .lg-form-side {
+        background: #10302a;
+        border-radius: 24px 24px 0 0;
+        box-shadow: 0 -12px 28px rgba(0, 0, 0, 0.25);
+    }
+}
+@media (prefers-reduced-motion: no-preference) {
+    .lg-card { animation: lg-in 420ms cubic-bezier(.2, .7, .2, 1) both; }
+    @keyframes lg-in { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+}
+
+/* ---- sign-up additions ---- */
+.lg-input select {
+    width: 100%;
+    box-sizing: border-box;
+    height: 3.4rem;
+    padding: 0 2.6rem 0 1.1rem;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.06) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23cfe9d7' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") no-repeat right 1rem center / 1.1rem;
+    color: #ffffff;
+    font: inherit;
+    font-size: 1rem;
+    outline: none;
+    appearance: none;
+    cursor: pointer;
+    transition: border-color 150ms ease, box-shadow 150ms ease;
+}
+.lg-input select:focus {
+    border-color: #4cb27a;
+    box-shadow: 0 0 0 4px rgba(76, 178, 122, 0.18);
+}
+.lg-input select:disabled { opacity: 0.55; cursor: not-allowed; }
+/* the open list uses the system colours, so give it a dark ground */
+.lg-input select option { background: #10302a; color: #ffffff; }
+
+.lg-hint {
+    margin: 0.4rem 0 0;
+    font-size: 0.8rem;
+    line-height: 1.45;
+    color: rgba(238, 247, 241, 0.6);
+}
+.lg-error {
+    margin: 0.4rem 0 0;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: #ffb4b4;
+}
+.lg-error[hidden] { display: none; }
+
+/* two fields side by side on wide screens */
+.lg-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0 1rem;
+}
+@media (max-width: 1100px) {
+    .lg-row { grid-template-columns: 1fr; }
+}
+.lg-card.is-signup .lg-form-side { padding-top: 2.75rem; padding-bottom: 2.75rem; }
+.lg-card.is-signup .lg-form-side h1 { font-size: clamp(2rem, 1.5rem + 1.3vw, 2.6rem); }
+
+/* Sign up in two steps: account, then location. Each step holds four
+   fields, so the card fits on a laptop screen without scrolling. */
+.lg-card.is-signup .lg-form-side { padding-top: 2.25rem; padding-bottom: 2.25rem; }
+.lg-card.is-signup .lg-form-side h1 { margin-bottom: 0.25rem; font-size: clamp(1.9rem, 1.5rem + 1.1vw, 2.5rem); }
+.lg-card.is-signup .lg-sub { margin-bottom: 1.1rem; }
+.lg-card.is-signup .lg-field { margin-bottom: 0.9rem; }
+.lg-card.is-signup .lg-input input,
+.lg-card.is-signup .lg-input select { height: 3.1rem; }
+.lg-card.is-signup .lg-hint { font-size: 0.76rem; }
+.lg-card.is-signup .lg-register { margin-top: 1rem; }
+
+.lg-step { margin: 0; padding: 0; border: 0; min-width: 0; }
+.lg-step[hidden] { display: none; }
+
+.lg-steps {
+    display: flex;
+    gap: 1.25rem;
+    margin: 0 0 1.2rem;
+    padding: 0;
+    list-style: none;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: rgba(238, 247, 241, 0.5);
+}
+.lg-steps li { display: flex; align-items: center; gap: 0.5rem; }
+.lg-steps li span {
+    display: grid;
+    place-items: center;
+    width: 1.6rem;
+    height: 1.6rem;
+    border-radius: 50%;
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    font-size: 0.75rem;
+}
+.lg-steps li.is-current { color: #ffffff; }
+.lg-steps li.is-current span { border-color: #4cb27a; background: #1d8a4e; color: #ffffff; }
+.lg-steps li.is-done { color: rgba(238, 247, 241, 0.8); }
+.lg-steps li.is-done span { border-color: #4cb27a; color: #7fd0a2; }
+
+.lg-step-actions { display: grid; grid-template-columns: auto 1fr; gap: 0.75rem; align-items: center; }
+.lg-step-back {
+    height: 3.5rem;
+    margin-top: 0.6rem;
+    padding: 0 1.4rem;
+    border: 1px solid rgba(255, 255, 255, 0.22);
+    border-radius: 999px;
+    background: transparent;
+    color: #ffffff;
+    font: inherit;
+    font-weight: 700;
+    cursor: pointer;
+}
+.lg-step-back:hover { background: rgba(255, 255, 255, 0.08); }

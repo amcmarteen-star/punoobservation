@@ -3,220 +3,118 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="theme-color" content="#e4ece1">
+    <meta name="theme-color" content="#0d3632">
     <title>Create Account - PuNoObservation</title>
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='images/favicon-32.png', v=asset_v) }}">
+    <link rel="apple-touch-icon" href="{{ url_for('static', filename='images/apple-touch-icon.png', v=asset_v) }}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css', v=asset_v) }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/login.css', v=asset_v) }}">
-    <style>
-/* ---------- Register page additions ---------- */
-    .lg-register .lg-card { width: min(100%, 28rem); }
-    .lg-register .lg-sub { margin-bottom: 1.5rem; }
-    .lg-register .lg-form { gap: 1.1rem; }
-    
-    .lg-page .lg-field select {
-        width: 100%;
-        box-sizing: border-box;
-        min-height: 52px;
-        padding: 0.8rem 3rem 0.8rem 1.25rem;
-        border: 1.5px solid transparent;
-        border-radius: 999px;
-        background-color: rgba(255, 255, 255, 0.78);
-        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2352645d' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
-        background-repeat: no-repeat;
-        background-position: right 1.1rem center;
-        background-size: 1.1rem;
-        -webkit-appearance: none;
-        appearance: none;
-        font: inherit;
-        font-size: 1rem;
-        color: var(--lg-ink);
-        text-overflow: ellipsis;
-        cursor: pointer;
-        outline: none;
-        min-width: 0;
-        max-width: 100%;
-        white-space: nowrap;
-        overflow: hidden;
-        transition: border-color 160ms var(--auth-ease), box-shadow 160ms var(--auth-ease),
-                    background-color 160ms var(--auth-ease);
-    }
-    .lg-page .lg-field select:hover { background-color: rgba(255, 255, 255, 0.92); }
-    .lg-page .lg-field select:focus {
-        background-color: #fff;
-        border-color: var(--auth-green);
-        box-shadow: 0 0 0 4px var(--lg-ring);
-    }
-    
-    .lg-page .lg-field .field-hint {
-        margin: 0.45rem 0 0 1.1rem;
-        font-size: 0.8125rem;
-        line-height: 1.4;
-        color: var(--lg-muted);
-    }
-    .lg-page .lg-field .password-error { margin: 0.5rem 0 0 1.1rem; }
-    
-    /* script.js adds .has-error to the confirm-password input on a mismatch. */
-    .lg-page .input-wrap input.has-error,
-    .lg-page .input-wrap input.has-error:focus {
-        border-color: var(--auth-danger);
-        box-shadow: 0 0 0 4px rgba(180, 35, 24, 0.12);
-    }
-    
-    /* The open list is drawn by the browser; this keeps its text readable. */
-    .lg-page .lg-field select option { color: #12261f; background: #fff; }
-
-    /* ---- Custom dropdown (replaces the browser's own option list) ---- */
-    .lg-page .lg-field select.lg-select-native {
-        position: absolute; width: 1px; height: 1px; opacity: 0;
-        pointer-events: none; overflow: hidden;
-    }
-    .lg-combo { position: relative; }
-    .lg-combo-trigger {
-        position: relative; display: block; width: 100%; box-sizing: border-box;
-        min-height: 52px; padding: 0.8rem 3rem 0.8rem 1.25rem;
-        border: 1.5px solid transparent; border-radius: 999px;
-        background: rgba(255, 255, 255, 0.78);
-        font: inherit; font-size: 1rem; color: var(--lg-ink); text-align: left;
-        white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer;
-        transition: border-color 160ms var(--auth-ease), box-shadow 160ms var(--auth-ease),
-                    background-color 160ms var(--auth-ease);
-    }
-    .lg-combo-trigger:hover { background: rgba(255, 255, 255, 0.92); }
-    .lg-combo-trigger:focus-visible, .lg-combo-trigger[aria-expanded="true"] {
-        outline: none; background: #fff; border-color: var(--auth-green);
-        box-shadow: 0 0 0 4px var(--lg-ring);
-    }
-    .lg-combo-chevron {
-        position: absolute; right: 1.1rem; top: 50%; width: 1.1rem; height: 1.1rem;
-        margin-top: -0.55rem; color: var(--lg-muted); pointer-events: none;
-        transition: transform 160ms var(--auth-ease);
-    }
-    .lg-combo-trigger[aria-expanded="true"] .lg-combo-chevron { transform: rotate(180deg); }
-
-    .lg-combo-panel {
-        position: absolute; left: 0; right: 0; top: calc(100% + 0.5rem); z-index: 30;
-        padding: 0.5rem; background: #fff; border: 1px solid var(--line);
-        border-radius: 1.25rem;
-        box-shadow: 0 20px 48px rgba(15, 42, 32, 0.16), 0 2px 6px rgba(15, 42, 32, 0.06);
-    }
-    .lg-combo-panel.is-up { top: auto; bottom: calc(100% + 0.5rem); }
-    .lg-combo-panel[hidden] { display: none; }
-    .lg-combo-searchrow { position: relative; }
-    .lg-combo-searchrow svg {
-        position: absolute; left: 0.95rem; top: 50%; width: 1rem; height: 1rem;
-        margin-top: -0.5rem; color: var(--lg-muted); pointer-events: none;
-    }
-    .lg-combo-search {
-        width: 100%; box-sizing: border-box; min-height: 42px;
-        padding: 0.55rem 1rem 0.55rem 2.5rem; border: 1.5px solid transparent;
-        border-radius: 999px; background: #eef3ef; font: inherit; font-size: 0.9375rem;
-        color: var(--lg-ink); outline: none;
-    }
-    .lg-combo-search:focus { background: #fff; border-color: var(--auth-green); }
-    .lg-combo-list {
-        max-height: 16.5rem; overflow-y: auto; overscroll-behavior: contain;
-        margin: 0.5rem 0 0; padding: 0; list-style: none;
-    }
-    .lg-combo-opt {
-        position: relative; display: flex; flex-direction: column; gap: 0.1rem;
-        padding: 0.6rem 2.5rem 0.6rem 0.9rem; border-radius: 0.75rem; cursor: pointer;
-    }
-    .lg-combo-opt.is-active { background: #eaf2ec; }
-    .lg-combo-name { font-size: 0.9375rem; font-weight: 500; line-height: 1.35; color: var(--lg-ink); }
-    .lg-combo-type { font-size: 0.8125rem; color: var(--lg-muted); }
-    .lg-combo-opt.is-selected .lg-combo-name { font-weight: 700; }
-    .lg-combo-opt.is-selected::after {
-        content: ""; position: absolute; right: 0.9rem; top: 50%; width: 1.1rem; height: 1.1rem;
-        margin-top: -0.55rem;
-        background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%230d7e5a' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6 9 17l-5-5'/%3E%3C/svg%3E") center / contain no-repeat;
-    }
-    .lg-combo-empty { margin: 0.75rem 0.9rem 0.5rem; font-size: 0.9375rem; color: var(--lg-muted); }
-    .lg-combo-empty[hidden] { display: none; }
-    @media (max-width: 580px) { .lg-combo-list { max-height: 13rem; } }
-    </style>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/auth.css', v=asset_v) }}">
 </head>
-<body class="login-page lg-page lg-register">
-    <div class="lg-shell">
-        <section class="lg-form-side">
-            <main class="lg-main">
-                <div class="lg-card">
-                    <h1>Create account</h1>
-                    <p class="lg-sub">Request access to the reforestation platform.</p>
+<body class="lg-body">
+    <span class="lg-orb o1" aria-hidden="true"></span>
+    <span class="lg-orb o2" aria-hidden="true"></span>
+    <span class="lg-orb o3" aria-hidden="true"></span>
+    <span class="lg-orb o4" aria-hidden="true"></span>
 
-                    {% if error %}
-                        <p class="form-alert" role="alert">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>
-                            <span>{{ error }}</span>
-                        </p>
+    <div class="lg-card is-signup">
+        <aside class="lg-art">
+            {# White shape with a flowing right edge, drawn past the panel so
+               the curve cuts into the dark form side like the reference. #}
+            <svg class="lg-wave" viewBox="0 0 700 800" preserveAspectRatio="none" aria-hidden="true">
+                <path fill="#ffffff" d="M0 0 H560 C640 70 690 170 690 300 C690 430 575 470 575 560 C575 660 640 720 650 800 H0 Z"/>
+            </svg>
+
+            <a href="{{ url_for('dashboard.home') }}" class="lg-brand">
+                <span style="color:inherit">PuNo</span><span>Observation</span>
+            </a>
+
+            <div class="lg-figure" aria-hidden="true">
+                <span class="lg-dot d1"></span>
+                <span class="lg-dot d2"></span>
+                <span class="lg-dot d3"></span>
+                <span class="lg-dot d4"></span>
+                <div class="lg-ring">
+                    <img src="{{ url_for('static', filename='images/finallogo.png', v=asset_v) }}" alt="" width="249" height="311">
+                </div>
+            </div>
+            <p class="lg-foot">&copy; 2026 PuNoObservation &middot; Eastern Pangasinan</p>
+        </aside>
+
+        <main class="lg-form-side">
+            <div>
+                <a href="{{ url_for('dashboard.home') }}" class="lg-back">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
+                    <span>Back to home</span>
+                </a>
+                <h1>Create account</h1>
+                <p class="lg-sub">Request access to the reforestation platform.</p>
+
+                {% if error %}
+                    <p class="form-alert" role="alert">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>
+                        <span>{{ error }}</span>
+                    </p>
+                {% endif %}
+
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <p class="flash-message {{ category }}" role="status">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>
+                                <span>{{ message }}</span>
+                                <button type="button" class="alert-close" aria-label="Dismiss message" title="Dismiss"
+                                        onclick="this.parentElement.remove()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
+                            </p>
+                        {% endfor %}
                     {% endif %}
+                {% endwith %}
 
-                    {% with messages = get_flashed_messages(with_categories=true) %}
-                        {% if messages %}
-                            {% for category, message in messages %}
-                                <p class="flash-message {{ category }}" role="status">
-                                    {% if category == 'success' %}
-                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21.801 10A10 10 0 1 1 17 3.335"/><path d="m9 11 3 3L22 4"/></svg>
-                                    {% else %}
-                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>
-                                    {% endif %}
-                                    <span>{{ message }}</span>
-                                </p>
-                            {% endfor %}
-                        {% endif %}
-                    {% endwith %}
+                <form action="{{ url_for('auth.register') }}" method="POST" id="register_form">
+                    {# Two steps in one form: the account first, then where the
+                       person is and who they are with. Both are sent together
+                       on Sign up. #}
+                    <ol class="lg-steps" aria-label="Sign-up steps">
+                        <li class="is-current" data-step-dot="1"><span>1</span>Account</li>
+                        <li data-step-dot="2"><span>2</span>Location</li>
+                    </ol>
 
-                    <form action="{{ url_for('auth.register') }}" method="POST" id="register_form" class="lg-form">
+                    <fieldset class="lg-step" data-step="1">
+                        <legend class="visually-hidden">Account details</legend>
                         <div class="lg-field">
                             <label for="username">Username</label>
-                            <div class="input-wrap">
+                            <div class="lg-input">
                                 <input type="text" id="username" name="username"
                                        placeholder="Enter your username"
                                        autocomplete="username"
                                        autocapitalize="none" spellcheck="false"
-                                       autofocus required>
-                            </div>
-                        </div>
-
-                        <div class="lg-field">
-                            <label for="email_address">Email address</label>
-                            <div class="input-wrap">
-                                <input type="email" name="email_address" id="email_address"
-                                       placeholder="yourname@denr.gov.ph"
-                                       autocomplete="email"
-                                       autocapitalize="none" spellcheck="false"
+                                       value="{{ form.get('username', '') }}"
                                        required>
                             </div>
                         </div>
 
                         <div class="lg-field">
-                            <label for="organization_id">Organization / Affiliation</label>
-                            <select name="organization_id" id="organization_id"
-                                    autocomplete="organization"
-                                    aria-describedby="organization_hint">
-                                <option value="" selected>None / Individual User</option>
-                                {% if organizations %}
-                                    {% for org in organizations %}
-                                        <option value="{{ org.organization_id }}"
-                                                data-name="{{ org.organization_name }}"
-                                                data-type="{{ org.organization_type }}">
-                                            {{ org.organization_name }} ({{ org.organization_type }})
-                                        </option>
-                                    {% endfor %}
-                                {% endif %}
-                            </select>
-                            <p class="field-hint" id="organization_hint">Optional. Leave as-is if you are signing up on your own.</p>
+                            <label for="email_address">Email address</label>
+                            <div class="lg-input">
+                                <input type="email" name="email_address" id="email_address"
+                                       placeholder="yourname@denr.gov.ph"
+                                       autocomplete="email"
+                                       autocapitalize="none" spellcheck="false"
+                                       value="{{ form.get('email_address', '') }}"
+                                       required>
+                            </div>
                         </div>
 
                         <div class="lg-field">
                             <label for="password">Password</label>
-                            <div class="input-wrap">
-                                <input type="password" name="password" id="password"
+                            <div class="lg-input">
+                                <input type="password" name="password" id="password" class="has-toggle"
                                        placeholder="Enter your password"
                                        autocomplete="new-password"
-                                       minlength="8"
+                                       minlength="{{ app_limits.passwordMin }}" maxlength="{{ app_limits.passwordMax }}"
+                                       pattern="(?=.*[A-Za-z])(?=.*[0-9]).*" title="Use at least one letter and one number."
                                        aria-describedby="password_hint"
                                        required>
                                 <button type="button" class="field-toggle" data-toggle-password="password"
@@ -225,15 +123,16 @@
                                     <svg class="icon-eye-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.733 5.076a10.744 10.744 0 0 1 11.205 6.575 1 1 0 0 1 0 .696 10.747 10.747 0 0 1-1.444 2.49"/><path d="M14.084 14.158a3 3 0 0 1-4.242-4.242"/><path d="M17.479 17.499a10.75 10.75 0 0 1-15.417-5.151 1 1 0 0 1 0-.696 10.75 10.75 0 0 1 4.446-5.143"/><path d="m2 2 20 20"/></svg>
                                 </button>
                             </div>
-                            <p class="field-hint" id="password_hint">At least 8 characters.</p>
+                            <p class="lg-hint" id="password_hint">{{ app_limits.passwordMin }} to {{ app_limits.passwordMax }} characters, with at least one letter and one number.</p>
                         </div>
 
                         <div class="lg-field">
                             <label for="confirmPassword">Confirm password</label>
-                            <div class="input-wrap">
-                                <input type="password" name="confirmPassword" id="confirmPassword"
+                            <div class="lg-input">
+                                <input type="password" name="confirmPassword" id="confirmPassword" class="has-toggle"
                                        placeholder="Re-type your password"
                                        autocomplete="new-password"
+                                       maxlength="{{ app_limits.passwordMax }}"
                                        aria-describedby="error-message"
                                        required>
                                 <button type="button" class="field-toggle" data-toggle-password="confirmPassword"
@@ -242,214 +141,117 @@
                                     <svg class="icon-eye-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.733 5.076a10.744 10.744 0 0 1 11.205 6.575 1 1 0 0 1 0 .696 10.747 10.747 0 0 1-1.444 2.49"/><path d="M14.084 14.158a3 3 0 0 1-4.242-4.242"/><path d="M17.479 17.499a10.75 10.75 0 0 1-15.417-5.151 1 1 0 0 1 0-.696 10.75 10.75 0 0 1 4.446-5.143"/><path d="m2 2 20 20"/></svg>
                                 </button>
                             </div>
-                            <p id="error-message" class="password-error" role="alert" hidden>
+                            <p id="error-message" class="lg-error" role="alert" hidden>
                                 Passwords do not match.
                             </p>
                         </div>
 
-                        <button type="submit" class="lg-btn" id="sign-up-btn">Create account</button>
-                    </form>
+                        <button type="button" class="lg-submit" id="regNext">Next</button>
+                    </fieldset>
 
-                    <p class="lg-switch">Already have an account? <a href="{{ url_for('auth.login') }}">Log in</a></p>
-                </div>
-            </main>
-        </section>
+                    <fieldset class="lg-step" data-step="2" hidden>
+                        <legend class="visually-hidden">Location and organization</legend>
+                        {# register.js fills each list from the one before it. #}
+                        <div class="lg-field">
+                            <label for="reg_province">Province</label>
+                            <div class="lg-input">
+                                <select id="reg_province" required>
+                                    <option value="">Choose a province</option>
+                                </select>
+                            </div>
+                        </div>
 
-        <aside class="brand-panel">
-            <div class="brand-mesh" aria-hidden="true">
-                <span class="blob blob-1"></span>
-                <span class="blob blob-2"></span>
-                <span class="blob blob-3"></span>
-                <span class="blob blob-4"></span>
+                        <div class="lg-field">
+                            <label for="reg_municipality">Municipality / City</label>
+                            <div class="lg-input">
+                                <select id="reg_municipality" required disabled>
+                                    <option value="">Choose a province first</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="lg-field">
+                            <label for="location_id">Barangay</label>
+                            <div class="lg-input">
+                                <select name="location_id" id="location_id" required disabled>
+                                    <option value="">Choose a municipality first</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="lg-field">
+                            <label for="organization_id">Organization / Affiliation</label>
+                            <div class="lg-input">
+                                <select name="organization_id" id="organization_id"
+                                        autocomplete="organization"
+                                        aria-describedby="organization_hint" disabled>
+                                    <option value="">Choose a barangay first</option>
+                                </select>
+                            </div>
+                            <p class="lg-hint" id="organization_hint">Only organizations in your barangay are listed. Pick "None / Individual User" if signing up on your own.</p>
+                        </div>
+
+                        <div class="lg-step-actions">
+                            <button type="button" class="lg-step-back" id="regBack">Back</button>
+                            <button type="submit" class="lg-submit">Sign up</button>
+                        </div>
+                    </fieldset>
+                </form>
+
+                <p class="lg-register">Already have an account? <a href="{{ url_for('auth.login') }}">Log in</a></p>
             </div>
-
-            <div class="brand-top">
-                <div class="brand-header">
-                    <img src="{{ url_for('static', filename='images/finallogo.png') }}" alt="" class="logo-box" width="251" height="310" />
-                    <div class="brand-copy">
-                        <div class="brand-name">PuNoObservation</div>
-                        <div class="brand-title">DECISION SUPPORT SYSTEM</div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="brand-content">
-                <h1>Reforestation<br class="brand-br"> Management<br class="brand-br"> Platform</h1>
-                <p>
-                    A web-based decision support system for tree species recommendation and reforestation
-                    management with geospatial visualization across Eastern Pangasinan.
-                </p>
-
-                <ul class="chip-row">
-                    <li>GIS Mapping</li>
-                    <li>Species Recommendation</li>
-                    <li>Analytics</li>
-                    <li>Reports</li>
-                </ul>
-            </div>
-
-            <div class="brand-footer">
-                Pangasinan DENR &bull; Eastern Pangasinan Region&nbsp;I
-                <br>
-                &copy; 2026 PuNoObservation. Capstone Project.
-            </div>
-        </aside>
+        </main>
     </div>
 
-    <script src="{{ url_for('static', filename='javascript/script.js') }}"></script>
-    <script>
-        (function () {
-            var form = document.getElementById('register_form');
-            var btn = document.getElementById('sign-up-btn');
-            form.addEventListener('submit', function (e) {
-                // script.js blocks the submit when the passwords differ.
-                if (e.defaultPrevented) { return; }
-                btn.classList.add('is-loading');
-                btn.textContent = 'Creating account\u2026';
-            });
-            // Back button restores the page from cache: undo the loading state.
-            window.addEventListener('pageshow', function () {
-                btn.classList.remove('is-loading');
-                btn.textContent = 'Create account';
-            });
-        })();
+    <script id="register-data" type="application/json">
+        {{ {"locations": locations, "organizations": organizations,
+            "location_id": form.get("location_id", ""),
+            "organization_id": form.get("organization_id", "")} | tojson }}
     </script>
-
+    <script src="{{ url_for('static', filename='javascript/script.js') }}"></script>
+    <script src="{{ url_for('static', filename='javascript/register.js', v=asset_v) }}"></script>
     <script>
-        /* Custom organization dropdown. The real <select> stays in the form
-           (hidden) and still carries the value, so submitting works as before. */
-        (function () {
-            var select = document.getElementById('organization_id');
-            if (!select) { return; }
-            var field = select.closest('.lg-field');
-            var label = field.querySelector('label');
-            var SVG = 'http://www.w3.org/2000/svg';
-
-            function el(tag, cls) { var n = document.createElement(tag); if (cls) { n.className = cls; } return n; }
-            function icon(cls, d, vb) {
-                var s = document.createElementNS(SVG, 'svg');
-                s.setAttribute('viewBox', '0 0 24 24'); s.setAttribute('fill', 'none');
-                s.setAttribute('stroke', 'currentColor'); s.setAttribute('stroke-width', '2');
-                s.setAttribute('stroke-linecap', 'round'); s.setAttribute('stroke-linejoin', 'round');
-                s.setAttribute('aria-hidden', 'true');
-                if (cls) { s.setAttribute('class', cls); }
-                d.forEach(function (x) {
-                    var p = document.createElementNS(SVG, x.t);
-                    Object.keys(x.a).forEach(function (k) { p.setAttribute(k, x.a[k]); });
-                    s.appendChild(p);
-                });
-                return s;
-            }
-
-            var items = Array.prototype.map.call(select.options, function (o) {
-                return { value: o.value, name: o.getAttribute('data-name') || o.textContent.replace(/\s+/g, ' ').trim(),
-                         type: o.getAttribute('data-type') || '' };
-            });
-
-            var wrap = el('div', 'lg-combo');
-            var trigger = el('button', 'lg-combo-trigger');
-            trigger.type = 'button'; trigger.id = 'organization_trigger';
-            trigger.setAttribute('role', 'combobox');
-            trigger.setAttribute('aria-haspopup', 'listbox');
-            trigger.setAttribute('aria-expanded', 'false');
-            trigger.setAttribute('aria-controls', 'organization_list');
-            trigger.setAttribute('aria-describedby', 'organization_hint');
-            var valueText = el('span', 'lg-combo-value');
-            trigger.appendChild(valueText);
-            trigger.appendChild(icon('lg-combo-chevron', [{ t: 'path', a: { d: 'm6 9 6 6 6-6' } }]));
-
-            var panel = el('div', 'lg-combo-panel'); panel.hidden = true;
-            var row = el('div', 'lg-combo-searchrow');
-            row.appendChild(icon('', [{ t: 'circle', a: { cx: '11', cy: '11', r: '8' } }, { t: 'path', a: { d: 'm21 21-4.3-4.3' } }]));
-            var search = el('input', 'lg-combo-search');
-            search.type = 'text'; search.placeholder = 'Search organizations'; search.autocomplete = 'off';
-            search.setAttribute('aria-label', 'Search organizations');
-            search.setAttribute('aria-controls', 'organization_list');
-            row.appendChild(search);
-            var list = el('ul', 'lg-combo-list'); list.id = 'organization_list'; list.setAttribute('role', 'listbox');
-            var empty = el('p', 'lg-combo-empty'); empty.hidden = true;
-            empty.textContent = 'No organization matches that search.';
-            panel.appendChild(row); panel.appendChild(list); panel.appendChild(empty);
-
-            select.parentNode.insertBefore(wrap, select);
-            wrap.appendChild(trigger); wrap.appendChild(panel); wrap.appendChild(select);
-            select.classList.add('lg-select-native');
-            select.tabIndex = -1; select.setAttribute('aria-hidden', 'true');
-            if (label) { label.setAttribute('for', 'organization_trigger'); }
-
-            var visible = [], active = 0;
-
-            function current() { return items.filter(function (i) { return i.value === select.value; })[0] || items[0]; }
-            function showValue() { valueText.textContent = current().name; }
-
-            function render(q) {
-                q = (q || '').toLowerCase();
-                visible = items.filter(function (i) { return !q || i.name.toLowerCase().indexOf(q) !== -1; });
-                list.textContent = '';
-                visible.forEach(function (it, idx) {
-                    var li = el('li', 'lg-combo-opt');
-                    li.id = 'org-opt-' + idx; li.setAttribute('role', 'option');
-                    var sel = it.value === select.value;
-                    li.setAttribute('aria-selected', sel ? 'true' : 'false');
-                    if (sel) { li.classList.add('is-selected'); }
-                    var n = el('span', 'lg-combo-name'); n.textContent = it.name; li.appendChild(n);
-                    if (it.type) { var t = el('span', 'lg-combo-type'); t.textContent = it.type; li.appendChild(t); }
-                    li.addEventListener('mousemove', function () { setActive(idx, false); });
-                    li.addEventListener('click', function () { choose(it); });
-                    list.appendChild(li);
-                });
-                empty.hidden = visible.length !== 0;
-                var si = visible.indexOf(current());
-                setActive(si > -1 ? si : 0, true);
-            }
-
-            function setActive(i, scroll) {
-                var opts = list.children;
-                if (!opts.length) { search.removeAttribute('aria-activedescendant'); return; }
-                active = Math.max(0, Math.min(i, opts.length - 1));
-                Array.prototype.forEach.call(opts, function (o, k) { o.classList.toggle('is-active', k === active); });
-                search.setAttribute('aria-activedescendant', opts[active].id);
-                if (scroll !== false && opts[active].scrollIntoView) { opts[active].scrollIntoView({ block: 'nearest' }); }
-            }
-
-            function open() {
-                var r = wrap.getBoundingClientRect();
-                var below = window.innerHeight - r.bottom;
-                panel.classList.toggle('is-up', below < 360 && r.top > below);
-                panel.hidden = false; trigger.setAttribute('aria-expanded', 'true');
-                search.value = ''; render('');
-                search.focus({ preventScroll: true });
-            }
-            function close(refocus) {
-                if (panel.hidden) { return; }
-                panel.hidden = true; trigger.setAttribute('aria-expanded', 'false');
-                if (refocus) { trigger.focus(); }
-            }
-            function choose(it) {
-                select.value = it.value;
-                select.dispatchEvent(new Event('change', { bubbles: true }));
-                showValue(); close(true);
-            }
-
-            trigger.addEventListener('click', function () { if (panel.hidden) { open(); } else { close(false); } });
-            trigger.addEventListener('keydown', function (e) {
-                if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); if (panel.hidden) { open(); } }
-            });
-            search.addEventListener('input', function () { render(search.value); });
-            search.addEventListener('keydown', function (e) {
-                if (e.key === 'ArrowDown') { e.preventDefault(); setActive(active + 1); }
-                else if (e.key === 'ArrowUp') { e.preventDefault(); setActive(active - 1); }
-                else if (e.key === 'Home') { e.preventDefault(); setActive(0); }
-                else if (e.key === 'End') { e.preventDefault(); setActive(visible.length - 1); }
-                else if (e.key === 'Enter') { e.preventDefault(); if (visible[active]) { choose(visible[active]); } }
-                else if (e.key === 'Escape') { e.preventDefault(); close(true); }
-                else if (e.key === 'Tab') { close(false); }
-            });
-            document.addEventListener('mousedown', function (e) { if (!wrap.contains(e.target)) { close(false); } });
-            // Back button can restore an earlier choice into the hidden select.
-            window.addEventListener('pageshow', showValue);
-            showValue();
-        })();
+      /* Step 1 must be valid, and the passwords must match, before step 2
+         opens. Back returns to step 1 with everything kept. */
+      (function () {
+        var form = document.getElementById("register_form");
+        var steps = form.querySelectorAll(".lg-step");
+        var dots = form.querySelectorAll("[data-step-dot]");
+        function show(n) {
+          steps.forEach(function (st) { st.hidden = st.dataset.step !== String(n); });
+          dots.forEach(function (d) {
+            var k = Number(d.dataset.stepDot);
+            d.classList.toggle("is-current", k === n);
+            d.classList.toggle("is-done", k < n);
+          });
+          var first = steps[n - 1].querySelector("input, select");
+          if (first) first.focus();
+        }
+        document.getElementById("regNext").addEventListener("click", function () {
+          var fields = steps[0].querySelectorAll("input");
+          for (var i = 0; i < fields.length; i++) {
+            if (!fields[i].checkValidity()) { fields[i].reportValidity(); return; }
+          }
+          var pw = document.getElementById("password");
+          var cpw = document.getElementById("confirmPassword");
+          if (pw.value !== cpw.value) {
+            document.getElementById("error-message").hidden = false;
+            cpw.classList.add("has-error");
+            cpw.setAttribute("aria-invalid", "true");
+            cpw.focus();
+            return;
+          }
+          show(2);
+        });
+        document.getElementById("regBack").addEventListener("click", function () { show(1); });
+        // Enter in step 1 goes to the next step instead of submitting.
+        steps[0].addEventListener("keydown", function (e) {
+          if (e.key === "Enter" && e.target.tagName === "INPUT") {
+            e.preventDefault();
+            document.getElementById("regNext").click();
+          }
+        });
+      })();
     </script>
 </body>
 </html>

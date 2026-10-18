@@ -3,145 +3,114 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="theme-color" content="#e4ece1">
+    <meta name="theme-color" content="#0d3632">
     <title>Log In - PuNoObservation</title>
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='images/favicon-32.png', v=asset_v) }}">
+    <link rel="apple-touch-icon" href="{{ url_for('static', filename='images/apple-touch-icon.png', v=asset_v) }}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css', v=asset_v) }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/login.css', v=asset_v) }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/auth.css', v=asset_v) }}">
 </head>
-<body class="login-page lg-page">
-    <div class="lg-shell">
-        <section class="lg-form-side">
-            <main class="lg-main">
-                <div class="lg-card">
-                    <h1>Welcome back</h1>
-                    <p class="lg-sub">Sign in to manage sites, requests and monitoring reports.</p>
+<body class="lg-body">
+    <span class="lg-orb o1" aria-hidden="true"></span>
+    <span class="lg-orb o2" aria-hidden="true"></span>
+    <span class="lg-orb o3" aria-hidden="true"></span>
+    <span class="lg-orb o4" aria-hidden="true"></span>
 
-                    {% if error %}
-                        <p class="form-alert" role="alert">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>
-                            <span>{{ error }}</span>
-                        </p>
-                    {% endif %}
+    <div class="lg-card">
+        <aside class="lg-art">
+            {# White shape with a flowing right edge, drawn past the panel so
+               the curve cuts into the dark form side like the reference. #}
+            <svg class="lg-wave" viewBox="0 0 700 800" preserveAspectRatio="none" aria-hidden="true">
+                <path fill="#ffffff" d="M0 0 H560 C640 70 690 170 690 300 C690 430 575 470 575 560 C575 660 640 720 650 800 H0 Z"/>
+            </svg>
 
-                    {% with messages = get_flashed_messages(with_categories=true) %}
-                        {% if messages %}
-                            {% for category, message in messages %}
-                                <p class="flash-message {{ category }}" role="status">
-                                    {% if category == 'success' %}
-                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21.801 10A10 10 0 1 1 17 3.335"/><path d="m9 11 3 3L22 4"/></svg>
-                                    {% else %}
-                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>
-                                    {% endif %}
-                                    <span>{{ message }}</span>
-                                </p>
-                            {% endfor %}
-                        {% endif %}
-                    {% endwith %}
+            <a href="{{ url_for('dashboard.home') }}" class="lg-brand">
+                <span style="color:inherit">PuNo</span><span>Observation</span>
+            </a>
 
-                    <form action="{{ url_for('auth.login') }}" method="POST" id="log_in_form" class="lg-form">
-                        <div class="lg-field">
-                            <label for="username">Username</label>
-                            <div class="input-wrap">
-                                <input type="text" id="username" name="username"
-                                       placeholder="Enter your username"
-                                       autocomplete="username"
-                                       autocapitalize="none" spellcheck="false"
-                                       autofocus required>
-                            </div>
-                        </div>
-
-                        <div class="lg-field">
-                            <label for="password">Password</label>
-                            <div class="input-wrap">
-                                <input type="password" id="password" name="password"
-                                       placeholder="Enter your password"
-                                       autocomplete="current-password"
-                                       required>
-                                <button type="button" class="field-toggle" data-toggle-password="password"
-                                        aria-label="Show password" aria-pressed="false">
-                                    <svg class="icon-eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"/><circle cx="12" cy="12" r="3"/></svg>
-                                    <svg class="icon-eye-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.733 5.076a10.744 10.744 0 0 1 11.205 6.575 1 1 0 0 1 0 .696 10.747 10.747 0 0 1-1.444 2.49"/><path d="M14.084 14.158a3 3 0 0 1-4.242-4.242"/><path d="M17.479 17.499a10.75 10.75 0 0 1-15.417-5.151 1 1 0 0 1 0-.696 10.75 10.75 0 0 1 4.446-5.143"/><path d="m2 2 20 20"/></svg>
-                                </button>
-                            </div>
-                            <p class="lg-caps" id="caps-hint" role="status" hidden>Caps Lock is on</p>
-                        </div>
-
-                        <button type="submit" class="lg-btn" id="sign-in-btn">Sign in</button>
-                    </form>
-
-                    <p class="lg-switch">Don't have an account? <a href="{{ url_for('auth.register') }}">Sign up</a></p>
+            <div class="lg-figure" aria-hidden="true">
+                <span class="lg-dot d1"></span>
+                <span class="lg-dot d2"></span>
+                <span class="lg-dot d3"></span>
+                <span class="lg-dot d4"></span>
+                <div class="lg-ring">
+                    <img src="{{ url_for('static', filename='images/finallogo.png', v=asset_v) }}" alt="" width="249" height="311">
                 </div>
-            </main>
-
-        </section>
-
-        <aside class="brand-panel">
-            <div class="brand-mesh" aria-hidden="true">
-                <span class="blob blob-1"></span>
-                <span class="blob blob-2"></span>
-                <span class="blob blob-3"></span>
-                <span class="blob blob-4"></span>
             </div>
+            <p class="lg-foot">&copy; 2026 PuNoObservation &middot; Eastern Pangasinan</p>
+        </aside>
 
-            <div class="brand-top">
-                <div class="brand-header">
-                    <img src="{{ url_for('static', filename='images/finallogo.png') }}" alt="" class="logo-box" width="251" height="310" />
-                    <div class="brand-copy">
-                        <div class="brand-name">PuNoObservation</div>
-                        <div class="brand-title">DECISION SUPPORT SYSTEM</div>
+        <main class="lg-form-side">
+            <a href="{{ url_for('dashboard.home') }}" class="lg-back">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
+                <span>Back to home</span>
+            </a>
+            <h1>Login</h1>
+            <p class="lg-sub">Sign in to continue to your dashboard.</p>
+
+            {% if error %}
+                <p class="form-alert" role="alert">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>
+                    <span>{{ error }}</span>
+                </p>
+            {% endif %}
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <p class="flash-message {{ category }}" role="status">
+                            {% if category == 'success' %}
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21.801 10A10 10 0 1 1 17 3.335"/><path d="m9 11 3 3L22 4"/></svg>
+                            {% else %}
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>
+                            {% endif %}
+                            <span>{{ message }}</span>
+                            <button type="button" class="alert-close" aria-label="Dismiss message" title="Dismiss"
+                                    onclick="this.parentElement.remove()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="width:1rem;height:1rem;margin:0"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
+                        </p>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            <form action="{{ url_for('auth.login', next=request.args.get('next')) }}" method="POST" id="log_in_form">
+                <div class="lg-field">
+                    <label for="username">Username</label>
+                    <div class="lg-input">
+                        <input type="text" id="username" name="username"
+                               placeholder="Enter your username"
+                               autocomplete="username"
+                               autocapitalize="none" spellcheck="false"
+                               required>
                     </div>
                 </div>
-            </div>
 
-            <div class="brand-content">
-                <h1>Reforestation<br class="brand-br"> Management<br class="brand-br"> Platform</h1>
-                <p>
-                    A web-based decision support system for tree species recommendation and reforestation
-                    management with geospatial visualization across Eastern Pangasinan.
-                </p>
+                <div class="lg-field">
+                    <label for="password">Password</label>
+                    <div class="lg-input">
+                        <input type="password" id="password" name="password" class="has-toggle"
+                               placeholder="Enter your password"
+                               autocomplete="current-password"
+                               maxlength="{{ app_limits.passwordMax }}"
+                               required>
+                        <button type="button" class="field-toggle" data-toggle-password="password"
+                                aria-label="Show password" aria-pressed="false">
+                            <svg class="icon-eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"/><circle cx="12" cy="12" r="3"/></svg>
+                            <svg class="icon-eye-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.733 5.076a10.744 10.744 0 0 1 11.205 6.575 1 1 0 0 1 0 .696 10.747 10.747 0 0 1-1.444 2.49"/><path d="M14.084 14.158a3 3 0 0 1-4.242-4.242"/><path d="M17.479 17.499a10.75 10.75 0 0 1-15.417-5.151 1 1 0 0 1 0-.696 10.75 10.75 0 0 1 4.446-5.143"/><path d="m2 2 20 20"/></svg>
+                        </button>
+                    </div>
+                </div>
 
-                <ul class="chip-row">
-                    <li>GIS Mapping</li>
-                    <li>Species Recommendation</li>
-                    <li>Analytics</li>
-                    <li>Reports</li>
-                </ul>
-            </div>
+                <button type="submit" class="lg-submit">Sign in</button>
+            </form>
 
-            <div class="brand-footer">
-                Pangasinan DENR &bull; Eastern Pangasinan Region&nbsp;I
-                <br>
-                &copy; 2026 PuNoObservation. Capstone Project.
-            </div>
-        </aside>
+            <p class="lg-register">Don't have an account? <a href="{{ url_for('auth.register') }}">Sign up</a></p>
+            <p class="lg-note">For DENR CENRO staff, field officers and partner organisations.</p>
+        </main>
     </div>
 
     <script src="{{ url_for('static', filename='javascript/script.js') }}"></script>
-    <script>
-        (function () {
-            var form = document.getElementById('log_in_form');
-            var btn = document.getElementById('sign-in-btn');
-            var pw = document.getElementById('password');
-            var hint = document.getElementById('caps-hint');
-            function caps(e) {
-                if (e.getModifierState) { hint.hidden = !e.getModifierState('CapsLock'); }
-            }
-            pw.addEventListener('keydown', caps);
-            pw.addEventListener('keyup', caps);
-            pw.addEventListener('blur', function () { hint.hidden = true; });
-            form.addEventListener('submit', function () {
-                btn.classList.add('is-loading');
-                btn.textContent = 'Signing in\u2026';
-            });
-            // Back button restores the page from cache: undo the loading state.
-            window.addEventListener('pageshow', function () {
-                btn.classList.remove('is-loading');
-                btn.textContent = 'Sign in';
-            });
-        })();
-    </script>
 </body>
 </html>
