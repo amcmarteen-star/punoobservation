@@ -1784,3 +1784,9 @@ html:has(> body.landing-page)::-webkit-scrollbar {
     .landing-lightbox figcaption { padding: 18px 20px 20px; gap: 6px; }
     .lightbox-count { margin-top: 6px; }
 }
+
+/* Nav links glide to their section instead of jumping. Off for people
+   who ask their system for reduced motion. */
+@media (prefers-reduced-motion: no-preference) {
+    html { scroll-behavior: smooth; }
+}
