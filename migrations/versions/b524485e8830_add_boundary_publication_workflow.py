@@ -32,9 +32,8 @@ def upgrade():
         batch_op.add_column(sa.Column('boundary_source_report_id', sa.Integer(), nullable=True))
         batch_op.create_foreign_key(None, 'users', ['boundary_published_by'], ['user_id'])
 
-    # Already dropped by 1433c81a5dc4 on most databases; IF EXISTS keeps
-    # this from aborting the upgrade when it is gone.
-    op.execute("ALTER TABLE users DROP CONSTRAINT IF EXISTS users_role_check")
+    with op.batch_alter_table('users', schema=None) as batch_op:
+        batch_op.drop_constraint(batch_op.f('users_role_check'), type_='check')
 
     # ### end Alembic commands ###
 

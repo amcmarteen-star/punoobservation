@@ -1,0 +1,3 @@
+since the location is in centroid the soil type may be 
+innacurate since a single barangay may have different 
+kinds of soil type, same with elevation

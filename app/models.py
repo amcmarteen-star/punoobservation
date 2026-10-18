@@ -79,6 +79,13 @@ class User(db.Model):
     )
     password_changed_at = db.Column(db.DateTime, nullable=True)
 
+    # Wrong passwords in a row. At LOGIN_MAX_ATTEMPTS the login is locked
+    # until locked_until (Manila time) and the count starts again.
+    failed_login_count = db.Column(
+        db.Integer, nullable=False, default=0, server_default='0'
+    )
+    locked_until = db.Column(db.DateTime, nullable=True)
+
     # Relationships
     # reports = db.relationship('MonitoringReport', backref='officer', lazy=True)
     notifications = db.relationship('Notification', backref='user', lazy=True)
@@ -187,6 +194,30 @@ class TreeSpecie(db.Model):
 
     # Relationship
     reforestation_records = db.relationship('ReforestationRecord', backref='species', lazy=True)
+
+
+class SpeciesCategory(db.Model):
+    """
+    One CENRO use category for one species (Timber, Agroforestry, ...).
+
+    A row per pair, so a species can be in several. The allowed names
+    are SPECIES_CATEGORIES in app/services/recommender.py; rows are
+    loaded by scripts/tools/load_species_categories.py.
+    """
+    __tablename__ = 'species_category'
+
+    id = db.Column(db.Integer, primary_key=True)
+    species_id = db.Column(
+        db.Integer,
+        db.ForeignKey('tree_specie.tree_id', ondelete='CASCADE'),
+        nullable=False, index=True,
+    )
+    category = db.Column(db.String(50), nullable=False)
+
+    __table_args__ = (
+        db.UniqueConstraint('species_id', 'category',
+                            name='uq_species_category'),
+    )
 
 
 class ReforestationRecord(db.Model):
@@ -382,6 +413,10 @@ class Request(db.Model):
     description = db.Column(db.Text, nullable=True)
     proposed_area_ha = db.Column(db.Float, nullable=True)
     contact_number = db.Column(db.String(30), nullable=True)
+    # Required on the form since October 2026. Older requests have none,
+    # so the columns stay nullable.
+    contact_name = db.Column(db.String(120), nullable=True)
+    contact_email = db.Column(db.String(120), nullable=True)
 
     # Submitted | Under Review | Approved | Rejected
     status = db.Column(db.String(30), nullable=False, default='Submitted')
@@ -413,6 +448,18 @@ class Request(db.Model):
     # --- seedlings needed (planning estimate) ---
     planting_density_per_ha = db.Column(db.Integer, nullable=True)
     estimated_seedlings = db.Column(db.Integer, nullable=True)
+
+    # --- adoption ---
+    # The existing site an Adoption request asks to take on. Empty for
+    # every other request type. Not to be confused with Site.source_request,
+    # which links a NEW site back to the request that created it.
+    adopted_site_id = db.Column(
+        db.Integer, db.ForeignKey('site.site_id'), nullable=True
+    )
+    adopted_site = db.relationship(
+        'Site', foreign_keys=[adopted_site_id],
+        backref=db.backref('adoption_requests', lazy=True),
+    )
 
     location = db.relationship('Location', backref='requests')
 

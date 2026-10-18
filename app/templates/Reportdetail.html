@@ -17,27 +17,20 @@
   the officer can see what was wrong with it.
 #}
 
-
 {% block extra_head %}
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <style>
-  /* ================= PHONE LAYOUT (<= 720px) =================
-     Phone-only. Nothing here applies on larger screens. */
   @media (max-width: 720px) {
 
-    /* ---------- Header ---------- */
     .um-header h2 { font-size: 1.25rem; }
     .um-title-row { flex-wrap: wrap; gap: 0.5rem; }
     .um-back-link { min-height: 44px; display: inline-flex; align-items: center; }
 
-    /* ---------- Survival headline ---------- */
     .rep-headline { gap: 0.75rem; padding: 0.9rem 1rem; }
     .rep-headline .big { font-size: 2rem; }
 
-    /* ---------- Panels ---------- */
     .um-panel { padding: 1rem 0.9rem; }
 
-    /* Fact tiles: two per row; the location (longest value) takes a full row */
     .um-fact-grid {
       display: grid !important;
       grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
@@ -47,7 +40,6 @@
     .um-fact .val { overflow-wrap: anywhere; }
     .um-fact-grid .um-fact:first-child { grid-column: 1 / -1; }
 
-    /* ---------- Survival calculation: label left, value right ---------- */
     .um-panel .rep-calc-line {
       display: flex; justify-content: space-between; align-items: flex-start;
       gap: 1rem;
@@ -59,10 +51,7 @@
     }
     .um-panel .rep-calc-line .val .rep-badge-flag { margin-top: 0.3rem; }
 
-    /* ---------- Plot counts: one small card per plot ----------
-       Line 1:  Plot 3                         Alive 46
-       Line 2:  [=====================  bar  ==========]
-       Line 3:  Notes (only when there are some)               */
+    /* Plot counts: one small card per plot, every part titled */
     .um-panel .um-table-card {
       border: 0; background: none; box-shadow: none; padding: 0; overflow: visible;
     }
@@ -89,81 +78,47 @@
     }
 
     #plotsTable tbody td {
-  height: auto !important; min-height: 0 !important;
-  min-width: 0 !important; max-width: none !important;
-  padding: 0 !important; border: 0 !important;
-  box-shadow: none !important;
-  background: transparent !important;
-  position: static !important; left: auto !important; z-index: auto !important;
-  text-align: left; white-space: normal !important; overflow: visible !important;
-}
-#plotsTable tbody td::after { content: none !important; }
-
-/* The small title above every value */
-#plotsTable tbody td::before {
-  display: block;
-  margin-bottom: 0.2rem;
-  font-size: 0.68rem; font-weight: 600; letter-spacing: 0.05em;
-  text-transform: uppercase; color: var(--text-2);
-}
-
-/* Line 1 left: PLOT / 3 */
-#plotsTable td[data-label="Plot"] {
-  order: 1; flex: 1 1 0;
-  font-size: 1.15rem; font-weight: 700; color: var(--text-heading);
-}
-#plotsTable td[data-label="Plot"]::before { content: "Plot" !important; }
-
-/* Line 1 right: ALIVE SEEDLINGS / 46 */
-#plotsTable td[data-label="Alive"] {
-  order: 2; flex: 0 0 auto; text-align: right;
-  font-size: 1.15rem; font-weight: 700; color: var(--text-heading);
-}
-#plotsTable td[data-label="Alive"]::before { content: "Alive seedlings" !important; }
-
-/* Line 2: RELATIVE TO MEAN / bar */
-#plotsTable td[data-label="Relative to mean"] { order: 3; flex: 0 0 100%; }
-#plotsTable td[data-label="Relative to mean"]::before {
-  content: "Relative to mean" !important;
-}
-#plotsTable .rep-bar-track { width: 100%; }
-
-/* Line 3: NOTES / text (only when the plot has a note) */
-#plotsTable td[data-label="Notes"] { order: 4; flex: 0 0 100%; }
-#plotsTable td[data-label="Notes"]::before { content: "Notes" !important; }
-#plotsTable td.no-note { display: none !important; }
-    #plotsTable tbody td::before,
+      height: auto !important; min-height: 0 !important;
+      min-width: 0 !important; max-width: none !important;
+      padding: 0 !important; border: 0 !important;
+      box-shadow: none !important;
+      background: transparent !important;
+      position: static !important; left: auto !important; z-index: auto !important;
+      text-align: left; white-space: normal !important; overflow: visible !important;
+    }
     #plotsTable tbody td::after { content: none !important; }
 
-    #plotsTable td[data-label="Plot"] {
-      order: 1; flex: 1 1 0;
-      font-weight: 700; color: var(--text-heading);
-    }
-    #plotsTable td[data-label="Plot"]::before { content: "Plot " !important; }
-
-    #plotsTable td[data-label="Alive"] {
-      order: 2; flex: 0 0 auto; text-align: right; font-size: 1.1rem;
-    }
-    #plotsTable td[data-label="Alive"]::before {
-      content: "Alive " !important;
-      font-size: 0.72rem; font-weight: 600; letter-spacing: 0.04em;
+    #plotsTable tbody td::before {
+      display: block;
+      margin-bottom: 0.2rem;
+      font-size: 0.68rem; font-weight: 600; letter-spacing: 0.05em;
       text-transform: uppercase; color: var(--text-2);
     }
 
+    #plotsTable td[data-label="Plot"] {
+      order: 1; flex: 1 1 0;
+      font-size: 1.15rem; font-weight: 700; color: var(--text-heading);
+    }
+    #plotsTable td[data-label="Plot"]::before { content: "Plot" !important; }
+
+    #plotsTable td[data-label="Alive"] {
+      order: 2; flex: 0 0 auto; text-align: right;
+      font-size: 1.15rem; font-weight: 700; color: var(--text-heading);
+    }
+    #plotsTable td[data-label="Alive"]::before { content: "Alive seedlings" !important; }
+
     #plotsTable td[data-label="Relative to mean"] { order: 3; flex: 0 0 100%; }
+    #plotsTable td[data-label="Relative to mean"]::before {
+      content: "Relative to mean" !important;
+    }
     #plotsTable .rep-bar-track { width: 100%; }
 
     #plotsTable td[data-label="Notes"] { order: 4; flex: 0 0 100%; }
-    #plotsTable td[data-label="Notes"]::before {
-      content: "Notes: " !important;
-      font-weight: 600; color: var(--text-2);
-    }
+    #plotsTable td[data-label="Notes"]::before { content: "Notes" !important; }
     #plotsTable td.no-note { display: none !important; }
 
-    /* ---------- Boundary map ---------- */
     .rep-map { height: 280px; }
 
-    /* ---------- Photos: two per row ---------- */
     .rep-photo-grid {
       display: grid !important;
       grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
@@ -173,7 +128,6 @@
     .rep-photo-card img { width: 100%; height: auto; }
     .rep-photo-meta { font-size: 0.72rem; overflow-wrap: anywhere; }
 
-    /* ---------- Decision form: stacked, finger-sized ---------- */
     .rep-decision-row {
       display: flex !important; flex-direction: column;
       align-items: stretch !important; gap: 0.75rem;
@@ -181,7 +135,7 @@
     .rep-decision-row .um-field { width: 100%; flex: 0 0 auto; }
     .rep-decision-row select,
     .rep-decision-row input[type="text"] {
-      width: 100%; min-height: 44px; font-size: 16px; /* no iOS zoom */
+      width: 100%; min-height: 44px; font-size: 16px;
     }
     .rep-decision-row .um-btn-add {
       width: 100%; min-height: 48px; justify-content: center;
@@ -190,7 +144,6 @@
     .um-alert { font-size: 0.85rem; line-height: 1.55; }
   }
 </style>
-
 {% endblock %}
 
 {% block content %}
@@ -281,6 +234,11 @@
 </div>
 
 <!-- ============ CALCULATION ============ -->
+{# A whole-site count (sites under 20 ha) stores no plot size: there are
+   no plots, and nothing is estimated. Older reports always have one.
+   plan is the rule for this site's size today (sampling_plan). #}
+{% set full_count = report.plot_size_sqm is none %}
+{% set plan = sampling_plan(report.site.area_size_ha) if report.site else none %}
 <div class="um-panel">
   <div class="um-panel-head">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="16" height="20" x="4" y="2" rx="2"/><line x1="8" x2="16" y1="6" y2="6"/><line x1="16" x2="16" y1="14" y2="18"/><path d="M16 10h.01"/><path d="M12 10h.01"/><path d="M8 10h.01"/><path d="M12 14h.01"/><path d="M8 14h.01"/><path d="M12 18h.01"/><path d="M8 18h.01"/></svg>
@@ -288,27 +246,41 @@
   </div>
 
   <div class="rep-calc-line">
-    <span class="lbl">Plots recorded</span>
-    <span class="val">{{ report.plots_recorded }}</span>
+    <span class="lbl">Method</span>
+    <span class="val val-sm">
+      {% if full_count %}Whole site counted{% else %}Sampling plots{% endif %}
+    </span>
   </div>
   <div class="rep-calc-line">
-    <span class="lbl">Plot size</span>
-    <span class="val">{{ report.plot_size_sqm }} m&sup2;</span>
+    <span class="lbl">{{ 'Parts counted' if full_count else 'Plots recorded' }}</span>
+    <span class="val">
+      {{ report.plots_recorded }}{% if not full_count and plan and plan.method == 'plots' %} of {{ plan.plots_needed }}{% endif %}
+    </span>
   </div>
+  {% if not full_count %}
+  <div class="rep-calc-line">
+    <span class="lbl">Plot size</span>
+    <span class="val">{{ '%g'|format(report.plot_size_sqm) }} m&sup2;</span>
+  </div>
+  {% endif %}
   <div class="rep-calc-line">
     <span class="lbl">Total counted alive</span>
     <span class="val">{{ "{:,}".format(report.total_counted or 0) }}</span>
   </div>
+  {% if not full_count %}
   <div class="rep-calc-line">
     <span class="lbl">Mean per plot</span>
     <span class="val">{{ report.mean_per_plot }} (sd {{ report.stdev_per_plot }})</span>
   </div>
+  {% endif %}
   <div class="rep-calc-line">
     <span class="lbl">Sampling intensity</span>
     <span class="val">
       {{ report.sampling_intensity }}%
-      {% if report.sampling_intensity and report.sampling_intensity < 5 %}
-        <span class="rep-badge-flag">below 5% reference</span>
+      {# against the rule for this site's size: 100% under 20 ha, else 10% #}
+      {% if plan and report.sampling_intensity is not none
+            and report.sampling_intensity < plan.target_pct %}
+        <span class="rep-badge-flag">below {{ '%g'|format(plan.target_pct) }}% required for this site</span>
       {% endif %}
     </span>
   </div>
@@ -317,7 +289,7 @@
     <span class="val">{{ "{:,.0f}".format(report.density_per_ha or 0) }} per ha</span>
   </div>
   <div class="rep-calc-line">
-    <span class="lbl">Estimated survivors</span>
+    <span class="lbl">{{ 'Survivors counted' if full_count else 'Estimated survivors' }}</span>
     <span class="val">{{ "{:,}".format(report.estimated_survivors or 0) }}</span>
   </div>
 
@@ -333,7 +305,7 @@
 <div class="um-panel">
   <div class="um-panel-head">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h.01"/><path d="M3 18h.01"/><path d="M3 6h.01"/><path d="M8 12h13"/><path d="M8 18h13"/><path d="M8 6h13"/></svg>
-    <h3>Plot counts</h3>
+    <h3>{{ 'Counts by part' if full_count else 'Plot counts' }}</h3>
   </div>
 
   <div class="um-table-card">
@@ -375,10 +347,12 @@
     {% endif %}
   </div>
 
+  {% if not full_count %}
   <p class="text-secondary small mt-2 mb-0">
     Amber bars mark plots below half the mean. Wide variation suggests survival
     is uneven across the site.
   </p>
+  {% endif %}
 </div>
 
 <!-- ============ BOUNDARY ============ -->
@@ -576,9 +550,9 @@
   (function () {
     const map = L.map('boundaryMap');
 
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    L.tileLayer(MAP_TILES.street.url, {
       maxZoom: 19,
-      attribution: '&copy; OpenStreetMap contributors',
+      attribution: MAP_TILES.street.attribution,
     }).addTo(map);
 
     const boundary = {{ report.boundary_geojson | safe }};

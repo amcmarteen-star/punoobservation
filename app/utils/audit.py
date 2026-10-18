@@ -52,7 +52,7 @@ def log_action(action, entity_type=None, entity_id=None, detail=None,
         db.session.rollback()
 
 
-def log_login(username, success, role=None, user_id=None):
+def log_login(username, success, role=None, user_id=None, detail=None):
     """
     Login attempts, including failures.
 
@@ -67,7 +67,7 @@ def log_login(username, success, role=None, user_id=None):
             action='login' if success else 'login_failed',
             entity_type='users',
             entity_id=user_id,
-            detail=None if success else 'Incorrect username or password',
+            detail=detail or (None if success else 'Incorrect username or password'),
             ip_address=request.remote_addr if request else None,
         )
         db.session.add(entry)

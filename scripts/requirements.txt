@@ -1,0 +1,7 @@
+# Packages the scripts need on top of the web app's own requirements.
+#   pip install -r scripts/requirements.txt
+-r ../requirements.txt
+
+requests        # get_elevation, get_climate (online data services)
+geopandas       # get_soil (reads the soil shapefile)
+shapely         # get_soil

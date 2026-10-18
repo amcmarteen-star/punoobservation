@@ -1,5 +1,24 @@
-in the overview the penro whould still be able to view the details but only the approved and the PENRO can not see the button, it should be replace with report like template
-e.g. Approved by "CENRO OFFICER/name"
 
-suggestions or random thoughts to review:
- user can uploads the boundaries when requesting reforestation
+
+October::
+Test The accuracy of the boundary publications
+
+
+Revise the table remove sensitive data columns
+
+
+review the map (yung sinabi ni sir sherwin) :: locus map
+
+Test deployment
+
+add email validation for acc creation and forgot password
+
+salinity for barangays
+
+ask if how the reference dataset gathering would be, climate and soil type since soil type is in BSWM
+
+remove the sensitive data in tables
+
+ask about the sampling requirement kay roniel
+
+optimize the mobile integration

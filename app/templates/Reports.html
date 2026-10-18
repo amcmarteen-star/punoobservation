@@ -23,6 +23,9 @@ endblock %} {% set active_page = 'reports' %} {% block content %}
   action="{{ url_for('dashboard.submit_report') }}"
   enctype="multipart/form-data"
   id="reportForm"
+  data-upload-form
+  data-upload-title="Submitting report"
+  data-upload-processing="Reading photo locations..."
 >
   <!-- ============ STEP 1 : LOCATION ============ -->
   <div class="um-panel">
@@ -116,23 +119,38 @@ endblock %} {% set active_page = 'reports' %} {% block content %}
     </div>
   </div>
 
-  <!-- ============ STEP 2 : SAMPLING PLOTS ============ -->
+  <!-- ============ STEP 2 : SURVIVAL COUNT ============ -->
+  {# The DENR rule, from sampling_plan() in app/services/monitoring.py:
+     the whole site under 20 ha, otherwise 100 m plots covering 10%. #}
+  {% set full_below = '%g'|format(sampling_rule.fullCountBelowHa) %}
+  {% set target_pct = '%g'|format(sampling_rule.targetPct) %}
+  {% set plot_side = (sampling_rule.plotSqm ** 0.5)|round|int %}
   <div class="um-panel">
     <div class="um-panel-head">
       <span class="um-step-num">2</span>
-      <h3>Sampling plots</h3>
+      <h3>Survival count</h3>
     </div>
 
     <div class="um-note">
       <strong>How to do this.</strong>
-      Lay out square plots of equal size spread across the site. In each plot,
-      count only the seedlings that are <strong>alive</strong>. Enter one row
-      per plot below. <br /><br />
-      DENR uses a <strong>5% sampling intensity</strong>: the plots together
-      cover 5% of the site area. Pick a plot size below, and the
-      <strong>plot plan</strong> tells you how many plots to lay out for this
-      site. <br /><br />
-      You do not type the survival rate. It is calculated from your counts.
+      Count only the seedlings that are <strong>alive</strong>. How you count
+      depends on the size of the site:
+      <ul class="rep-rule">
+        <li>
+          <strong>Under {{ full_below }} ha:</strong> count every live
+          seedling on the whole site. You can count it in parts, one row per
+          part.
+        </li>
+        <li>
+          <strong>{{ full_below }} ha and over:</strong> lay out plots of
+          <strong>{{ plot_side }} m &times; {{ plot_side }} m</strong>, spread
+          across the site, until they cover <strong>{{ target_pct }}%</strong>
+          of it. One row per plot.
+        </li>
+      </ul>
+      The <strong>count plan</strong> below shows which one applies to the
+      site you chose. You do not type the survival rate. It is calculated
+      from your counts.
     </div>
 
     <div class="um-field-row mb-3">
@@ -147,60 +165,35 @@ endblock %} {% set active_page = 'reports' %} {% block content %}
           required
         />
       </div>
-
-      <div class="um-field">
-        <label for="plot_size_choice"
-          >Plot size <span class="um-req">*</span></label
-        >
-        <!-- People measure a square with a tape, so the choices are side
-             lengths. The m² value the server needs goes in plot_size_sqm. -->
-        <select id="plot_size_choice">
-          <option value="25">5 m &times; 5 m (25 m&sup2;)</option>
-          <option value="100">10 m &times; 10 m (100 m&sup2;)</option>
-          <option value="400" selected>20 m &times; 20 m (400 m&sup2;)</option>
-          <option value="other">Other size</option>
-        </select>
-        <div id="plotSizeOther" hidden>
-          <label for="plot_size_sqm" class="um-field-hint"
-            >Plot area in m&sup2; (one side &times; the other)</label
-          >
-          <input
-            type="number"
-            step="1"
-            min="1"
-            name="plot_size_sqm"
-            id="plot_size_sqm"
-            value="400"
-            required
-          />
-        </div>
-        <p class="um-field-hint">Use the same size for every plot.</p>
-      </div>
     </div>
 
-    <!-- ============ PLOT PLAN ============ -->
-    <!-- Filled by updatePlotHint(): plots needed for 5% on the chosen site,
-         and how many have been entered so far. -->
+    <!-- ============ COUNT PLAN ============ -->
+    <!-- Filled by updatePlotHint(): how this site is counted, and for a
+         plot survey how many plots are needed and entered so far. -->
     <div class="rep-plan" id="plotPlan" aria-live="polite">
       <p class="rep-plan-empty" id="plotPlanEmpty">
-        Choose a site in step 1 to see how many plots you need.
+        Choose a site in step 1 to see how to count it.
       </p>
       <div id="plotPlanBody" hidden>
-        <div class="rep-plan-head">Plot plan for this site</div>
+        <div class="rep-plan-head">Count plan for this site</div>
         <div class="rep-calc-line">
           <span class="lbl">Site area</span>
           <span class="val" id="planArea">—</span>
         </div>
         <div class="rep-calc-line">
-          <span class="lbl">Plot size</span>
-          <span class="val" id="planSize">—</span>
+          <span class="lbl">Method</span>
+          <span class="val" id="planMethod">—</span>
         </div>
-        <div class="rep-calc-line">
-          <span class="lbl">Plots needed for 5%</span>
+        <div class="rep-calc-line" id="planSizeLine">
+          <span class="lbl">Plot size</span>
+          <span class="val">{{ plot_side }} m &times; {{ plot_side }} m
+            ({{ '%g'|format(sampling_rule.plotSqm / 10000) }} ha)</span>
+        </div>
+        <div class="rep-calc-line" id="planNeededLine">
+          <span class="lbl">Plots needed for {{ target_pct }}%</span>
           <span class="val" id="planNeeded">—</span>
         </div>
         <div class="rep-plan-status" id="planStatus"></div>
-        <p class="rep-plan-tip" id="planTip" hidden></p>
         <button type="button" class="um-btn-outline mt-2" id="planAddRows"
                 onclick="addRowsToPlan()">
           Add rows for all plots
@@ -229,28 +222,34 @@ endblock %} {% set active_page = 'reports' %} {% block content %}
         <path d="M5 12h14" />
         <path d="M12 5v14" />
       </svg>
-      Add plot
+      <span id="addRowLabel">Add row</span>
     </button>
     <p class="um-field-hint">
-      Photographs for these plots are attached in step 3.
+      Photographs for these counts are attached in step 3.
     </p>
 
     <!-- live calculation -->
     <div class="rep-calc" id="calcPanel">
       <div class="text-secondary">
-        Enter plot counts to see the survival calculation.
+        Enter counts to see the survival calculation.
       </div>
     </div>
 
-    <div class="um-note-warn">
+    {# Only the one for the chosen site's method shows (updatePlotHint). #}
+    <div class="um-note-warn" id="plotsWarn" hidden>
       <strong>Please read.</strong>
       This estimate assumes seedlings are distributed evenly across the site.
       Plots placed only in healthy areas, or only in poor ones, will not
       represent the site. Spread them out.
       <br /><br />
       The result is an <strong>estimate from a sample</strong>, not a full
-      count. A low sampling intensity or wide variation between plots makes it
-      less reliable, and the calculation will say so.
+      count. Fewer plots than the plan, or wide variation between plots,
+      makes it less reliable, and the calculation will say so.
+    </div>
+    <div class="um-note-warn" id="fullWarn" hidden>
+      <strong>Please read.</strong>
+      Count every part of the site exactly once. A part counted twice, or
+      missed, changes the survival rate directly.
     </div>
   </div>
 
@@ -279,6 +278,8 @@ endblock %} {% set active_page = 'reports' %} {% block content %}
         id="plot_photos"
         multiple
         accept="image/*"
+        data-upload-zone
+        data-max-mb="15"
       />
       <p class="um-field-hint">
         Evidence of what you counted. One per plot is ideal.
@@ -295,6 +296,8 @@ endblock %} {% set active_page = 'reports' %} {% block content %}
         id="boundary_photos"
         multiple
         accept="image/*"
+        data-upload-zone
+        data-max-mb="15"
       />
       <p class="um-field-hint">
         Stand at each corner of the site and take one photo.
@@ -360,6 +363,15 @@ endblock %} {% set active_page = 'reports' %} {% block content %}
     display: none !important;
   }
 
+  .rep-rule {
+    margin: 0.5rem 0 0.6rem;
+    padding-left: 1.2rem;
+  }
+
+  .rep-rule li + li {
+    margin-top: 0.3rem;
+  }
+
   .rep-proposed {
     margin-top: 0.9rem;
   }
@@ -375,21 +387,18 @@ endblock %} {% set active_page = 'reports' %} {% block content %}
     font-size: 0.78rem;
     line-height: 1.5;
     color: #dcfce7;
-    /* ================= PHONE LAYOUT (<= 720px) =================
-   Phone-only. Nothing here applies on larger screens. */
+    #siteTitle .st-loc { display: none; }
+.rep-plot-field { display: contents; }
+.rep-plot-lbl { display: none; }
 @media (max-width: 720px) {
 
-  /* ---------- Header ---------- */
   .um-header { flex-wrap: wrap; gap: 0.75rem; }
   .um-header h2 { font-size: 1.25rem; }
   .um-header .um-btn-ghost { width: 100%; justify-content: center; min-height: 44px; }
-  
 
-  /* ---------- Step panels ---------- */
   #reportForm .um-panel { padding: 1rem 0.9rem; }
   #reportForm .um-panel-head { gap: 0.6rem; }
 
-  /* ---------- Fields: one per line, finger-sized ---------- */
   #reportForm .um-field-row {
     display: flex !important; flex-direction: column;
     gap: 0.75rem;
@@ -401,14 +410,13 @@ endblock %} {% set active_page = 'reports' %} {% block content %}
   #reportForm select,
   #reportForm textarea {
     width: 100%; min-height: 44px;
-    font-size: 16px;               /* stops iOS zooming in on focus */
+    font-size: 16px;
   }
   #reportForm textarea { min-height: 7rem; }
   #reportForm input[type="file"] {
     width: 100%; min-height: 44px; font-size: 16px;
   }
 
-  /* ---------- Site facts: two per row ---------- */
   #reportForm .um-fact-grid {
     display: grid !important;
     grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
@@ -418,12 +426,15 @@ endblock %} {% set active_page = 'reports' %} {% block content %}
   #reportForm .um-fact .val { overflow-wrap: anywhere; }
   #reportForm .site-title { overflow-wrap: anywhere; }
 
+  /* Site title: name / code / location on separate lines */
+  #siteTitle span { display: block; }
+  #siteTitle .st-sep { display: none; }
+  #siteTitle .st-code { margin-top: 0.15rem; font-size: 0.85rem; opacity: 0.9; }
+  #siteTitle .st-loc { display: block; margin-top: 0.4rem; font-size: 0.8rem; opacity: 0.85; }
+
   .rep-proposed-map { height: 200px; }
 
-  /* ---------- Plot plan + live calculation ---------- */
-  #reportForm .rep-calc-line {
-    gap: 1rem; align-items: baseline;
-  }
+  #reportForm .rep-calc-line { gap: 1rem; align-items: baseline; }
   #reportForm .rep-calc-line .val { text-align: right; overflow-wrap: anywhere; }
   #reportForm .rep-plan-status { line-height: 1.5; }
 
@@ -434,35 +445,54 @@ endblock %} {% set active_page = 'reports' %} {% block content %}
   }
   #reportForm #planAddRows[hidden] { display: none !important; }
 
-  /* ---------- Plot rows ----------
-     Line 1:  [ # ]  [ Alive count ........ ]  [ x ]
-     Line 2:  [ Notes (optional) ............... ]       */
+  /* Plot rows: one small card per plot */
   #reportForm .rep-plot-head { display: none !important; }
 
   #reportForm .rep-plot-row {
     display: grid !important;
-    grid-template-columns: 2rem minmax(0, 1fr) 44px;
+    grid-template-columns: minmax(0, 1fr) 44px;
     grid-template-areas:
-      "num count remove"
-      "note note note";
+      "num remove"
+      "count count"
+      "note note";
     gap: 0.5rem; align-items: center;
-    padding: 0.7rem 0;
-    border-top: 1px solid var(--line);
-  }
-  #reportForm .rep-plot-num { grid-area: num; text-align: center; }
-  #reportForm .rep-plot-row input[name="plot_count"] { grid-area: count; }
-  #reportForm .rep-plot-row input[name="plot_note"]  { grid-area: note; }
-  #reportForm .rep-plot-remove {
-    grid-area: remove; width: 44px; height: 44px;
-    display: inline-flex; align-items: center; justify-content: center;
-    font-size: 1.4rem;
+    margin: 0 0 0.75rem; padding: 0.7rem 0.85rem 0.85rem;
+    border: 1px solid var(--line); border-radius: 12px;
+    background: var(--surface-1);
   }
 
-  /* ---------- Warnings and notes ---------- */
+  #reportForm .rep-plot-num {
+    grid-area: num;
+    display: block; width: auto !important; height: auto !important;
+    padding: 0 !important; border: 0 !important; border-radius: 0 !important;
+    background: none !important;
+    text-align: left; font-size: 0.95rem; font-weight: 700;
+    color: var(--text-heading);
+  }
+  #reportForm .rep-plot-num::before { content: "Plot "; }
+
+  #reportForm .rep-plot-field {
+    display: flex; flex-direction: column; gap: 0.3rem; min-width: 0;
+  }
+  #reportForm .rep-plot-field-count { grid-area: count; }
+  #reportForm .rep-plot-field-note  { grid-area: note; }
+  #reportForm .rep-plot-lbl {
+    display: block;
+    font-size: 0.72rem; font-weight: 600; letter-spacing: 0.04em;
+    text-transform: uppercase; color: var(--text-2);
+  }
+  #reportForm .rep-plot-field-count input { font-size: 18px; font-weight: 600; }
+
+  #reportForm .rep-plot-remove {
+    grid-area: remove; justify-self: end;
+    width: 44px; height: 44px;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 1.5rem;
+  }
+
   #reportForm .um-note,
   #reportForm .um-note-warn { font-size: 0.85rem; line-height: 1.55; }
 
-  /* ---------- Submit row: button on top, explanation underneath ---------- */
   #reportForm .d-flex.align-items-center.gap-2.mt-3 {
     flex-direction: column; align-items: stretch !important; gap: 0.6rem !important;
   }
@@ -474,6 +504,7 @@ endblock %} {% set active_page = 'reports' %} {% block content %}
   }
 </style>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script type="application/json" id="sampling-rule">{{ sampling_rule | tojson }}</script>
 <script>
   // ---------- cascading location pickers ----------
   let currentSite = null;
@@ -600,10 +631,10 @@ endblock %} {% set active_page = 'reports' %} {% block content %}
 
     if (!proposedMap) {
       proposedMap = L.map("proposedMap", { scrollWheelZoom: false });
-      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-        maxZoom: 19,
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-      }).addTo(proposedMap);
+      L.tileLayer(MAP_TILES.street.url, {
+      maxZoom: 19,
+      attribution: MAP_TILES.street.attribution,
+    }).addTo(proposedMap);
     }
     if (proposedLayer) proposedMap.removeLayer(proposedLayer);
     proposedLayer = L.featureGroup().addTo(proposedMap);
@@ -686,23 +717,24 @@ if (brgyName || muniName) {
     updatePlotHint();
   }
 
-  // The officer chooses the plot size before going out and lays out that
-  // same square at every sampling point. The plot plan turns the 5% rule
-  // into a number to aim for, and counts the plots entered against it,
-  // rather than a warning they only receive after the field work.
-  const MIN_PLOTS = 3;    // fewer and the server cannot judge variation
-  const MANY_PLOTS = 60;  // past this, suggest a bigger plot
+  // The DENR count rule, from sampling_plan() in app/services/monitoring.py
+  // and written nowhere else: the whole site under fullCountBelowHa,
+  // otherwise plots of plotSqm covering targetPct of it. The plan shows
+  // the officer which applies before the field work, not after.
+  const RULE = JSON.parse(document.getElementById("sampling-rule").textContent);
+  const PLOT_SIDE = Math.round(Math.sqrt(RULE.plotSqm));
 
-  // Plots for 5%, same rule as compute_survival(): plots x plot area must
-  // reach 5% of the site. Worked in m\u00B2 with a small tolerance, so a
-  // floating-point 5.000000001 does not round up to one plot too many.
-  function plotsFor5Percent() {
-    const size = parseFloat(document.getElementById("plot_size_sqm").value);
-    if (!currentSite || !currentSite.area_size_ha || !size || size <= 0) {
-      return null;
-    }
-    const sqmNeeded = currentSite.area_size_ha * 10000 * 0.05;
-    return Math.max(1, Math.ceil(sqmNeeded / size - 1e-9));
+  // Same as sampling_plan(). The small tolerance keeps 2.0000001 plots
+  // at 2, not 3.
+  function countPlan() {
+    const area = currentSite && currentSite.area_size_ha;
+    if (!(area > 0)) return null;
+    if (area < RULE.fullCountBelowHa) return { method: "full", needed: 1 };
+    const plotHa = RULE.plotSqm / 10000;
+    const needed = Math.max(
+      1, Math.ceil((area * RULE.targetPct) / 100 / plotHa - 1e-9),
+    );
+    return { method: "plots", needed: needed };
   }
 
   function updatePlotHint() {
@@ -710,13 +742,14 @@ if (brgyName || muniName) {
     const body = document.getElementById("plotPlanBody");
     if (!empty || !body) return;
 
-    const size = parseFloat(document.getElementById("plot_size_sqm").value);
-    const for5 = plotsFor5Percent();
+    const plan = countPlan();
+    document.getElementById("plotsWarn").hidden = !plan || plan.method !== "plots";
+    document.getElementById("fullWarn").hidden = !plan || plan.method !== "full";
 
-    if (for5 === null) {
+    if (!plan) {
       empty.textContent = currentSite
-        ? "Enter a plot size to see how many plots you need."
-        : "Choose a site in step 1 to see how many plots you need.";
+        ? "This site has no recorded area, so it cannot be planned."
+        : "Choose a site in step 1 to see how to count it.";
       empty.hidden = false;
       body.hidden = true;
       return;
@@ -725,77 +758,82 @@ if (brgyName || muniName) {
     empty.hidden = true;
     body.hidden = false;
 
-    const needed = Math.max(for5, MIN_PLOTS);
-    const side = Math.sqrt(size);
-    const sideText = Number.isInteger(side)
-      ? `${side} m \u00D7 ${side} m`
-      : `about ${side.toFixed(1)} m \u00D7 ${side.toFixed(1)} m`;
-
+    const full = plan.method === "full";
     document.getElementById("planArea").textContent =
       currentSite.area_size_ha + " ha";
-    document.getElementById("planSize").textContent =
-      `${sideText} (${size} m\u00B2)`;
+    document.getElementById("planMethod").textContent = full
+      ? `Count the whole site (under ${RULE.fullCountBelowHa} ha)`
+      : `Plots covering ${RULE.targetPct}% of the site`;
+    document.getElementById("planSizeLine").hidden = full;
+    document.getElementById("planNeededLine").hidden = full;
     document.getElementById("planNeeded").textContent =
-      needed + (needed === 1 ? " plot" : " plots");
+      plan.needed + (plan.needed === 1 ? " plot" : " plots");
+    document.getElementById("addRowLabel").textContent =
+      full ? "Add part" : "Add plot";
 
     // progress: rows that actually have a count typed in
     const entered = [...document.querySelectorAll('input[name="plot_count"]')]
       .filter((i) => i.value.trim() !== "").length;
     const status = document.getElementById("planStatus");
-    const done = entered >= needed;
+    const addBtn = document.getElementById("planAddRows");
+
+    if (full) {
+      status.classList.toggle("done", entered > 0);
+      status.textContent = entered
+        ? `\u2713 Counted in ${entered} part${entered === 1 ? "" : "s"}. ` +
+          "Add a row for any part not counted yet."
+        : "Enter the count for the whole site, or one row per part.";
+      addBtn.hidden = true;
+      return;
+    }
+
+    const done = entered >= plan.needed;
     status.classList.toggle("done", done);
     status.textContent = done
-      ? `\u2713 ${entered} of ${needed} plots entered. That reaches 5%.`
-      : `${entered} of ${needed} plots entered. ` +
-        `${needed - entered} more to reach 5%.`;
-
-    const tip = document.getElementById("planTip");
-    if (for5 < MIN_PLOTS) {
-      tip.textContent =
-        `5% needs only ${for5} on this site, but record at least ` +
-        `${MIN_PLOTS} plots so the variation between them can be checked.`;
-      tip.hidden = false;
-    } else if (needed > MANY_PLOTS) {
-      tip.textContent =
-        "That is a lot of plots. A bigger plot size means fewer plots " +
-        "to lay out.";
-      tip.hidden = false;
-    } else {
-      tip.hidden = true;
-    }
+      ? `\u2713 ${entered} of ${plan.needed} plots entered. ` +
+        `That reaches ${RULE.targetPct}%.`
+      : `${entered} of ${plan.needed} plots entered. ` +
+        `${plan.needed - entered} more to reach ${RULE.targetPct}%.`;
 
     // offer to add the missing rows, until there are enough
     const rows = document.querySelectorAll("#plotRows .rep-plot-row").length;
-    const addBtn = document.getElementById("planAddRows");
-    addBtn.hidden = rows >= needed;
-    addBtn.textContent = `Add rows for all ${needed} plots`;
+    addBtn.hidden = rows >= plan.needed;
+    addBtn.textContent = `Add rows for all ${plan.needed} plots`;
   }
 
   function addRowsToPlan() {
-    const for5 = plotsFor5Percent();
-    if (for5 === null) return;
-    const needed = Math.max(for5, MIN_PLOTS);
+    const plan = countPlan();
+    if (!plan || plan.method !== "plots") return;
     const wrap = document.getElementById("plotRows");
-    while (wrap.children.length < needed) addPlotRow();
+    while (wrap.children.length < plan.needed) addPlotRow();
     updatePlotHint();
   }
 
   // ---------- plot rows ----------
   function addPlotRow() {
-    const wrap = document.getElementById("plotRows");
-    const n = wrap.children.length + 1;
+  const wrap = document.getElementById("plotRows");
+  const n = wrap.children.length + 1;
 
-    const row = document.createElement("div");
-    row.className = "rep-plot-row";
-    row.innerHTML = `
-      <span class="rep-plot-num">${n}</span>
-      <input type="number" name="plot_count" min="0" placeholder="0" aria-label="Seedlings counted in this plot" oninput="recalc()">
-      <input type="text" name="plot_note" placeholder="e.g. near the creek" aria-label="Note for this plot">
-      <button type="button" class="rep-plot-remove"
-              onclick="removePlotRow(this)" aria-label="Remove plot">&times;</button>
-    `;
-    wrap.appendChild(row);
-  }
+  const row = document.createElement("div");
+  row.className = "rep-plot-row";
+  row.innerHTML = `
+    <span class="rep-plot-num">${n}</span>
+    <label class="rep-plot-field rep-plot-field-count">
+      <span class="rep-plot-lbl">Alive seedlings counted</span>
+      <input type="number" name="plot_count" min="0" inputmode="numeric"
+             placeholder="0" aria-label="Seedlings counted in this plot"
+             oninput="recalc()">
+    </label>
+    <label class="rep-plot-field rep-plot-field-note">
+      <span class="rep-plot-lbl">Notes (optional)</span>
+      <input type="text" name="plot_note" placeholder="e.g. near the creek"
+             aria-label="Note for this plot">
+    </label>
+    <button type="button" class="rep-plot-remove"
+            onclick="removePlotRow(this)" aria-label="Remove plot">&times;</button>
+  `;
+  wrap.appendChild(row);
+}
 
   function removePlotRow(btn) {
     btn.closest(".rep-plot-row").remove();
@@ -809,33 +847,11 @@ if (brgyName || muniName) {
     });
   }
 
-  // start with three rows
-  addPlotRow();
-  addPlotRow();
+  // one row to start; the count plan offers the rest for a plot survey
   addPlotRow();
 
   // ---------- live calculation ----------
   let calcTimer = null;
-
-  document.getElementById("plot_size_sqm").addEventListener("input", () => {
-    recalc();
-    updatePlotHint();
-  });
-
-  // A preset writes its m² into plot_size_sqm; "Other size" shows that
-  // box so any size can be typed.
-  document.getElementById("plot_size_choice").addEventListener("change", function () {
-    const other = this.value === "other";
-    const input = document.getElementById("plot_size_sqm");
-    document.getElementById("plotSizeOther").hidden = !other;
-    if (other) {
-      input.focus();
-    } else {
-      input.value = this.value;
-    }
-    recalc();
-    updatePlotHint();
-  });
 
   function recalc() {
     updatePlotHint(); // the plot plan's progress updates without waiting
@@ -858,7 +874,7 @@ if (brgyName || muniName) {
 
     if (!counts.length) {
       panel.innerHTML =
-        '<div class="text-secondary">Enter plot counts to see the survival calculation.</div>';
+        '<div class="text-secondary">Enter counts to see the survival calculation.</div>';
       return;
     }
 
@@ -867,7 +883,6 @@ if (brgyName || muniName) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         counts: counts,
-        plot_size_sqm: document.getElementById("plot_size_sqm").value,
         site_area_ha: currentSite.area_size_ha,
         seedlings_planted: currentSite.actual_planted,
       }),
@@ -883,21 +898,33 @@ if (brgyName || muniName) {
     const line = (l, v) =>
       `<div class="rep-calc-line"><span class="lbl">${l}</span><span class="val">${v}</span></div>`;
 
-    let html =
-      line("Plots recorded", c.plots_recorded) +
-      line("Total counted alive", c.total_counted.toLocaleString()) +
-      line(
-        "Mean per plot",
-        c.mean_per_plot + " (sd " + c.stdev_per_plot + ")",
-      ) +
-      line(
-        "Area sampled",
-        c.area_sampled_ha + " ha of " + currentSite.area_size_ha + " ha",
-      ) +
-      line("Sampling intensity", c.sampling_intensity + "%") +
-      line("Density", c.density_per_ha.toLocaleString() + " per ha") +
-      line("Estimated survivors", c.estimated_survivors.toLocaleString()) +
-      line("Originally planted", currentSite.actual_planted.toLocaleString());
+    let html;
+    if (c.method === "full") {
+      // every seedling counted: nothing is estimated
+      html =
+        line("Method", "Whole site counted") +
+        line("Parts counted", c.plots_recorded) +
+        line("Area counted", currentSite.area_size_ha + " ha (100%)") +
+        line("Survivors counted", c.estimated_survivors.toLocaleString()) +
+        line("Originally planted", currentSite.actual_planted.toLocaleString());
+    } else {
+      html =
+        line("Method", `Plots, ${PLOT_SIDE} m \u00D7 ${PLOT_SIDE} m`) +
+        line("Plots recorded", `${c.plots_recorded} of ${c.plots_needed}`) +
+        line("Total counted alive", c.total_counted.toLocaleString()) +
+        line(
+          "Mean per plot",
+          c.mean_per_plot + " (sd " + c.stdev_per_plot + ")",
+        ) +
+        line(
+          "Area sampled",
+          c.area_sampled_ha + " ha of " + currentSite.area_size_ha + " ha",
+        ) +
+        line("Sampling intensity", c.sampling_intensity + "%") +
+        line("Density", c.density_per_ha.toLocaleString() + " per ha") +
+        line("Estimated survivors", c.estimated_survivors.toLocaleString()) +
+        line("Originally planted", currentSite.actual_planted.toLocaleString());
+    }
 
     if (c.survival_rate !== null) {
       const fail = !c.meets_threshold;

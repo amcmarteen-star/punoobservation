@@ -1025,13 +1025,7 @@
     loadDashboard();
   });
 </script>
-     window.addEventListener("pno-theme-change", function () {
-       applyChartTheme();
-       loadDashboard();
-     });
-   </script>
-   {% include 'partials/_dashboard_mobile.html' %}
-   {% block extra_scripts %}
+{% block extra_scripts %}
 <script>
   /* The clock is always Manila time, whatever the machine is set to, so
      the parts are read out of a formatter pinned to that zone rather than

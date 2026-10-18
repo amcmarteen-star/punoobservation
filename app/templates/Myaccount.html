@@ -26,7 +26,7 @@
 
   .acct-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(min(15rem, 100%), 1fr));
     gap: 0.9rem;
   }
 
@@ -129,6 +129,69 @@
     font-weight: 600;
     white-space: nowrap;
   }
+
+  /* ================= PHONE LAYOUT (<= 720px) =================
+     Phone-only. Nothing here applies on larger screens. */
+  @media (max-width: 720px) {
+
+    .acct-columns { gap: 1rem; }
+    .acct-columns > .um-panel { margin-bottom: 0; }
+
+    /* Account facts: one per row, label above value */
+    .acct-grid { grid-template-columns: 1fr; gap: 0.75rem; }
+
+    /* Form: 16px text stops iOS zooming in, and the button is a full-width target */
+    .acct-form input { min-height: 44px; font-size: 16px; }
+    .acct-form .um-btn-add {
+      width: 100%; min-height: 46px; justify-content: center;
+    }
+
+    /* Recent activity: each entry becomes a small card, no side scroll */
+    .acct-activity,
+    .acct-activity tbody,
+    .acct-activity tr,
+    .acct-activity td {
+      display: block;
+      width: 100%;
+    }
+
+    .acct-activity thead {
+      position: absolute;
+      width: 1px; height: 1px;
+      overflow: hidden;
+      clip: rect(0 0 0 0);
+    }
+
+    .acct-activity tr {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 0.2rem 0.8rem;
+      margin-bottom: 0.6rem;
+    }
+
+    .acct-activity td {
+      position: relative;
+      padding: 0.45rem 0 0.45rem 5.5rem;
+      border-bottom: 1px solid var(--surface-3);
+      overflow-wrap: anywhere;
+    }
+    .acct-activity td:last-child { border-bottom: none; }
+
+    .acct-activity td::before {
+      content: attr(data-label);
+      position: absolute;
+      left: 0;
+      top: 0.55rem;
+      width: 5rem;
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      color: var(--text-2);
+    }
+
+    .acct-when { white-space: normal; }
+  }
 </style>
 {% endblock %}
 
@@ -209,105 +272,109 @@
 <div class="acct-columns">
   <!-- ============ CHANGE PASSWORD ============ -->
   <div class="um-panel">
-  <div class="um-panel-head">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-    <h3>Change password</h3>
+    <div class="um-panel-head">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+      <h3>Change password</h3>
+    </div>
+
+    <form method="POST" action="{{ url_for('dashboard.my_account') }}"
+          class="acct-form" autocomplete="off">
+      <div class="um-field">
+        <label for="current_password">Current password</label>
+        <input
+          type="password"
+          name="current_password"
+          id="current_password"
+          autocomplete="current-password"
+          maxlength="{{ app_limits.passwordMax }}"
+          required
+        />
+        <p class="acct-hint">
+          Asked for so that nobody at an unlocked machine can change your
+          password.
+        </p>
+      </div>
+
+      <div class="um-field">
+        <label for="new_password">New password</label>
+        <input
+          type="password"
+          name="new_password"
+          id="new_password"
+          minlength="{{ app_limits.passwordMin }}" maxlength="{{ app_limits.passwordMax }}"
+          pattern="(?=.*[A-Za-z])(?=.*[0-9]).*" title="Use at least one letter and one number."
+          autocomplete="new-password"
+          required
+        />
+        <p class="acct-hint">{{ app_limits.passwordMin }} to {{ app_limits.passwordMax }} characters, with at least one letter and one number.</p>
+      </div>
+
+      <div class="um-field">
+        <label for="confirm_password">Confirm new password</label>
+        <input
+          type="password"
+          name="confirm_password"
+          id="confirm_password"
+          minlength="{{ app_limits.passwordMin }}" maxlength="{{ app_limits.passwordMax }}"
+          autocomplete="new-password"
+          required
+        />
+      </div>
+
+      <button type="submit" class="um-btn-add mt-3">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+        Change password
+      </button>
+    </form>
   </div>
-
-  <form method="POST" action="{{ url_for('dashboard.my_account') }}"
-        class="acct-form" autocomplete="off">
-    <div class="um-field">
-      <label for="current_password">Current password</label>
-      <input
-        type="password"
-        name="current_password"
-        id="current_password"
-        autocomplete="current-password"
-        required
-      />
-      <p class="acct-hint">
-        Asked for so that nobody at an unlocked machine can change your
-        password.
-      </p>
-    </div>
-
-    <div class="um-field">
-      <label for="new_password">New password</label>
-      <input
-        type="password"
-        name="new_password"
-        id="new_password"
-        minlength="8"
-        autocomplete="new-password"
-        required
-      />
-      <p class="acct-hint">At least 8 characters.</p>
-    </div>
-
-    <div class="um-field">
-      <label for="confirm_password">Confirm new password</label>
-      <input
-        type="password"
-        name="confirm_password"
-        id="confirm_password"
-        minlength="8"
-        autocomplete="new-password"
-        required
-      />
-    </div>
-
-    <button type="submit" class="um-btn-add mt-3">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
-      Change password
-    </button>
-  </form>
-</div>
 
   <!-- ============ RECENT ACTIVITY ============ -->
   <div class="um-panel">
-  <div class="um-panel-head">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-    <h3>Recent activity</h3>
-    {% if recent_activity %}
-    <span class="um-count-pill">{{ recent_activity|length }}</span>
-    {% endif %}
-  </div>
+    <div class="um-panel-head">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      <h3>Recent activity</h3>
+      {% if recent_activity %}
+      <span class="um-count-pill">{{ recent_activity|length }}</span>
+      {% endif %}
+    </div>
 
-  {% if recent_activity %}
-  <table class="acct-activity">
-    <thead>
-      <tr>
-        <th style="width: 170px;">When</th>
-        <th style="width: 170px;">Action</th>
-        <th>Detail</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for entry in recent_activity %}
-      <tr>
-        <td class="acct-when">
-          {{ entry.created_at.strftime('%d %b %Y, %I:%M %p') if entry.created_at else '&mdash;'|safe }}
-        </td>
-        <td>
-          <span class="acct-action">
-            {{ entry.action|replace('_', ' ') }}
-          </span>
-        </td>
-        <td>{{ entry.detail or '&mdash;'|safe }}</td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-  {% else %}
-  <div class="um-empty">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-    <strong>Nothing recorded yet</strong>
-    <p>
-      Signing in, submitting reports and reviewing work all appear here as
-      you use the system.
-    </p>
-  </div>
-  {% endif %}
+    {% if recent_activity %}
+    <table class="acct-activity">
+      <thead>
+        <tr>
+          <th style="width: 170px;">When</th>
+          <th style="width: 170px;">Action</th>
+          <th>Detail</th>
+        </tr>
+      </thead>
+      <tbody>
+        {# The dash is a real character here. Inside {{ }} an HTML entity
+           like &mdash; is escaped and shows up as literal text. #}
+        {% for entry in recent_activity %}
+        <tr>
+          <td class="acct-when" data-label="When">
+            {{ entry.created_at.strftime('%d %b %Y, %I:%M %p') if entry.created_at else '—' }}
+          </td>
+          <td data-label="Action">
+            <span class="acct-action">
+              {{ entry.action|replace('_', ' ') }}
+            </span>
+          </td>
+          <td data-label="Detail">{{ entry.detail or '—' }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <div class="um-empty">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      <strong>Nothing recorded yet</strong>
+      <p>
+        Signing in, submitting reports and reviewing work all appear here as
+        you use the system.
+      </p>
+    </div>
+    {% endif %}
   </div>
 </div>
 

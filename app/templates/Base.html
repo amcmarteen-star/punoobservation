@@ -41,13 +41,27 @@
         try {
           var w = parseInt(localStorage.getItem("sidebarWidth"), 10);
           if (w) {
-            w = Math.max(64, Math.min(w, 320));
+            // two states only: the 64px icon rail or the 240px full rail
+            w = w < 150 ? 64 : 240;
             var root = document.documentElement;
             root.style.setProperty("--sidebar-init-w", w + "px");
             if (w < 150) root.classList.add("sidebar-init-collapsed");
           }
         } catch (e) {
           /* storage blocked; the default width is used */
+        }
+      })();
+
+      /* Text size from My Account. Applied here, before the body renders,
+         so pages do not paint at the default size and then jump. */
+      (function () {
+        try {
+          var s = parseFloat(localStorage.getItem("pno-text-scale"));
+          if (s >= 0.8 && s <= 1.5) {
+            document.documentElement.style.setProperty("--text-scale", s);
+          }
+        } catch (e) {
+          /* storage blocked; default size */
         }
       })();
 
@@ -61,6 +75,14 @@
         }
       })();
     </script>
+    {# Map tile sources, set in app/config.py (and .env). Every Leaflet
+       map uses MAP_TILES.street, and the GIS map adds .satellite. #}
+    <script type="application/json" id="map-tiles">{{ map_tiles | tojson }}</script>
+    {# Upload, password and session limits from app/config.py. #}
+    <script type="application/json" id="app-limits">{{ app_limits | tojson }}</script>
+    <script>
+      window.MAP_TILES = JSON.parse(document.getElementById("map-tiles").textContent);
+    </script>
     {% block extra_head %}{% endblock %}
   </head>
   <body class="app-body">
@@ -70,38 +92,12 @@
         <div class="sidebar-header">
           <a href="{{ url_for('dashboard.index') }}" class="sidebar-logo">
             <img
-              src="{{ url_for('static', filename='images/logo-mark.png', v=asset_v) }}"
+              src="{{ url_for('static', filename='images/finallogo.png', v=asset_v) }}"
               alt="PuNoObservation Logo"
               class="logo-icon"
             />
             <span class="logo-text">PuNoObservation</span>
           </a>
-
-          <!-- One-click version of the drag handle on the right edge. The
-               handle still works; this is here so narrowing the rail does not
-               require aiming at a 6px target. -->
-          <button
-            type="button"
-            class="sidebar-toggle"
-            id="sidebarToggle"
-            aria-label="Collapse sidebar"
-            aria-expanded="true"
-            title="Collapse sidebar"
-          >
-            <svg
-              class="sidebar-toggle-icon"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            >
-              <rect width="18" height="18" x="3" y="3" rx="2" />
-              <path d="M9 3v18" />
-              <path id="sidebarToggleChevron" d="m16 15-3-3 3-3" />
-            </svg>
-          </button>
 
           <!-- Phones get the sidebar as a slide-in drawer; this closes it.
                Hidden on wider screens, where the rail is always shown. -->
@@ -493,7 +489,7 @@
         </nav>
 
         {% if session.username %}
-        <a href="{{ url_for('auth.logout') }}" class="sign-out">
+        <a href="{{ url_for('auth.logout') }}" class="sign-out" id="signOutLink">
           <svg
             viewBox="0 0 24 24"
             fill="none"
@@ -526,12 +522,32 @@
         </a>
         {% endif %}
 
-        <div
-          class="sidebar-resize-handle"
-          id="sidebarResizeHandle"
-          aria-hidden="true"
-        ></div>
       </aside>
+
+      <!-- Collapse / expand. A round button sitting on the rail's right edge.
+           It lives outside the sidebar because the sidebar clips its own
+           overflow, and follows the rail's width through --sidebar-w. -->
+      <button
+        type="button"
+        class="sidebar-toggle"
+        id="sidebarToggle"
+        aria-label="Collapse sidebar"
+        aria-expanded="true"
+        title="Collapse sidebar"
+      >
+        <svg
+          class="sidebar-toggle-icon"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2.25"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"
+        >
+          <path id="sidebarToggleChevron" d="m15 18-6-6 6-6" />
+        </svg>
+      </button>
 
       <!-- Dims the page behind the open drawer on phones; tapping it closes
            the drawer. -->
@@ -654,7 +670,11 @@
           {% if messages %}
           <div class="flash-messages">
             {% for category, message in messages %}
-            <div class="um-alert um-alert-{{ category }}">{{ message }}</div>
+            <div class="um-alert um-alert-{{ category }} is-dismissible" role="status">
+              <span class="um-alert-text">{{ message }}</span>
+              <button type="button" class="alert-close" aria-label="Dismiss message" title="Dismiss"
+                      onclick="dismissAlert(this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
+            </div>
             {% endfor %}
           </div>
           {% endif %} {% endwith %} {% block content %}{% endblock %}
@@ -662,37 +682,94 @@
       </div>
     </div>
 
+    {% if session.username %}
+    <!-- ============ SIGN OUT CONFIRMATION ============ -->
+    <div class="um-modal-overlay" id="signOutModal">
+      <div class="um-modal" role="dialog" aria-modal="true" aria-labelledby="signOutTitle">
+        <div class="um-modal-head">
+          <h3 id="signOutTitle">Sign Out</h3>
+          <button type="button" class="um-modal-close" aria-label="Close dialog" data-signout-close>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>
+          </button>
+        </div>
+        <div class="um-modal-body">
+          <p class="um-modal-text">Are you sure you want to sign out?</p>
+        </div>
+        <div class="um-modal-foot">
+          <button type="button" class="um-btn-cancel" data-signout-close>Stay signed in</button>
+          <a href="{{ url_for('auth.logout') }}" class="um-btn-confirm">Yes, sign out</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ SESSION TIMED OUT ============ -->
+    {# Its own overlay class, not um-modal-overlay: several pages close
+       every um-modal-overlay on Escape, and this one must stay up. #}
+    <div class="session-overlay" id="sessionExpired">
+      <div class="um-modal" role="alertdialog" aria-modal="true"
+           aria-labelledby="sessionExpiredTitle" aria-describedby="sessionExpiredText">
+        <div class="um-modal-head">
+          <h3 id="sessionExpiredTitle">Session timed out</h3>
+        </div>
+        <div class="um-modal-body">
+          <p class="um-modal-text" id="sessionExpiredText">
+            You were signed out after {{ app_limits.sessionIdleMinutes }}
+            minutes without activity, to keep your account safe. Anything
+            you had not saved was not kept.
+          </p>
+        </div>
+        <div class="um-modal-foot">
+          <a href="#" class="um-btn-confirm" id="sessionExpiredLogin"
+             style="text-align:center; text-decoration:none;">Sign in again</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ IDLE SIGN-OUT WARNING ============ -->
+    <div class="um-modal-overlay" id="idleModal">
+      <div class="um-modal" role="alertdialog" aria-modal="true"
+           aria-labelledby="idleTitle" aria-describedby="idleText">
+        <div class="um-modal-head">
+          <h3 id="idleTitle">Still there?</h3>
+        </div>
+        <div class="um-modal-body">
+          <p class="um-modal-text" id="idleText">
+            You will be signed out in <strong id="idleCountdown">2:00</strong>
+            because there has been no activity. Anything you have not saved
+            will be lost.
+          </p>
+        </div>
+        <div class="um-modal-foot">
+          <a href="{{ url_for('auth.logout') }}" class="um-btn-cancel" style="text-align:center; text-decoration:none;">Sign out now</a>
+          <button type="button" class="um-btn-confirm" id="idleStay">Stay signed in</button>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
     <script>
       // Notification bell logic -- lives outside extra_scripts block on purpose,
       // so it still runs even on pages (like GIS_map) that override extra_scripts
       // with their own script.
 
-      // Sidebar width. Two ways in: drag the right edge, or click the toggle
-      // in the header. Below COLLAPSE_THRESHOLD the nav labels hide and only
-      // icons show (links keep working, they're still real <a> tags).
+      // Sidebar width. Two states, switched only by the round button on the
+      // rail's edge: the full 240px rail, or the 64px icon rail where nav
+      // labels hide and only icons show (links still work as real <a> tags).
       (function () {
         const sidebar = document.querySelector(".sidebar");
-        const handle = document.getElementById("sidebarResizeHandle");
         const toggleBtn = document.getElementById("sidebarToggle");
         const chevron = document.getElementById("sidebarToggleChevron");
-        const CHEVRON_COLLAPSE = "m16 15-3-3 3-3";
-        const CHEVRON_EXPAND = "m14 9 3 3-3 3";
-        const MIN_WIDTH = 64;
-        const MAX_WIDTH = 320;
-        const DEFAULT_WIDTH = 240;
-        const COLLAPSE_THRESHOLD = 150;
+        const CHEVRON_COLLAPSE = "m15 18-6-6 6-6";
+        const CHEVRON_EXPAND = "m9 18 6-6-6-6";
+        const COLLAPSED_WIDTH = 64;
+        const EXPANDED_WIDTH = 240;
 
-        function applyWidth(px) {
-          const clamped = Math.max(MIN_WIDTH, Math.min(px, MAX_WIDTH));
-          sidebar.style.width = clamped + "px";
-          sidebar.classList.toggle("collapsed", clamped < COLLAPSE_THRESHOLD);
-          syncToggle();
-        }
-
-        // The button points the way it will move the rail, so it has to be
-        // redrawn after a drag too, not only after a click.
-        function syncToggle() {
-          const collapsed = sidebar.classList.contains("collapsed");
+        function setCollapsed(collapsed) {
+          const px = collapsed ? COLLAPSED_WIDTH : EXPANDED_WIDTH;
+          sidebar.style.width = px + "px";
+          sidebar.classList.toggle("collapsed", collapsed);
+          // the edge button follows the rail
+          document.documentElement.style.setProperty("--sidebar-w", px + "px");
           const label = collapsed ? "Expand sidebar" : "Collapse sidebar";
           chevron.setAttribute("d", collapsed ? CHEVRON_EXPAND : CHEVRON_COLLAPSE);
           toggleBtn.setAttribute("aria-expanded", collapsed ? "false" : "true");
@@ -700,63 +777,25 @@
           toggleBtn.setAttribute("title", label);
         }
 
-        // Restoring a saved width is not a user action, so it should not
+        // Restoring the saved state is not a user action, so it should not
         // animate -- .resizing switches the width transition off, and reading
         // offsetWidth forces the new width to land before it comes back on.
-        const saved = parseInt(localStorage.getItem("sidebarWidth"), 10);
+        let saved = NaN;
+        try { saved = parseInt(localStorage.getItem("sidebarWidth"), 10); } catch (e) {}
         sidebar.classList.add("resizing");
-        applyWidth(saved || DEFAULT_WIDTH);
+        setCollapsed(saved > 0 && saved < 150);
         // the rail now carries its own state; the pre-paint hint can go
         document.documentElement.classList.remove("sidebar-init-collapsed");
         void sidebar.offsetWidth;
         sidebar.classList.remove("resizing");
 
-        let dragging = false;
-
-        handle.addEventListener("mousedown", function (e) {
-          dragging = true;
-          sidebar.classList.add("resizing");
-          document.body.style.userSelect = "none";
-          e.preventDefault();
-        });
-
-        document.addEventListener("mousemove", function (e) {
-          if (!dragging) return;
-          applyWidth(e.clientX);
-        });
-
-        document.addEventListener("mouseup", function () {
-          if (!dragging) return;
-          dragging = false;
-          sidebar.classList.remove("resizing");
-          document.body.style.userSelect = "";
-          rememberWidth();
-        });
-
-        // Expanding restores the last width the user actually chose rather
-        // than snapping back to the default, so a deliberately wide or narrow
-        // rail survives a collapse.
-        function rememberWidth() {
-          const px = parseInt(sidebar.style.width, 10);
-          localStorage.setItem("sidebarWidth", px);
-          if (!sidebar.classList.contains("collapsed")) {
-            localStorage.setItem("sidebarExpandedWidth", px);
-          }
-        }
-
         toggleBtn.addEventListener("click", function () {
-          if (sidebar.classList.contains("collapsed")) {
-            const restore = parseInt(
-              localStorage.getItem("sidebarExpandedWidth"),
-              10,
-            );
-            applyWidth(
-              restore >= COLLAPSE_THRESHOLD ? restore : DEFAULT_WIDTH,
-            );
-          } else {
-            applyWidth(MIN_WIDTH);
-          }
-          rememberWidth();
+          const collapse = !sidebar.classList.contains("collapsed");
+          setCollapsed(collapse);
+          try {
+            localStorage.setItem("sidebarWidth", collapse ? COLLAPSED_WIDTH : EXPANDED_WIDTH);
+            localStorage.removeItem("sidebarExpandedWidth");
+          } catch (e) {}
         });
       })();
 
@@ -804,6 +843,18 @@
           if (!e.matches) setOpen(false);
         });
       })();
+
+      // The X on a flash message: fades it, then removes it
+      function dismissAlert(btn) {
+        var box = btn.closest(".is-dismissible");
+        if (!box) return;
+        box.classList.add("is-leaving");
+        setTimeout(function () {
+          var wrap = box.parentElement;
+          box.remove();
+          if (wrap && wrap.classList.contains("flash-messages") && !wrap.children.length) wrap.remove();
+        }, 180);
+      }
 
       function updateThemeToggle() {
         var dark =
@@ -1098,10 +1149,173 @@
 
       // load on every page that uses this layout
       loadNotifications();
+
+      // Sign Out asks first. The link still works without JS.
+      (function () {
+        const link = document.getElementById("signOutLink");
+        const modal = document.getElementById("signOutModal");
+        if (!link || !modal) return;
+
+        function close() {
+          modal.classList.remove("open");
+          link.focus();
+        }
+
+        link.addEventListener("click", function (e) {
+          e.preventDefault();
+          modal.classList.add("open");
+          modal.querySelector(".um-btn-cancel").focus();
+        });
+        modal.querySelectorAll("[data-signout-close]").forEach(function (btn) {
+          btn.addEventListener("click", close);
+        });
+        modal.addEventListener("click", function (e) {
+          if (e.target === modal) close();
+        });
+        document.addEventListener("keydown", function (e) {
+          if (e.key === "Escape" && modal.classList.contains("open")) close();
+        });
+      })();
+
+      const APP_LIMITS = JSON.parse(document.getElementById("app-limits").textContent);
+
+      // Idle sign-out (SESSION_IDLE_MINUTES in app/config.py). The server
+      // keeps the real clock; this asks it how long is left, so activity
+      // in another tab counts too. A warning shows two minutes before.
+      (function () {
+        const modal = document.getElementById("idleModal");
+        if (!modal) return;   // signed out: nothing to time
+        const STATUS_URL = "{{ url_for('auth.session_status') }}";
+        const KEEPALIVE_URL = "{{ url_for('auth.session_keepalive') }}";
+        const LOGIN_URL = "{{ url_for('auth.login', timeout=1) }}";
+        const WARN_SECONDS = 120;
+        const countdown = document.getElementById("idleCountdown");
+        const stayBtn = document.getElementById("idleStay");
+        let checkTimer = null;
+        let tickTimer = null;
+
+        // Say so on the page, rather than moving the user away from it.
+        function signedOut() {
+          clearTimeout(checkTimer);
+          clearInterval(tickTimer);
+          modal.classList.remove("open");
+          const here = window.location.pathname + window.location.search;
+          const link = document.getElementById("sessionExpiredLogin");
+          link.href = LOGIN_URL + "&next=" + encodeURIComponent(here);
+          document.getElementById("sessionExpired").classList.add("open");
+          link.focus();
+        }
+
+        function schedule(remaining) {
+          clearTimeout(checkTimer);
+          checkTimer = setTimeout(check, Math.max(0, remaining - WARN_SECONDS) * 1000);
+        }
+
+        function hide() {
+          clearInterval(tickTimer);
+          modal.classList.remove("open");
+        }
+
+        function show(remaining) {
+          let left = remaining;
+          function draw() {
+            const m = Math.floor(left / 60);
+            const s = String(left % 60).padStart(2, "0");
+            countdown.textContent = m + ":" + s;
+          }
+          draw();
+          modal.classList.add("open");
+          stayBtn.focus();
+          clearInterval(tickTimer);
+          tickTimer = setInterval(function () {
+            left -= 1;
+            if (left <= 0) {
+              clearInterval(tickTimer);
+              check();   // the server decides; another tab may have kept it alive
+            } else {
+              draw();
+            }
+          }, 1000);
+        }
+
+        function check() {
+          fetch(STATUS_URL, { credentials: "same-origin" })
+            .then(function (res) {
+              if (res.status === 401) return signedOut();
+              return res.json().then(function (data) {
+                if (data.remaining <= 0) return signedOut();
+                if (data.remaining > WARN_SECONDS + 5) {
+                  hide();
+                  schedule(data.remaining);
+                } else {
+                  show(data.remaining);
+                }
+              });
+            })
+            .catch(function () {
+              // offline for a moment: ask again shortly
+              checkTimer = setTimeout(check, 30000);
+            });
+        }
+
+        stayBtn.addEventListener("click", function () {
+          fetch(KEEPALIVE_URL, { method: "POST", credentials: "same-origin" })
+            .then(function (res) {
+              if (res.status === 401) return signedOut();
+              return res.json().then(function (data) {
+                hide();
+                schedule(data.remaining);
+              });
+            })
+            .catch(function () { hide(); schedule(WARN_SECONDS + 60); });
+        });
+
+        // This page load was activity, so the full time is left.
+        schedule(APP_LIMITS.sessionIdleMinutes * 60);
+      })();
+
+      // File size and count, checked as soon as files are chosen, on every
+      // file box. data-max-mb and data-max-files override the defaults.
+      // The server checks again (app/utils/security.py).
+      document.addEventListener("change", function (e) {
+        const input = e.target;
+        if (!(input instanceof HTMLInputElement) || input.type !== "file") return;
+
+        const maxMb = Number(input.dataset.maxMb || APP_LIMITS.maxFileMb);
+        const maxFiles = Number(input.dataset.maxFiles || 0);
+        const files = Array.from(input.files || []);
+        let problem = "";
+        if (maxFiles && files.length > maxFiles) {
+          problem = "Choose at most " + maxFiles + " files.";
+        } else {
+          const big = files.filter(function (f) { return f.size > maxMb * 1024 * 1024; });
+          if (big.length) {
+            problem = "Each file must be " + maxMb + " MB or smaller. Too big: "
+              + big.map(function (f) { return f.name; }).join(", ") + ".";
+          }
+        }
+
+        let note = input.parentNode.querySelector(".upload-error");
+        if (!problem) {
+          if (note) note.remove();
+          return;
+        }
+        input.value = "";
+        if (!note) {
+          note = document.createElement("p");
+          note.className = "upload-error";
+          note.setAttribute("role", "alert");
+          note.style.cssText = "margin:.35rem 0 0; font-size:.8rem; font-weight:600; color:var(--danger-strong);";
+          input.insertAdjacentElement("afterend", note);
+        }
+        note.textContent = problem;
+      });
     </script>
 
     <!-- frozen header row + first columns on wide tables (data-freeze) -->
     <script src="{{ url_for('static', filename='js/table-freeze.js', v=asset_v) }}"></script>
+    <!-- drop zones on file fields, and the progress card for uploads -->
+    <script src="{{ url_for('static', filename='js/upload.js', v=asset_v) }}"></script>
 
     {% block extra_scripts %}{% endblock %}
   </body>

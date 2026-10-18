@@ -495,6 +495,20 @@
   }
 
   /* ---------- species info panel (opened from the thumbnail) ---------- */
+  /* the species photo, large, at the top of the information panel */
+  .rec-info-photo {
+    margin: 0 0 1rem;
+    border-radius: 12px;
+    overflow: hidden;
+    background: var(--surface-2);
+  }
+  .rec-info-photo img {
+    display: block;
+    width: 100%;
+    max-height: 320px;
+    object-fit: cover;
+  }
+
   .rec-thumb-btn {
     display: block;
     padding: 0;
@@ -635,11 +649,8 @@
       height: 44px;
     }
   }
-  /* ================= PHONE LAYOUT (<= 720px) =================
-   Everything below applies to phones only. */
-@media (max-width: 720px) {
+  @media (max-width: 720px) {
 
-  /* ---------- Picker ---------- */
   .rec-picker-row {
     display: flex !important; flex-direction: column !important;
     align-items: stretch !important; gap: 0.75rem;
@@ -647,19 +658,16 @@
   .rec-picker-row .um-field {
     flex: 0 0 auto !important; width: 100%; margin-left: 0 !important;
   }
-  .rec-picker-row select { width: 100%; min-height: 44px; font-size: 16px; } /* no iOS zoom */
+  .rec-picker-row select { width: 100%; min-height: 44px; font-size: 16px; }
 
-  /* ---------- Profile chips: two per row ---------- */
   .profile-strip { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; }
   .profile-chip { min-width: 0; padding: 0.55rem 0.75rem; }
   .profile-chip .value { font-size: 1rem; overflow-wrap: anywhere; }
   .profile-chip:last-child:nth-child(odd) { grid-column: 1 / -1; }
 
-  /* ---------- Results bar ---------- */
   .results-bar { flex-direction: column; align-items: stretch; }
   .results-bar .um-btn-ghost { width: 100%; min-height: 44px; }
 
-  /* ---------- Table becomes cards ---------- */
   #rec-results .um-table-card {
     border: 0; background: none; box-shadow: none; padding: 0;
   }
@@ -685,7 +693,6 @@
     border: 1px solid var(--line); border-radius: 12px;
     background: var(--surface-1);
   }
-  /* keep "show top 5 only" working */
   #rec-results .rec-table tbody tr.beyond-top.is-hidden { display: none !important; }
 
   #rec-results .rec-table tbody td {
@@ -710,7 +717,6 @@
     text-transform: uppercase; text-align: left; color: var(--text-2);
   }
 
-  /* Rank badge + species on the first line, no labels */
   #rec-results .rec-table td[data-label="Rank"] {
     grid-column: 1; border-top: 0; padding-top: 0 !important;
   }
@@ -721,22 +727,16 @@
   #rec-results .rec-table td[data-label="Rank"]::before,
   #rec-results .rec-table td[data-label="Species"]::before { display: none; }
 
-  /* Wider hit area for superadmin photo controls */
   .rec-thumb-upload { width: 30px; height: 30px; right: -8px; bottom: -8px; }
   .rec-thumb-remove { width: 26px; height: 26px; }
   .rec-thumb-upload svg { width: 15px; height: 15px; }
 
-  /* Empty-state preview: just rank + species, no empty rows of dashes */
   #rec-results .rec-row-preview td:nth-child(n+3) { display: none !important; }
 
-  /* ---------- Modals (evaluation + species info) ---------- */
-  .rec-modal {
-    width: calc(100vw - 1rem); max-height: 92dvh;
-  }
+  .rec-modal { width: calc(100vw - 1rem); max-height: 92dvh; }
   .rec-modal .um-modal-close { width: 44px; height: 44px; }
   .rec-modal .um-modal-body { padding-bottom: calc(1rem + env(safe-area-inset-bottom)); }
 
-  /* wide tables scroll sideways inside the modal instead of squeezing */
   .rec-grid { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; }
   .rec-grid th, .rec-grid td { white-space: nowrap; }
   .rec-cm th.rowhead { white-space: normal; }
@@ -999,12 +999,12 @@
               role="button"
               aria-label="Show evaluation metrics for {{ r.specie_name }}">
             <td data-label="Rank">
-                <span class="rank-badge {% if loop.index > 5 %}muted{% endif %}">
+              <span class="rank-badge {% if loop.index > 5 %}muted{% endif %}">
                 {{ loop.index }}
               </span>
             </td>
             <td data-label="Species">
-               <div class="rec-species-cell">
+              <div class="rec-species-cell">
                 <div class="rec-thumb">
                   <button type="button" class="rec-thumb-btn"
                           data-info-id="{{ r.tree_id }}"
@@ -1029,7 +1029,7 @@
                     <label class="rec-thumb-upload"
                            title="{% if r.photo_url %}Replace photo{% else %}Upload photo{% endif %}">
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>
-                      <input type="file" name="photo"
+                      <input type="file" name="photo" data-max-mb="5"
                              accept="image/jpeg,image/png,image/webp"
                              aria-label="{% if r.photo_url %}Replace{% else %}Upload{% endif %} photo for {{ r.specie_name }}">
                     </label>
@@ -1054,7 +1054,7 @@
               </div>
             </td>
             <td data-label="Similarity">
-               <div class="d-flex align-items-center gap-2">
+              <div class="d-flex align-items-center gap-2">
                 <div class="score-bar-track">
                   <div class="score-bar-fill {% if loop.index > 5 %}muted{% endif %}"
                        style="width: {{ (r.similarity * 100) | round(0) | int }}%;"></div>
@@ -1069,11 +1069,11 @@
                 <span class="in-range-no">Outside</span>
               {% endif %}
             </td>
-            <td data-label="Elevation">{{ r.elevation_range }}</td>
-            <td data-label="Temperature">{{ r.temperature_range }}</td>
+           <td data-label="Elevation">{{ r.elevation_range }}</td>
+           <td data-label="Temperature">{{ r.temperature_range }}</td>
             <td data-label="Rainfall">{{ r.rainfall_range }}</td>
-            <td data-label="Preferred soil">{{ r.preferred_soil or '—' }}</td>
-            <td class="num-cell" data-label="Features used">{{ r.features_used }} of 4</td> 
+<td data-label="Preferred soil">{{ r.preferred_soil or '—' }}</td>
+<td class="num-cell" data-label="Features used">{{ r.features_used }} of 4</td>
           </tr>
           {% endfor %}
         </tbody>
@@ -1348,6 +1348,7 @@
           form.addEventListener(type, function (e) { e.stopPropagation(); });
         });
 
+        // the photo is checked here, then sent behind the progress card
         const input = form.querySelector('input[type="file"]');
         input.addEventListener('change', function () {
           const file = input.files[0];
@@ -1357,7 +1358,7 @@
             : null;
           if (problem) {
             input.value = '';
-            alert('This photo was not uploaded.' + problem);
+            alert('This photo was not uploaded.\n\n' + problem);
             return;
           }
           if (window.PNOUpload) {
@@ -1382,7 +1383,16 @@
       const infoBody = document.getElementById('rec-info-body');
       const infoTitle = document.getElementById('rec-info-title');
       const infoCache = {};
+      const infoPhoto = {};   // tree id -> the photo shown in its thumbnail
       let infoLastFocused = null;
+
+      // The clicked thumbnail's photo, shown large at the top of the panel.
+      function photoHtml(treeId) {
+        const src = infoPhoto[treeId];
+        return src
+          ? '<figure class="rec-info-photo"><img src="' + esc(src) + '" alt=""></figure>'
+          : '';
+      }
 
       function infoRow(label, value) {
         return '<dt>' + esc(label) + '</dt><dd>' + esc(value || '—') + '</dd>';
@@ -1397,7 +1407,8 @@
               ? ' <span class="rec-sci">' + esc(sp.scientific_name) + '</span>'
               : '');
 
-        let html = '<div class="rec-section">'
+        let html = photoHtml(treeId)
+          + '<div class="rec-section">'
           + '<h4>From the reference dataset</h4>'
           + '<dl class="rec-info-list">'
           + infoRow('Native to', sp.native_to)
@@ -1457,7 +1468,7 @@
       }
 
       function loadInfo(treeId) {
-        infoBody.innerHTML = '<div class="rec-loading">Loading…</div>';
+        infoBody.innerHTML = photoHtml(treeId) + '<div class="rec-loading">Loading…</div>';
         return fetch('/api/species-info/' + treeId)
           .then(function (res) { return res.json(); })
           .then(function (data) {
@@ -1526,6 +1537,8 @@
         const treeId = btn.getAttribute('data-info-id');
         const name = btn.closest('tr').querySelector('.fw-semibold')
           .textContent.trim();
+        const img = btn.querySelector('img');
+        if (img && !img.classList.contains('is-default')) infoPhoto[treeId] = img.src;
 
         // The thumbnail sits inside a row that opens the metrics panel.
         // Stopping keydown matters too: the row handler cancels Enter and

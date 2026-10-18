@@ -56,24 +56,18 @@ active_page = 'users' %} {% block extra_head %}
   .um-warn.um-warn-soft svg {
     color: #16a34a;
   }
-  /* ================= PHONE LAYOUT (<= 720px) =================
-   Phone-only. Nothing here applies on larger screens. */
-@media (max-width: 720px) {
+  @media (max-width: 720px) {
 
-  /* ---------- Header ---------- */
   .um-header { flex-wrap: wrap; gap: 0.75rem; }
   .um-header h2 { font-size: 1.25rem; }
   .um-header .um-btn-add { width: 100%; justify-content: center; min-height: 44px; }
 
-  /* ---------- Toolbar ---------- */
   .um-toolbar { flex-direction: column; align-items: stretch; gap: 0.75rem; }
   .um-search-group { width: 100%; flex-wrap: wrap; }
   .um-search-group .um-search-wrap { flex: 1 1 100%; }
-  .um-search-input { font-size: 16px; min-height: 44px; } /* stops iOS zoom */
+  .um-search-input { font-size: 16px; min-height: 44px; }
   .um-search-group .um-btn-ghost { min-height: 44px; display: inline-flex; align-items: center; }
 
-  /* Filters: three buttons that wrap. Menus anchor to the whole row, not to
-     each button, so they can never run off the screen edge. */
   .um-filters { position: relative; width: 100%; gap: 0.5rem; }
   .um-filters .um-filter-wrap { position: static; flex: 1 1 9rem; }
   .um-filters .um-filter-btn { width: 100%; min-width: 0; min-height: 44px; }
@@ -85,18 +79,14 @@ active_page = 'users' %} {% block extra_head %}
   }
   .um-filters .um-filter-menu button { min-height: 44px; }
 
-  /* ---------- Table becomes cards ---------- */
   .um-table-card {
-    border: 0; background: none; box-shadow: none; padding: 0;
-    overflow: visible;
+    border: 0; background: none; box-shadow: none; padding: 0; overflow: visible;
   }
   #um-table,
   #um-table tbody { display: block !important; width: 100% !important; min-width: 0 !important; }
   #um-table colgroup,
   #um-table thead { display: none !important; }
 
-  /* No !important on display here: the page's filter script hides rows with
-     an inline display:none, which has to keep winning. */
   #um-table tbody tr:not(.um-nomatch) {
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto;
@@ -129,49 +119,46 @@ active_page = 'users' %} {% block extra_head %}
     text-transform: uppercase; text-align: left; color: var(--text-2);
   }
 
- /* Top line: avatar + name on the left, ⋯ menu on the right, no labels */
-#um-table tbody tr:not(.um-nomatch) td[data-label="User"] {
-  grid-column: 1; grid-row: 1;
-  display: flex; justify-content: flex-start; align-items: center;
-  text-align: left;
-  border-top: 0; padding: 0.5rem 0;
-}
-#um-table tbody tr:not(.um-nomatch) td.um-actions-cell {
-  grid-column: 2; grid-row: 1;
-  display: flex; justify-content: flex-end; align-items: center;
-  text-align: right;
-  border-top: 0; padding: 0.25rem 0;
-}
-#um-table tbody tr:not(.um-nomatch) td[data-label="User"]::before,
-#um-table tbody tr:not(.um-nomatch) td.um-actions-cell::before {
-  display: none; content: none;
-}
+  /* Top line: avatar + name on the left, the three-dot menu on the right */
+  #um-table tbody tr:not(.um-nomatch) td[data-label="User"] {
+    grid-column: 1; grid-row: 1;
+    display: flex; justify-content: flex-start; align-items: center;
+    text-align: left;
+    border-top: 0; padding: 0.5rem 0;
+  }
+  #um-table tbody tr:not(.um-nomatch) td.um-actions-cell {
+    grid-column: 2; grid-row: 1;
+    display: flex; justify-content: flex-end; align-items: center;
+    text-align: right;
+    border-top: 0; padding: 0.25rem 0;
+  }
+  #um-table tbody tr:not(.um-nomatch) td[data-label="User"]::before,
+  #um-table tbody tr:not(.um-nomatch) td.um-actions-cell::before {
+    display: none; content: none;
+  }
 
-/* Avatar then username, all left-aligned */
-.um-name-cell {
-  display: flex; align-items: center; justify-content: flex-start;
-  gap: 0.75rem; min-width: 0; width: 100%; text-align: left;
-}
-.um-avatar { flex: none; }
-.um-identity {
-  display: flex; flex-direction: column; align-items: flex-start;
-  min-width: 0; text-align: left;
-}
-.um-name { text-align: left; }
-.um-identity-sub { text-align: left; overflow-wrap: anywhere; }
+  .um-name-cell {
+    display: flex; align-items: center; justify-content: flex-start;
+    gap: 0.75rem; min-width: 0; width: 100%; text-align: left;
+  }
+  .um-avatar { flex: none; }
+  .um-identity {
+    display: flex; flex-direction: column; align-items: flex-start;
+    min-width: 0; text-align: left;
+  }
+  .um-name { text-align: left; }
+  .um-identity-sub { text-align: left; overflow-wrap: anywhere; }
+  .um-menu-wrap { margin-left: auto; }
 
-  /* Action menu: bigger target */
   .um-kebab { width: 44px; height: 44px; }
   .um-row-menu { min-width: 12rem; max-width: calc(100vw - 16px); }
   .um-row-menu button { min-height: 44px; }
 
-  /* "No users match" row */
   #um-table tbody tr.um-nomatch { display: block; }
   #um-table tbody tr.um-nomatch[hidden] { display: none; }
   #um-table tbody tr.um-nomatch td { display: block; }
   .um-nomatch button { min-height: 44px; width: 100%; }
 
-  /* ---------- Modals: near full-width, scroll inside, buttons stacked ---------- */
   .um-modal {
     width: calc(100vw - 1rem); max-width: 480px;
     max-height: 92dvh;
@@ -188,7 +175,7 @@ active_page = 'users' %} {% block extra_head %}
   .um-modal-foot button { width: 100%; min-height: 44px; }
 
   .um-field input,
-  .um-field select { min-height: 44px; font-size: 16px; } /* stops iOS zoom */
+  .um-field select { min-height: 44px; font-size: 16px; }
 }
 </style>
 {% endblock %}
@@ -416,6 +403,14 @@ active_page = 'users' %} {% block extra_head %}
                 Reactivate account
               </button>
               {% endif %}
+              <button
+                type="button"
+                role="menuitem"
+                class="is-danger"
+                onclick="umCloseRowMenu(); umOpenDeleteAccount('{{ u.username|e }}', '{{ u.role|replace('_', ' ')|title }}', '{{ url_for('admin.delete_user', user_id=u.user_id) }}')"
+              >
+                Delete account&hellip;
+              </button>
               {% endif %}
             </div>
           </div>
@@ -514,6 +509,66 @@ active_page = 'users' %} {% block extra_head %}
       <button type="submit" class="um-btn-confirm-danger" id="um-del-confirm">
         Yes, Deactivate
       </button>
+    </form>
+  </div>
+</div>
+
+<!-- Permanent delete confirmation. The button stays disabled until the
+     username is typed exactly; admin.delete_user checks it again and
+     refuses accounts that have reports, requests or boundaries. -->
+<div class="um-modal-overlay" id="um-erase-modal">
+  <div class="um-modal">
+    <div class="um-modal-head">
+      <h3>Delete Account</h3>
+      <button
+        type="button"
+        class="um-modal-close"
+        aria-label="Close dialog"
+        onclick="umClose('um-erase-modal')"
+      >
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>
+      </button>
+    </div>
+    <form method="POST" id="um-erase-form" autocomplete="off">
+      <div class="um-modal-body">
+        <div class="um-warn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3" /><path d="M12 9v4" /><path d="M12 17h.01" /></svg>
+          <span>
+            Permanently delete <strong id="um-erase-name"></strong>
+            (<span id="um-erase-role"></span>)? This cannot be undone.
+            Accounts with reports, requests or published boundaries cannot
+            be deleted &mdash; deactivate those instead. Audit log entries
+            are kept.
+          </span>
+        </div>
+
+        <div class="um-field">
+          <label for="um-erase-confirm-input">
+            Type <strong id="um-erase-name-2"></strong> to confirm
+          </label>
+          <input
+            type="text"
+            name="confirm_username"
+            id="um-erase-confirm-input"
+            autocomplete="off"
+            autocapitalize="none"
+            spellcheck="false"
+            required
+          />
+        </div>
+      </div>
+      <div class="um-modal-foot">
+        <button
+          type="button"
+          class="um-btn-cancel"
+          onclick="umClose('um-erase-modal')"
+        >
+          Cancel
+        </button>
+        <button type="submit" class="um-btn-confirm-danger" id="um-erase-submit" disabled>
+          Delete Permanently
+        </button>
+      </div>
     </form>
   </div>
 </div>
@@ -752,6 +807,22 @@ active_page = 'users' %} {% block extra_head %}
     document.getElementById("um-reset-name").textContent = name;
     document.getElementById("um-reset-pw").value = "";
     umOpen("um-reset-modal");
+  }
+
+  function umOpenDeleteAccount(name, role, action) {
+    const input = document.getElementById("um-erase-confirm-input");
+    const submit = document.getElementById("um-erase-submit");
+    document.getElementById("um-erase-form").action = action;
+    document.getElementById("um-erase-name").textContent = name;
+    document.getElementById("um-erase-name-2").textContent = name;
+    document.getElementById("um-erase-role").textContent = role;
+    input.value = "";
+    submit.disabled = true;
+    input.oninput = function () {
+      submit.disabled = input.value.trim() !== name;
+    };
+    umOpen("um-erase-modal");
+    input.focus();
   }
 
   // One dialog for both directions.

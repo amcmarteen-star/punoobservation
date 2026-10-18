@@ -1,5 +1,5 @@
 # app/routes/admin.py
-from flask import Blueprint, render_template, request, flash, redirect, url_for, session, jsonify, current_app, send_file
+from flask import Blueprint, render_template, request, flash, redirect, url_for, session, jsonify, current_app, send_file, g
 from app.extensions import db
 from app.models import User, Location, Organization, Site, TreeSpecie, ReforestationRecord, Request, Notification, MonitoringReport, MonitoringPlot, MonitoringPhoto,ReforestationRecord,Site,AuditLog
 from app.utils.decorators import admin_required, superadmin_required
@@ -14,14 +14,15 @@ from app.models import Request as ReforestationRequest
 from app.utils.jurisdiction import (
     scope_sites, scope_locations, allowed_municipalities,
     can_see_municipality, current_cenro, is_superadmin, scope_label,
-    CENRO_LIST, CENRO_MUNICIPALITIES,
+    CENRO_LIST, CENRO_MUNICIPALITIES, place_key,
 )
 from app.utils.decorators import superadmin_required
 from app.services.monitoring import save_species_photo, delete_species_photo
 from app.services.wikipedia import refresh_species_summary, WikipediaUnavailable
-from app.services.request_site import boundary_dict, SITE_REQUEST_TYPES
+from app.services.request_site import boundary_dict, barangay_point, SITE_REQUEST_TYPES
 from app.services.export_report import build_sites_workbook
 from app.utils.timeutil import manila_now
+from app.utils.security import password_problem
 from sqlalchemy.exc import IntegrityError
 from app.routes.dashboard import _load_barangay_geometry
 
@@ -47,6 +48,11 @@ def create_field_officer():
 
     if not username or not email or not password:
         flash("Username, email and password are all required.", "danger")
+        return redirect(url_for('admin.user_management'))
+
+    problem = password_problem(password)
+    if problem:
+        flash(problem, "danger")
         return redirect(url_for('admin.user_management'))
 
     VALID_ROLES = ('superadmin', 'admin', 'field_officer', 'normal_user')
@@ -207,23 +213,74 @@ def _get_or_create_location(barangay, municipality):
     if not barangay or not municipality:
         return None
 
-    location = Location.query.filter(
-        db.func.lower(Location.municipality) == municipality.lower(),
-        db.func.lower(Location.barangay) == barangay.lower()
-    ).first()
+    # Matched with place_key(), not on the exact name. An exact match
+    # (lowercase only) turned "SanVicente" and "Sta. Maria East" into
+    # second copies of "San Vicente" and "Santa Maria East", with no map
+    # point and no climate data. The existing record and its spelling win.
+    key = place_key(municipality, barangay)
+    location = _indexed_location(key)
 
-    if location:
-        return location
+    if not location:
+        location = Location(
+            region=DEFAULT_REGION,
+            province=DEFAULT_PROVINCE,
+            municipality=municipality,
+            barangay=barangay
+        )
+        db.session.add(location)
 
-    location = Location(
-        region=DEFAULT_REGION,
-        province=DEFAULT_PROVINCE,
-        municipality=municipality,
-        barangay=barangay
-    )
-    db.session.add(location)
+    _fill_location_point(location)
     db.session.flush()  # get location_id without full commit yet
+    g._location_index[key] = location.location_id
     return location
+
+
+def _indexed_location(key):
+    """
+    The Location for a place_key, or None.
+
+    The index (key -> location_id) is built once per request, so a long
+    import reads the barangay list once instead of once per row. Where two
+    records share a key, the older one wins: the later one is a copy. A
+    record created by a row that then failed was rolled back, so a miss on
+    its id rebuilds the index from the database.
+    """
+    for _ in (1, 2):
+        index = getattr(g, '_location_index', None)
+        if index is None:
+            index = {}
+            for loc in Location.query.order_by(Location.location_id):
+                index.setdefault(place_key(loc.municipality, loc.barangay),
+                                 loc.location_id)
+            g._location_index = index
+        location_id = index.get(key)
+        if location_id is None:
+            return None
+        location = db.session.get(Location, location_id)
+        if location is not None:
+            return location
+        g._location_index = None   # stale after a rollback; rebuild once
+    return None
+
+
+def _fill_location_point(location):
+    """
+    Give a barangay with no coordinates a point from its map outline.
+
+    The map places sites at their barangay's coordinates, and skips a
+    barangay without them. The DENR sheet has no coordinates, so a
+    barangay first created by an import got none and its sites never
+    showed. Existing coordinates are left alone. Returns True if filled.
+    """
+    if location.latitude is not None and location.longitude is not None:
+        return False
+    point = barangay_point(
+        _load_barangay_geometry(location.municipality, location.barangay)
+    )
+    if point is None:
+        return False
+    location.latitude, location.longitude = point
+    return True
 
 
 def _get_or_create_organization(name):
@@ -297,9 +354,10 @@ def user_management():
     )
 
 # ======================================================================
-# Accounts are deactivated, never deleted.
+# Accounts are deactivated, not deleted - with one narrow exception,
+# delete_user() below, for accounts that have no work attached.
 #
-# WHY THERE IS NO DELETE ROUTE
+# WHY DEACTIVATING IS THE NORMAL WAY OUT
 #
 # Eight foreign keys point at users.user_id: audit_log.user_id,
 # notification.user_id, monitoring_report.user_id / reviewed_by /
@@ -386,6 +444,93 @@ def reactivate_user(user_id):
     return _set_user_active(user_id, True)
 
 
+def _user_work_counts(user):
+    """
+    Official records that point at this account, by kind. Any of these
+    makes the account undeletable (see the note above deactivation).
+    Notifications and audit rows are not counted: delete_user() handles
+    both without losing anything.
+    """
+    uid = user.user_id
+    counts = {
+        "monitoring reports submitted": MonitoringReport.query.filter_by(user_id=uid).count(),
+        "monitoring reports reviewed": MonitoringReport.query.filter_by(reviewed_by=uid).count(),
+        "monitoring reports published": MonitoringReport.query.filter_by(published_by=uid).count(),
+        "requests submitted": ReforestationRequest.query.filter_by(user_id=uid).count(),
+        "requests reviewed": ReforestationRequest.query.filter_by(reviewed_by=uid).count(),
+        "site boundaries published": Site.query.filter_by(boundary_published_by=uid).count(),
+    }
+    return {k: v for k, v in counts.items() if v}
+
+
+@admin_bp.route('/users/<int:user_id>/delete', methods=['POST'])
+@superadmin_required
+def delete_user(user_id):
+    """
+    Permanently remove an account that has no work attached - a test
+    account, a duplicate, one created by mistake.
+
+    Anything with reports, requests or published boundaries is refused
+    and pointed at Deactivate instead, so no official record loses the
+    person behind it.
+
+    What happens to the rest:
+      notifications  deleted - they were this user's own inbox
+      audit log      kept. Each row already holds the username, role and
+                     CENRO as text (see app/utils/audit.py), so only the
+                     link to the account is cleared and the log reads
+                     exactly as before.
+    """
+    if user_id == session.get('user_id'):
+        flash("You cannot delete your own account.", "danger")
+        return redirect(url_for('admin.user_management'))
+
+    user = User.query.get_or_404(user_id)
+
+    # The typed name is the confirmation; the dialog only enables the
+    # button once it matches, and this repeats the check for a hand-posted
+    # form.
+    if (request.form.get('confirm_username') or '').strip() != user.username:
+        flash("The username typed did not match, so nothing was deleted.",
+              "danger")
+        return redirect(url_for('admin.user_management'))
+
+    if user.role == 'superadmin':
+        remaining = User.query.filter(
+            User.role == 'superadmin',
+            User.is_active.is_(True),
+            User.user_id != user.user_id,
+        ).count()
+        if remaining == 0:
+            flash("That is the last active system administrator and cannot "
+                  "be deleted.", "danger")
+            return redirect(url_for('admin.user_management'))
+
+    work = _user_work_counts(user)
+    if work:
+        listed = ", ".join(f"{n} {kind}" for kind, n in work.items())
+        flash(f"'{user.username}' cannot be deleted: the account has "
+              f"{listed}. Deactivate it instead - that stops it signing in "
+              "and keeps those records intact.", "danger")
+        return redirect(url_for('admin.user_management'))
+
+    username, role, cenro = user.username, user.role, user.cenro
+
+    Notification.query.filter_by(user_id=user_id).delete(
+        synchronize_session=False)
+    AuditLog.query.filter_by(user_id=user_id).update(
+        {AuditLog.user_id: None}, synchronize_session=False)
+    db.session.delete(user)
+
+    log_action('delete_user', 'users', user_id,
+               f"Deleted {role} '{username}'"
+               + (f" ({cenro})" if cenro else ""))
+    db.session.commit()
+
+    flash(f"Deleted the account '{username}'.", "success")
+    return redirect(url_for('admin.user_management'))
+
+
 @admin_bp.route('/users/<int:user_id>/reset-password', methods=['POST'])
 @superadmin_required
 def reset_password(user_id):
@@ -411,13 +556,17 @@ def reset_password(user_id):
     user = User.query.get_or_404(user_id)
 
     new_password = request.form.get('new_password') or ''
-    if len(new_password) < 8:
-        flash("A temporary password needs at least 8 characters.", "danger")
+    problem = password_problem(new_password)
+    if problem:
+        flash(problem, "danger")
         return redirect(url_for('admin.user_management'))
 
     user.set_password(new_password)
     user.must_change_password = True
     user.password_changed_at = None
+    # A reset is also how an administrator unlocks a locked login.
+    user.failed_login_count = 0
+    user.locked_until = None
 
     # The password value is never written to the log, only the fact.
     log_action('reset_password', 'users', user_id,
@@ -836,13 +985,6 @@ import re
 # ======================================================================
 
 
-def _norm_name(s):
-    """Lowercase, expand Sta./Sto., strip spaces, dots, dashes."""
-    s = str(s or "").lower()
-    s = s.replace("sta.", "santa").replace("sto.", "santo")
-    return re.sub(r"[\s.\-]", "", s)
-
-
 @admin_bp.route('/reference-dataset/preview', methods=['POST'])
 @superadmin_required
 def preview_denr_data():
@@ -865,7 +1007,7 @@ def preview_denr_data():
     # every known barangay, indexed by normalised municipality + barangay
     known = set()
     for loc in Location.query.all():
-        known.add((_norm_name(loc.municipality), _norm_name(loc.barangay)))
+        known.add(place_key(loc.municipality, loc.barangay))
 
     # site codes already in the database - these will be UPDATED not created
     existing_codes = {
@@ -919,7 +1061,8 @@ def preview_denr_data():
             sheet_rows += 1
             total_rows += 1
 
-            key = (_norm_name(municipality), _norm_name(barangay))
+            # the same rule the import uses, so "known" here means reused there
+            key = place_key(municipality, barangay)
             is_known = key in known
 
             if not is_known:

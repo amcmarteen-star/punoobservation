@@ -255,6 +255,125 @@
 
   .al-empty { padding: 2rem 1rem; }
 }
+@media (max-width: 720px) {
+
+  .um-header h2 { font-size: 1.25rem; }
+  .al-search .um-search-input { min-height: 44px; font-size: 16px; }
+  .al-filters .notif-filter-select { min-height: 44px; font-size: 16px; }
+  .al-clear { width: 100%; justify-content: center; min-height: 44px; align-self: stretch; }
+  .al-shown { width: 100%; }
+
+  .um-table-card { border: 0; background: none; box-shadow: none; padding: 0; overflow: visible; }
+  .um-table-card .um-scroll-wrap { max-height: none !important; overflow: visible !important; }
+  .um-table-card .um-scroll-wrap::before,
+  .um-table-card .um-scroll-wrap::after { display: none !important; }
+
+  .um-table-card .um-scroll-table,
+  .um-table-card .um-scroll-table tbody {
+    display: block !important; width: 100% !important; min-width: 0 !important;
+  }
+  .um-table-card .um-scroll-table thead { display: none !important; }
+
+  #al-rows tr:not(.al-nomatch) {
+    display: flex; flex-wrap: wrap; align-items: baseline;
+    column-gap: 0.75rem;
+    height: auto !important; min-height: 0 !important; overflow: visible !important;
+    content-visibility: visible !important; contain: none !important;
+    margin: 0 0 0.75rem; padding: 0.35rem 0.9rem 0.5rem;
+    border: 1px solid var(--line); border-radius: 12px;
+    background: var(--surface-1);
+  }
+  #al-rows tr[hidden] { display: none !important; }
+
+  #al-rows tr:not(.al-nomatch) td {
+    flex: 0 0 100%;
+    display: flex; justify-content: space-between; align-items: baseline;
+    gap: 1rem;
+    height: auto !important; min-height: 0 !important;
+    min-width: 0 !important; max-width: none !important;
+    overflow: visible !important;
+    padding: 0.5rem 0 !important;
+    border: 0; border-top: 1px solid var(--line);
+    box-shadow: none !important;
+    font-size: 0.875rem; line-height: 1.4;
+    text-align: right; white-space: normal !important; word-break: break-word;
+    position: static !important; left: auto !important; z-index: auto !important;
+    background: transparent !important;
+  }
+  #al-rows tr:not(.al-nomatch) td::after { content: none !important; }
+  #al-rows tr:not(.al-nomatch) td::before {
+    content: attr(data-label);
+    flex: none; max-width: 40%;
+    font-size: 0.72rem; font-weight: 600; letter-spacing: 0.04em;
+    text-transform: uppercase; text-align: left; color: var(--text-2);
+  }
+
+  #al-rows tr:not(.al-nomatch) td[data-label="Action"] { order: 1; }
+  #al-rows tr:not(.al-nomatch) td[data-label="When"]   { order: 2; }
+  #al-rows tr:not(.al-nomatch) td[data-label="Who"]    { order: 3; }
+  #al-rows tr:not(.al-nomatch) td[data-label="Detail"] { order: 4; }
+  #al-rows tr:not(.al-nomatch) td[data-label="Target"] { order: 5; }
+  #al-rows tr:not(.al-nomatch) td[data-label="IP"]     { order: 6; }
+
+  /* First line: badge on the left, date and time on the right */
+  #al-rows tr:not(.al-nomatch) td[data-label="Action"] {
+    flex: 1 1 0;
+    justify-content: flex-start; text-align: left;
+    border-top: 0; padding-top: 0.6rem !important;
+  }
+  #al-rows tr:not(.al-nomatch) td[data-label="When"] {
+    flex: 0 0 auto;
+    min-width: max-content !important;
+    white-space: nowrap !important;
+    display: block; text-align: right;
+    border-top: 0; padding-top: 0.6rem !important;
+  }
+  #al-rows tr:not(.al-nomatch) td[data-label="When"] .al-role {
+    display: block; text-align: right;
+  }
+  #al-rows tr:not(.al-nomatch) td[data-label="Action"]::before,
+  #al-rows tr:not(.al-nomatch) td[data-label="When"]::before {
+    display: none; content: none;
+  }
+
+  /* Who: label floats left, name over role on the right */
+  #al-rows tr:not(.al-nomatch) td[data-label="Who"] {
+    display: block;
+    text-align: right;
+  }
+  #al-rows tr:not(.al-nomatch) td[data-label="Who"]::before {
+    float: left;
+    max-width: none;
+    white-space: nowrap;
+    margin: 0.15rem 1rem 0 0;
+  }
+  #al-rows tr:not(.al-nomatch) td[data-label="Who"] > div {
+    text-align: right;
+    overflow-wrap: anywhere;
+  }
+  #al-rows tr:not(.al-nomatch) td[data-label="Who"] .al-role {
+    font-size: 0.75rem;
+  }
+
+  #al-rows tr:not(.al-nomatch) td.al-detail {
+    flex-direction: column; align-items: flex-start; gap: 0.25rem;
+    text-align: left;
+  }
+
+  #al-rows tr:not(.al-nomatch) td[data-label="Target"] {
+    color: var(--text-body); font-size: 0.875rem;
+  }
+  #al-rows tr:not(.al-nomatch) td[data-label="IP"] {
+    color: var(--text-body); font-size: 0.8125rem;
+  }
+
+  .al-act { white-space: normal; }
+
+  #al-rows tr.al-nomatch { display: block; }
+  #al-rows tr.al-nomatch td { display: block; padding: 1.5rem 1rem; }
+
+  .al-empty { padding: 2rem 1rem; }
+}
 </style>
 {% endblock %}
 

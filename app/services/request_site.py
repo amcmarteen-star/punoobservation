@@ -6,25 +6,30 @@ want, click its corners to draw the area. This module checks what the
 browser sends, measures the drawn area, and estimates how many
 seedlings the area needs.
 
-Everything here is a pure function except common_planting_densities(),
-which reads the planting records.
+Everything here is a pure function.
 """
 
 import json
 import math
-from collections import Counter
-
-from sqlalchemy import func
-
-from app.extensions import db
-from app.models import ReforestationRecord, Site
 from app.services.monitoring import point_in_geojson, polygon_area_ha
 
 
 # A pin is required for these, because an approved request of this kind
 # is expected to become a reforestation site. Seedling Supply and
 # Technical Assistance can be requested without one.
-SITE_REQUEST_TYPES = ("New Planting Site", "Site Rehabilitation")
+SITE_REQUEST_TYPES = ("New Planting Site",)
+
+# Takes on a site that already exists, so it needs no pin and never
+# creates a new site. The requester picks the site on the form.
+ADOPTION_REQUEST_TYPE = "Adoption"
+
+# Every type the request form offers, in the order it lists them.
+REQUEST_TYPES = (
+    "New Planting Site",
+    ADOPTION_REQUEST_TYPE,
+    "Seedling Supply",
+    "Technical Assistance",
+)
 
 LAND_OWNERSHIP_CHOICES = (
     "Public land",
@@ -36,12 +41,40 @@ LAND_OWNERSHIP_CHOICES = (
 LAND_COVER_CHOICES = (
     "Open grassland",
     "Brushland or shrubs",
-    "Degraded forest",
+    "Open forest",
+    "Closed forest",
     "Idle or abandoned farmland",
     "Riverbank or easement",
     "Coastal or mangrove area",
     "Other",
 )
+
+# Headings the Description box starts with. The requester writes after
+# each colon; headings left blank are dropped by tidy_description().
+DESCRIPTION_BULLETS = (
+    "Current land use",
+    "Intended use of the land",
+    "Access to the site",
+    "Why it needs reforesting",
+)
+DESCRIPTION_TEMPLATE = "\n".join(f"\u2022 {b}: " for b in DESCRIPTION_BULLETS)
+
+
+def tidy_description(text):
+    """
+    The description without bullets the requester left blank.
+    None when nothing was written at all.
+    """
+    kept = []
+    for line in (text or "").splitlines():
+        bare = line.strip().lstrip("\u2022-* ").strip()
+        heading, _, rest = bare.partition(":")
+        if heading in DESCRIPTION_BULLETS and not rest.strip():
+            continue
+        if line.strip():
+            kept.append(line.rstrip())
+    return "\n".join(kept) or None
+
 
 MIN_BOUNDARY_POINTS = 3
 MAX_BOUNDARY_POINTS = 50
@@ -52,11 +85,17 @@ MIN_DRAWN_AREA_HA = 0.01
 MIN_SPACING_M = 0.5
 MAX_SPACING_M = 20.0
 
-# A density is offered as a preset only when at least this many recorded
-# sites were planted at it, so a one-off figure is not shown as practice.
-DENSITY_MIN_SITES = 5
-
 SQM_PER_HA = 10000.0
+
+# Standard spacing for each kind of planting, as (row m, plant m).
+# The request form offers these in this order, then Custom spacing.
+PLANTING_TYPES = {
+    "timber": {"label": "Timber", "row_m": 2, "plant_m": 3},
+    "agroforestry": {"label": "Agroforestry (fruit trees and trees)",
+                     "row_m": 4, "plant_m": 5},
+    "bamboo": {"label": "Bamboo", "row_m": 4, "plant_m": 5},
+    "fuelwood": {"label": "Fuel wood", "row_m": 2, "plant_m": 2},
+}
 
 
 # ----------------------------------------------------------------------
@@ -285,6 +324,65 @@ def geometry_bbox(geojson_text):
     return [min(lats), min(lngs), max(lats), max(lngs)]
 
 
+def _ring_centroid(ring):
+    """(lng, lat, area) of one ring by the shoelace formula, or None."""
+    a = cx = cy = 0.0
+    for (x1, y1), (x2, y2) in zip(ring, ring[1:] + ring[:1]):
+        cross = x1 * y2 - x2 * y1
+        a += cross
+        cx += (x1 + x2) * cross
+        cy += (y1 + y2) * cross
+    if abs(a) < 1e-15:
+        return None
+    return cx / (3 * a), cy / (3 * a), abs(a) / 2
+
+
+def barangay_point(geometry):
+    """
+    (latitude, longitude) for a barangay's map marker, inside its outline.
+
+    The area centre of its largest polygon. A C- or L-shaped barangay can
+    have its centre outside itself, so then the point moves to the middle
+    of the widest stretch of the barangay along that latitude. Accepts a
+    GeoJSON Polygon or MultiPolygon (a dict). None when nothing usable.
+    """
+    if not isinstance(geometry, dict):
+        return None
+    coords = geometry.get("coordinates") or []
+    if geometry.get("type") == "Polygon":
+        polys = [coords]
+    elif geometry.get("type") == "MultiPolygon":
+        polys = coords
+    else:
+        return None
+
+    best = None
+    for poly in polys:
+        if not poly or len(poly[0]) < 4:
+            continue
+        ring = [tuple(p[:2]) for p in poly[0][:-1]]
+        c = _ring_centroid(ring)
+        if c and (best is None or c[2] > best[1][2]):
+            best = (poly, c, ring)
+    if best is None:
+        return None
+
+    poly, (lng, lat, _), ring = best
+    if not point_in_geojson(lng, lat, {"type": "Polygon", "coordinates": poly}):
+        # where this latitude crosses the outline, paired up into the
+        # stretches that lie inside it; the widest one wins
+        xs = sorted(
+            x1 + (lat - y1) * (x2 - x1) / (y2 - y1)
+            for (x1, y1), (x2, y2) in zip(ring, ring[1:] + ring[:1])
+            if (y1 > lat) != (y2 > lat)
+        )
+        spans = list(zip(xs[0::2], xs[1::2]))
+        if spans:
+            left, right = max(spans, key=lambda s: s[1] - s[0])
+            lng = (left + right) / 2
+    return round(lat, 6), round(lng, 6)
+
+
 def site_position(site):
     """
     Where a site's own map marker goes, as (lat, lon, placed_by), or None.
@@ -346,56 +444,18 @@ def density_from_spacing(row_m, plant_m):
     return math.floor(SQM_PER_HA / (row_m * plant_m) + 1e-9)
 
 
-def estimate_seedlings(area_ha, density_per_ha):
+def estimate_seedlings(area_ha, row_m, plant_m):
     """
-    Seedlings needed for an area, rounded up. None when either is missing.
+    Seedlings needed for an area: area / spacing, rounded up.
+    None when either is missing.
+
+    Worked from the area itself, not from a rounded per-hectare
+    density: 2 ha at 2 m x 3 m is 20,000 m2 / 6 m2 = 3,334 seedlings.
 
     A planning figure only. It does not add extra seedlings for
     replanting losses.
     """
-    if not area_ha or not density_per_ha:
+    if not area_ha or not row_m or not plant_m:
         return None
-    # The inner round stops 2.4 x 1000 = 2400.0000000000005 becoming 2401.
-    return math.ceil(round(area_ha * density_per_ha, 6))
-
-
-def common_planting_densities():
-    """
-    Planting densities used at recorded sites, most common first.
-
-    Each site's density is its target seedlings divided by its area.
-    Densities are grouped by the space each seedling gets, rounded to
-    half a square metre, so 1,666 and 1,668 per hectare count as the
-    same practice (6 m2 per seedling). Only densities used at
-    DENSITY_MIN_SITES or more sites are returned.
-
-    Returns [{"density": 1666, "sqm_per_seedling": 6.0, "sites": 32}, ...]
-    """
-    rows = (
-        db.session.query(
-            Site.area_size_ha,
-            func.sum(ReforestationRecord.target_quantity),
-        )
-        .join(ReforestationRecord, ReforestationRecord.site_id == Site.site_id)
-        .group_by(Site.site_id, Site.area_size_ha)
-        .all()
-    )
-
-    counts = Counter()
-    for area, target in rows:
-        if area and area > 0 and target:
-            sqm = round((SQM_PER_HA * area / target) * 2) / 2
-            if sqm > 0:
-                counts[sqm] += 1
-
-    presets = [
-        {
-            "density": math.floor(SQM_PER_HA / sqm + 1e-9),
-            "sqm_per_seedling": sqm,
-            "sites": n,
-        }
-        for sqm, n in counts.items()
-        if n >= DENSITY_MIN_SITES
-    ]
-    presets.sort(key=lambda d: (-d["sites"], -d["density"]))
-    return presets
+    # The inner round stops float noise like 3333.0000000001 becoming 3334.
+    return math.ceil(round(area_ha * SQM_PER_HA / (row_m * plant_m), 6))

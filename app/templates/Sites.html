@@ -2,11 +2,12 @@
 {% block title %}Reforestation Sites{% endblock %}
 {% block content_class %}page-content-wide{% endblock %}
 {% set active_page = 'sites' %}
+
 {% block extra_head %}
 <style>
   /* Phone-only elements: hidden on PC */
-  .site-more { display: none; }
   .site-actions { display: none; }
+  .site-more { display: none; }
 
   @media (max-width: 720px) {
 
@@ -52,6 +53,7 @@
       background: var(--surface-1);
     }
 
+    /* Every cell: label on the left (from its own data-label), value on the right */
     .sites-table tbody td {
       display: flex; justify-content: space-between; align-items: baseline;
       flex: 0 0 auto !important;
@@ -74,7 +76,7 @@
       text-transform: uppercase; text-align: left; color: var(--text-2);
     }
 
-    /* Name on top */
+    /* Site name on top, no label */
     .sites-table td.sites-name-cell {
       order: -3; display: block; text-align: left;
       border-top: 0; padding-top: 0.6rem;
@@ -82,14 +84,15 @@
     }
     .sites-table td.sites-name-cell::before { display: none; }
 
-    /* The original Map cell is hidden: its button now lives in the bottom row */
+    /* The Map cell is hidden: its View button is copied into the bottom row */
     .sites-table td.site-map { display: none !important; }
 
-    /* Extra columns sit behind the toggle */
+    /* Extra columns sit behind "Show all details" */
     .sites-table tbody tr:not(.is-open) td.site-extra { display: none; }
 
-    /* Actual Planted cell: label and value on top, buttons underneath */
-    .sites-table td.has-more { flex-wrap: wrap; }
+    /* The Area (ha) cell holds the buttons. It is always the last line of the
+       card, so the buttons stay at the bottom even when the details are open. */
+    .sites-table td.has-more { order: 99; flex-wrap: wrap; }
 
     .site-actions {
       display: flex; flex: 0 0 100%; gap: 0.5rem; margin-top: 0.6rem;
@@ -121,6 +124,7 @@
   }
 </style>
 {% endblock %}
+
 {% block content %}
 
 {% set ns = namespace(sites=[]) %}
@@ -138,10 +142,46 @@
 <th scope="col" class="{{ 'text-end ' if end else '' }}{{ pin }}">{{ label }}</th>
 {% endmacro %}
 
+{# Contract duration from the executed and expiry dates, as "3 yrs 2 mos",
+   with the two dates underneath. Whole months only: a month counts once
+   its day-of-month is reached, so 15 Jan -> 14 Mar is 1 month. #}
+{% macro duration_cell(start, end) %}
+<td class="sites-duration-cell site-extra" data-label="Duration">
+    {% if start and end and end >= start %}
+        {% set months = (end.year - start.year) * 12 + (end.month - start.month) - (1 if end.day < start.day else 0) %}
+        {% set y = months // 12 %}
+        {% set m = months % 12 %}
+        <span class="sites-fw-semibold">
+            {%- if months == 0 -%}
+                Less than a month
+            {%- else -%}
+                {%- if y %}{{ y }} {{ 'yr' if y == 1 else 'yrs' }}{% endif -%}
+                {%- if y and m %} {% endif -%}
+                {%- if m %}{{ m }} {{ 'mo' if m == 1 else 'mos' }}{% endif -%}
+            {%- endif -%}
+        </span>
+        <div class="text-secondary small fw-normal">
+            {{ start.strftime('%b %d, %Y') }} &ndash; {{ end.strftime('%b %d, %Y') }}
+        </div>
+    {% elif start or end %}
+        {# One date is missing (or they are out of order), so no duration;
+           show whatever was recorded. #}
+        <span class="um-muted">&mdash;</span>
+        <div class="text-secondary small fw-normal">
+            {% if start %}From {{ start.strftime('%b %d, %Y') }}{% endif %}
+            {% if start and end %}&middot;{% endif %}
+            {% if end %}Until {{ end.strftime('%b %d, %Y') }}{% endif %}
+        </div>
+    {% else %}
+        <span class="um-muted">&mdash;</span>
+    {% endif %}
+</td>
+{% endmacro %}
+
 {# "View" button that opens the map on this site, after a confirmation.
    pin takes the same classes as th() when the column is one of the pinned pair. #}
 {% macro map_cell(s, pin='') %}
-<td class="{{ pin }}">
+<td class="site-map {{ pin }}" data-label="Map">
     {% if s.location.latitude is not none %}
         <button type="button" class="um-btn-row"
                 data-site-id="{{ s.site_id }}"
@@ -213,9 +253,9 @@
                 <tr>
                     {% if session.role in ['admin', 'superadmin'] %}
                         {{ th('Site Code', pin='dt-pin') }}
-                        {{ th('Site Name', pin='dt-pin dt-pin-last') }}
+                        {{ th('Site Name', pin='dt-pin') }}
+                        {{ th('Map', pin='dt-pin dt-pin-last') }}
                         {{ th('Barangay') }}
-                        {{ th('Map') }}
                     {% else %}
                         {{ th('Site Name', pin='dt-pin') }}
                         {{ th('Map', pin='dt-pin dt-pin-last') }}
@@ -231,14 +271,15 @@
                     {{ th('District') }}
                     {{ th('Land Class') }}
                     {{ th('Land Use') }}
-                    {{ th('Contact Person') }}
+                    {# A private person's name: staff only, never public users. #}
+                    {% if session.role in ['admin', 'superadmin', 'field_officer'] %}
+                        {{ th('Contact Person') }}
+                    {% endif %}
                     {{ th('Component') }}
                     {{ th('Commodity') }}
                     {{ th('Year', 'num') }}
                     {{ th('Area (ha)', 'num', true) }}
-                    {{ th('Contracted (ha)', 'num', true) }}
-                    {{ th('Executed Date') }}
-                    {{ th('Expiry Date') }}
+                    {{ th('Duration') }}
                     {% if session.role in ['admin', 'superadmin'] %}
                         {{ th('Project Cost (3yr)', 'num', true) }}
                         {{ th('Retention Fee', 'num', true) }}
@@ -246,17 +287,20 @@
                         {{ th('Land Improvement', 'num', true) }}
                         {{ th('CIP Amount', 'num', true) }}
                     {% endif %}
-                    {{ th('Target Seedlings', 'num', true) }}
-                    {{ th('Actual Planted', 'num', true) }}
+                    {{ th('Planted Seedlings', 'num', true) }}
                 </tr>
             </thead>
             <tbody>
+                {# Every cell below carries its own data-label. The phone card
+                   layout reads those, so a label can never end up on the wrong
+                   value, whatever columns a role sees. Cells with the class
+                   site-extra are the ones tucked behind "Show all details". #}
                 {% for s in ns.sites %}
                 <tr data-municipality="{{ s.location.municipality|e }}"
                     data-search="{{ (s.site_name ~ ' ' ~ s.location.barangay ~ ' ' ~ s.location.municipality ~ ' ' ~ (s.site_code or ''))|lower|e }}">
                     {% if session.role in ['admin', 'superadmin'] %}
-                        <td class="dt-pin"><code>{{ s.site_code or '—' }}</code></td>
-                        <td class="sites-name-cell dt-pin dt-pin-last">
+                        <td class="dt-pin site-extra" data-label="Site Code"><code>{{ s.site_code or '—' }}</code></td>
+                        <td class="sites-name-cell dt-pin" data-label="Site Name">
                             {{ s.site_name }}
                             {% if s.source_request_id %}
                                 <div class="text-secondary small fw-normal">
@@ -264,20 +308,20 @@
                                 </div>
                             {% endif %}
                         </td>
-                        <td>{{ s.location.barangay }}</td>
-                        {{ map_cell(s) }}
+                        {{ map_cell(s, pin='dt-pin dt-pin-last') }}
+                        <td data-label="Barangay">{{ s.location.barangay }}</td>
                     {% else %}
-                        <td class="sites-name-cell dt-pin">
+                        <td class="sites-name-cell dt-pin" data-label="Site Name">
                             {{ s.site_name }}
                             {% if s.source_request_id %}
                                 <div class="text-secondary small fw-normal">From a public request</div>
                             {% endif %}
                         </td>
                         {{ map_cell(s, pin='dt-pin dt-pin-last') }}
-                        <td>{{ s.location.barangay }}</td>
+                        <td data-label="Barangay">{{ s.location.barangay }}</td>
                     {% endif %}
-                    <td>{{ s.location.municipality }}</td>
-                    <td>
+                    <td data-label="Municipality">{{ s.location.municipality }}</td>
+                    <td data-label="Zone">
                         {% if s.zone_type == 'Production' %}
                             <span class="badge-zone-production">Production</span>
                         {% elif s.zone_type == 'Protection' %}
@@ -287,32 +331,29 @@
                         {% endif %}
                     </td>
                     {% if session.role in ['admin', 'superadmin'] %}
-                        <td><code>{{ s.loa_contract_code or '—' }}</code></td>
+                        <td class="site-extra" data-label="LOA/Contract Code"><code>{{ s.loa_contract_code or '—' }}</code></td>
                     {% endif %}
-                    <td>{{ s.penro or '—' }}</td>
-                    <td>{{ s.cenro or '—' }}</td>
-                    <td>{{ s.congressional_district or '—' }}</td>
-                    <td>{{ s.land_classification or '—' }}</td>
-                    <td>{{ s.major_land_use or '—' }}</td>
-                    <td>{{ s.contact_person or '—' }}</td>
-                    <td>{{ s.component or '—' }}</td>
-                    <td>{{ s.commodity or '—' }}</td>
-                    <td>{{ s.year_contracted or '—' }}</td>
-                    <td class="num-cell">{{ s.area_size_ha }}</td>
-                    <td class="num-cell">{{ s.area_contracted_ha or '—' }}</td>
-                    <td>{{ s.date_contract_executed or '—' }}</td>
-                    <td>{{ s.date_contract_expiry or '—' }}</td>
+                    <td class="site-extra" data-label="PENRO">{{ s.penro or '—' }}</td>
+                    <td class="site-extra" data-label="CENRO">{{ s.cenro or '—' }}</td>
+                    <td class="site-extra" data-label="District">{{ s.congressional_district or '—' }}</td>
+                    <td class="site-extra" data-label="Land Class">{{ s.land_classification or '—' }}</td>
+                    <td class="site-extra" data-label="Land Use">{{ s.major_land_use or '—' }}</td>
+                    {% if session.role in ['admin', 'superadmin', 'field_officer'] %}
+                        <td class="site-extra" data-label="Contact Person">{{ s.contact_person or '—' }}</td>
+                    {% endif %}
+                    <td class="site-extra" data-label="Component">{{ s.component or '—' }}</td>
+                    <td class="site-extra" data-label="Commodity">{{ s.commodity or '—' }}</td>
+                    <td class="site-extra" data-label="Year">{{ s.year_contracted or '—' }}</td>
+                    <td class="num-cell" data-label="Area (ha)">{{ s.area_size_ha }}</td>
+                    {{ duration_cell(s.date_contract_executed, s.date_contract_expiry) }}
                     {% if session.role in ['admin', 'superadmin'] %}
-                        <td class="num-cell">{% if s.project_cost_3yr %}₱{{ "{:,.2f}".format(s.project_cost_3yr) }}{% else %}—{% endif %}</td>
-                        <td class="num-cell">{% if s.retention_fee_amount_paid %}₱{{ "{:,.2f}".format(s.retention_fee_amount_paid) }}{% else %}—{% endif %}</td>
-                        <td>{{ s.retention_fee_date_paid or '—' }}</td>
-                        <td class="num-cell">{% if s.amount_under_land_improvement %}₱{{ "{:,.2f}".format(s.amount_under_land_improvement) }}{% else %}—{% endif %}</td>
-                        <td class="num-cell">{% if s.amount_still_in_cip %}₱{{ "{:,.2f}".format(s.amount_still_in_cip) }}{% else %}—{% endif %}</td>
+                        <td class="num-cell site-extra" data-label="Project Cost (3yr)">{% if s.project_cost_3yr %}₱{{ "{:,.2f}".format(s.project_cost_3yr) }}{% else %}—{% endif %}</td>
+                        <td class="num-cell site-extra" data-label="Retention Fee">{% if s.retention_fee_amount_paid %}₱{{ "{:,.2f}".format(s.retention_fee_amount_paid) }}{% else %}—{% endif %}</td>
+                        <td class="site-extra" data-label="Retention Paid Date">{{ s.retention_fee_date_paid or '—' }}</td>
+                        <td class="num-cell site-extra" data-label="Land Improvement">{% if s.amount_under_land_improvement %}₱{{ "{:,.2f}".format(s.amount_under_land_improvement) }}{% else %}—{% endif %}</td>
+                        <td class="num-cell site-extra" data-label="CIP Amount">{% if s.amount_still_in_cip %}₱{{ "{:,.2f}".format(s.amount_still_in_cip) }}{% else %}—{% endif %}</td>
                     {% endif %}
-                    <td class="num-cell sites-fw-semibold">
-                        {{ "{:,}".format(site_totals.get(s.site_id).target_total) if site_totals.get(s.site_id) and site_totals.get(s.site_id).target_total else '—' }}
-                    </td>
-                    <td class="num-cell sites-fw-semibold sites-actual">
+                    <td class="num-cell sites-fw-semibold sites-actual site-extra" data-label="Planted Seedlings">
                         {{ "{:,}".format(site_totals.get(s.site_id).actual_total) if site_totals.get(s.site_id) and site_totals.get(s.site_id).actual_total else '—' }}
                     </td>
                 </tr>
@@ -371,58 +412,44 @@
     var totalRows = allRows.length;
 
     var currentMunicipality = 'all';
-/* ---- phone card labels ----
-   Copies each column header onto its cells so the card layout can show
-   "BARANGAY", "AREA (HA)" etc. in front of every value. */
-var KEY_COLUMNS = ['Site Name', 'Map', 'Municipality', 'Barangay', 'Zone',
-                   'Area (ha)', 'Target Seedlings', 'Actual Planted'];
 
-function decorateRows() {
-    var heads = Array.prototype.map.call(table.tHead.rows[0].cells, function (th) {
-        return th.textContent.trim();
-    });
+    /* ---- phone cards: View + "Show all details" under Area (ha) ----
+       The labels and the "extra" columns are already set in the template
+       (data-label, site-extra), so all this does is build the button row
+       and put it inside the Area (ha) cell. */
+    function decorateRows() {
+        allRows.forEach(function (row) {
+            var areaCell = row.querySelector('td[data-label="Area (ha)"]');
+            var mapCell = row.querySelector('td.site-map');
+            if (!areaCell) return;
+            areaCell.classList.add('has-more');
 
-    allRows.forEach(function (row) {
-        var actualCell = null;
-        var mapCell = null;
+            var actions = document.createElement('div');
+            actions.className = 'site-actions';
 
-        Array.prototype.forEach.call(row.cells, function (td, i) {
-            var label = heads[i] || '';
-            td.setAttribute('data-label', label);
-            if (label === 'Map') { td.classList.add('site-map'); mapCell = td; }
-            if (KEY_COLUMNS.indexOf(label) === -1) td.classList.add('site-extra');
-            if (label === 'Actual Planted') actualCell = td;
+            // Copy of the View button (the original stays in the table for PC).
+            // cloneNode keeps the data-site-id/name and the onclick handler.
+            var viewBtn = mapCell && mapCell.querySelector('.um-btn-row');
+            if (viewBtn) actions.appendChild(viewBtn.cloneNode(true));
+
+            var btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'site-more';
+            btn.textContent = 'Show all details';
+            btn.setAttribute('aria-expanded', 'false');
+            btn.addEventListener('click', function () {
+                var open = row.classList.toggle('is-open');
+                btn.textContent = open ? 'Hide details' : 'Show all details';
+                btn.setAttribute('aria-expanded', String(open));
+            });
+            actions.appendChild(btn);
+
+            areaCell.appendChild(actions);
         });
+    }
+    decorateRows();
 
-        if (!actualCell) return;
-        actualCell.classList.add('has-more');
-
-        // One row of buttons at the bottom of the card
-        var actions = document.createElement('div');
-        actions.className = 'site-actions';
-
-        // Copy of the View button (the original stays in the table for PC).
-        // cloneNode keeps the data-site-id/name and the onclick handler.
-        var viewBtn = mapCell && mapCell.querySelector('.um-btn-row');
-        if (viewBtn) actions.appendChild(viewBtn.cloneNode(true));
-
-        var btn = document.createElement('button');
-        btn.type = 'button';
-        btn.className = 'site-more';
-        btn.textContent = 'Show all details';
-        btn.setAttribute('aria-expanded', 'false');
-        btn.addEventListener('click', function () {
-            var open = row.classList.toggle('is-open');
-            btn.textContent = open ? 'Hide details' : 'Show all details';
-            btn.setAttribute('aria-expanded', String(open));
-        });
-        actions.appendChild(btn);
-
-        actualCell.appendChild(actions);
-    });
-}
-decorateRows();
-   /* ---- one render pass: filter, sort, slice ---- */
+    /* ---- one render pass: filter, sort, slice ---- */
     function render() {
         var q = (document.getElementById('site-search-input').value || '').trim().toLowerCase();
 
@@ -493,23 +520,23 @@ decorateRows();
        rows is shown. Each pinned column's `left` is therefore measured from
        the header cells after every render rather than hard-coded. */
     function layoutPinnedColumns() {
-    var headCells = table.tHead.rows[0].cells;
-    var offset = 0;
+        var headCells = table.tHead.rows[0].cells;
+        var offset = 0;
 
-    Array.prototype.forEach.call(headCells, function (th) {
-        if (!th.classList.contains('dt-pin')) return;
-        var index = th.cellIndex;
-        var left = offset + 'px';
+        Array.prototype.forEach.call(headCells, function (th) {
+            if (!th.classList.contains('dt-pin')) return;
+            var index = th.cellIndex;
+            var left = offset + 'px';
 
-        th.style.left = left;
-        allRows.forEach(function (row) {
-            var cell = row.cells[index];
-            if (cell) cell.style.left = left;
+            th.style.left = left;
+            allRows.forEach(function (row) {
+                var cell = row.cells[index];
+                if (cell) cell.style.left = left;
+            });
+
+            offset += th.getBoundingClientRect().width;
         });
-
-        offset += th.getBoundingClientRect().width;
-    });
-}
+    }
 
     document.addEventListener('click', function (e) {
         var wrap = document.querySelector('.um-filter-wrap');

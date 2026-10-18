@@ -1,0 +1,3 @@
+since our capstone paper contains cosine similarity and our instructor suggests it
+but cosine similarity does not recognize magnitude like rainfall it just pick the middle ground
+upon further research the Gower similarity would cover this flaw of our engine
