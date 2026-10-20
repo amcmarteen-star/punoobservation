@@ -387,6 +387,120 @@ endblock %} {% set active_page = 'reports' %} {% block content %}
     font-size: 0.78rem;
     line-height: 1.5;
     color: #dcfce7;
+    #siteTitle .st-loc { display: none; }
+.rep-plot-field { display: contents; }
+.rep-plot-lbl { display: none; }
+@media (max-width: 720px) {
+
+  .um-header { flex-wrap: wrap; gap: 0.75rem; }
+  .um-header h2 { font-size: 1.25rem; }
+  .um-header .um-btn-ghost { width: 100%; justify-content: center; min-height: 44px; }
+
+  #reportForm .um-panel { padding: 1rem 0.9rem; }
+  #reportForm .um-panel-head { gap: 0.6rem; }
+
+  #reportForm .um-field-row {
+    display: flex !important; flex-direction: column;
+    gap: 0.75rem;
+  }
+  #reportForm .um-field-row .um-field,
+  #reportForm .um-field { width: 100%; flex: 0 0 auto; min-width: 0; }
+
+  #reportForm input:not([type="file"]):not([type="checkbox"]),
+  #reportForm select,
+  #reportForm textarea {
+    width: 100%; min-height: 44px;
+    font-size: 16px;
+  }
+  #reportForm textarea { min-height: 7rem; }
+  #reportForm input[type="file"] {
+    width: 100%; min-height: 44px; font-size: 16px;
+  }
+
+  #reportForm .um-fact-grid {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 0.5rem;
+  }
+  #reportForm .um-fact { min-width: 0; }
+  #reportForm .um-fact .val { overflow-wrap: anywhere; }
+  #reportForm .site-title { overflow-wrap: anywhere; }
+
+  /* Site title: name / code / location on separate lines */
+  #siteTitle span { display: block; }
+  #siteTitle .st-sep { display: none; }
+  #siteTitle .st-code { margin-top: 0.15rem; font-size: 0.85rem; opacity: 0.9; }
+  #siteTitle .st-loc { display: block; margin-top: 0.4rem; font-size: 0.8rem; opacity: 0.85; }
+
+  .rep-proposed-map { height: 200px; }
+
+  #reportForm .rep-calc-line { gap: 1rem; align-items: baseline; }
+  #reportForm .rep-calc-line .val { text-align: right; overflow-wrap: anywhere; }
+  #reportForm .rep-plan-status { line-height: 1.5; }
+
+  #reportForm .um-btn-outline,
+  #reportForm #planAddRows {
+    width: 100%; min-height: 44px;
+    display: inline-flex; align-items: center; justify-content: center; gap: 0.4rem;
+  }
+  #reportForm #planAddRows[hidden] { display: none !important; }
+
+  /* Plot rows: one small card per plot */
+  #reportForm .rep-plot-head { display: none !important; }
+
+  #reportForm .rep-plot-row {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) 44px;
+    grid-template-areas:
+      "num remove"
+      "count count"
+      "note note";
+    gap: 0.5rem; align-items: center;
+    margin: 0 0 0.75rem; padding: 0.7rem 0.85rem 0.85rem;
+    border: 1px solid var(--line); border-radius: 12px;
+    background: var(--surface-1);
+  }
+
+  #reportForm .rep-plot-num {
+    grid-area: num;
+    display: block; width: auto !important; height: auto !important;
+    padding: 0 !important; border: 0 !important; border-radius: 0 !important;
+    background: none !important;
+    text-align: left; font-size: 0.95rem; font-weight: 700;
+    color: var(--text-heading);
+  }
+  #reportForm .rep-plot-num::before { content: "Plot "; }
+
+  #reportForm .rep-plot-field {
+    display: flex; flex-direction: column; gap: 0.3rem; min-width: 0;
+  }
+  #reportForm .rep-plot-field-count { grid-area: count; }
+  #reportForm .rep-plot-field-note  { grid-area: note; }
+  #reportForm .rep-plot-lbl {
+    display: block;
+    font-size: 0.72rem; font-weight: 600; letter-spacing: 0.04em;
+    text-transform: uppercase; color: var(--text-2);
+  }
+  #reportForm .rep-plot-field-count input { font-size: 18px; font-weight: 600; }
+
+  #reportForm .rep-plot-remove {
+    grid-area: remove; justify-self: end;
+    width: 44px; height: 44px;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 1.5rem;
+  }
+
+  #reportForm .um-note,
+  #reportForm .um-note-warn { font-size: 0.85rem; line-height: 1.55; }
+
+  #reportForm .d-flex.align-items-center.gap-2.mt-3 {
+    flex-direction: column; align-items: stretch !important; gap: 0.6rem !important;
+  }
+  #reportForm .um-btn-add {
+    width: 100%; min-height: 48px; justify-content: center;
+  }
+  #reportForm .d-flex .text-secondary.small { text-align: center; }
+}
   }
 </style>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -566,8 +680,27 @@ endblock %} {% set active_page = 'reports' %} {% block content %}
   }
 
   function showFacts(s) {
-    document.getElementById("siteTitle").textContent =
-      s.site_name + (s.site_code ? "  ·  " + s.site_code : "");
+    const title = document.getElementById("siteTitle");
+title.textContent = "";
+function titlePart(cls, text) {
+  const el = document.createElement("span");
+  el.className = cls;
+  el.textContent = text;
+  return el;
+}
+title.appendChild(titlePart("st-name", s.site_name));
+if (s.site_code) {
+  title.appendChild(titlePart("st-sep", "  ·  "));
+  title.appendChild(titlePart("st-code", s.site_code));
+}
+const brgyName = document.getElementById("barangay").value;
+const muniName = document.getElementById("municipality").value;
+if (brgyName || muniName) {
+  title.appendChild(titlePart("st-sep", "  ·  "));
+  title.appendChild(
+    titlePart("st-loc", [brgyName, muniName].filter(Boolean).join(", ")),
+  );
+}
     document.getElementById("factArea").textContent = s.area_size_ha + " ha";
     document.getElementById("factTarget").textContent =
       s.target_trees.toLocaleString();
@@ -685,8 +818,17 @@ endblock %} {% set active_page = 'reports' %} {% block content %}
     row.className = "rep-plot-row";
     row.innerHTML = `
       <span class="rep-plot-num">${n}</span>
-      <input type="number" name="plot_count" min="0" placeholder="0" aria-label="Live seedlings counted" oninput="recalc()">
-      <input type="text" name="plot_note" placeholder="e.g. near the creek" aria-label="Note for this row">
+      <label class="rep-plot-field rep-plot-field-count">
+        <span class="rep-plot-lbl">Alive seedlings counted</span>
+        <input type="number" name="plot_count" min="0" inputmode="numeric"
+               placeholder="0" aria-label="Live seedlings counted"
+               oninput="recalc()">
+      </label>
+      <label class="rep-plot-field rep-plot-field-note">
+        <span class="rep-plot-lbl">Notes (optional)</span>
+        <input type="text" name="plot_note" placeholder="e.g. near the creek"
+               aria-label="Note for this row">
+      </label>
       <button type="button" class="rep-plot-remove"
               onclick="removePlotRow(this)" aria-label="Remove row">&times;</button>
     `;

@@ -5,7 +5,7 @@
 {% set active_page = 'notifications' %}
 {% block extra_head %}
 <style>
-      .notif-tabs {
+  .notif-tabs {
     display: flex;
     gap: 0.4rem;
     border-bottom: 2px solid var(--line);
@@ -38,6 +38,228 @@
     background: var(--ok-bg);
     color: var(--ok-text);
   }
+
+  /* ================= PHONE LAYOUT (<= 720px) =================
+     Phone-only. Nothing here applies on larger screens. */
+  @media (max-width: 720px) {
+
+    /* ---------- Header ---------- */
+    .um-header { flex-wrap: wrap; gap: 0.75rem; }
+    .um-header h2 { font-size: 1.25rem; }
+
+    /* Mark all as read: floating pill, bottom centre of the screen */
+    .notif-mark-all {
+      position: fixed;
+      left: 0; right: 0; margin-inline: auto;   /* centres it without a transform */
+      width: max-content; max-width: calc(100vw - 2rem);
+      bottom: calc(1rem + env(safe-area-inset-bottom));
+      z-index: 40;
+      min-height: 48px; padding: 0 1.4rem;
+      display: inline-flex; align-items: center; justify-content: center;
+      border: 0; border-radius: 999px;
+      background: var(--brand-solid, #16a34a); color: #ffffff;
+      font-weight: 600; font-size: 0.9rem; white-space: nowrap;
+      box-shadow: 0 6px 20px rgba(15, 23, 42, 0.3);
+    }
+
+    /* leave room under the last notification so the button never covers it */
+    .notif-list-card { margin-bottom: 5.5rem; }
+
+    /* ---------- Tabs: three equal buttons ---------- */
+    .notif-tabs { gap: 0; margin-bottom: 1rem; }
+    .notif-tab {
+      flex: 1 1 0; min-width: 0;
+      display: inline-flex; align-items: center; justify-content: center;
+      min-height: 44px; padding: 0.5rem 0.25rem;
+      text-align: center; white-space: nowrap;
+    }
+
+    /* ---------- Toolbar: stacked ---------- */
+    .notif-toolbar {
+      flex-direction: column; align-items: stretch; gap: 0.75rem;
+    }
+
+    .notif-bulk {
+      display: flex; flex-wrap: wrap; align-items: center;
+      gap: 0.5rem; width: 100%;
+    }
+    .notif-select-all:not([hidden]) {
+      display: inline-flex; align-items: center; gap: 0.6rem;
+      min-height: 44px;
+    }
+    .notif-select-all input { width: 1.25rem; height: 1.25rem; }
+
+    /* :not([hidden]) so the page's own show/hide logic still works */
+    .notif-bulk-actions:not([hidden]) {
+      display: flex; flex-wrap: wrap; gap: 0.5rem; width: 100%;
+    }
+    .notif-bulk-btn,
+    .notif-delete-btn {
+      flex: 1 1 auto; min-height: 44px;
+      display: inline-flex; align-items: center; justify-content: center;
+      gap: 0.4rem;
+    }
+
+    /* Filters: two selects side by side, note and Clear on their own lines */
+    .notif-filters {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 0.5rem; width: 100%;
+    }
+    .notif-filters-icon { display: none; }
+    .notif-filter-select {
+      width: 100%; min-width: 0; min-height: 44px;
+      font-size: 16px; /* stops iOS zooming in on focus */
+    }
+    .notif-filter-note,
+    .notif-filter-clear { grid-column: 1 / -1; }
+    .notif-filter-clear { min-height: 44px; }
+
+    /* ---------- Rows ----------
+       Line 1:  [ ] (icon)  message + time
+       Line 2:           [eye] [trash]            [Details]          */
+    .notif-row:not([hidden]) {
+      display: grid !important;
+      grid-template-columns: auto auto auto auto 1fr;
+      column-gap: 0.6rem; row-gap: 0.2rem;
+      align-items: start;
+      padding: 0.8rem 0.75rem;
+    }
+
+    .notif-row .notif-row-checkbox {
+      grid-column: 1; grid-row: 1;
+      width: 1.25rem; height: 1.25rem; margin: 0.15rem 0 0;
+    }
+    .notif-row .notif-icon {
+      grid-column: 2; grid-row: 1; flex: none; margin: 0;
+    }
+    .notif-row .notif-row-body {
+      grid-column: 3 / -1; grid-row: 1; min-width: 0; margin: 0;
+    }
+    .notif-row-body p {
+      margin: 0 0 0.25rem; overflow-wrap: anywhere; line-height: 1.45;
+    }
+
+    /* On PC these may be revealed on hover. A phone has no hover, so they
+       must always be visible. */
+    .notif-row .notif-row-eye,
+    .notif-row .notif-row-trash,
+    .notif-row .notif-row-details {
+      opacity: 1 !important; visibility: visible !important;
+      position: static !important; transform: none !important;
+      margin: 0 !important;
+      min-width: 44px; min-height: 44px;
+      display: inline-flex; align-items: center; justify-content: center;
+    }
+    .notif-row .notif-row-eye   { grid-column: 3; grid-row: 2; justify-self: start; }
+    .notif-row .notif-row-trash { grid-column: 4; grid-row: 2; justify-self: start; }
+
+    /* Details was the only child with no grid position, so the grid dropped
+       it into row 2, column 1 under the checkbox. Pin it to the right edge. */
+    .notif-row .notif-row-details {
+      grid-column: 5; grid-row: 2; justify-self: end;
+      padding: 0 1rem;
+    }
+  }
+  @media (max-width: 720px) {
+
+  /* ---------- Header ---------- */
+  .um-header { flex-wrap: wrap; gap: 0.75rem; }
+  .um-header h2 { font-size: 1.25rem; }
+
+  /* Mark all as read: floating pill, bottom centre of the screen */
+  .notif-mark-all {
+    position: fixed;
+    left: 0; right: 0; margin-inline: auto;
+    width: max-content; max-width: calc(100vw - 2rem);
+    bottom: calc(1rem + env(safe-area-inset-bottom));
+    z-index: 40;
+    min-height: 48px; padding: 0 1.4rem;
+    display: inline-flex; align-items: center; justify-content: center;
+    border: 0; border-radius: 999px;
+    background: var(--brand-solid, #16a34a); color: #ffffff;
+    font-weight: 600; font-size: 0.9rem; white-space: nowrap;
+    box-shadow: 0 6px 20px rgba(15, 23, 42, 0.3);
+  }
+  .notif-list-card { margin-bottom: 5.5rem; }
+
+  /* ---------- Tabs: three equal buttons ---------- */
+  .notif-tabs { gap: 0; margin-bottom: 1rem; }
+  .notif-tab {
+    flex: 1 1 0; min-width: 0;
+    display: inline-flex; align-items: center; justify-content: center;
+    min-height: 44px; padding: 0.5rem 0.25rem;
+    text-align: center; white-space: nowrap;
+  }
+
+  /* ---------- Toolbar: stacked ---------- */
+  .notif-toolbar { flex-direction: column; align-items: stretch; gap: 0.75rem; }
+
+  .notif-bulk {
+    display: flex; flex-wrap: wrap; align-items: center;
+    gap: 0.5rem; width: 100%;
+  }
+  .notif-select-all:not([hidden]) {
+    display: inline-flex; align-items: center; gap: 0.6rem; min-height: 44px;
+  }
+  .notif-select-all input { width: 1.25rem; height: 1.25rem; }
+
+  .notif-bulk-actions:not([hidden]) {
+    display: flex; flex-wrap: wrap; gap: 0.5rem; width: 100%;
+  }
+  .notif-bulk-btn,
+  .notif-delete-btn {
+    flex: 1 1 auto; min-height: 44px;
+    display: inline-flex; align-items: center; justify-content: center; gap: 0.4rem;
+  }
+
+  .notif-filters {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 0.5rem; width: 100%;
+  }
+  .notif-filters-icon { display: none; }
+  .notif-filter-select {
+    width: 100%; min-width: 0; min-height: 44px; font-size: 16px;
+  }
+  .notif-filter-note,
+  .notif-filter-clear { grid-column: 1 / -1; }
+  .notif-filter-clear { min-height: 44px; }
+
+  /* ---------- Rows ---------- */
+  .notif-row:not([hidden]) {
+    display: grid !important;
+    grid-template-columns: auto auto auto auto 1fr;
+    column-gap: 0.6rem; row-gap: 0.2rem;
+    align-items: start;
+    padding: 0.8rem 0.75rem;
+  }
+
+  .notif-row .notif-row-checkbox {
+    grid-column: 1; grid-row: 1;
+    width: 1.25rem; height: 1.25rem; margin: 0.15rem 0 0;
+  }
+  .notif-row .notif-icon { grid-column: 2; grid-row: 1; flex: none; margin: 0; }
+  .notif-row .notif-row-body { grid-column: 3 / -1; grid-row: 1; min-width: 0; margin: 0; }
+  .notif-row-body p { margin: 0 0 0.25rem; overflow-wrap: anywhere; line-height: 1.45; }
+
+  .notif-row .notif-row-eye,
+  .notif-row .notif-row-trash,
+  .notif-row .notif-row-details {
+    opacity: 1 !important; visibility: visible !important;
+    position: static !important; transform: none !important;
+    margin: 0 !important;
+    min-width: 44px; min-height: 44px;
+    display: inline-flex; align-items: center; justify-content: center;
+  }
+  .notif-row .notif-row-eye   { grid-column: 3; grid-row: 2; justify-self: start; }
+  .notif-row .notif-row-trash { grid-column: 4; grid-row: 2; justify-self: start; }
+  .notif-row .notif-row-details {
+    grid-column: 5; grid-row: 2; justify-self: end; padding: 0 0.9rem;
+  }
+
+  /* ---------- Empty states ---------- */
+  .notif-empty { padding: 2rem 1rem; }
+  .notif-empty .notif-filter-clear { width: 100%; }
+}
 </style>
 {% endblock %}
 {% block content %}
