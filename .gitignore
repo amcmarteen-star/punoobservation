@@ -19,3 +19,7 @@ app/static/images/landing/pexels-*
 
 # Run logs from the data scripts (scripts/README.md).
 scripts/data/generated/*.log
+
+# Database backups. They hold user data and password hashes, so they
+# stay on the machine that made them.
+*.sql
