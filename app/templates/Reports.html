@@ -387,120 +387,137 @@ endblock %} {% set active_page = 'reports' %} {% block content %}
     font-size: 0.78rem;
     line-height: 1.5;
     color: #dcfce7;
-    #siteTitle .st-loc { display: none; }
-.rep-plot-field { display: contents; }
-.rep-plot-lbl { display: none; }
-@media (max-width: 720px) {
-
-  .um-header { flex-wrap: wrap; gap: 0.75rem; }
-  .um-header h2 { font-size: 1.25rem; }
-  .um-header .um-btn-ghost { width: 100%; justify-content: center; min-height: 44px; }
-
-  #reportForm .um-panel { padding: 1rem 0.9rem; }
-  #reportForm .um-panel-head { gap: 0.6rem; }
-
-  #reportForm .um-field-row {
-    display: flex !important; flex-direction: column;
-    gap: 0.75rem;
-  }
-  #reportForm .um-field-row .um-field,
-  #reportForm .um-field { width: 100%; flex: 0 0 auto; min-width: 0; }
-
-  #reportForm input:not([type="file"]):not([type="checkbox"]),
-  #reportForm select,
-  #reportForm textarea {
-    width: 100%; min-height: 44px;
-    font-size: 16px;
-  }
-  #reportForm textarea { min-height: 7rem; }
-  #reportForm input[type="file"] {
-    width: 100%; min-height: 44px; font-size: 16px;
   }
 
-  #reportForm .um-fact-grid {
-    display: grid !important;
-    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-    gap: 0.5rem;
-  }
-  #reportForm .um-fact { min-width: 0; }
-  #reportForm .um-fact .val { overflow-wrap: anywhere; }
-  #reportForm .site-title { overflow-wrap: anywhere; }
+  /* Phone-only pieces. These sit OUTSIDE the media query so PC looks
+     exactly as before: the location line and the field labels stay hidden. */
+  #siteTitle .st-loc { display: none; }
+  .rep-plot-field { display: contents; }
+  .rep-plot-lbl { display: none; }
 
-  /* Site title: name / code / location on separate lines */
-  #siteTitle span { display: block; }
-  #siteTitle .st-sep { display: none; }
-  #siteTitle .st-code { margin-top: 0.15rem; font-size: 0.85rem; opacity: 0.9; }
-  #siteTitle .st-loc { display: block; margin-top: 0.4rem; font-size: 0.8rem; opacity: 0.85; }
+  /* ================= PHONE LAYOUT (<= 720px) =================
+     Phone-only. Nothing here applies on larger screens. */
+  @media (max-width: 720px) {
 
-  .rep-proposed-map { height: 200px; }
+    /* ---------- Header ---------- */
+    .um-header { flex-wrap: wrap; gap: 0.75rem; }
+    .um-header h2 { font-size: 1.25rem; }
+    .um-header .um-btn-ghost { width: 100%; justify-content: center; min-height: 44px; }
 
-  #reportForm .rep-calc-line { gap: 1rem; align-items: baseline; }
-  #reportForm .rep-calc-line .val { text-align: right; overflow-wrap: anywhere; }
-  #reportForm .rep-plan-status { line-height: 1.5; }
+    /* ---------- Step panels ---------- */
+    #reportForm .um-panel { padding: 1rem 0.9rem; }
+    #reportForm .um-panel-head { gap: 0.6rem; }
 
-  #reportForm .um-btn-outline,
-  #reportForm #planAddRows {
-    width: 100%; min-height: 44px;
-    display: inline-flex; align-items: center; justify-content: center; gap: 0.4rem;
-  }
-  #reportForm #planAddRows[hidden] { display: none !important; }
+    /* ---------- Fields: one per line, finger-sized ---------- */
+    #reportForm .um-field-row {
+      display: flex !important; flex-direction: column;
+      gap: 0.75rem;
+    }
+    #reportForm .um-field-row .um-field,
+    #reportForm .um-field { width: 100%; flex: 0 0 auto; min-width: 0; }
 
-  /* Plot rows: one small card per plot */
-  #reportForm .rep-plot-head { display: none !important; }
+    #reportForm input:not([type="file"]):not([type="checkbox"]),
+    #reportForm select,
+    #reportForm textarea {
+      width: 100%; min-height: 44px;
+      font-size: 16px;               /* stops iOS zooming in on focus */
+    }
+    #reportForm textarea { min-height: 7rem; }
+    #reportForm input[type="file"] {
+      width: 100%; min-height: 44px; font-size: 16px;
+    }
 
-  #reportForm .rep-plot-row {
-    display: grid !important;
-    grid-template-columns: minmax(0, 1fr) 44px;
-    grid-template-areas:
-      "num remove"
-      "count count"
-      "note note";
-    gap: 0.5rem; align-items: center;
-    margin: 0 0 0.75rem; padding: 0.7rem 0.85rem 0.85rem;
-    border: 1px solid var(--line); border-radius: 12px;
-    background: var(--surface-1);
-  }
+    /* ---------- Site facts: two per row ---------- */
+    #reportForm .um-fact-grid {
+      display: grid !important;
+      grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+      gap: 0.5rem;
+    }
+    #reportForm .um-fact { min-width: 0; }
+    #reportForm .um-fact .val { overflow-wrap: anywhere; }
+    #reportForm .site-title { overflow-wrap: anywhere; }
 
-  #reportForm .rep-plot-num {
-    grid-area: num;
-    display: block; width: auto !important; height: auto !important;
-    padding: 0 !important; border: 0 !important; border-radius: 0 !important;
-    background: none !important;
-    text-align: left; font-size: 0.95rem; font-weight: 700;
-    color: var(--text-heading);
-  }
-  #reportForm .rep-plot-num::before { content: "Plot "; }
+    /* Site title: name / code / location on separate lines */
+    #siteTitle span { display: block; }
+    #siteTitle .st-sep { display: none; }
+    #siteTitle .st-code { margin-top: 0.15rem; font-size: 0.85rem; opacity: 0.9; }
+    #siteTitle .st-loc { display: block; margin-top: 0.4rem; font-size: 0.8rem; opacity: 0.85; }
 
-  #reportForm .rep-plot-field {
-    display: flex; flex-direction: column; gap: 0.3rem; min-width: 0;
-  }
-  #reportForm .rep-plot-field-count { grid-area: count; }
-  #reportForm .rep-plot-field-note  { grid-area: note; }
-  #reportForm .rep-plot-lbl {
-    display: block;
-    font-size: 0.72rem; font-weight: 600; letter-spacing: 0.04em;
-    text-transform: uppercase; color: var(--text-2);
-  }
-  #reportForm .rep-plot-field-count input { font-size: 18px; font-weight: 600; }
+    .rep-proposed-map { height: 200px; }
 
-  #reportForm .rep-plot-remove {
-    grid-area: remove; justify-self: end;
-    width: 44px; height: 44px;
-    display: inline-flex; align-items: center; justify-content: center;
-    font-size: 1.5rem;
-  }
+    /* ---------- Count plan + live calculation ---------- */
+    #reportForm .rep-calc-line { gap: 1rem; align-items: baseline; }
+    #reportForm .rep-calc-line[hidden] { display: none !important; }
+    #reportForm .rep-calc-line .val { text-align: right; overflow-wrap: anywhere; }
+    #reportForm .rep-plan-status { line-height: 1.5; }
 
-  #reportForm .um-note,
-  #reportForm .um-note-warn { font-size: 0.85rem; line-height: 1.55; }
+    #reportForm .um-btn-outline,
+    #reportForm #planAddRows {
+      width: 100%; min-height: 44px;
+      display: inline-flex; align-items: center; justify-content: center; gap: 0.4rem;
+    }
+    #reportForm #planAddRows[hidden] { display: none !important; }
 
-  #reportForm .d-flex.align-items-center.gap-2.mt-3 {
-    flex-direction: column; align-items: stretch !important; gap: 0.6rem !important;
-  }
-  #reportForm .um-btn-add {
-    width: 100%; min-height: 48px; justify-content: center;
-  }
-  #reportForm .d-flex .text-secondary.small { text-align: center; }
-}
+    /* ---------- Count rows: one small card per plot (or per part) ---------- */
+    #reportForm .rep-plot-head { display: none !important; }
+
+    #reportForm .rep-plot-row {
+      display: grid !important;
+      grid-template-columns: minmax(0, 1fr) 44px;
+      grid-template-areas:
+        "num remove"
+        "count count"
+        "note note";
+      gap: 0.5rem; align-items: center;
+      margin: 0 0 0.75rem; padding: 0.7rem 0.85rem 0.85rem;
+      border: 1px solid var(--line); border-radius: 12px;
+      background: var(--surface-1);
+    }
+
+    #reportForm .rep-plot-num {
+      grid-area: num;
+      display: block; width: auto !important; height: auto !important;
+      padding: 0 !important; border: 0 !important; border-radius: 0 !important;
+      background: none !important;
+      text-align: left; font-size: 0.95rem; font-weight: 700;
+      color: var(--text-heading);
+    }
+    /* "Plot 1" for a plot survey, "Part 1" when the whole site is counted */
+    #reportForm .rep-plot-num::before { content: "Plot "; }
+    #reportForm #plotRows[data-mode="full"] .rep-plot-num::before { content: "Part "; }
+
+    #reportForm .rep-plot-field {
+      display: flex; flex-direction: column; gap: 0.3rem; min-width: 0;
+    }
+    #reportForm .rep-plot-field-count { grid-area: count; }
+    #reportForm .rep-plot-field-note  { grid-area: note; }
+    #reportForm .rep-plot-lbl {
+      display: block;
+      font-size: 0.72rem; font-weight: 600; letter-spacing: 0.04em;
+      text-transform: uppercase; color: var(--text-2);
+    }
+    #reportForm .rep-plot-field-count input { font-size: 18px; font-weight: 600; }
+
+    #reportForm .rep-plot-remove {
+      grid-area: remove; justify-self: end;
+      width: 44px; height: 44px;
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 1.5rem;
+    }
+
+    /* ---------- Notes ---------- */
+    #reportForm .um-note,
+    #reportForm .um-note-warn { font-size: 0.85rem; line-height: 1.55; }
+    #reportForm .um-note-warn[hidden] { display: none !important; }
+
+    /* ---------- Submit row: button on top, explanation underneath ---------- */
+    #reportForm .d-flex.align-items-center.gap-2.mt-3 {
+      flex-direction: column; align-items: stretch !important; gap: 0.6rem !important;
+    }
+    #reportForm .um-btn-add {
+      width: 100%; min-height: 48px; justify-content: center;
+    }
+    #reportForm .d-flex .text-secondary.small { text-align: center; }
   }
 </style>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -632,9 +649,9 @@ endblock %} {% set active_page = 'reports' %} {% block content %}
     if (!proposedMap) {
       proposedMap = L.map("proposedMap", { scrollWheelZoom: false });
       L.tileLayer(MAP_TILES.street.url, {
-      maxZoom: 19,
-      attribution: MAP_TILES.street.attribution,
-    }).addTo(proposedMap);
+        maxZoom: 19,
+        attribution: MAP_TILES.street.attribution,
+      }).addTo(proposedMap);
     }
     if (proposedLayer) proposedMap.removeLayer(proposedLayer);
     proposedLayer = L.featureGroup().addTo(proposedMap);
@@ -679,28 +696,33 @@ endblock %} {% set active_page = 'reports' %} {% block content %}
     updatePlotHint();
   }
 
+  // The site title is built from parts so a phone can put the name, the
+  // code and the location on separate lines. On PC the location part is
+  // hidden and the name and code read on one line, as before.
+  function titlePart(cls, text) {
+    const el = document.createElement("span");
+    el.className = cls;
+    el.textContent = text;
+    return el;
+  }
+
   function showFacts(s) {
     const title = document.getElementById("siteTitle");
-title.textContent = "";
-function titlePart(cls, text) {
-  const el = document.createElement("span");
-  el.className = cls;
-  el.textContent = text;
-  return el;
-}
-title.appendChild(titlePart("st-name", s.site_name));
-if (s.site_code) {
-  title.appendChild(titlePart("st-sep", "  ·  "));
-  title.appendChild(titlePart("st-code", s.site_code));
-}
-const brgyName = document.getElementById("barangay").value;
-const muniName = document.getElementById("municipality").value;
-if (brgyName || muniName) {
-  title.appendChild(titlePart("st-sep", "  ·  "));
-  title.appendChild(
-    titlePart("st-loc", [brgyName, muniName].filter(Boolean).join(", ")),
-  );
-}
+    title.textContent = "";
+    title.appendChild(titlePart("st-name", s.site_name));
+    if (s.site_code) {
+      title.appendChild(titlePart("st-sep", "  \u00B7  "));
+      title.appendChild(titlePart("st-code", s.site_code));
+    }
+    const brgyName = document.getElementById("barangay").value;
+    const muniName = document.getElementById("municipality").value;
+    if (brgyName || muniName) {
+      title.appendChild(titlePart("st-sep", "  \u00B7  "));
+      title.appendChild(
+        titlePart("st-loc", [brgyName, muniName].filter(Boolean).join(", ")),
+      );
+    }
+
     document.getElementById("factArea").textContent = s.area_size_ha + " ha";
     document.getElementById("factTarget").textContent =
       s.target_trees.toLocaleString();
@@ -745,6 +767,11 @@ if (brgyName || muniName) {
     const plan = countPlan();
     document.getElementById("plotsWarn").hidden = !plan || plan.method !== "plots";
     document.getElementById("fullWarn").hidden = !plan || plan.method !== "full";
+
+    // The phone layout titles each row "Plot 1" or "Part 1" from this.
+    const rowsWrap = document.getElementById("plotRows");
+    if (plan) rowsWrap.dataset.mode = plan.method;
+    else delete rowsWrap.dataset.mode;
 
     if (!plan) {
       empty.textContent = currentSite
@@ -810,6 +837,9 @@ if (brgyName || muniName) {
   }
 
   // ---------- plot rows ----------
+  // The two inputs sit inside labelled wrappers. On PC the wrappers vanish
+  // (display: contents) and the labels are hidden, so a row looks as it
+  // always did; on a phone each row becomes a card with titled fields.
   function addPlotRow() {
     const wrap = document.getElementById("plotRows");
     const n = wrap.children.length + 1;
@@ -1010,7 +1040,7 @@ if (brgyName || muniName) {
       banner.className = "alert alert-info";
       banner.textContent =
         "Site pre-selected from the GIS map. Change it above if needed.";
-      document.querySelector(".page-header").after(banner);
+      document.querySelector(".um-header").after(banner);
     }
   })();
 </script>
