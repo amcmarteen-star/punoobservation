@@ -6,6 +6,9 @@
 
     var reduced = window.matchMedia("(prefers-reduced-motion: reduce)");
 
+    /* Opens the species lightbox for a card; set by initLightbox(). */
+    var openSpecies = null;
+
     /* ---------- Sticky nav ----------
        A sentinel at the top of the document tells us when the bar has
        left the hero, which avoids listening to every scroll frame. */
@@ -54,6 +57,12 @@
                 if (i === 0) return;
                 if (it.target.getBoundingClientRect().top <= line) active = it;
             });
+            // the footer is too short to reach the line, so at the very
+            // bottom of the page the last link is the current one
+            var doc = document.documentElement;
+            if (window.innerHeight + window.scrollY >= doc.scrollHeight - 4) {
+                active = items[items.length - 1];
+            }
             setCurrent(active);
         }
 
@@ -136,6 +145,9 @@
         Array.prototype.slice.call(track.children).forEach(function (node) {
             var clone = node.cloneNode(true);
             clone.setAttribute("aria-hidden", "true");
+            /* Copies are only there for the seamless loop; keep them out of
+               the tab order so each species is reached once. */
+            if (clone.hasAttribute("tabindex")) clone.setAttribute("tabindex", "-1");
             track.appendChild(clone);
         });
 
@@ -149,6 +161,7 @@
         var dragging = false;
         var dragX = 0;
         var dragOffset = 0;
+        var downSlide = null;
 
         function measure() {
             /* The original set is half the track, so it is the loop length. */
@@ -210,6 +223,7 @@
             dragging = true;
             dragX = e.clientX;
             dragOffset = offset;
+            downSlide = e.target.closest(".landing-slide");
             root.classList.add("is-dragging");
             if (track.setPointerCapture && e.pointerId !== undefined) {
                 try { track.setPointerCapture(e.pointerId); } catch (err) { /* not captured */ }
@@ -230,7 +244,14 @@
 
         track.addEventListener("pointerdown", onDown);
         track.addEventListener("pointermove", onMove);
-        track.addEventListener("pointerup", onUp);
+        /* The track captures the pointer, so a tap on a card is recognised
+           here: released close to where it was pressed means a click, not a
+           drag, and it opens that card's photo. */
+        track.addEventListener("pointerup", function (e) {
+            var tapped = dragging && Math.abs(e.clientX - dragX) < 6 ? downSlide : null;
+            onUp();
+            if (tapped && openSpecies) openSpecies(tapped);
+        });
         track.addEventListener("pointercancel", onUp);
         track.addEventListener("lostpointercapture", onUp);
         track.addEventListener("dragstart", function (e) { e.preventDefault(); });
@@ -543,11 +564,80 @@
         window.addEventListener("blur", hide);
     }
 
+    /* ---------- Species lightbox ----------
+       Clicking a species card shows its photo large with the same details,
+       the photo credit, and arrows (or the arrow keys) to step through all
+       ten. Esc, the close button, or a click outside closes it. */
+    function initLightbox() {
+        var dialog = document.getElementById("species-lightbox");
+        var cards = Array.prototype.slice.call(
+            document.querySelectorAll('#species .landing-slide:not([aria-hidden="true"])'));
+        if (!dialog || !cards.length || typeof dialog.showModal !== "function") return;
+
+        var img = dialog.querySelector(".lightbox-img");
+        var credit = dialog.querySelector(".lightbox-credit a");
+        var current = 0;
+
+        function text(card, selector) {
+            var el = card.querySelector(selector);
+            return el ? el.textContent.trim() : "";
+        }
+
+        function show(index) {
+            current = (index + cards.length) % cards.length;
+            var card = cards[current];
+            var photo = card.querySelector("img");
+            img.src = photo.currentSrc || photo.src;
+            img.alt = photo.alt;
+            dialog.querySelector(".lightbox-sci").textContent = text(card, ".landing-slide-sci");
+            dialog.querySelector("#lightbox-name").textContent = text(card, "h3");
+            dialog.querySelector(".lightbox-ranges").textContent =
+                text(card, ".landing-slide-body p:not(.landing-slide-sci)");
+            credit.textContent = card.dataset.creditAuthor || "";
+            credit.href = card.dataset.creditUrl || "#";
+            dialog.querySelector(".lightbox-credit span").textContent = "(" + (card.dataset.creditLicense || "") + ")";
+            dialog.querySelector(".lightbox-count").textContent = (current + 1) + " / " + cards.length;
+        }
+
+        openSpecies = function (card) {
+            show(Number(card.dataset.index) || 0);
+            if (!dialog.open) dialog.showModal();
+        };
+
+        /* Without the running marquee (reduced motion, no JS strip) the cards
+           receive ordinary clicks. */
+        document.querySelectorAll("#species .landing-slide").forEach(function (card) {
+            card.addEventListener("click", function () {
+                if (!card.closest(".landing-marquee.is-running")) openSpecies(card);
+            });
+            card.addEventListener("keydown", function (e) {
+                if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    openSpecies(card);
+                }
+            });
+        });
+
+        dialog.addEventListener("click", function (e) {
+            var step = e.target.closest("[data-lightbox-step]");
+            if (step) {
+                show(current + Number(step.getAttribute("data-lightbox-step")));
+            } else if (e.target.closest("[data-lightbox-close]") || e.target === dialog) {
+                dialog.close();
+            }
+        });
+        dialog.addEventListener("keydown", function (e) {
+            if (e.key === "ArrowLeft") show(current - 1);
+            if (e.key === "ArrowRight") show(current + 1);
+        });
+    }
+
     function init() {
         initNav();
         initNavSpy();
         initReveals();
         initMarquee();
+        initLightbox();
         initPlates();
         initMapHover();
     }

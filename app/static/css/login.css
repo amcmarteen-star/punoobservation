@@ -1,0 +1,155 @@
+/* Login page. Loaded after style.css; every rule is scoped to .lg-page so
+   the Register page and the rest of the app are not affected. */
+
+.lg-page {
+    --lg-bg: #e4ece1;
+    --lg-bg-2: #d3e0d0;
+    --lg-ink: #12261f;
+    --lg-muted: #52645d;
+    --lg-green: #0d3632;
+    --lg-green-hover: #14574c;
+    --lg-ring: rgba(13, 126, 90, 0.22);
+    background: var(--lg-bg);
+}
+
+.lg-shell {
+    display: grid;
+    grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+    min-height: 100vh;
+    background: linear-gradient(160deg, var(--lg-bg) 0%, var(--lg-bg-2) 100%);
+}
+
+/* ---------- Form side ---------- */
+.lg-form-side {
+    display: flex;
+    flex-direction: column;
+    padding: 2rem clamp(1.5rem, 5vw, 4.5rem) 1.75rem;
+}
+
+.lg-main {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem 0;
+}
+.lg-card { width: min(100%, 26rem); }
+
+.lg-card h1 {
+    margin: 0;
+    font-family: 'Fraunces', Georgia, 'Times New Roman', serif;
+    font-weight: 600;
+    font-size: clamp(2.25rem, 3.4vw, 3rem);
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+    color: var(--lg-ink);
+    text-align: center;
+}
+.lg-sub {
+    margin: 0.75rem 0 2rem;
+    text-align: center;
+    color: var(--lg-muted);
+    font-size: 1rem;
+    line-height: 1.5;
+}
+
+.lg-form { display: flex; flex-direction: column; gap: 1.25rem; }
+.lg-field label {
+    display: block;
+    margin: 0 0 0.45rem 1.1rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--lg-ink);
+}
+
+/* Pill inputs: filled, no hard border, like the reference. */
+.lg-page .input-wrap input {
+    width: 100%;
+    box-sizing: border-box;
+    min-height: 52px;
+    padding: 0.8rem 3.1rem 0.8rem 1.25rem;
+    border: 1.5px solid transparent;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.78);
+    font: inherit;
+    font-size: 1rem;
+    color: var(--lg-ink);
+    outline: none;
+    transition: border-color 160ms var(--auth-ease), box-shadow 160ms var(--auth-ease),
+                background-color 160ms var(--auth-ease);
+}
+.lg-page .input-wrap input::placeholder { color: #7b8a84; }
+.lg-page .input-wrap input:hover { background: rgba(255, 255, 255, 0.92); }
+.lg-page .input-wrap input:focus {
+    background: #fff;
+    border-color: var(--auth-green);
+    box-shadow: 0 0 0 4px var(--lg-ring);
+}
+.lg-page .field-toggle { right: 0.6rem; }
+
+.lg-caps {
+    margin: 0.5rem 0 0 1.1rem;
+    font-size: 0.875rem;
+    color: var(--warn-strong);
+}
+.lg-caps[hidden] { display: none; }
+
+.lg-btn {
+    margin-top: 0.5rem;
+    min-height: 54px;
+    border: none;
+    border-radius: 999px;
+    background: var(--lg-green);
+    color: #fff;
+    font: inherit;
+    font-size: 1.0625rem;
+    font-weight: 700;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.6rem;
+    transition: background-color 160ms var(--auth-ease), box-shadow 160ms var(--auth-ease),
+                transform 160ms var(--auth-ease);
+}
+.lg-btn:hover { background: var(--lg-green-hover); box-shadow: 0 8px 20px rgba(13, 54, 50, 0.22); }
+.lg-btn:active { transform: translateY(1px); box-shadow: none; }
+.lg-btn.is-loading { pointer-events: none; opacity: 0.85; }
+.lg-btn.is-loading::before {
+    content: "";
+    width: 1rem;
+    height: 1rem;
+    border: 2px solid rgba(255, 255, 255, 0.4);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: lg-spin 700ms linear infinite;
+}
+@keyframes lg-spin { to { transform: rotate(360deg); } }
+
+.lg-switch {
+    margin: 1.75rem 0 0;
+    text-align: center;
+    color: var(--lg-muted);
+}
+.lg-switch a { color: var(--lg-green); font-weight: 700; text-underline-offset: 3px; }
+
+/* ---------- Green brand panel (the existing one from style.css) ---------- */
+@media (min-width: 981px) {
+    .lg-page .brand-panel { margin: 1rem 1rem 1rem 0; }
+
+    /* Want the green panel on the left instead? Add this class to the
+       <div class="lg-shell"> in Log_in.html. */
+    .lg-shell--green-left { grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr); }
+    .lg-shell--green-left .brand-panel { order: -1; margin: 1rem 0 1rem 1rem; }
+}
+
+/* ---------- Small screens: green panel on top, form below ---------- */
+@media (max-width: 980px) {
+    .lg-shell { display: flex; flex-direction: column; }
+    .lg-page .brand-panel { order: -1; }
+    .lg-form-side { padding: 1.5rem 1.25rem 2rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .lg-btn.is-loading::before { animation-duration: 2s; }
+    .lg-btn { transition: none; }
+}

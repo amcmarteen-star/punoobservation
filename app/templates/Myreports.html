@@ -15,6 +15,115 @@
   everything they have filed.
 #}
 
+{% block extra_head %}
+<style>
+  /* ================= PHONE LAYOUT (<= 720px) =================
+     Phone-only. Nothing here applies on larger screens. */
+  @media (max-width: 720px) {
+
+    /* ---------- Header ---------- */
+    .um-header { flex-wrap: wrap; gap: 0.75rem; }
+    .um-header h2 { font-size: 1.25rem; }
+    .um-header .um-btn-add {
+      width: 100%; justify-content: center; min-height: 44px;
+    }
+
+    /* ---------- Filter ---------- */
+    .um-toolbar { flex-direction: column; align-items: stretch; }
+    .um-toolbar .um-filter-wrap { width: 100%; }
+    .um-toolbar .um-filter-btn {
+      width: 100%; justify-content: space-between; min-height: 44px;
+    }
+    .um-toolbar .um-filter-menu,
+    .um-toolbar .um-filter-menu.um-filter-menu-end {
+      left: 0; right: 0; width: auto; min-width: 0;
+      max-height: 60dvh; overflow-y: auto;
+    }
+    .um-toolbar .um-filter-menu a {
+      min-height: 44px;
+      display: flex; align-items: center; justify-content: space-between; gap: 0.75rem;
+    }
+
+    /* ---------- Table becomes cards ---------- */
+    .um-table-card {
+      border: 0; background: none; box-shadow: none; padding: 0; overflow: visible;
+    }
+    #myreports-scroll {
+      max-height: none !important; overflow: visible !important;
+    }
+    #myreports-scroll::before,
+    #myreports-scroll::after { display: none !important; }
+
+    #myreports-table,
+    #myreports-table tbody {
+      display: block !important; width: 100% !important; min-width: 0 !important;
+    }
+    #myreports-table thead { display: none !important; }
+
+    #myreports-table tbody tr {
+      display: flex; flex-direction: column;
+      height: auto !important; min-height: 0 !important; overflow: visible !important;
+      content-visibility: visible !important; contain: none !important;
+      margin: 0 0 0.75rem; padding: 0.35rem 0.9rem 0.7rem;
+      border: 1px solid var(--line); border-radius: 12px;
+      background: var(--surface-1);
+    }
+
+    /* Every cell: label on the left (its own data-label), value on the right */
+    #myreports-table tbody td {
+      display: flex; justify-content: space-between; align-items: baseline;
+      flex: 0 0 auto !important;
+      gap: 1rem;
+      height: auto !important; min-height: 0 !important;
+      min-width: 0 !important; max-width: none !important;
+      overflow: visible !important;
+      padding: 0.5rem 0 !important;
+      border: 0; border-top: 1px solid var(--line);
+      box-shadow: none !important;
+      font-size: 0.875rem; line-height: 1.4;
+      text-align: right; white-space: normal !important; word-break: break-word;
+      position: static !important; left: auto !important; z-index: auto !important;
+      background: transparent !important;
+    }
+    #myreports-table tbody td::after { content: none !important; }
+    #myreports-table tbody td::before {
+      content: attr(data-label);
+      flex: none; max-width: 45%;
+      font-size: 0.72rem; font-weight: 600; letter-spacing: 0.04em;
+      text-transform: uppercase; text-align: left; color: var(--text-2);
+    }
+
+    /* Site on top: name with the barangay underneath, no label */
+    #myreports-table td.mr-site {
+      order: -4; display: block; text-align: left;
+      border-top: 0; padding-top: 0.6rem !important;
+    }
+    #myreports-table td.mr-site::before { display: none; }
+    #myreports-table td.mr-site .sites-name-cell {
+      font-size: 1rem; font-weight: 700; color: var(--text-heading);
+    }
+
+    /* Then the two things you check first: status, then survival */
+    #myreports-table td.mr-status { order: -3; flex-wrap: wrap; }
+    #myreports-table td.mr-status .fst-italic {
+      flex: 0 0 100%; text-align: left; margin-top: 0.2rem;
+    }
+    #myreports-table td.mr-survival { order: -2; font-size: 1.1rem; }
+
+    /* View button last, full width, no label */
+    #myreports-table td.mr-action {
+      order: 99; display: block;
+      border-top: 0; padding-top: 0.6rem !important;
+    }
+    #myreports-table td.mr-action::before { display: none; }
+    #myreports-table td.mr-action .um-btn-row {
+      width: 100%; min-height: 44px;
+      display: inline-flex; align-items: center; justify-content: center; gap: 0.4rem;
+    }
+  }
+</style>
+{% endblock %}
+
 {% block content %}
 
 {% set is_all = not status_filter or status_filter == 'all' %}
@@ -68,7 +177,7 @@
 <div class="um-table-card">
   {% if my_reports %}
   <div class="um-scroll-wrap table-freeze-wrap" id="myreports-scroll">
-    <table class="um-table um-scroll-table" data-freeze="2">
+    <table class="um-table um-scroll-table" id="myreports-table" data-freeze="2">
       <thead>
         <tr>
           <th>#</th>
@@ -84,10 +193,13 @@
         </tr>
       </thead>
       <tbody>
+        {# Each cell carries its own data-label, which the phone card layout
+           shows in front of the value. The label lives on the cell itself,
+           so it can never end up on the wrong value. #}
         {% for r in my_reports %}
         <tr>
-          <td class="num-cell">{{ r.report_id }}</td>
-          <td>
+          <td class="num-cell" data-label="Report #">{{ r.report_id }}</td>
+          <td class="mr-site" data-label="Site">
             {% if r.site %}
             <div class="sites-name-cell">{{ r.site.site_name }}</div>
             {% if r.site.location %}
@@ -98,16 +210,17 @@
             <span class="text-secondary">&mdash;</span>
             {% endif %}
           </td>
-          <td>{{ r.monitoring_date.strftime('%Y-%m-%d') }}</td>
-          <td class="num-cell">{{ r.plots_recorded or '—' }}</td>
-          <td class="num-cell">{{ r.total_counted or '—' }}</td>
+          <td data-label="Monitored">{{ r.monitoring_date.strftime('%Y-%m-%d') }}</td>
+          <td class="num-cell" data-label="Plots">{{ r.plots_recorded or '—' }}</td>
+          <td class="num-cell" data-label="Counted alive">{{ r.total_counted or '—' }}</td>
           <td
-            class="num-cell sites-fw-semibold {% if r.survival_rate >= 85 %}text-success{% else %}text-danger{% endif %}"
+            class="mr-survival num-cell sites-fw-semibold {% if r.survival_rate >= 85 %}text-success{% else %}text-danger{% endif %}"
+            data-label="Survival rate"
           >
             {{ r.survival_rate }}%
           </td>
-          <td class="num-cell">{{ r.sampling_intensity }}%</td>
-          <td>
+          <td class="num-cell" data-label="Sampling intensity">{{ r.sampling_intensity }}%</td>
+          <td class="mr-status" data-label="Status">
             <span class="um-status st-{{ r.approval_status|lower }}"
               >{{ r.approval_status }}</span
             >
@@ -117,8 +230,8 @@
             </div>
             {% endif %}
           </td>
-          <td>{{ r.submitted_at|datetime_ph }}</td>
-          <td>
+          <td data-label="Submitted">{{ r.submitted_at|datetime_ph }}</td>
+          <td class="mr-action" data-label="View">
             <a href="{{ url_for('dashboard.my_report_detail', report_id=r.report_id) }}"
                class="um-btn-row">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"/><circle cx="12" cy="12" r="3"/></svg>

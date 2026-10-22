@@ -2,6 +2,129 @@
 {% block title %}Reforestation Sites{% endblock %}
 {% block content_class %}page-content-wide{% endblock %}
 {% set active_page = 'sites' %}
+
+{% block extra_head %}
+<style>
+  /* Phone-only elements: hidden on PC */
+  .site-actions { display: none; }
+  .site-more { display: none; }
+
+  @media (max-width: 720px) {
+
+    /* ---------- Header + toolbar ---------- */
+    .um-header { flex-wrap: wrap; gap: 0.75rem; }
+    .um-header h2 { font-size: 1.25rem; }
+    .um-header .um-btn-add { width: 100%; justify-content: center; }
+
+    .dt-toolbar { flex-direction: column; align-items: stretch; gap: 0.6rem; }
+    .um-filter-wrap, .um-filter-btn { width: 100%; }
+    .um-filter-btn { justify-content: space-between; min-height: 44px; }
+    .um-filter-menu { left: 0; right: 0; width: auto; max-height: 50dvh; overflow-y: auto; }
+    .um-filter-menu button { min-height: 44px; }
+
+    .um-search-group { flex-wrap: wrap; width: 100%; }
+    .um-search-wrap { flex: 1 1 100%; }
+    .um-search-input { font-size: 16px; min-height: 44px; } /* stops iOS zoom */
+    .dt-count { width: 100%; }
+
+    /* ---------- Table becomes cards ---------- */
+    .sites-scroll-wrap {
+      max-height: none !important;
+      overflow: visible !important;
+    }
+    .sites-scroll-wrap::before,
+    .sites-scroll-wrap::after { display: none !important; }
+
+    .sites-table,
+    .sites-table tbody {
+      display: block !important;
+      width: 100% !important;
+      min-width: 0 !important;
+    }
+    .sites-table thead { display: none !important; }
+
+    .sites-table tbody tr {
+      display: flex; flex-direction: column;
+      height: auto !important; min-height: 0 !important; max-height: none !important;
+      overflow: visible !important;
+      content-visibility: visible !important; contain: none !important;
+      margin: 0 0 0.75rem; padding: 0.35rem 0.9rem 0.6rem;
+      border: 1px solid var(--line); border-radius: 12px;
+      background: var(--surface-1);
+    }
+
+    /* Every cell: label on the left (from its own data-label), value on the right */
+    .sites-table tbody td {
+      display: flex; justify-content: space-between; align-items: baseline;
+      flex: 0 0 auto !important;
+      gap: 1rem;
+      height: auto !important; min-height: 0 !important; max-height: none !important;
+      min-width: 0 !important; max-width: none !important;
+      overflow: visible !important; text-overflow: clip !important;
+      padding: 0.45rem 0; border: 0; border-top: 1px solid var(--line);
+      box-shadow: none !important;
+      font-size: 0.875rem; line-height: 1.4;
+      text-align: right; white-space: normal !important; word-break: break-word;
+      position: static !important; left: auto !important; z-index: auto !important;
+      background: transparent !important;
+    }
+    .sites-table tbody td::after { content: none !important; }
+    .sites-table tbody td::before {
+      content: attr(data-label);
+      flex: none; max-width: 45%;
+      font-size: 0.72rem; font-weight: 600; letter-spacing: 0.04em;
+      text-transform: uppercase; text-align: left; color: var(--text-2);
+    }
+
+    /* Site name on top, no label */
+    .sites-table td.sites-name-cell {
+      order: -3; display: block; text-align: left;
+      border-top: 0; padding-top: 0.6rem;
+      font-size: 1rem; font-weight: 700; color: var(--text-heading);
+    }
+    .sites-table td.sites-name-cell::before { display: none; }
+
+    /* The Map cell is hidden: its View button is copied into the bottom row */
+    .sites-table td.site-map { display: none !important; }
+
+    /* Extra columns sit behind "Show all details" */
+    .sites-table tbody tr:not(.is-open) td.site-extra { display: none; }
+
+    /* The Area (ha) cell holds the buttons. It is always the last line of the
+       card, so the buttons stay at the bottom even when the details are open. */
+    .sites-table td.has-more { order: 99; flex-wrap: wrap; }
+
+    .site-actions {
+      display: flex; flex: 0 0 100%; gap: 0.5rem; margin-top: 0.6rem;
+    }
+    .site-actions .um-btn-row,
+    .site-actions .site-more {
+      flex: 1 1 0; min-width: 0; min-height: 44px;
+      display: inline-flex; align-items: center; justify-content: center;
+      gap: 0.35rem; margin: 0; padding: 0.4rem 0.6rem;
+      font: inherit; font-size: 0.8rem; font-weight: 600;
+      text-align: center; text-transform: none; letter-spacing: normal;
+      white-space: nowrap; cursor: pointer;
+    }
+    .site-actions .site-more {
+      border: 1px solid var(--line-strong); border-radius: 8px;
+      background: var(--surface-1); color: var(--brand-text);
+    }
+
+    .dt-footer { text-align: center; }
+
+    /* Confirmation dialog */
+    .um-modal { width: calc(100vw - 1.5rem); max-width: 480px; }
+    .um-modal-close { width: 44px; height: 44px; }
+    .um-modal-foot {
+      flex-direction: column-reverse; gap: 0.5rem;
+      padding-bottom: calc(1rem + env(safe-area-inset-bottom));
+    }
+    .um-modal-foot button { width: 100%; min-height: 44px; }
+  }
+</style>
+{% endblock %}
+
 {% block content %}
 
 {% set ns = namespace(sites=[]) %}
@@ -23,7 +146,7 @@
    with the two dates underneath. Whole months only: a month counts once
    its day-of-month is reached, so 15 Jan -> 14 Mar is 1 month. #}
 {% macro duration_cell(start, end) %}
-<td class="sites-duration-cell">
+<td class="sites-duration-cell site-extra" data-label="Duration">
     {% if start and end and end >= start %}
         {% set months = (end.year - start.year) * 12 + (end.month - start.month) - (1 if end.day < start.day else 0) %}
         {% set y = months // 12 %}
@@ -58,7 +181,7 @@
 {# "View" button that opens the map on this site, after a confirmation.
    pin takes the same classes as th() when the column is one of the pinned pair. #}
 {% macro map_cell(s, pin='') %}
-<td class="{{ pin }}">
+<td class="site-map {{ pin }}" data-label="Map">
     {% if s.location.latitude is not none %}
         <button type="button" class="um-btn-row"
                 data-site-id="{{ s.site_id }}"
@@ -130,9 +253,9 @@
                 <tr>
                     {% if session.role in ['admin', 'superadmin'] %}
                         {{ th('Site Code', pin='dt-pin') }}
-                        {{ th('Site Name', pin='dt-pin dt-pin-last') }}
+                        {{ th('Site Name', pin='dt-pin') }}
+                        {{ th('Map', pin='dt-pin dt-pin-last') }}
                         {{ th('Barangay') }}
-                        {{ th('Map') }}
                     {% else %}
                         {{ th('Site Name', pin='dt-pin') }}
                         {{ th('Map', pin='dt-pin dt-pin-last') }}
@@ -168,12 +291,16 @@
                 </tr>
             </thead>
             <tbody>
+                {# Every cell below carries its own data-label. The phone card
+                   layout reads those, so a label can never end up on the wrong
+                   value, whatever columns a role sees. Cells with the class
+                   site-extra are the ones tucked behind "Show all details". #}
                 {% for s in ns.sites %}
                 <tr data-municipality="{{ s.location.municipality|e }}"
                     data-search="{{ (s.site_name ~ ' ' ~ s.location.barangay ~ ' ' ~ s.location.municipality ~ ' ' ~ (s.site_code or ''))|lower|e }}">
                     {% if session.role in ['admin', 'superadmin'] %}
-                        <td class="dt-pin"><code>{{ s.site_code or '—' }}</code></td>
-                        <td class="sites-name-cell dt-pin dt-pin-last">
+                        <td class="dt-pin site-extra" data-label="Site Code"><code>{{ s.site_code or '—' }}</code></td>
+                        <td class="sites-name-cell dt-pin" data-label="Site Name">
                             {{ s.site_name }}
                             {% if s.source_request_id %}
                                 <div class="text-secondary small fw-normal">
@@ -181,20 +308,20 @@
                                 </div>
                             {% endif %}
                         </td>
-                        <td>{{ s.location.barangay }}</td>
-                        {{ map_cell(s) }}
+                        {{ map_cell(s, pin='dt-pin dt-pin-last') }}
+                        <td data-label="Barangay">{{ s.location.barangay }}</td>
                     {% else %}
-                        <td class="sites-name-cell dt-pin">
+                        <td class="sites-name-cell dt-pin" data-label="Site Name">
                             {{ s.site_name }}
                             {% if s.source_request_id %}
                                 <div class="text-secondary small fw-normal">From a public request</div>
                             {% endif %}
                         </td>
                         {{ map_cell(s, pin='dt-pin dt-pin-last') }}
-                        <td>{{ s.location.barangay }}</td>
+                        <td data-label="Barangay">{{ s.location.barangay }}</td>
                     {% endif %}
-                    <td>{{ s.location.municipality }}</td>
-                    <td>
+                    <td data-label="Municipality">{{ s.location.municipality }}</td>
+                    <td data-label="Zone">
                         {% if s.zone_type == 'Production' %}
                             <span class="badge-zone-production">Production</span>
                         {% elif s.zone_type == 'Protection' %}
@@ -204,29 +331,29 @@
                         {% endif %}
                     </td>
                     {% if session.role in ['admin', 'superadmin'] %}
-                        <td><code>{{ s.loa_contract_code or '—' }}</code></td>
+                        <td class="site-extra" data-label="LOA/Contract Code"><code>{{ s.loa_contract_code or '—' }}</code></td>
                     {% endif %}
-                    <td>{{ s.penro or '—' }}</td>
-                    <td>{{ s.cenro or '—' }}</td>
-                    <td>{{ s.congressional_district or '—' }}</td>
-                    <td>{{ s.land_classification or '—' }}</td>
-                    <td>{{ s.major_land_use or '—' }}</td>
+                    <td class="site-extra" data-label="PENRO">{{ s.penro or '—' }}</td>
+                    <td class="site-extra" data-label="CENRO">{{ s.cenro or '—' }}</td>
+                    <td class="site-extra" data-label="District">{{ s.congressional_district or '—' }}</td>
+                    <td class="site-extra" data-label="Land Class">{{ s.land_classification or '—' }}</td>
+                    <td class="site-extra" data-label="Land Use">{{ s.major_land_use or '—' }}</td>
                     {% if session.role in ['admin', 'superadmin', 'field_officer'] %}
-                        <td>{{ s.contact_person or '—' }}</td>
+                        <td class="site-extra" data-label="Contact Person">{{ s.contact_person or '—' }}</td>
                     {% endif %}
-                    <td>{{ s.component or '—' }}</td>
-                    <td>{{ s.commodity or '—' }}</td>
-                    <td>{{ s.year_contracted or '—' }}</td>
-                    <td class="num-cell">{{ s.area_size_ha }}</td>
+                    <td class="site-extra" data-label="Component">{{ s.component or '—' }}</td>
+                    <td class="site-extra" data-label="Commodity">{{ s.commodity or '—' }}</td>
+                    <td class="site-extra" data-label="Year">{{ s.year_contracted or '—' }}</td>
+                    <td class="num-cell" data-label="Area (ha)">{{ s.area_size_ha }}</td>
                     {{ duration_cell(s.date_contract_executed, s.date_contract_expiry) }}
                     {% if session.role in ['admin', 'superadmin'] %}
-                        <td class="num-cell">{% if s.project_cost_3yr %}₱{{ "{:,.2f}".format(s.project_cost_3yr) }}{% else %}—{% endif %}</td>
-                        <td class="num-cell">{% if s.retention_fee_amount_paid %}₱{{ "{:,.2f}".format(s.retention_fee_amount_paid) }}{% else %}—{% endif %}</td>
-                        <td>{{ s.retention_fee_date_paid or '—' }}</td>
-                        <td class="num-cell">{% if s.amount_under_land_improvement %}₱{{ "{:,.2f}".format(s.amount_under_land_improvement) }}{% else %}—{% endif %}</td>
-                        <td class="num-cell">{% if s.amount_still_in_cip %}₱{{ "{:,.2f}".format(s.amount_still_in_cip) }}{% else %}—{% endif %}</td>
+                        <td class="num-cell site-extra" data-label="Project Cost (3yr)">{% if s.project_cost_3yr %}₱{{ "{:,.2f}".format(s.project_cost_3yr) }}{% else %}—{% endif %}</td>
+                        <td class="num-cell site-extra" data-label="Retention Fee">{% if s.retention_fee_amount_paid %}₱{{ "{:,.2f}".format(s.retention_fee_amount_paid) }}{% else %}—{% endif %}</td>
+                        <td class="site-extra" data-label="Retention Paid Date">{{ s.retention_fee_date_paid or '—' }}</td>
+                        <td class="num-cell site-extra" data-label="Land Improvement">{% if s.amount_under_land_improvement %}₱{{ "{:,.2f}".format(s.amount_under_land_improvement) }}{% else %}—{% endif %}</td>
+                        <td class="num-cell site-extra" data-label="CIP Amount">{% if s.amount_still_in_cip %}₱{{ "{:,.2f}".format(s.amount_still_in_cip) }}{% else %}—{% endif %}</td>
                     {% endif %}
-                    <td class="num-cell sites-fw-semibold sites-actual">
+                    <td class="num-cell sites-fw-semibold sites-actual site-extra" data-label="Planted Seedlings">
                         {{ "{:,}".format(site_totals.get(s.site_id).actual_total) if site_totals.get(s.site_id) and site_totals.get(s.site_id).actual_total else '—' }}
                     </td>
                 </tr>
@@ -285,6 +412,42 @@
     var totalRows = allRows.length;
 
     var currentMunicipality = 'all';
+
+    /* ---- phone cards: View + "Show all details" under Area (ha) ----
+       The labels and the "extra" columns are already set in the template
+       (data-label, site-extra), so all this does is build the button row
+       and put it inside the Area (ha) cell. */
+    function decorateRows() {
+        allRows.forEach(function (row) {
+            var areaCell = row.querySelector('td[data-label="Area (ha)"]');
+            var mapCell = row.querySelector('td.site-map');
+            if (!areaCell) return;
+            areaCell.classList.add('has-more');
+
+            var actions = document.createElement('div');
+            actions.className = 'site-actions';
+
+            // Copy of the View button (the original stays in the table for PC).
+            // cloneNode keeps the data-site-id/name and the onclick handler.
+            var viewBtn = mapCell && mapCell.querySelector('.um-btn-row');
+            if (viewBtn) actions.appendChild(viewBtn.cloneNode(true));
+
+            var btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'site-more';
+            btn.textContent = 'Show all details';
+            btn.setAttribute('aria-expanded', 'false');
+            btn.addEventListener('click', function () {
+                var open = row.classList.toggle('is-open');
+                btn.textContent = open ? 'Hide details' : 'Show all details';
+                btn.setAttribute('aria-expanded', String(open));
+            });
+            actions.appendChild(btn);
+
+            areaCell.appendChild(actions);
+        });
+    }
+    decorateRows();
 
     /* ---- one render pass: filter, sort, slice ---- */
     function render() {

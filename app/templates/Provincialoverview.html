@@ -240,6 +240,124 @@
     font-size: 0.78rem;
     color: var(--text-2);
   }
+
+  /* ================= PHONE LAYOUT (<= 720px) =================
+     Phone-only. Nothing here applies on larger screens.
+     Tables become stacked cards, so there is no side scroll. */
+  @media (max-width: 720px) {
+
+    /* Read-only notice */
+    .po-readonly { font-size: 0.8rem; padding: 0.65rem 0.8rem; }
+
+    /* Headline cards: two per row, first one full width */
+    .po-cards {
+      grid-template-columns: 1fr 1fr;
+      gap: 0.6rem;
+      margin-bottom: 1rem;
+    }
+    .po-cards .po-card:first-child { grid-column: 1 / -1; }
+
+    .po-card {
+      padding: 0.75rem 0.85rem;
+      gap: 0.5rem;
+    }
+    .po-card .po-value { font-size: 1.4rem; }
+    .po-card .po-label { font-size: 0.68rem; letter-spacing: 0.4px; }
+    .po-icon { width: 2.1rem; height: 2.1rem; border-radius: 8px; }
+    .po-icon svg { width: 1.1rem; height: 1.1rem; }
+
+    /* Section spacing and headers */
+    .po-section { margin-top: 1.4rem; }
+    .po-section .um-header { gap: 0.5rem; }
+    .po-section .um-header h2 { font-size: 1.15rem; }
+    .po-section .um-title-row { flex-wrap: wrap; gap: 0.5rem; }
+
+    /* ---- Tables become stacked cards: no side scroll ---- */
+    .po-section .um-table-card {
+      background: transparent;
+      border: 0;
+      box-shadow: none;
+      overflow: visible;
+    }
+    .po-section .um-scroll-wrap {
+      overflow: visible !important;
+      max-height: none !important;
+    }
+
+    .po-section .um-table,
+    .po-section .um-table tbody,
+    .po-section .um-table tr,
+    .po-section .um-table td {
+      display: block;
+      width: 100%;
+      min-width: 0 !important;
+    }
+
+    /* Hide the header row but keep it for screen readers */
+    .po-section .um-table thead {
+      position: absolute;
+      width: 1px; height: 1px;
+      overflow: hidden;
+      clip: rect(0 0 0 0);
+    }
+
+    .po-section .um-table tr {
+      background: var(--surface-1);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 0.35rem 0.85rem;
+      margin-bottom: 0.7rem;
+    }
+
+    /* Each cell: label on the left, value beside it */
+    .po-section .um-table td {
+      position: relative !important;   /* cancels the frozen-column sticky */
+      left: auto !important;
+      box-shadow: none !important;
+      padding: 0.45rem 0 0.45rem 8rem;
+      min-height: 2rem;
+      border: 0;
+      border-bottom: 1px solid var(--surface-3);
+      text-align: left !important;
+      overflow-wrap: anywhere;
+    }
+    .po-section .um-table td:last-child { border-bottom: 0; }
+
+    .po-section .um-table td[data-label]::before {
+      content: attr(data-label);
+      position: absolute;
+      left: 0;
+      top: 0.5rem;
+      width: 7.2rem;
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      color: var(--text-2);
+    }
+
+    /* First cell is the card title: full width, no label */
+    .po-section .um-table td:first-child {
+      padding-left: 0;
+      padding-top: 0.6rem;
+      font-size: 0.95rem;
+    }
+
+    /* View button cell: full width, no label */
+    .po-section .um-table td[data-label=""] {
+      padding-left: 0;
+      padding-top: 0.6rem;
+    }
+    .po-section .um-table td[data-label=""]::before { display: none; }
+    .po-section .um-btn-row { width: 100%; justify-content: center; min-height: 40px; }
+
+    .po-truncated { padding: 0.6rem 0.75rem 0; }
+  }
+
+  /* Phones and tablets have no hover, so don't lift cards on tap */
+  @media (hover: none) {
+    .po-card:hover { transform: none; box-shadow: none; }
+  }
 </style>
 {% endblock %}
 
@@ -375,16 +493,16 @@
           <td>
             <div class="sites-name-cell">{{ c.cenro }}</div>
           </td>
-          <td class="num-cell">
+          <td class="num-cell" data-label="Municipalities">
             {% if c.municipalities %}
               {{ c.municipalities }}
             {% else %}
               <span class="po-none">&mdash;</span>
             {% endif %}
           </td>
-          <td class="num-cell">{{ c.reports }}</td>
-          <td class="num-cell">{{ c.requests }}</td>
-          <td class="num-cell">
+          <td class="num-cell" data-label="Approved reports">{{ c.reports }}</td>
+          <td class="num-cell" data-label="Approved requests">{{ c.requests }}</td>
+          <td class="num-cell" data-label="Mean survival">
             {% if c.mean_survival is not none %}
               <span class="{% if c.mean_survival >= threshold %}po-pass{% else %}po-fail{% endif %}">
                 {{ c.mean_survival }}%
@@ -393,7 +511,7 @@
               <span class="po-none">no data</span>
             {% endif %}
           </td>
-          <td class="num-cell">
+          <td class="num-cell" data-label="Below {{ threshold | int }}%">
             {% if c.below_threshold %}
               <span class="po-fail">{{ c.below_threshold }}</span>
             {% else %}
@@ -449,11 +567,11 @@
                 <span class="po-sub">{{ r.site.site_code }}</span>
               {% endif %}
             </td>
-            <td>{{ row.barangay or '—' }}</td>
-            <td>{{ row.municipality or '—' }}</td>
-            <td><span class="po-pill po-pill-cenro">{{ row.cenro }}</span></td>
-            <td>{{ r.monitoring_date.strftime('%Y-%m-%d') if r.monitoring_date else '—' }}</td>
-            <td class="num-cell">
+            <td data-label="Barangay">{{ row.barangay or '—' }}</td>
+            <td data-label="Municipality">{{ row.municipality or '—' }}</td>
+            <td data-label="CENRO"><span class="po-pill po-pill-cenro">{{ row.cenro }}</span></td>
+            <td data-label="Monitored">{{ r.monitoring_date.strftime('%Y-%m-%d') if r.monitoring_date else '—' }}</td>
+            <td class="num-cell" data-label="Survival">
               {% if r.survival_rate is not none %}
                 <span class="{% if r.survival_rate >= threshold %}po-pass{% else %}po-fail{% endif %}">
                   {{ r.survival_rate }}%
@@ -462,13 +580,13 @@
                 <span class="po-none">&mdash;</span>
               {% endif %}
             </td>
-            <td>
+            <td data-label="Approved by">
               {{ r.reviewer.username if r.reviewer else 'unrecorded' }}
               <span class="po-sub">
                 {{ r.date_reviewed|datetime_ph('date not recorded') }}
               </span>
             </td>
-            <td>
+            <td data-label="Boundary">
               {% if row.boundary_published %}
                 <span class="po-pill po-pill-published">Published</span>
               {% elif row.has_boundary %}
@@ -477,7 +595,7 @@
                 <span class="po-pill po-pill-nogeom">No boundary</span>
               {% endif %}
             </td>
-            <td>
+            <td data-label="">
               {# Both detail routes turn away anyone whose current_cenro() is
                  None: review is a CENRO function, and this page is the
                  province observing outcomes. Superadmins count as None too.
@@ -565,30 +683,26 @@
                 <span class="po-sub">{{ q.contact_name or '' }}{% if q.contact_name and q.contact_number %} &middot; {% endif %}{{ q.contact_number or '' }}</span>
               {% endif %}
             </td>
-            <td>{{ row.barangay or '—' }}</td>
-            <td>{{ row.municipality or '—' }}</td>
-            <td><span class="po-pill po-pill-cenro">{{ row.cenro }}</span></td>
-            <td>{{ q.request_type or '—' }}</td>
-            <td class="num-cell">
+            <td data-label="Barangay">{{ row.barangay or '—' }}</td>
+            <td data-label="Municipality">{{ row.municipality or '—' }}</td>
+            <td data-label="CENRO"><span class="po-pill po-pill-cenro">{{ row.cenro }}</span></td>
+            <td data-label="Type">{{ q.request_type or '—' }}</td>
+            <td class="num-cell" data-label="Proposed area">
               {% if q.proposed_area_ha is not none %}
                 {{ q.proposed_area_ha }} ha
               {% else %}
                 <span class="po-none">&mdash;</span>
               {% endif %}
             </td>
-            <td>
+            <td data-label="Approved by">
               {{ q.reviewer.username if q.reviewer else 'unrecorded' }}
               <span class="po-sub">
                 {{ q.date_reviewed|datetime_ph('date not recorded') }}
               </span>
             </td>
-            <td>
-              {# Both detail routes turn away anyone whose current_cenro() is
-                 None: review is a CENRO function, and this page is the
-                 province observing outcomes. Superadmins count as None too.
-                 So the link is only offered to someone it will let in --
-                 everyone else gets a dash instead of a button that always
-                 lands back here with a warning. #}
+            <td data-label="">
+              {# Same rule as the reports table: only offer the link to
+                 someone the detail route will let in. #}
               {% if session.role != 'superadmin' and session.cenro %}
               <a href="{{ url_for('admin.review_request_detail', request_id=q.request_id) }}"
                  class="um-btn-row">
@@ -626,8 +740,5 @@
     {% endif %}
   </div>
 </div>
-
-<script>
-</script>
 
 {% endblock %}

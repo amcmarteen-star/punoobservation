@@ -1673,3 +1673,120 @@ html:has(> body.landing-page)::-webkit-scrollbar {
     color: var(--body);
     line-height: 1.6;
 }
+
+/* Species cards open a larger view when clicked. */
+.landing-slide { cursor: zoom-in; }
+.landing-marquee.is-dragging .landing-slide { cursor: grabbing; }
+.landing-slide:focus-visible { outline: 3px solid var(--leaf); outline-offset: 3px; }
+
+/* Species lightbox: the photo on the left, its details on the right. */
+.landing-lightbox {
+    width: min(1060px, calc(100vw - 32px));
+    max-height: calc(100dvh - 32px);
+    padding: 0;
+    border: 0;
+    border-radius: var(--r);
+    background: #0b1610;
+    color: var(--bone);
+    overflow: hidden;
+    box-shadow: var(--sh-lg);
+}
+.landing-lightbox::backdrop {
+    background: rgba(6, 20, 13, 0.78);
+    backdrop-filter: blur(6px);
+}
+.landing-lightbox[open] { animation: lightbox-in 0.35s var(--ease); }
+@keyframes lightbox-in { from { opacity: 0; transform: scale(0.97); } }
+@media (prefers-reduced-motion: reduce) { .landing-lightbox[open] { animation: none; } }
+.landing-lightbox figure {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 320px;
+    margin: 0;
+}
+.lightbox-media {
+    position: relative;
+    background: #050d08;
+}
+/* Beats the page-wide `.landing-page img { height: auto }`. */
+.landing-lightbox .lightbox-img {
+    display: block;
+    width: 100%;
+    height: min(72vh, 640px);
+    object-fit: contain;
+}
+.landing-lightbox figcaption {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 56px 28px 24px;
+}
+.landing-lightbox h3 {
+    font-size: var(--fs-xl);
+    color: var(--bone);
+}
+.lightbox-ranges {
+    font-size: var(--fs-base);
+    line-height: 1.6;
+    color: #d3ddd5;
+}
+.lightbox-credit {
+    font-size: var(--fs-xs);
+    color: #9fb3a6;
+}
+.lightbox-credit a { color: inherit; text-decoration: underline; text-underline-offset: 2px; }
+.lightbox-credit a:hover { color: var(--leaf-soft); }
+.lightbox-count {
+    margin-top: auto;
+    font-family: "JetBrains Mono", monospace;
+    font-size: var(--fs-xs);
+    letter-spacing: 0.08em;
+    color: #9fb3a6;
+}
+.lightbox-close,
+.lightbox-nav {
+    position: absolute;
+    z-index: 2;
+    display: grid;
+    place-items: center;
+    width: 42px;
+    height: 42px;
+    padding: 0;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 50%;
+    background: rgba(6, 20, 13, 0.55);
+    color: #fff;
+    cursor: pointer;
+    transition: background-color 0.2s, border-color 0.2s;
+}
+.lightbox-close:hover,
+.lightbox-nav:hover { background: var(--lime); border-color: var(--lime); }
+.lightbox-close:focus-visible,
+.lightbox-nav:focus-visible { outline: 3px solid var(--leaf-soft); outline-offset: 2px; }
+.lightbox-close svg,
+.lightbox-nav svg {
+    width: 20px;
+    height: 20px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+.lightbox-close { top: 12px; right: 12px; }
+.lightbox-nav { top: 50%; transform: translateY(-50%); }
+.lightbox-nav.prev { left: 12px; }
+.lightbox-nav.next { right: 12px; }
+
+/* Phones: details move under the photo. */
+@media (max-width: 760px) {
+    .landing-lightbox figure { grid-template-columns: 1fr; }
+    .landing-lightbox .lightbox-img { height: min(52vh, 420px); }
+    .landing-lightbox figcaption { padding: 18px 20px 20px; gap: 6px; }
+    .lightbox-count { margin-top: 6px; }
+}
+
+/* Nav links glide to their section instead of jumping. Off for people
+   who ask their system for reduced motion. */
+@media (prefers-reduced-motion: no-preference) {
+    html { scroll-behavior: smooth; }
+}
