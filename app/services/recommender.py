@@ -269,7 +269,19 @@ def cosine_similarity(vec_a, vec_b):
 # Step 5 - rank
 # ----------------------------------------------------------------------
 
-def recommend_for_location(location, top_k=5, purpose=PURPOSE_ALL):
+def reference_species(purpose=PURPOSE_ALL):
+    """The reference species recommend_for_location scores for purpose."""
+    check_purpose(purpose)
+    candidates = TreeSpecie.query.filter_by(is_reference=True)
+    if purpose != PURPOSE_ALL:
+        candidates = candidates.join(
+            SpeciesCategory, SpeciesCategory.species_id == TreeSpecie.tree_id
+        ).filter(SpeciesCategory.category == purpose)
+    return candidates.all()
+
+
+def recommend_for_location(location, top_k=5, purpose=PURPOSE_ALL,
+                           bounds=None, species_list=None, profiles=None):
     """
     Ranked species recommendations for one barangay.
 
@@ -279,9 +291,17 @@ def recommend_for_location(location, top_k=5, purpose=PURPOSE_ALL):
     scores every reference species (the original behaviour); a category
     from SPECIES_CATEGORIES scores only the species tagged with it. An
     unknown purpose raises ValueError rather than being ignored.
+
+    bounds, species_list and profiles let a caller scoring many
+    barangays work them out once instead of once per barangay:
+    get_scale_bounds(), reference_species(), and
+    {sp.tree_id: species_vector(sp, bounds)} for that list. Left out,
+    they are worked out here. A species_list passed in must already
+    match purpose, and profiles must come from the same bounds.
     """
     check_purpose(purpose)
-    bounds = get_scale_bounds()
+    if bounds is None:
+        bounds = get_scale_bounds()
     sv = site_vector(location, bounds)
 
     if all(v is None for v in sv.values()):
@@ -292,16 +312,15 @@ def recommend_for_location(location, top_k=5, purpose=PURPOSE_ALL):
             "barangay": location.barangay,
         }
 
-    candidates = TreeSpecie.query.filter_by(is_reference=True)
-    if purpose != PURPOSE_ALL:
-        candidates = candidates.join(
-            SpeciesCategory, SpeciesCategory.species_id == TreeSpecie.tree_id
-        ).filter(SpeciesCategory.category == purpose)
-    species_list = candidates.all()
+    if species_list is None:
+        species_list = reference_species(purpose)
 
     results = []
     for sp in species_list:
-        pv = species_vector(sp, bounds)
+        if profiles is not None:
+            pv = profiles[sp.tree_id]
+        else:
+            pv = species_vector(sp, bounds)
         score, used = cosine_similarity(sv, pv)
 
         # The full-precision score is carried alongside the row so the

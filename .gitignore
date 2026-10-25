@@ -23,3 +23,6 @@ scripts/data/generated/*.log
 # Database backups. They hold user data and password hashes, so they
 # stay on the machine that made them.
 *.sql
+
+# A second local copy of the project, kept on this machine only.
+/punoobservation/

@@ -14,7 +14,8 @@ import math
 from datetime import datetime
 from zoneinfo import ZoneInfo
 from app.services.recommender import (
-    recommend_for_location, _fmt, SALINITY_LABELS,
+    recommend_for_location, get_scale_bounds, reference_species,
+    species_vector, _fmt, SALINITY_LABELS,
     SPECIES_CATEGORIES, PURPOSE_ALL, check_purpose,
 )
 from app.services.wikipedia import (
@@ -2027,10 +2028,10 @@ def api_dashboard_analytics():
     """
     Every figure the dashboard charts need.
  
-    Roughly one second on 478 barangays, most of it the suitability
-    scoring in section 3. If that becomes a problem, cache the section 3
-    block - the underlying data changes only when species or barangay
-    characteristics are reseeded.
+    Most of the time goes on the suitability scoring in section 3, which
+    scores every barangay once. If that becomes a problem, store the
+    section 3 results - the underlying data changes only when species or
+    barangay characteristics are reseeded.
     """
     # ------------------------------------------------------------------
     # base pull: every site with its location and planting figures
@@ -2191,13 +2192,28 @@ def api_dashboard_analytics():
  
     suitability_points = []
     unplanted = []
- 
+    species_hits = {}   # how often each species reaches a top 5
+
+    # The scale, the species and their vectors are the same for every
+    # barangay, so they are worked out once here rather than once per
+    # barangay.
+    bounds = get_scale_bounds()
+    species_list = reference_species()
+    profiles = {sp.tree_id: species_vector(sp, bounds) for sp in species_list}
+
     for loc in all_locations:
-        result = recommend_for_location(loc, top_k=5)
+        result = recommend_for_location(
+            loc, top_k=5, bounds=bounds,
+            species_list=species_list, profiles=profiles,
+        )
         if not result["found"] or not result["recommendations"]:
             continue
- 
+
         top5 = result["recommendations"]
+        for r in top5:
+            species_hits[r["specie_name"]] = species_hits.get(
+                r["specie_name"], 0
+            ) + 1
         mean_sim = sum(r["similarity"] for r in top5) / len(top5)
  
         key = (loc.municipality, loc.barangay)
@@ -2224,18 +2240,7 @@ def api_dashboard_analytics():
             })
  
     unplanted.sort(key=lambda x: -x["suitability"])
- 
-    # --- how often each species reaches a top 5 ---
-    species_hits = {}
-    for loc in all_locations:
-        result = recommend_for_location(loc, top_k=5)
-        if not result["found"]:
-            continue
-        for r in result["recommendations"]:
-            species_hits[r["specie_name"]] = species_hits.get(
-                r["specie_name"], 0
-            ) + 1
- 
+
     species_rank = sorted(
         [{"species": k, "count": v} for k, v in species_hits.items()],
         key=lambda x: -x["count"],
