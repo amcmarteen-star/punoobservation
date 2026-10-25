@@ -6102,3 +6102,168 @@ body.help-open {
     .help-panel { animation: none; }
     .faq-item summary::after { transition: none; }
 }
+
+/* ======================================================================
+   FIRST-TIME TOUR (partials/_tour.html)
+   Driver.js's popover, restyled with the app's colours so it follows
+   the light and dark theme. Scoped to .pno-tour (its popoverClass).
+   ====================================================================== */
+.driver-popover.pno-tour {
+    max-width: min(22rem, calc(100vw - 2rem));
+    padding: 1.1rem 1.15rem 1rem;
+    border-radius: 12px;
+    background-color: var(--surface-1);
+    color: var(--text-body);
+    border: 1px solid var(--line);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+}
+
+.driver-popover.pno-tour * {
+    font-family: inherit;
+}
+
+.driver-popover.pno-tour .driver-popover-title {
+    padding-right: 1.5rem;
+    font-size: 1.05rem;
+    font-weight: 700;
+    line-height: 1.35;
+    color: var(--text-heading);
+}
+
+.driver-popover.pno-tour .driver-popover-description {
+    margin-top: 0.4rem;
+    font-size: 0.95rem;
+    line-height: 1.55;
+    color: var(--text-body);
+}
+
+.driver-popover.pno-tour .driver-popover-progress-text {
+    font-size: 0.8rem;
+    color: var(--text-2);
+}
+
+.driver-popover.pno-tour .driver-popover-close-btn {
+    width: 2.25rem;
+    height: 2.25rem;
+    font-size: 1.25rem;
+    color: var(--text-3);
+}
+
+.driver-popover.pno-tour .driver-popover-close-btn {
+    top: 0.4rem;
+    right: 0.4rem;
+    border-radius: 8px;
+}
+
+.driver-popover.pno-tour .driver-popover-close-btn:hover,
+.driver-popover.pno-tour .driver-popover-close-btn:focus-visible {
+    color: var(--text-heading);
+    background-color: var(--surface-3);
+    outline: none;
+}
+
+/* Phones: dock the box to the top or bottom edge, full width, so it never
+   covers what it points at or runs off the screen (_tour.html). The
+   !important beats the position Driver.js writes inline. */
+@media (max-width: 860px) {
+    .driver-popover.pno-tour.pno-dock-top,
+    .driver-popover.pno-tour.pno-dock-bottom {
+        left: 0.75rem !important;
+        right: 0.75rem !important;
+        width: auto;
+        min-width: 0;
+        max-width: none;
+    }
+
+    .driver-popover.pno-tour.pno-dock-top {
+        top: 0.75rem !important;
+        bottom: auto !important;
+    }
+
+    .driver-popover.pno-tour.pno-dock-bottom {
+        top: auto !important;
+        bottom: 0.75rem !important;
+    }
+
+    .driver-popover.pno-tour.pno-dock-top .driver-popover-arrow,
+    .driver-popover.pno-tour.pno-dock-bottom .driver-popover-arrow {
+        display: none;
+    }
+}
+
+.driver-popover.pno-tour .driver-popover-footer button {
+    min-height: 2.5rem;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    border: 1px solid var(--line-strong);
+    background-color: var(--surface-1);
+    color: var(--text-strong);
+    font-size: 0.9rem;
+    font-weight: 600;
+    text-shadow: none;
+}
+
+.driver-popover.pno-tour .driver-popover-footer button:hover {
+    background-color: var(--surface-3);
+}
+
+/* Next and Finish are the main action */
+.driver-popover.pno-tour .driver-popover-footer .driver-popover-next-btn {
+    border-color: var(--brand-solid);
+    background-color: var(--brand-solid);
+    color: #ffffff;
+}
+
+.driver-popover.pno-tour .driver-popover-footer .driver-popover-next-btn:hover {
+    background-color: var(--brand-deep);
+}
+
+.driver-popover.pno-tour .driver-popover-footer button:focus-visible {
+    outline: 2px solid var(--brand-solid);
+    outline-offset: 2px;
+}
+
+.driver-popover.pno-tour .driver-popover-navigation-btns {
+    gap: 0.5rem;
+}
+
+/* the little pointer takes the popover's colour */
+.driver-popover.pno-tour .driver-popover-arrow {
+    border-color: var(--surface-1);
+}
+.driver-popover.pno-tour .driver-popover-arrow-side-left   { border-right-color: transparent; border-top-color: transparent; border-bottom-color: transparent; }
+.driver-popover.pno-tour .driver-popover-arrow-side-right  { border-left-color: transparent; border-top-color: transparent; border-bottom-color: transparent; }
+.driver-popover.pno-tour .driver-popover-arrow-side-top    { border-right-color: transparent; border-bottom-color: transparent; border-left-color: transparent; }
+.driver-popover.pno-tour .driver-popover-arrow-side-bottom { border-left-color: transparent; border-top-color: transparent; border-right-color: transparent; }
+
+/* "Take the tour" at the top of the help panel */
+.help-tour-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    width: 100%;
+    margin: 0.75rem 0 0.25rem;
+    padding: 0.65rem 1rem;
+    border: 1px solid var(--ok-line);
+    border-radius: 10px;
+    background-color: var(--ok-bg);
+    color: var(--brand-text);
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.help-tour-btn svg {
+    width: 1.1rem;
+    height: 1.1rem;
+}
+
+.help-tour-btn:hover {
+    border-color: var(--brand-solid);
+}
+
+.help-tour-btn:focus-visible {
+    outline: 2px solid var(--brand-solid);
+    outline-offset: 2px;
+}

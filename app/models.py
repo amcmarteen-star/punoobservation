@@ -86,6 +86,12 @@ class User(db.Model):
     )
     locked_until = db.Column(db.DateTime, nullable=True)
 
+    # When the holder finished or skipped the first-time tour (Manila
+    # time). None means the Dashboard starts it on their next visit.
+    # Stored here, not in the browser, so it shows once per person
+    # rather than once per device.
+    tour_completed_at = db.Column(db.DateTime, nullable=True)
+
     # Relationships
     # reports = db.relationship('MonitoringReport', backref='officer', lazy=True)
     notifications = db.relationship('Notification', backref='user', lazy=True)

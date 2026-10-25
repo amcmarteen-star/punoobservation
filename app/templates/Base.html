@@ -83,6 +83,9 @@
     <script>
       window.MAP_TILES = JSON.parse(document.getElementById("map-tiles").textContent);
     </script>
+    {% if session.user_id %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='vendor/driverjs/driver.css') }}">
+    {% endif %}
     {% block extra_head %}{% endblock %}
   </head>
   <body class="app-body">
@@ -723,6 +726,12 @@
         </button>
       </div>
       <div class="help-panel-body">
+        {% if session.user_id %}
+        <button type="button" class="help-tour-btn" id="helpTourBtn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m10 8 6 4-6 4z"/></svg>
+          Take the tour
+        </button>
+        {% endif %}
         {% include page_faq %}
       </div>
     </aside>
@@ -864,6 +873,8 @@
             closeBtn && closeBtn.focus();
           }
         }
+        // the first-time tour opens the drawer for its menu steps
+        window.setNavDrawer = setOpen;
 
         openBtn.addEventListener("click", function () { setOpen(true); });
         closeBtn && closeBtn.addEventListener("click", function () {
@@ -1455,12 +1466,25 @@
 
         openBtn.addEventListener("click", function () { setOpen(panel.hidden); });
         closeBtn.addEventListener("click", function () { setOpen(false); });
+        var tourBtn = document.getElementById("helpTourBtn");
+        if (tourBtn) {
+          tourBtn.addEventListener("click", function () {
+            setOpen(false);
+            if (window.startTour) window.startTour();
+          });
+        }
         backdrop.addEventListener("click", function () { setOpen(false); });
         document.addEventListener("keydown", function (e) {
           if (e.key === "Escape" && !panel.hidden) setOpen(false);
         });
       })();
     </script>
+    {% endif %}
+
+    {% if session.user_id %}
+    <!-- first-time tour (partials/_tour.html) -->
+    <script src="{{ url_for('static', filename='vendor/driverjs/driver.js.iife.js') }}"></script>
+    {% include 'partials/_tour.html' %}
     {% endif %}
 
     {% block extra_scripts %}{% endblock %}

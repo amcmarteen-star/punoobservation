@@ -1,0 +1,197 @@
+{# First-time tour, built on Driver.js (static/vendor/driverjs, MIT).
+
+   Included from Base.html for signed-in users. It starts by itself on
+   the Dashboard while users.tour_completed_at is empty (tour_due, set in
+   app/__init__.py), and the "Take the tour" button in the help panel
+   replays it on any page. Finishing or closing it calls
+   dashboard.tour_done, so it starts by itself only once per person.
+
+   Steps point at the sidebar links and the top bar, which every page
+   has. A step whose element is missing (a link renamed or removed) is
+   dropped rather than breaking the tour. On phones the sidebar is a
+   drawer, so it is opened for the menu steps (in_menu) and closed again
+   for the top bar ones.
+
+   To change the wording, edit the lists below. #}
+{% set nav = '.sidebar-nav a[href="%s"]' %}
+{% set role = session.role %}
+
+{% set steps = [
+  {"title": "Welcome, " ~ session.username ~ "!",
+   "text": "This short tour shows you around. It takes about a minute. Press Next, or use the arrow keys."},
+  {"element": nav|format(url_for('dashboard.index')), "in_menu": true,
+   "title": "Dashboard",
+   "text": "Your home page. Charts of the reforestation work in your area, and the best places to plant next."},
+] %}
+
+{% if role == 'field_officer' %}
+{% set steps = steps + [
+  {"element": nav|format(url_for('dashboard.reports_page')), "in_menu": true,
+   "title": "Monitoring Report",
+   "text": "Record a survival count for a site. Take the photos with a GPS camera app, so their location is read automatically."},
+  {"element": nav|format(url_for('dashboard.my_reports_page')), "in_menu": true,
+   "title": "My Reports",
+   "text": "Everything you have submitted, and whether your CENRO approved it."},
+  {"element": nav|format(url_for('dashboard.gis_map')), "in_menu": true,
+   "title": "Interactive GIS Map",
+   "text": "Find a site on the map, then press its Monitoring Report button to start a report for it."},
+] %}
+{% elif role == 'admin' and session.cenro %}
+{% set steps = steps + [
+  {"element": nav|format(url_for('admin.review_requests')), "in_menu": true,
+   "title": "Review Requests",
+   "text": "Requests from your CENRO's area. Mark them Under Review, Approved or Rejected. The requester is told each time."},
+  {"element": nav|format(url_for('admin.review_reports')), "in_menu": true,
+   "title": "Review Reports",
+   "text": "Survival counts from field officers. Approving one updates the site's survival rate."},
+  {"element": nav|format(url_for('admin.provincial_overview')), "in_menu": true,
+   "title": "CENRO Overview",
+   "text": "Everything your office has approved, in one place."},
+] %}
+{% elif role == 'admin' %}
+{% set steps = steps + [
+  {"element": nav|format(url_for('admin.provincial_overview')), "in_menu": true,
+   "title": "Provincial Overview",
+   "text": "Approved work from every CENRO in Pangasinan. This page is read-only."},
+  {"element": nav|format(url_for('admin.publications')), "in_menu": true,
+   "title": "Boundary Publications",
+   "text": "Site boundaries approved by a CENRO wait here. Publishing one puts it on the map for everyone."},
+] %}
+{% elif role == 'superadmin' %}
+{% set steps = steps + [
+  {"element": nav|format(url_for('admin.user_management')), "in_menu": true,
+   "title": "User Management",
+   "text": "Add accounts, reset forgotten passwords, and deactivate people who leave."},
+  {"element": nav|format(url_for('admin.reference_dataset')), "in_menu": true,
+   "title": "Reference Dataset",
+   "text": "Import the official DENR contract Excel files. Re-importing a file updates sites instead of copying them."},
+  {"element": nav|format(url_for('admin.audit_log')), "in_menu": true,
+   "title": "Audit Log",
+   "text": "A permanent record of sign-ins and important actions."},
+] %}
+{% else %}
+{% set steps = steps + [
+  {"element": nav|format(url_for('dashboard.gis_map')), "in_menu": true,
+   "title": "Interactive GIS Map",
+   "text": "Every reforestation site on a map. Click a town or barangay to see its sites and their history."},
+  {"element": nav|format(url_for('dashboard.recommendations')), "in_menu": true,
+   "title": "Species Recommendation",
+   "text": "Pick a barangay to see which tree species suit it best."},
+  {"element": nav|format(url_for('dashboard.requests_page')), "in_menu": true,
+   "title": "Request Reforestation Site",
+   "text": "Ask DENR for a new planting site, seedlings or technical help, and follow each request's status."},
+] %}
+{% endif %}
+
+{% set steps = steps + [
+  {"element": "#helpOpenBtn",
+   "title": "Help on every page",
+   "text": "Press ? for answers about the page you are on. You can replay this tour from there too."},
+  {"element": ".notif-bell-btn",
+   "title": "Notifications",
+   "text": "Updates about your work appear here. The red number counts the unread ones."},
+  {"element": ".topbar-account",
+   "title": "My Account",
+   "text": "Change your password and the text size here."},
+  {"title": "You're all set",
+   "text": "Press ? at the top of any page whenever you need help."},
+] %}
+
+<script>
+  (function () {
+    if (!window.driver || !window.driver.js) return;
+
+    const STEPS = {{ steps|tojson }};
+    const MOBILE = window.matchMedia("(max-width: 860px)");
+    const body = document.body;
+
+    // Phones: the menu links live in the drawer. setNavDrawer is the
+    // drawer's own open/close (Base.html). Desktop never touches it.
+    function setDrawer(open) {
+      if (MOBILE.matches && window.setNavDrawer) window.setNavDrawer(open);
+    }
+
+    function exists(step) {
+      if (!step.element) return true;
+      const el = document.querySelector(step.element);
+      // A menu link is hidden inside the closed drawer on phones, so it
+      // only has to exist. A top bar control must actually be shown.
+      return !!el && (step.in_menu || el.getClientRects().length > 0);
+    }
+
+    function markDone() {
+      fetch("{{ url_for('dashboard.tour_done') }}", { method: "POST" })
+        .catch(function () { /* tried again next time */ });
+    }
+
+    window.startTour = function () {
+      const steps = STEPS.filter(exists).map(function (s) {
+        const step = { popover: { title: s.title, description: s.text } };
+        if (s.element) step.element = s.element;
+        step.inMenu = !!s.in_menu;
+        return step;
+      });
+
+      let current = null;   // the element being highlighted
+
+      const tour = window.driver.js.driver({
+        steps: steps,
+        showProgress: true,
+        allowClose: true,
+        popoverClass: "pno-tour",
+        nextBtnText: "Next",
+        prevBtnText: "Back",
+        doneBtnText: "Finish",
+        // Phones have no room beside an element, so the box docks to the
+        // top or bottom edge, away from the half the element is in
+        // (style.css, .pno-dock-*). Steps without an element stay centred.
+        onPopoverRender: function (popover) {
+          popover.wrapper.classList.remove("pno-dock-top", "pno-dock-bottom");
+          if (!MOBILE.matches || !current || current.classList.contains("driver-dummy-element")) return;
+          const r = current.getBoundingClientRect();
+          const inTopHalf = r.top + r.height / 2 < window.innerHeight / 2;
+          popover.wrapper.classList.add(inTopHalf ? "pno-dock-bottom" : "pno-dock-top");
+        },
+        onHighlightStarted: function (el, step) {
+          current = el;
+          const want = !!step.inMenu;
+          if (MOBILE.matches && body.classList.contains("nav-open") !== want) {
+            // The drawer slides (260 ms); place the highlight once it has
+            // stopped. transitionend is the signal, the timer a backup
+            // for when it does not fire.
+            const sidebar = document.getElementById("appSidebar");
+            let placed = false;
+            const place = function () {
+              if (placed) return;
+              placed = true;
+              sidebar && sidebar.removeEventListener("transitionend", place);
+              tour.refresh();
+            };
+            sidebar && sidebar.addEventListener("transitionend", place);
+            setTimeout(place, 400);
+            setDrawer(want);
+          }
+        },
+        onDestroyed: function () {
+          setDrawer(false);
+          markDone();
+        },
+      });
+      tour.drive();
+    };
+
+    {% if tour_due %}
+    // First visit: start once the page has settled, or after 2.5 s at the
+    // latest, so a slow image or font on a weak connection cannot hold
+    // the tour back.
+    let started = false;
+    function autoStart() {
+      if (started) return;
+      started = true;
+      window.startTour();
+    }
+    window.addEventListener("load", function () { setTimeout(autoStart, 400); });
+    setTimeout(autoStart, 2500);
+    {% endif %}
+  })();
+</script>

@@ -106,6 +106,20 @@ def create_app():
     def _page_faq():
         return {"page_faq": page_faqs.get(request.endpoint)}
 
+    # First-time tour (partials/_tour.html): True when the Dashboard should
+    # start it by itself. Only the Dashboard asks the database, and never
+    # while a temporary password is still waiting to be changed.
+    @app.context_processor
+    def _tour_due():
+        due = False
+        if (request.endpoint == 'dashboard.index'
+                and session.get('user_id')
+                and not session.get('must_change_password')):
+            from app.models import User
+            user = db.session.get(User, session['user_id'])
+            due = user is not None and user.tour_completed_at is None
+        return {"tour_due": due}
+
     # Register Blueprints
     from app.routes.auth import auth_bp
     from app.routes.dashboard import dashboard_bp

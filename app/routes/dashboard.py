@@ -481,6 +481,19 @@ def mark_all_notifications_read():
     db.session.commit()
     return jsonify({"success": True})
 
+
+@dashboard_bp.route('/api/tour/done', methods=['POST'])
+@login_required
+def tour_done():
+    """Record that this user finished or skipped the first-time tour, so
+    the Dashboard stops starting it (partials/_tour.html). Replaying it
+    from the help panel calls this again, which changes nothing."""
+    user = db.session.get(User, session.get('user_id'))
+    if user is not None and user.tour_completed_at is None:
+        user.tour_completed_at = manila_now()
+        db.session.commit()
+    return jsonify({"success": True})
+
 @dashboard_bp.route('/recommendations')
 def recommendations():
     """
