@@ -285,56 +285,56 @@
         <div class="lf-timeline">
                 <article class="lf-row">
                     <div class="lf-copy landing-reveal landing-from-left">
-                        <div class="lf-label"><span class="lf-num">01</span><p class="lf-kicker">Mapping</p></div>
+                        <div class="lf-label"><span class="lf-num">01</span><p class="lf-kicker">Overview</p></div>
+                        <h3>A dashboard built for action</h3>
+                        <p class="lf-desc">See sites, contracted area, seedlings planted, and delivery rates for Districts 5 and 6 at a glance, with clear charts that turn field data into next steps.</p>
+                    </div>
+                    <div class="lf-visual landing-reveal landing-from-right" style="--reveal-delay: 140ms">
+                        <div class="landing-shot has-lift">
+                            <img src="{{ url_for('static', filename='images/landing/dashboard-devices.png') }}" width="2400" height="1328" loading="lazy" decoding="async" alt="The dashboard on a desktop, tablet and phone: reforestation totals, sites and area contracted per year, and where to plant next">
+                            <span class="landing-glint" aria-hidden="true" style="--shot-src: url('{{ url_for('static', filename='images/landing/dashboard-devices.png') }}')"></span>
+                        </div>
+                    </div>
+                </article>
+                <article class="lf-row lf-reverse">
+                    <div class="lf-copy landing-reveal landing-from-right">
+                        <div class="lf-label"><span class="lf-num">02</span><p class="lf-kicker">Mapping</p></div>
                         <h3>Interactive GIS map and heatmap</h3>
                         <p class="lf-desc">Every planting site across Eastern Pangasinan on one live map, with a density heatmap showing where reforestation activity is concentrated by barangay and municipality.</p>
                         <p class="lf-cta">
                             <a href="{{ url_for('dashboard.gis_map') }}" class="landing-link">Open the map <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></a>
                         </p>
                     </div>
-                    <div class="lf-visual landing-reveal landing-from-right" style="--reveal-delay: 140ms">
-                        <div class="landing-shot">
-                            <img src="{{ url_for('static', filename='images/landing/map.png') }}" width="2219" height="1350" loading="lazy" decoding="async" alt="The GIS map on a laptop, with districts 5 and 6 shaded over Eastern Pangasinan and planting sites marked">
-                            <span class="landing-glint" aria-hidden="true" style="--shot-src: url('{{ url_for('static', filename='images/landing/map.png') }}')"></span>
-                        </div>
-                    </div>
-                </article>
-                <article class="lf-row lf-reverse">
-                    <div class="lf-copy landing-reveal landing-from-right">
-                        <div class="lf-label"><span class="lf-num">02</span><p class="lf-kicker">Species matching</p></div>
-                        <h3>Plant the right tree in the right place</h3>
-                        <p class="lf-desc">Rank native species by how well they suit a site's soil, elevation, and climate, so every planting plan starts from what the ground can actually support.</p>
-                    </div>
                     <div class="lf-visual landing-reveal landing-from-left" style="--reveal-delay: 140ms">
-                        <div class="landing-shot">
-                            <img src="{{ url_for('static', filename='images/landing/speciesreco2.png') }}" width="2500" height="2444" loading="lazy" decoding="async" alt="The species recommendation screen on a laptop, listing native species ranked by suitability for a barangay">
-                            <span class="landing-glint" aria-hidden="true" style="--shot-src: url('{{ url_for('static', filename='images/landing/speciesreco2.png') }}')"></span>
+                        <div class="landing-shot has-lift">
+                            <img src="{{ url_for('static', filename='images/landing/gis-devices.png') }}" width="2400" height="1329" loading="lazy" decoding="async" alt="The GIS map on a desktop, tablet and phone, with Eastern Pangasinan's districts shaded, planting sites marked, and a site's details open">
+                            <span class="landing-glint" aria-hidden="true" style="--shot-src: url('{{ url_for('static', filename='images/landing/gis-devices.png') }}')"></span>
                         </div>
                     </div>
                 </article>
                 <article class="lf-row">
                     <div class="lf-copy landing-reveal landing-from-left">
-                        <div class="lf-label"><span class="lf-num">03</span><p class="lf-kicker">Site requests</p></div>
-                        <h3>Clear requests, accountable decisions</h3>
-                        <p class="lf-desc">Anyone can propose a planting site. Administrators review it, and every decision is tracked against the record so nothing is decided off the books.</p>
+                        <div class="lf-label"><span class="lf-num">03</span><p class="lf-kicker">Species matching</p></div>
+                        <h3>Plant the right tree in the right place</h3>
+                        <p class="lf-desc">Rank native species by how well they suit a site's soil, elevation, and climate, so every planting plan starts from what the ground can actually support.</p>
                     </div>
                     <div class="lf-visual landing-reveal landing-from-right" style="--reveal-delay: 140ms">
-                        <div class="landing-shot">
-                            <img src="{{ url_for('static', filename='images/landing/requestsite2.png') }}" width="1597" height="1350" loading="lazy" decoding="async" alt="The site request screen on a laptop, with the new request form open">
-                            <span class="landing-glint" aria-hidden="true" style="--shot-src: url('{{ url_for('static', filename='images/landing/requestsite2.png') }}')"></span>
+                        <div class="landing-shot has-lift">
+                            <img src="{{ url_for('static', filename='images/landing/species-devices.png') }}" width="2400" height="1328" loading="lazy" decoding="async" alt="Species recommendation on a desktop, tablet and phone: native species ranked by similarity for a barangay, a species' evaluation metrics, and its reference profile">
+                            <span class="landing-glint" aria-hidden="true" style="--shot-src: url('{{ url_for('static', filename='images/landing/species-devices.png') }}')"></span>
                         </div>
                     </div>
                 </article>
                 <article class="lf-row lf-reverse">
                     <div class="lf-copy landing-reveal landing-from-right">
-                        <div class="lf-label"><span class="lf-num">04</span><p class="lf-kicker">Overview</p></div>
-                        <h3>A dashboard built for action</h3>
-                        <p class="lf-desc">See sites, contracted area, seedlings planted, and delivery rates for Districts 5 and 6 at a glance, with clear charts that turn field data into next steps.</p>
+                        <div class="lf-label"><span class="lf-num">04</span><p class="lf-kicker">Site requests</p></div>
+                        <h3>Clear requests, accountable decisions</h3>
+                        <p class="lf-desc">Anyone can propose a planting site. Administrators review it, and every decision is tracked against the record so nothing is decided off the books.</p>
                     </div>
                     <div class="lf-visual landing-reveal landing-from-left" style="--reveal-delay: 140ms">
-                        <div class="landing-shot">
-                            <img src="{{ url_for('static', filename='images/landing/dashboard.png') }}" width="2406" height="2384" loading="lazy" decoding="async" alt="The overview dashboard on a laptop, showing reforestation totals and charts of area contracted per year">
-                            <span class="landing-glint" aria-hidden="true" style="--shot-src: url('{{ url_for('static', filename='images/landing/dashboard.png') }}')"></span>
+                        <div class="landing-shot has-lift">
+                            <img src="{{ url_for('static', filename='images/landing/requests-devices.png') }}" width="2400" height="1328" loading="lazy" decoding="async" alt="Requesting a reforestation site on a desktop, tablet and phone: drawing the plot on the map, the request form with suggested species, and the list of submitted requests">
+                            <span class="landing-glint" aria-hidden="true" style="--shot-src: url('{{ url_for('static', filename='images/landing/requests-devices.png') }}')"></span>
                         </div>
                     </div>
                 </article>

@@ -328,7 +328,7 @@ html:has(> body.app-body) {
     --side-accent: #7fd8a8;
 
     /* the saved width when there is one (set in Base.html before paint) */
-    width: var(--sidebar-init-w, 240px);
+    width: var(--sidebar-init-w, 272px);
     flex-shrink: 0;
     transition: width 0.18s ease;
     background-color: var(--brand-deepest);
@@ -390,14 +390,31 @@ html:has(> body.app-body) {
     flex: 1;
     min-width: 0;
     padding: 0;
-    gap: 0.5rem;
-    font-size: 0.95rem;
-    letter-spacing: -0.01em;
+    gap: 0.7rem;
+    font-size: 1.15rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
 }
 
+/* The logo is the brand's one moment in the app, so it is set large with a
+   soft glow behind it. The glow is a background on the image itself, so
+   the markup stays a single <img>. */
 .sidebar-header .logo-icon {
-    width: 1.55rem;
-    height: 1.55rem;
+    width: 3.25rem;
+    height: 3.25rem;
+    padding: 0.2rem;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(127, 216, 168, 0.3) 0%, rgba(127, 216, 168, 0.1) 45%, transparent 70%);
+    filter: drop-shadow(0 0 6px rgba(127, 216, 168, 0.25));
+    flex-shrink: 0;
+}
+
+/* The 64px icon rail only has 32px inside its padding. */
+.sidebar-init-collapsed .sidebar .sidebar-header .logo-icon,
+.sidebar.collapsed .sidebar-header .logo-icon {
+    width: 2.25rem;
+    height: 2.25rem;
+    padding: 0.15rem;
 }
 
 /* Without this the wordmark refuses to shrink, shoves the button past the
@@ -414,13 +431,13 @@ html:has(> body.app-body) {
    animates. */
 .sidebar-toggle {
     position: fixed;
-    top: 1.75rem;
-    left: calc(var(--sidebar-w, var(--sidebar-init-w, 240px)) - 0.8rem);
+    top: 2.25rem;
+    left: calc(var(--sidebar-w, var(--sidebar-init-w, 272px)) - 1.05rem);
     z-index: 1100;
     display: grid;
     place-items: center;
-    width: 1.6rem;
-    height: 1.6rem;
+    width: 2.1rem;
+    height: 2.1rem;
     padding: 0;
     border: 1px solid rgba(255, 255, 255, 0.22);
     border-radius: 50%;
@@ -449,8 +466,8 @@ html:has(> body.app-body) {
 }
 
 .sidebar-toggle-icon {
-    width: 0.85rem;
-    height: 0.85rem;
+    width: 1.1rem;
+    height: 1.1rem;
 }
 
 /* On the narrow rail there is no room beside the logo mark, so the button
@@ -481,13 +498,13 @@ html:has(> body.app-body) {
 .role-pill {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: 0.75rem;
     background-color: rgba(255,255,255,0.06);
-    padding: 0.5rem 0.8rem;
-    border-radius: 8px;
-    font-size: 0.875rem;
+    padding: 0.7rem 0.9rem;
+    border-radius: 12px;
+    font-size: 1rem;
     color: var(--side-accent);
-    margin-bottom: 1.4rem;
+    margin-bottom: 1rem;
 }
 
 .role-dot {
@@ -500,8 +517,8 @@ html:has(> body.app-body) {
 }
 
 .role-avatar {
-    width: 2rem;
-    height: 2rem;
+    width: 2.6rem;
+    height: 2.6rem;
     border-radius: 50%;
     background-color: var(--ok-solid);
     color: #ffffff;
@@ -509,8 +526,69 @@ html:has(> body.app-body) {
     align-items: center;
     justify-content: center;
     font-weight: 700;
-    font-size: 0.875rem;
+    font-size: 1.05rem;
     flex-shrink: 0;
+}
+
+/* The 64px icon rail has 32px inside its padding: the pill loses its side
+   padding and the avatar steps back down to fit. */
+.sidebar-init-collapsed .sidebar .role-pill,
+.sidebar.collapsed .role-pill {
+    padding-left: 0;
+    padding-right: 0;
+}
+
+.sidebar-init-collapsed .sidebar .role-avatar,
+.sidebar.collapsed .role-avatar {
+    width: 2rem;
+    height: 2rem;
+    font-size: 0.875rem;
+}
+
+/* Holds the avatar so the online dot can sit on its lower-right edge. */
+.role-avatar-wrap {
+    position: relative;
+    display: inline-flex;
+    flex-shrink: 0;
+}
+
+/* Green dot with a ring in the pill's colour, so it reads as cut into the
+   photo. A slow soft pulse says "live" without pulling the eye. */
+.online-dot {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    width: 0.75rem;
+    height: 0.75rem;
+    border-radius: 50%;
+    background-color: #22c55e;
+    box-shadow: 0 0 0 2.5px #1d2d26;
+}
+
+.online-dot::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background-color: #22c55e;
+    animation: online-pulse 2.4s ease-out infinite;
+}
+
+@keyframes online-pulse {
+    0%   { transform: scale(1);   opacity: 0.55; }
+    70%  { transform: scale(2.2); opacity: 0; }
+    100% { transform: scale(2.2); opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .online-dot::after { animation: none; opacity: 0; }
+}
+
+.sidebar-init-collapsed .sidebar .online-dot,
+.sidebar.collapsed .online-dot {
+    width: 0.6rem;
+    height: 0.6rem;
+    box-shadow: 0 0 0 2px #1d2d26;
 }
 
 /* Photographs fill their circle instead of stretching. Applies wherever
@@ -529,21 +607,30 @@ html:has(> body.app-body) {
 .role-pill-username {
     color: #ffffff;
     font-weight: 600;
-    font-size: 0.875rem;
+    font-size: 1rem;
 }
 
 .role-pill-role {
     color: var(--side-accent);
-    font-size: 0.75rem;
+    font-size: 0.875rem;
 }
 
 /* overflow-x is pinned to hidden because setting only overflow-y makes the
    other axis compute to auto -- any nav label wider than the rail (or the
    rail mid-drag) then raises a horizontal scrollbar across the sidebar. */
 .sidebar-nav {
-    flex: 1;
+    /* Logo and user box sit together above this one divider. */
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    padding-top: 1rem;
+    /* Only the link list scrolls. min-height: 0 lets it shrink below its
+       content, so Sign out underneath always stays on screen. */
+    flex: 1 1 auto;
+    min-height: 0;
     overflow-y: auto;
     overflow-x: hidden;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.18) transparent;
 }
 
 /* Group heading above the role-specific links. Set in small caps so it reads
@@ -573,19 +660,20 @@ html:has(> body.app-body) {
 .nav-link {
     display: flex;
     align-items: center;
-    gap: 0.65rem;
-    padding: 0.55rem 0.7rem;
-    margin-bottom: 0.2rem;
-    border-radius: 8px;
+    gap: 0.9rem;
+    min-height: 3rem;
+    padding: 0.7rem 0.9rem;
+    margin-bottom: 0.25rem;
+    border-radius: 12px;
     color: var(--side-text);
     text-decoration: none;
-    font-size: 0.875rem;
+    font-size: 1rem;
     transition: background-color 0.15s ease, color 0.15s ease;
 }
 
 .nav-icon {
-    width: 1.1rem;
-    height: 1.1rem;
+    width: 1.375rem;
+    height: 1.375rem;
     flex-shrink: 0;
     transition: stroke-width 0.15s ease;
 }
@@ -616,22 +704,32 @@ html:has(> body.app-body) {
 .sign-out {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
-    padding: 0.6rem 0.7rem;
+    gap: 0.9rem;
+    min-height: 3rem;
+    padding: 0.7rem 0.9rem;
     color: var(--side-text);
     text-decoration: none;
-    font-size: 0.875rem;
+    font-size: 1rem;
     border-top: 1px solid rgba(255,255,255,0.08);
-    margin-top: 0.8rem;
-    padding-top: 1rem;
-    margin-top: auto;
+    margin-top: 0.6rem;
+    padding-top: 1.1rem;
     flex-shrink: 0;
 }
 
 .sign-out svg {
-    width: 1.05rem;
-    height: 1.05rem;
+    width: 1.375rem;
+    height: 1.375rem;
     flex-shrink: 0;
+}
+
+/* On the 64px icon rail there is only 32px inside the padding, so the
+   bigger rows drop their side padding and just centre the icon. */
+.sidebar-init-collapsed .sidebar .nav-link,
+.sidebar-init-collapsed .sidebar .sign-out,
+.sidebar.collapsed .nav-link,
+.sidebar.collapsed .sign-out {
+    padding-left: 0;
+    padding-right: 0;
 }
 
 .sign-out:hover {
@@ -849,7 +947,7 @@ html:has(> body.app-body) {
     display: flex;
     justify-content: flex-end;
     align-items: center;
-    gap: 0.35rem;
+    gap: 0.6rem;
     height: var(--topbar-h);
     padding: 0 1.5rem;
     background-color: var(--surface-1);
@@ -894,14 +992,15 @@ html:has(> body.app-body) {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 2rem;
-    height: 2rem;
+    /* Same size as the avatar in the sidebar's user box. */
+    width: 2.6rem;
+    height: 2.6rem;
     flex: none;
     border-radius: 50%;
     background-color: var(--ok-solid);
     color: #ffffff;
     font-weight: 700;
-    font-size: 0.875rem;
+    font-size: 1.05rem;
 }
 
 .topbar-account:hover {
@@ -913,35 +1012,149 @@ html:has(> body.app-body) {
 }
 
 /* --- Theme toggle -------------------------------------------------------
-   One button, two icons: the sun shows in dark (press it for light) and
-   the moon shows in light. Only one is ever in the layout, so the button
-   never changes width as it swaps. */
+   A sliding switch. Thumb on the right = light, on the left = dark.
+   The button is the tap area; the track inside it is what you see.
+   While dragging, JS moves the thumb directly (no transition); on release
+   the inline transform is cleared and the thumb springs to its side. */
 .theme-toggle {
+    --switch-w: 4.25rem;
+    --switch-h: 2.125rem;
+    --thumb: 1.75rem;
+    --thumb-gap: 0.1875rem;
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 0.5rem;
+    padding: 0.4rem 0.25rem;
     border: none;
-    border-radius: 8px;
+    border-radius: 999px;
     background: none;
-    color: var(--text-body);
     cursor: pointer;
-    transition: background-color 160ms var(--ease), color 160ms var(--ease);
+    touch-action: none;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
 }
 
-.theme-toggle svg {
-    width: 1.2rem;
-    height: 1.2rem;
+.theme-toggle:focus-visible {
+    outline: none;
 }
 
-.theme-toggle:hover {
+.theme-toggle:focus-visible .theme-switch-track {
+    box-shadow: 0 0 0 2px var(--surface-1), 0 0 0 4px var(--brand-text);
+}
+
+.theme-switch-track {
+    position: relative;
+    display: block;
+    width: var(--switch-w);
+    height: var(--switch-h);
+    border-radius: 999px;
+    border: 1px solid var(--line);
     background-color: var(--surface-3);
-    color: var(--text-heading);
+    transition: background-color 260ms var(--ease), border-color 260ms var(--ease);
 }
 
-.theme-toggle .theme-icon-sun { display: none; }
-:root[data-theme="dark"] .theme-toggle .theme-icon-sun { display: block; }
-:root[data-theme="dark"] .theme-toggle .theme-icon-moon { display: none; }
+.theme-toggle:hover .theme-switch-track {
+    border-color: var(--line-strong);
+}
+
+/* Faint icons on the track mark which side is which. */
+.theme-track-icon {
+    position: absolute;
+    top: 50%;
+    width: 0.95rem;
+    height: 0.95rem;
+    margin-top: -0.475rem;
+    color: var(--text-3);
+    transition: opacity 200ms var(--ease);
+}
+
+.theme-track-moon { left: 0.45rem; }
+.theme-track-sun { right: 0.45rem; }
+
+.theme-switch-thumb {
+    position: absolute;
+    top: calc(var(--thumb-gap) - 1px);
+    left: calc(var(--thumb-gap) - 1px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--thumb);
+    height: var(--thumb);
+    border-radius: 999px;
+    background-color: #d97706;
+    color: #ffffff;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.22), 0 1px 1px rgba(0, 0, 0, 0.1);
+    /* Light is the default, so the thumb starts on the right. */
+    transform: translateX(calc(var(--switch-w) - var(--thumb) - var(--thumb-gap) * 2));
+    transition:
+        transform 340ms cubic-bezier(0.34, 1.36, 0.64, 1),
+        width 160ms var(--ease),
+        background-color 260ms var(--ease),
+        color 260ms var(--ease);
+}
+
+.theme-switch-thumb svg {
+    position: absolute;
+    width: 1.1rem;
+    height: 1.1rem;
+    transition: opacity 220ms var(--ease), transform 340ms var(--ease);
+}
+
+/* Light: sun on the thumb, moon hidden. */
+.theme-switch-thumb .theme-icon-moon {
+    opacity: 0;
+    transform: rotate(-90deg) scale(0.5);
+}
+
+.theme-toggle .theme-track-sun { opacity: 0; }
+
+/* Dark: thumb slides left and turns into a moon. */
+:root[data-theme="dark"] .theme-switch-track {
+    background-color: var(--surface-3);
+}
+
+:root[data-theme="dark"] .theme-switch-thumb {
+    transform: translateX(0);
+    background-color: #3b4a8c;
+    color: #ffffff;
+}
+
+:root[data-theme="dark"] .theme-switch-thumb .theme-icon-sun {
+    opacity: 0;
+    transform: rotate(90deg) scale(0.5);
+}
+
+:root[data-theme="dark"] .theme-switch-thumb .theme-icon-moon {
+    opacity: 1;
+    transform: none;
+}
+
+:root[data-theme="dark"] .theme-toggle .theme-track-sun { opacity: 1; }
+:root[data-theme="dark"] .theme-toggle .theme-track-moon { opacity: 0; }
+
+/* Pressing stretches the thumb a little, like a real switch. In light it
+   grows to the left so it stays tucked against its right edge. */
+.theme-toggle.is-pressed .theme-switch-thumb {
+    width: calc(var(--thumb) + 0.3rem);
+    margin-left: -0.3rem;
+}
+
+:root[data-theme="dark"] .theme-toggle.is-pressed .theme-switch-thumb {
+    margin-left: 0;
+}
+
+/* Following the finger: no easing, or the thumb would lag behind it. */
+.theme-toggle.is-dragging .theme-switch-thumb {
+    transition: width 160ms var(--ease), background-color 260ms var(--ease);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .theme-switch-thumb,
+    .theme-switch-thumb svg,
+    .theme-switch-track {
+        transition-duration: 1ms;
+    }
+}
 
 .notif-bell-btn {
     position: relative;
@@ -957,8 +1170,9 @@ html:has(> body.app-body) {
 }
 
 .notif-bell-btn svg {
-    width: 1.2rem;
-    height: 1.2rem;
+    /* Same size as the sidebar's nav icons. */
+    width: 1.375rem;
+    height: 1.375rem;
 }
 
 .notif-bell-btn:hover {
@@ -5185,7 +5399,10 @@ table[data-freeze="2"].is-scrolled-x th:nth-child(2) {
         padding-left: 0.15rem;
     }
 
-    .theme-toggle,
+    .theme-toggle {
+        height: 2.75rem;
+    }
+
     .notif-bell-btn {
         width: 2.75rem;
         height: 2.75rem;

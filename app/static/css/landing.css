@@ -1248,7 +1248,24 @@ html:has(> body.landing-page)::-webkit-scrollbar {
     mask-repeat: no-repeat;
 }
 
+/* Devices mockup: a soft shadow under each device so the set looks lifted
+   off the page. drop-shadow follows the PNG's shape, so each device casts
+   its own shadow instead of the image casting a rectangle. */
+.landing-shot.has-lift img {
+    filter:
+        drop-shadow(0 6px 5px rgba(16, 36, 26, 0.12))
+        drop-shadow(0 18px 16px rgba(16, 36, 26, 0.14));
+    transition:
+        transform var(--grow) var(--grow-ease),
+        filter var(--grow) var(--grow-ease);
+}
+
 @media (prefers-reduced-motion: no-preference) {
+    .landing-shot.has-lift:hover img {
+        filter:
+            drop-shadow(0 10px 8px rgba(16, 36, 26, 0.10))
+            drop-shadow(0 28px 24px rgba(16, 36, 26, 0.16));
+    }
     .landing-shot:hover img { transform: translateY(-8px) scale(1.015); }
     .landing-shot:hover .landing-glint { animation: landing-glint-sweep 0.9s var(--ease); }
 }

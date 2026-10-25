@@ -2,7 +2,7 @@
 %} {% set active_page = 'gis_map' %} {% block extra_head %}
 <link
   rel="stylesheet"
-  href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+  href="{{ url_for('static', filename='vendor/leaflet/leaflet.css') }}"
 />
 <style>
   /* The map fills whatever height the two bars above it leave. The main
@@ -1871,7 +1871,7 @@
   <div class="lb-caption" id="lightboxCaption"></div>
 </div>
 {% endblock %} {% block extra_scripts %}
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="{{ url_for('static', filename='vendor/leaflet/leaflet.js') }}"></script>
 <script>
   // Jinja renders this once. The panel is built with innerHTML, so the
   // role has to be available to plain JavaScript.
