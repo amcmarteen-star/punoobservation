@@ -10,7 +10,7 @@
 {% block extra_head %}
 <link
   rel="stylesheet"
-  href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+  href="{{ url_for('static', filename='vendor/leaflet/leaflet.css') }}"
 />
 <style>
   .pub-strip {
@@ -452,7 +452,7 @@
 </div>
 {% endif %}
 
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="{{ url_for('static', filename='vendor/leaflet/leaflet.js') }}"></script>
 <script>
   // One small map per card
   {% if reports %}

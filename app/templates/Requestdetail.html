@@ -6,7 +6,7 @@
 {% block content_class %}page-content-wide{% endblock %}
 
 {% block extra_head %}
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<link rel="stylesheet" href="{{ url_for('static', filename='vendor/leaflet/leaflet.css') }}" />
 <style>
   /* ---- Request review ----
      The request on the left, read top to bottom; the decision on the
@@ -571,7 +571,7 @@
 </script>
 
 {% if req.latitude is not none or site_boundary %}
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="{{ url_for('static', filename='vendor/leaflet/leaflet.js') }}"></script>
 <script>
   (function () {
     const pin = {{ ([req.latitude, req.longitude] if req.latitude is not none else none) | tojson }};

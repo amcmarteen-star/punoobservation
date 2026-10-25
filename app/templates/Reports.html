@@ -354,7 +354,7 @@ endblock %} {% set active_page = 'reports' %} {% block content %}
 </form>
 
 
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<link rel="stylesheet" href="{{ url_for('static', filename='vendor/leaflet/leaflet.css') }}" />
 <style>
   /* Proposed area: the requester's drawn area on a site created from a
      request. It sits inside the green site facts panel, so its note uses
@@ -520,7 +520,7 @@ endblock %} {% set active_page = 'reports' %} {% block content %}
     #reportForm .d-flex .text-secondary.small { text-align: center; }
   }
 </style>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="{{ url_for('static', filename='vendor/leaflet/leaflet.js') }}"></script>
 <script type="application/json" id="sampling-rule">{{ sampling_rule | tojson }}</script>
 <script>
   // ---------- cascading location pickers ----------
