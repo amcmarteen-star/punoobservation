@@ -1,0 +1,48 @@
+{# FAQ for My Reports (dashboard.my_reports_page). Field officers only. #}
+
+<details class="faq-item">
+  <summary>What is on this page?</summary>
+  <div class="faq-answer">
+    <p>Every monitoring report you have submitted, newest first, with its review status.</p>
+  </div>
+</details>
+
+<details class="faq-item">
+  <summary>What do the statuses mean?</summary>
+  <div class="faq-answer">
+    <ul>
+      <li><strong>Pending:</strong> waiting for your CENRO to review it.</li>
+      <li><strong>Approved:</strong> accepted. The site's survival rate now uses your figure.</li>
+      <li><strong>Rejected:</strong> not accepted. The reviewer's reason is shown under the status.</li>
+    </ul>
+  </div>
+</details>
+
+<details class="faq-item">
+  <summary>My report was rejected. Can I edit it?</summary>
+  <div class="faq-answer">
+    <p>No. A submitted report cannot be changed.</p>
+    <p>Read the reason, fix the problem, then submit a <a href="{{ url_for('dashboard.reports_page') }}">new monitoring report</a>.</p>
+  </div>
+</details>
+
+<details class="faq-item">
+  <summary>What is Intensity?</summary>
+  <div class="faq-answer">
+    <p>How much of the site your counts covered. A whole-site count is 100%. Plot surveys aim for {{ '%g'|format(sampling_rule.targetPct) }}%.</p>
+  </div>
+</details>
+
+<details class="faq-item">
+  <summary>How do I see a report's photos and plot counts?</summary>
+  <div class="faq-answer">
+    <p>Press <strong>View</strong> on its row.</p>
+  </div>
+</details>
+
+<details class="faq-item">
+  <summary>Can I delete a report?</summary>
+  <div class="faq-answer">
+    <p>No. Reports are official records and stay in the system.</p>
+  </div>
+</details>

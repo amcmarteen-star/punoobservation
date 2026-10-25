@@ -575,6 +575,21 @@
           {# Optional page title, on the left of the same row as the theme,
              bell and account controls. Pages fill it or leave it empty. #}
           {% block topbar_title %}{% endblock %}
+          {# Opens this page's FAQ. Only pages listed in page_faqs
+             (app/__init__.py) have one. #}
+          {% if page_faq %}
+          <button
+            type="button"
+            class="help-btn"
+            id="helpOpenBtn"
+            aria-label="Help for this page"
+            title="Help for this page"
+            aria-controls="helpPanel"
+            aria-expanded="false"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>
+          </button>
+          {% endif %}
           <button
             type="button"
             class="theme-toggle"
@@ -693,6 +708,25 @@
         </main>
       </div>
     </div>
+
+    {% if page_faq %}
+    <!-- ============ HELP PANEL ============ -->
+    {# Slides in from the right. The questions are one partial per page in
+       partials/faq/, chosen by page_faqs in app/__init__.py. #}
+    <div class="help-backdrop" id="helpBackdrop" hidden></div>
+    <aside class="help-panel" id="helpPanel" role="dialog" aria-modal="true"
+           aria-labelledby="helpPanelTitle" hidden>
+      <div class="help-panel-head">
+        <h2 id="helpPanelTitle">Help for this page</h2>
+        <button type="button" class="um-modal-close" id="helpCloseBtn" aria-label="Close help">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+        </button>
+      </div>
+      <div class="help-panel-body">
+        {% include page_faq %}
+      </div>
+    </aside>
+    {% endif %}
 
     {% if session.username %}
     <!-- ============ SIGN OUT CONFIRMATION ============ -->
@@ -1398,6 +1432,36 @@
     <script src="{{ url_for('static', filename='js/table-freeze.js', v=asset_v) }}"></script>
     <!-- drop zones on file fields, and the progress card for uploads -->
     <script src="{{ url_for('static', filename='js/upload.js', v=asset_v) }}"></script>
+
+    {% if page_faq %}
+    <script>
+      // Help panel: open from the "?" button; close with the X, Escape,
+      // or a tap outside. Focus goes back to the button on close.
+      (function () {
+        var openBtn = document.getElementById("helpOpenBtn");
+        var panel = document.getElementById("helpPanel");
+        var backdrop = document.getElementById("helpBackdrop");
+        var closeBtn = document.getElementById("helpCloseBtn");
+        if (!openBtn || !panel) return;
+
+        function setOpen(open) {
+          panel.hidden = !open;
+          backdrop.hidden = !open;
+          document.body.classList.toggle("help-open", open);
+          openBtn.setAttribute("aria-expanded", String(open));
+          if (open) closeBtn.focus();
+          else openBtn.focus();
+        }
+
+        openBtn.addEventListener("click", function () { setOpen(panel.hidden); });
+        closeBtn.addEventListener("click", function () { setOpen(false); });
+        backdrop.addEventListener("click", function () { setOpen(false); });
+        document.addEventListener("keydown", function (e) {
+          if (e.key === "Escape" && !panel.hidden) setOpen(false);
+        });
+      })();
+    </script>
+    {% endif %}
 
     {% block extra_scripts %}{% endblock %}
   </body>

@@ -1,0 +1,50 @@
+{# FAQ for Notifications (dashboard.notifications_page). #}
+
+<details class="faq-item">
+  <summary>What do I get notified about?</summary>
+  <div class="faq-answer">
+    <ul>
+      {% if session.role == 'field_officer' %}
+      <li>A CENRO approved or rejected your monitoring report.</li>
+      <li>The province published or declined a boundary from your report.</li>
+      {% elif session.role == 'admin' %}
+      <li>A new request or monitoring report for your office to review.</li>
+      <li>A requester cancelled a request.</li>
+      <li>A boundary is waiting for publication (province-wide accounts).</li>
+      {% elif session.role == 'superadmin' %}
+      <li>Monitoring reports approved across the province.</li>
+      {% else %}
+      <li>Your request's status changed: under review, approved or rejected.</li>
+      {% endif %}
+    </ul>
+  </div>
+</details>
+
+<details class="faq-item">
+  <summary>How do I mark notifications as read?</summary>
+  <div class="faq-answer">
+    <p>Opening one marks it read. The eye button on each row switches it between read and unread.</p>
+    <p>To do many at once, tick them and press <strong>Mark read</strong>, or press <strong>Mark all as read</strong>.</p>
+  </div>
+</details>
+
+<details class="faq-item">
+  <summary>Can I delete notifications?</summary>
+  <div class="faq-answer">
+    <p>Yes. Use the bin button on a row, or tick several and press <strong>Delete</strong>. This cannot be undone.</p>
+  </div>
+</details>
+
+<details class="faq-item">
+  <summary>How do I find an old notification?</summary>
+  <div class="faq-answer">
+    <p>Filter by type (Reports or Requests) and by time (Today, Last 7 days, Last 30 days).</p>
+  </div>
+</details>
+
+<details class="faq-item">
+  <summary>What does the bell in the top bar do?</summary>
+  <div class="faq-answer">
+    <p>It shows your newest notifications on any page. The red number is how many are unread.</p>
+  </div>
+</details>

@@ -1,0 +1,53 @@
+{# FAQ for My Account (dashboard.my_account). Numbers come from
+   app_limits (app/config.py). #}
+
+<details class="faq-item">
+  <summary>How do I change my password?</summary>
+  <div class="faq-answer">
+    <p>Fill in the <strong>Change password</strong> form. You need your current password first.</p>
+    <p>A new password needs {{ app_limits.passwordMin }} to {{ app_limits.passwordMax }} characters, with at least one letter and one number.</p>
+  </div>
+</details>
+
+<details class="faq-item">
+  <summary>Why must I change my password before I can do anything?</summary>
+  <div class="faq-answer">
+    <p>An administrator gave you a temporary password. The rest of the system stays locked until you choose your own.</p>
+  </div>
+</details>
+
+<details class="faq-item">
+  <summary>I forgot my password. What do I do?</summary>
+  <div class="faq-answer">
+    <p>Ask your system administrator to reset it. They give you a temporary password, which you change the next time you sign in.</p>
+  </div>
+</details>
+
+<details class="faq-item">
+  <summary>Can I change my username, email or role?</summary>
+  <div class="faq-answer">
+    <p>Not here. Ask your system administrator.</p>
+  </div>
+</details>
+
+<details class="faq-item">
+  <summary>What does Text size do?</summary>
+  <div class="faq-answer">
+    <p>It makes text and buttons bigger or smaller on every page.</p>
+    <p>It is saved on this device only. Set it again on another phone or computer.</p>
+  </div>
+</details>
+
+<details class="faq-item">
+  <summary>Why was I signed out?</summary>
+  <div class="faq-answer">
+    <p>For safety, you are signed out after {{ app_limits.sessionIdleMinutes }} minutes without activity. Sign in again to continue.</p>
+  </div>
+</details>
+
+<details class="faq-item">
+  <summary>What is Recent activity?</summary>
+  <div class="faq-answer">
+    <p>Things you did in the system, such as signing in, submitting reports and reviewing work.</p>
+  </div>
+</details>

@@ -1,0 +1,114 @@
+{# FAQ for one monitoring report (Reportdetail.html). Three routes show
+   it, and the answers follow the variables they pass:
+     dashboard.public_report_detail   public_view  approved, read-only
+     dashboard.my_report_detail       the officer's own report
+     admin.review_report_detail       can_review   the CENRO decision form
+   Behaviour described lives in admin.review_report and
+   services/monitoring.py. #}
+{% set threshold = '%g'|format(sampling_rule.survivalThreshold) %}
+
+<h3 class="faq-group">Reading the report</h3>
+
+<details class="faq-item">
+  <summary>How was the survival rate calculated?</summary>
+  <div class="faq-answer">
+    <ul>
+      <li><strong>Whole site counted:</strong> live seedlings &divide; seedlings planted.</li>
+      <li><strong>Sampling plots:</strong> the average per plot is scaled up to the whole site, then divided by seedlings planted.</li>
+    </ul>
+    <p>Every step is shown under <strong>Survival calculation</strong>, so it can be checked by hand.</p>
+  </div>
+</details>
+
+<details class="faq-item">
+  <summary>What does the {{ threshold }}% line mean?</summary>
+  <div class="faq-answer">
+    <p>It is the DENR reference threshold for survival. The badge says whether this report reaches it.</p>
+  </div>
+</details>
+
+<details class="faq-item">
+  <summary>What do the amber bars mean?</summary>
+  <div class="faq-answer">
+    <p>Plots with fewer than half the average count. Many amber bars mean survival is uneven across the site.</p>
+  </div>
+</details>
+
+<details class="faq-item">
+  <summary>Why is the captured boundary bigger than the contracted area?</summary>
+  <div class="faq-answer">
+    <p>The boundary is the smallest simple shape around the corner photos. An L-shaped site, or one that bends around a stream, gets its gap filled in, so it measures larger.</p>
+  </div>
+</details>
+
+<details class="faq-item">
+  <summary>What do the photo labels mean?</summary>
+  <div class="faq-answer">
+    <ul>
+      <li><strong>Inside barangay:</strong> the photo's GPS location is inside the site's barangay.</li>
+      <li><strong>No GPS data:</strong> the photo has no location. It may have been sent through a messaging app.</li>
+      <li><strong>Flags:</strong> something to check, such as a photo taken outside the barangay, too long before the monitoring date, or used before.</li>
+    </ul>
+  </div>
+</details>
+
+{% if public_view %}
+<details class="faq-item">
+  <summary>Is this report official?</summary>
+  <div class="faq-answer">
+    <p>Yes. Only reports approved by a CENRO are shown to the public.</p>
+  </div>
+</details>
+{% elif can_review %}
+<h3 class="faq-group">Making a decision</h3>
+
+<details class="faq-item">
+  <summary>What should I check before approving?</summary>
+  <div class="faq-answer">
+    <ul>
+      <li>The counts and notes look believable.</li>
+      <li>Enough plots were counted for the site's size.</li>
+      <li>Flagged photos: open them and decide if they are acceptable.</li>
+      <li>The captured area is close to the contracted area.</li>
+    </ul>
+  </div>
+</details>
+
+<details class="faq-item">
+  <summary>What happens when I approve?</summary>
+  <div class="faq-answer">
+    <p>The report's survival rate and monitoring date are saved to the site's planting record right away.</p>
+    <p>If the report has a captured boundary, it goes to the provincial administrator for publication. It does not appear on the map until they publish it.</p>
+  </div>
+</details>
+
+<details class="faq-item">
+  <summary>Do I have to give a reason to reject?</summary>
+  <div class="faq-answer">
+    <p>Yes. The field officer sees your note, so say clearly what to fix.</p>
+  </div>
+</details>
+
+<details class="faq-item">
+  <summary>Can I change my decision later?</summary>
+  <div class="faq-answer">
+    <p>Yes. Setting a new status replaces the old one, and the officer is notified again.</p>
+  </div>
+</details>
+{% else %}
+<h3 class="faq-group">Your report</h3>
+
+<details class="faq-item">
+  <summary>Where is the reviewer's note?</summary>
+  <div class="faq-answer">
+    <p>In the status box at the bottom of the page, once your CENRO has reviewed the report.</p>
+  </div>
+</details>
+
+<details class="faq-item">
+  <summary>Can I edit this report?</summary>
+  <div class="faq-answer">
+    <p>No. If it was rejected, fix the problem and submit a <a href="{{ url_for('dashboard.reports_page') }}">new monitoring report</a>.</p>
+  </div>
+</details>
+{% endif %}

@@ -5907,3 +5907,198 @@ table[data-freeze="2"].is-scrolled-x th:nth-child(2) {
 .alert-close:focus-visible { outline: 2px solid currentColor; outline-offset: 1px; }
 .alert-close svg { width: 0.95rem; height: 0.95rem; }
 .flash-message .alert-close svg { width: 0.95rem; height: 0.95rem; margin: 0; }
+
+/* ======================================================================
+   HELP PANEL (Base.html)
+   The "?" button in the top bar opens this page's FAQ in a panel that
+   slides in from the right. Full width on phones.
+   ====================================================================== */
+.help-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: none;
+    border: none;
+    color: var(--text-body);
+    cursor: pointer;
+    padding: 0.5rem;
+    border-radius: 8px;
+}
+
+.help-btn svg {
+    /* Same size as the bell next to it. */
+    width: 1.375rem;
+    height: 1.375rem;
+}
+
+.help-btn:hover,
+.help-btn[aria-expanded="true"] {
+    background-color: var(--surface-3);
+}
+
+.help-btn:focus-visible {
+    outline: 2px solid var(--brand-solid);
+    outline-offset: 2px;
+}
+
+.help-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 3900;
+    background-color: rgba(15, 23, 42, 0.45);
+}
+
+.help-panel {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 3950;
+    display: flex;
+    flex-direction: column;
+    width: min(28rem, 100%);
+    background-color: var(--surface-1);
+    border-left: 1px solid var(--line);
+    box-shadow: -8px 0 24px rgba(0, 0, 0, 0.12);
+    animation: help-slide-in 0.2s ease-out;
+}
+
+.help-panel[hidden],
+.help-backdrop[hidden] {
+    display: none;
+}
+
+@keyframes help-slide-in {
+    from { transform: translateX(100%); }
+    to   { transform: translateX(0); }
+}
+
+/* the page behind does not scroll while the panel is open */
+body.help-open {
+    overflow: hidden;
+}
+
+.help-panel-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    min-height: var(--topbar-h);
+    padding: 0 1.25rem;
+    border-bottom: 1px solid var(--line);
+}
+
+.help-panel-head h2 {
+    margin: 0;
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: var(--text-heading);
+}
+
+.help-panel-head .um-modal-close {
+    width: 2.25rem;
+    height: 2.25rem;
+}
+
+.help-panel-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0.5rem 1.25rem 2rem;
+}
+
+.faq-group {
+    margin: 1.25rem 0 0.4rem;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--text-2);
+}
+
+.faq-item {
+    border-bottom: 1px solid var(--line);
+}
+
+.faq-item summary {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.8rem 0;
+    cursor: pointer;
+    list-style: none;
+    font-size: 0.95rem;
+    font-weight: 600;
+    line-height: 1.4;
+    color: var(--text-heading);
+}
+
+.faq-item summary::-webkit-details-marker {
+    display: none;
+}
+
+/* a chevron that turns when the answer is open */
+.faq-item summary::after {
+    content: "";
+    flex: none;
+    width: 0.5rem;
+    height: 0.5rem;
+    margin-top: 0.35rem;
+    border-right: 2px solid var(--text-2);
+    border-bottom: 2px solid var(--text-2);
+    transform: rotate(45deg);
+    transition: transform 0.15s ease;
+}
+
+.faq-item[open] summary::after {
+    transform: rotate(-135deg);
+    margin-top: 0.55rem;
+}
+
+.faq-item summary:hover {
+    color: var(--brand-text);
+}
+
+.faq-item summary:focus-visible {
+    outline: 2px solid var(--brand-solid);
+    outline-offset: 2px;
+    border-radius: 4px;
+}
+
+.faq-answer {
+    padding: 0 0 0.9rem;
+    font-size: 0.9rem;
+    line-height: 1.6;
+    color: var(--text-body);
+}
+
+.faq-answer p {
+    margin: 0 0 0.5rem;
+}
+
+.faq-answer ul {
+    margin: 0 0 0.5rem;
+    padding-left: 1.2rem;
+}
+
+.faq-answer li {
+    margin-bottom: 0.25rem;
+}
+
+.faq-answer a {
+    color: var(--brand-text);
+    font-weight: 600;
+}
+
+@media (max-width: 860px) {
+    .help-btn {
+        width: 2.75rem;
+        height: 2.75rem;
+        padding: 0;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .help-panel { animation: none; }
+    .faq-item summary::after { transition: none; }
+}

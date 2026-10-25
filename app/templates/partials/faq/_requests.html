@@ -1,0 +1,89 @@
+{# FAQ for My Requests (dashboard.requests_page). Behaviour described
+   lives in requests_page, cancel_request and services/request_site.py.
+   Limits come from app_limits. #}
+
+<h3 class="faq-group">Making a request</h3>
+
+<details class="faq-item">
+  <summary>Which request type should I choose?</summary>
+  <div class="faq-answer">
+    <ul>
+      <li><strong>New Planting Site:</strong> you have land you want reforested. You must mark it on the map.</li>
+      <li><strong>Adoption:</strong> you want to take care of a site that already exists.</li>
+      <li><strong>Seedling Supply:</strong> you need seedlings.</li>
+      <li><strong>Technical Assistance:</strong> you need advice or help from DENR staff.</li>
+    </ul>
+  </div>
+</details>
+
+<details class="faq-item">
+  <summary>How do I mark the site on the map?</summary>
+  <div class="faq-answer">
+    <p>Press <strong>Mark it on the map</strong>. Then either:</p>
+    <ul>
+      <li><strong>Drop a pin</strong> where the site is, or</li>
+      <li><strong>Draw the plot</strong> by clicking each corner. This measures the area for you.</li>
+    </ul>
+    <p>The pin must be inside the barangay you chose, and inside the plot if you drew one.</p>
+  </div>
+</details>
+
+<details class="faq-item">
+  <summary>I don't know the size of the land. What do I put?</summary>
+  <div class="faq-answer">
+    <p>Type your best guess, or leave it blank. If you draw the plot on the map, the measured area is used instead.</p>
+  </div>
+</details>
+
+<details class="faq-item">
+  <summary>How is "Estimated seedlings" worked out?</summary>
+  <div class="faq-answer">
+    <p>Area &divide; the space each seedling takes. Pick a planting type to use its standard spacing, or enter your own.</p>
+    <p>It is a planning estimate only, with no extra for seedlings that die and need replacing.</p>
+  </div>
+</details>
+
+<details class="faq-item">
+  <summary>Which documents should I attach?</summary>
+  <div class="faq-answer">
+    <p>A photo or scan of your Indicative Management Plan (IMP), or other supporting documents.</p>
+    <p>Images or PDF only, up to {{ app_limits.maxRequestFiles }} files of {{ app_limits.maxFileMb }} MB each. It is optional, but a request with an IMP is reviewed faster.</p>
+  </div>
+</details>
+
+<h3 class="faq-group">After you submit</h3>
+
+<details class="faq-item">
+  <summary>Who reviews my request?</summary>
+  <div class="faq-answer">
+    <p>The CENRO office for the barangay you chose. They are notified as soon as you submit.</p>
+  </div>
+</details>
+
+<details class="faq-item">
+  <summary>What do the statuses mean?</summary>
+  <div class="faq-answer">
+    <ul>
+      <li><strong>Submitted:</strong> received, not opened yet.</li>
+      <li><strong>Under Review:</strong> the CENRO is checking it.</li>
+      <li><strong>Approved:</strong> accepted.</li>
+      <li><strong>Rejected:</strong> not accepted. The reason is shown with it.</li>
+    </ul>
+    <p>You get a notification every time the status changes.</p>
+  </div>
+</details>
+
+<details class="faq-item">
+  <summary>Can I cancel a request?</summary>
+  <div class="faq-answer">
+    <p>Yes, while it is still Submitted or Under Review. Press <strong>Cancel</strong> on its row.</p>
+    <p>This deletes the request and its documents for good. Once it is approved or rejected, it can't be cancelled.</p>
+  </div>
+</details>
+
+<details class="faq-item">
+  <summary>Can I edit a request after sending it?</summary>
+  <div class="faq-answer">
+    <p>No. Cancel it while it is still pending, then send a new one.</p>
+  </div>
+</details>

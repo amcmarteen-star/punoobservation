@@ -1,0 +1,88 @@
+{# FAQ for the GIS Map (dashboard.gis_map). Open to guests. Behaviour
+   described lives in GIS_map.html, request-mode.js and
+   jurisdiction.can_see_site. #}
+
+<h3 class="faq-group">Using the map</h3>
+
+<details class="faq-item">
+  <summary>How do I find a site?</summary>
+  <div class="faq-answer">
+    <p>Click a municipality to see its sites. Click a barangay to see the sites in it.</p>
+    <p>On a site card:</p>
+    <ul>
+      <li><strong>Locate</strong> zooms the map to the site.</li>
+      <li><strong>History</strong> shows its past survival counts.</li>
+      <li>The Google Maps button opens it in Google Maps.</li>
+    </ul>
+  </div>
+</details>
+
+<details class="faq-item">
+  <summary>What are Area and District at the top?</summary>
+  <div class="faq-answer">
+    <p>They filter the map to part of the province. <strong>None</strong> keeps every district but removes the colours.</p>
+  </div>
+</details>
+
+<details class="faq-item">
+  <summary>How do I switch to satellite view or show barangay outlines?</summary>
+  <div class="faq-answer">
+    <p>Open <strong>Layers</strong>. There you can switch the base map and turn sites, boundaries, outlines and names on or off.</p>
+  </div>
+</details>
+
+<details class="faq-item">
+  <summary>What does the heat map show?</summary>
+  <div class="faq-answer">
+    <p>Where activity is concentrated. Choose what to measure: number of sites, seedlings planted, target seedlings or hectares.</p>
+  </div>
+</details>
+
+<details class="faq-item">
+  <summary>Why is a site's marker in the middle of the barangay?</summary>
+  <div class="faq-answer">
+    <p>Sites imported from DENR records have no exact location, so they sit at the barangay centre.</p>
+    <p>A site moves to its real place once the province publishes its GPS boundary.</p>
+  </div>
+</details>
+
+<h3 class="faq-group">Site details</h3>
+
+<details class="faq-item">
+  <summary>What is Monitoring History?</summary>
+  <div class="faq-answer">
+    <p>Past survival counts for a site, oldest to newest, with photos.</p>
+    <p>Only reports a CENRO has approved are shown.</p>
+  </div>
+</details>
+
+<details class="faq-item">
+  <summary>What is the difference between a solid and a dashed boundary?</summary>
+  <div class="faq-answer">
+    <p><strong>Solid:</strong> an official boundary, measured with GPS and published by the province.</p>
+    <p><strong>Dashed:</strong> a proposed site from a request, not surveyed yet. Only staff see these.</p>
+  </div>
+</details>
+
+<details class="faq-item">
+  <summary>Where do the recommended species come from?</summary>
+  <div class="faq-answer">
+    <p>From the same recommender as the <a href="{{ url_for('dashboard.recommendations') }}">Species Recommendation</a> page. It compares the barangay's conditions with each species' published growing conditions.</p>
+  </div>
+</details>
+
+{% if session.user_id %}
+<h3 class="faq-group">Requests</h3>
+
+<details class="faq-item">
+  <summary>How do I request a site from the map?</summary>
+  <div class="faq-answer">
+    <p>Choose a request type, then use the map tools:</p>
+    <ul>
+      <li><strong>Drop pin:</strong> click once where the site is.</li>
+      <li><strong>Draw plot:</strong> click each corner to measure the area.</li>
+    </ul>
+    <p>Then press <strong>Continue to form</strong> to finish the request.</p>
+  </div>
+</details>
+{% endif %}

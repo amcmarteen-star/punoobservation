@@ -1,0 +1,56 @@
+{# FAQ for Reforestation Sites (dashboard.Reforestation_sites).
+   Behaviour described lives in scope_sites, can_see_site and
+   admin.export_sites_excel. #}
+
+<details class="faq-item">
+  <summary>Which sites are listed?</summary>
+  <div class="faq-answer">
+    <p>Every reforestation site in your area. A CENRO account sees its own CENRO. Province-wide accounts see all of Pangasinan.</p>
+    <p>"Showing" at the top says which area you are looking at.</p>
+  </div>
+</details>
+
+<details class="faq-item">
+  <summary>How do I find one site?</summary>
+  <div class="faq-answer">
+    <p>Use the <strong>Municipality</strong> filter, or search by name or code. <strong>Clear</strong> resets it.</p>
+  </div>
+</details>
+
+<details class="faq-item">
+  <summary>What does "View" in the Map column do?</summary>
+  <div class="faq-answer">
+    <p>It opens the site on the GIS map. "No coordinates" means the site has no location recorded yet.</p>
+  </div>
+</details>
+
+<details class="faq-item">
+  <summary>What does "From request" mean?</summary>
+  <div class="faq-answer">
+    <p>The site was created from a reforestation request, not imported from DENR records.</p>
+    <p>Its area is the requester's proposed area until the province publishes a GPS boundary.</p>
+  </div>
+</details>
+
+<details class="faq-item">
+  <summary>How is the duration worked out?</summary>
+  <div class="faq-answer">
+    <p>From the contract start date to its end date, counted in whole months.</p>
+  </div>
+</details>
+
+<details class="faq-item">
+  <summary>Why can't I see the contact person?</summary>
+  <div class="faq-answer">
+    <p>Contact details are private. Only staff (field officers and administrators) see them.</p>
+  </div>
+</details>
+
+{% if session.role in ['admin', 'superadmin'] %}
+<details class="faq-item">
+  <summary>What is in the Excel export?</summary>
+  <div class="faq-answer">
+    <p>The sites you can see, in the DENR contract profile layout, with their reports and requests.</p>
+  </div>
+</details>
+{% endif %}

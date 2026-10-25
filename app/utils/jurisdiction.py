@@ -267,6 +267,26 @@ def region_label():
     return CENRO_REGIONS.get(cenro, "Pangasinan")
 
 
+def area_label():
+    """
+    The current user's area in words, for page subtitles.
+
+    CENRO staff get their districts and part of the province, e.g.
+    "Districts 5 and 6, Eastern Pangasinan". Everyone without a CENRO
+    gets the whole province, "Pangasinan". Templates call it as
+    {{ area_label() }} (registered in app/__init__.py).
+    """
+    cenro = current_cenro()
+    region = region_label()
+    districts = sorted(CENRO_GEOJSON.get(cenro, {}).get("districts", []))
+    if cenro is None or not districts:
+        return region
+    nums = [str(d) for d in districts]
+    if len(nums) == 1:
+        return f"District {nums[0]}, {region}"
+    return f"Districts {', '.join(nums[:-1])} and {nums[-1]}, {region}"
+
+
 def scope_label():
     """Short description of the current user's scope, for the interface."""
     cenro = current_cenro()

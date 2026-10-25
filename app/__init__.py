@@ -26,6 +26,11 @@ def create_app():
     app.jinja_env.filters['datetime_ph'] = format_datetime
     app.jinja_env.filters['date_ph'] = format_date
 
+    # The current user's area in words, for page subtitles:
+    #   {{ area_label() }}  ->  Districts 5 and 6, Eastern Pangasinan
+    from app.utils.jurisdiction import area_label
+    app.jinja_env.globals['area_label'] = area_label
+
     # Map tile sources, from app/config.py. Base.html hands them to every
     # page's JavaScript as MAP_TILES, so no template hard-codes a server.
     # sampling_rule / sampling_plan: the DENR survey rule (whole-site count
@@ -33,6 +38,7 @@ def create_app():
     # hard-codes it either.
     from app.services.monitoring import (
         FULL_COUNT_BELOW_HA, TARGET_INTENSITY, SAMPLE_PLOT_SQM, sampling_plan,
+        DENR_THRESHOLD,
     )
 
     @app.context_processor
@@ -61,7 +67,44 @@ def create_app():
             "fullCountBelowHa": FULL_COUNT_BELOW_HA,
             "targetPct": TARGET_INTENSITY,
             "plotSqm": SAMPLE_PLOT_SQM,
+            "survivalThreshold": DENR_THRESHOLD,
         }, "sampling_plan": sampling_plan}
+
+    # Help panel: the FAQ for the page being shown. Base.html shows the
+    # "?" button only when the page has one. To add a page, write its
+    # partial in templates/partials/faq/ and list its endpoint here.
+    page_faqs = {
+        # everyone
+        'dashboard.index': 'partials/faq/_dashboard.html',
+        'dashboard.gis_map': 'partials/faq/_gis_map.html',
+        'dashboard.Reforestation_sites': 'partials/faq/_sites.html',
+        'dashboard.recommendations': 'partials/faq/_recommendations.html',
+        'dashboard.notifications_page': 'partials/faq/_notifications.html',
+        'dashboard.my_account': 'partials/faq/_my_account.html',
+        'dashboard.requests_page': 'partials/faq/_requests.html',
+        # field officers
+        'dashboard.reports_page': 'partials/faq/_reports.html',
+        'dashboard.my_reports_page': 'partials/faq/_my_reports.html',
+        # one report: the partial adapts to which of these three it is
+        'dashboard.my_report_detail': 'partials/faq/_report_detail.html',
+        'dashboard.public_report_detail': 'partials/faq/_report_detail.html',
+        'admin.review_report_detail': 'partials/faq/_report_detail.html',
+        # CENRO and provincial administrators
+        'admin.review_requests': 'partials/faq/_review_requests.html',
+        'admin.review_request_detail': 'partials/faq/_request_detail.html',
+        'admin.create_site_from_request': 'partials/faq/_create_site.html',
+        'admin.review_reports': 'partials/faq/_review_reports.html',
+        'admin.provincial_overview': 'partials/faq/_provincial_overview.html',
+        'admin.publications': 'partials/faq/_publications.html',
+        # system administrators
+        'admin.user_management': 'partials/faq/_user_management.html',
+        'admin.reference_dataset': 'partials/faq/_reference_dataset.html',
+        'admin.audit_log': 'partials/faq/_audit_log.html',
+    }
+
+    @app.context_processor
+    def _page_faq():
+        return {"page_faq": page_faqs.get(request.endpoint)}
 
     # Register Blueprints
     from app.routes.auth import auth_bp

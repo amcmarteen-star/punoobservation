@@ -1,0 +1,45 @@
+{# FAQ for Review Reports (admin.review_reports). CENRO administrators
+   only. Behaviour described lives in admin.review_report. #}
+
+<details class="faq-item">
+  <summary>Which reports do I see?</summary>
+  <div class="faq-answer">
+    <p>Monitoring reports for sites under your CENRO, submitted by field officers.</p>
+  </div>
+</details>
+
+<details class="faq-item">
+  <summary>What does "flagged" mean in the Flags column?</summary>
+  <div class="faq-answer">
+    <p>How many photos have something to check. A photo is flagged when it:</p>
+    <ul>
+      <li>has no GPS location or no date</li>
+      <li>was taken outside the site's barangay</li>
+      <li>was taken more than 60 days before the monitoring date, or after it</li>
+      <li>was already used, in this report or an earlier one</li>
+    </ul>
+    <p>Flags are warnings, not proof. Open the report and decide.</p>
+  </div>
+</details>
+
+<details class="faq-item">
+  <summary>What is Intensity?</summary>
+  <div class="faq-answer">
+    <p>How much of the site was counted. Plot surveys should reach {{ '%g'|format(sampling_rule.targetPct) }}%. A whole-site count is 100%.</p>
+  </div>
+</details>
+
+<details class="faq-item">
+  <summary>What happens when I approve a report?</summary>
+  <div class="faq-answer">
+    <p>Its survival rate is saved to the site's planting record right away, and the dashboard uses it.</p>
+    <p>A captured boundary goes to the provincial administrator for publication.</p>
+  </div>
+</details>
+
+<details class="faq-item">
+  <summary>Does the field officer know my decision?</summary>
+  <div class="faq-answer">
+    <p>Yes. They get a notification with your note. A rejection needs a note, so tell them what to fix.</p>
+  </div>
+</details>

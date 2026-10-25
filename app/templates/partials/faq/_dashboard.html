@@ -1,0 +1,85 @@
+{# FAQ for the Dashboard (dashboard.index). Behaviour described lives in
+   dashboard.api_dashboard_analytics and _plant_next. #}
+{% set threshold = '%g'|format(sampling_rule.survivalThreshold) %}
+
+<h3 class="faq-group">The basics</h3>
+
+<details class="faq-item">
+  <summary>What does the dashboard show?</summary>
+  <div class="faq-answer">
+    <p>Three sections, top to bottom:</p>
+    <ul>
+      <li><strong>What has been done:</strong> sites and hectares placed under contract, by year and municipality.</li>
+      <li><strong>How well was it done:</strong> how much was planted against the target, and how many seedlings survived.</li>
+      <li><strong>What should be done next:</strong> well-suited barangays that have no site yet.</li>
+    </ul>
+  </div>
+</details>
+
+<details class="faq-item">
+  <summary>Why do I only see some municipalities?</summary>
+  <div class="faq-answer">
+    <p>A CENRO account sees only its own CENRO's area. Province-wide accounts see all of Pangasinan.</p>
+  </div>
+</details>
+
+<details class="faq-item">
+  <summary>Why do the charts take a few seconds to load?</summary>
+  <div class="faq-answer">
+    <p>Each time you open the page, the system scores every barangay to find the best places to plant next. That takes a moment.</p>
+  </div>
+</details>
+
+<details class="faq-item">
+  <summary>How up to date are the numbers?</summary>
+  <div class="faq-answer">
+    <p>They are worked out fresh every time you open the page. Reload it to see the latest.</p>
+  </div>
+</details>
+
+<h3 class="faq-group">Reading the charts</h3>
+
+<details class="faq-item">
+  <summary>What is the delivery rate?</summary>
+  <div class="faq-answer">
+    <p>Seedlings actually planted, as a percentage of the contracted target.</p>
+    <p>Because it is a percentage, a small municipality that planted everything ranks above a big one that fell short.</p>
+  </div>
+</details>
+
+<details class="faq-item">
+  <summary>Where does the survival rate come from?</summary>
+  <div class="faq-answer">
+    <p>From each site's planting record. When a CENRO approves a monitoring report, that report's survival rate is saved to the site.</p>
+    <p>The chart shows the average for each municipality. The dashed line marks the DENR {{ threshold }}% threshold.</p>
+  </div>
+</details>
+
+<details class="faq-item">
+  <summary>Why is a municipality missing from the survival chart?</summary>
+  <div class="faq-answer">
+    <p>None of its sites has a survival rate recorded yet.</p>
+  </div>
+</details>
+
+<details class="faq-item">
+  <summary>What is cost per hectare?</summary>
+  <div class="faq-answer">
+    <p>The three-year project cost divided by the contracted area. Big differences can come from terrain, species or how hard the site is to reach.</p>
+  </div>
+</details>
+
+<details class="faq-item">
+  <summary>How is "Where to plant next" worked out?</summary>
+  <div class="faq-answer">
+    <p>Every barangay gets a suitability score from the species recommender.</p>
+    <p>"Highly suitable" means the top quarter of barangays by that score. The chart counts the highly suitable barangays that have no reforestation site yet.</p>
+  </div>
+</details>
+
+<details class="faq-item">
+  <summary>What does "Most recommended species" mean?</summary>
+  <div class="faq-answer">
+    <p>How many barangays have that species in their top 5. A species high on this list suits many places.</p>
+  </div>
+</details>

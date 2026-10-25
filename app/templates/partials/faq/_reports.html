@@ -1,0 +1,173 @@
+{# FAQ for the Monitoring Report page (dashboard.reports_page), shown in
+   the help panel from Base.html.
+
+   Keep answers short and plain: field officers read this on a phone.
+   Numbers come from app config (sampling_rule, app_limits), so they stay
+   right if the rule or a limit changes. The behaviour described lives in
+   dashboard.submit_report, services/monitoring.py and admin.review_report;
+   change this file when those change. #}
+{% set full_below = '%g'|format(sampling_rule.fullCountBelowHa) %}
+{% set plot_side = '%g'|format(sampling_rule.plotSqm ** 0.5) %}
+{% set target_pct = '%g'|format(sampling_rule.targetPct) %}
+{% set threshold = '%g'|format(sampling_rule.survivalThreshold) %}
+
+<h3 class="faq-group">Before you start</h3>
+
+<details class="faq-item">
+  <summary>What is a monitoring report?</summary>
+  <div class="faq-answer">
+    <p>It records how many seedlings are still alive at a reforestation site.</p>
+    <p>The system turns your counts into a survival rate. Your CENRO then reviews it.</p>
+  </div>
+</details>
+
+<details class="faq-item">
+  <summary>Why can't I find my site in the list?</summary>
+  <div class="faq-answer">
+    <p>Pick the municipality first, then the barangay. The site list fills in after that.</p>
+    <p>You only see sites in your CENRO's area.</p>
+    <p>Still missing? Ask your CENRO administrator to check the site's record.</p>
+  </div>
+</details>
+
+<details class="faq-item">
+  <summary>It says the site has no planting record. What do I do?</summary>
+  <div class="faq-answer">
+    <p>Survival is measured against the number of seedlings planted. Without that number, there is nothing to compare your count to.</p>
+    <p>Ask an administrator to add the site's planting record. Or choose another site.</p>
+  </div>
+</details>
+
+<details class="faq-item">
+  <summary>Can I pick a future monitoring date?</summary>
+  <div class="faq-answer">
+    <p>No. Use the day you did the count. The date cannot be later than today.</p>
+  </div>
+</details>
+
+<h3 class="faq-group">Counting</h3>
+
+<details class="faq-item">
+  <summary>How do I count the seedlings?</summary>
+  <div class="faq-answer">
+    <p>Count only seedlings that are alive. The method depends on the site's size:</p>
+    <ul>
+      <li><strong>Under {{ full_below }} ha:</strong> count every live seedling on the whole site. You can count it in parts, with one row per part.</li>
+      <li><strong>{{ full_below }} ha and over:</strong> lay out plots of {{ plot_side }} m &times; {{ plot_side }} m until they cover {{ target_pct }}% of the site. Enter one row per plot.</li>
+    </ul>
+    <p>After you choose a site, the count plan shows which method applies and how many plots you need.</p>
+  </div>
+</details>
+
+<details class="faq-item">
+  <summary>Do I type the survival rate?</summary>
+  <div class="faq-answer">
+    <p>No. The system calculates it from your counts while you type.</p>
+    <ul>
+      <li><strong>Whole-site count:</strong> live seedlings &divide; seedlings planted.</li>
+      <li><strong>Plots:</strong> the average per plot is scaled up to the whole site, then divided by seedlings planted.</li>
+    </ul>
+    <p>The number you see on screen is the number that gets saved.</p>
+  </div>
+</details>
+
+<details class="faq-item">
+  <summary>What does the {{ threshold }}% mean?</summary>
+  <div class="faq-answer">
+    <p>It is the DENR reference threshold for survival. The calculation shows whether the site reaches it.</p>
+  </div>
+</details>
+
+<details class="faq-item">
+  <summary>Where should I put the plots?</summary>
+  <div class="faq-answer">
+    <p>Spread them across the whole site.</p>
+    <p>Plots placed only in healthy areas, or only in poor ones, give a wrong picture of the site.</p>
+  </div>
+</details>
+
+<details class="faq-item">
+  <summary>I counted fewer plots than needed. Can I still submit?</summary>
+  <div class="faq-answer">
+    <p>Yes. You will see a warning, and the reviewer sees it too.</p>
+    <p>Fewer plots make the estimate less reliable. Try to reach the full number when you can.</p>
+  </div>
+</details>
+
+<h3 class="faq-group">Photos</h3>
+
+<details class="faq-item">
+  <summary>Which photos do I need?</summary>
+  <div class="faq-answer">
+    <ul>
+      <li><strong>Plot photographs:</strong> proof of what you counted. One per plot is ideal.</li>
+      <li><strong>Corner photographs:</strong> stand at each corner of the site and take one photo. You need at least 4 corners to draw the boundary.</li>
+    </ul>
+    <p>Use a GPS camera app. The system reads the location and time from each photo, so you never type coordinates.</p>
+  </div>
+</details>
+
+<details class="faq-item">
+  <summary>Will my photo be rejected if it has no GPS?</summary>
+  <div class="faq-answer">
+    <p>No. Nothing is rejected automatically.</p>
+    <p>The photo is accepted but marked for the reviewer to check. A photo is marked when:</p>
+    <ul>
+      <li>it has no GPS location or no date</li>
+      <li>it was taken outside the site's barangay</li>
+      <li>it was taken more than 60 days before the monitoring date, or after it</li>
+      <li>the same photo was already used, in this report or an earlier one</li>
+    </ul>
+  </div>
+</details>
+
+<details class="faq-item">
+  <summary>Why did my photo lose its location?</summary>
+  <div class="faq-answer">
+    <p>Messaging apps like Messenger and Viber often remove the location when they send a photo.</p>
+    <p>Upload the original photo from your phone's gallery instead.</p>
+  </div>
+</details>
+
+<details class="faq-item">
+  <summary>How big can a photo be?</summary>
+  <div class="faq-answer">
+    <p>Up to {{ app_limits.maxFileMb }} MB each. JPG, PNG and HEIC photos work.</p>
+  </div>
+</details>
+
+<details class="faq-item">
+  <summary>Why is the drawn boundary bigger than the real site?</summary>
+  <div class="faq-answer">
+    <p>The boundary is the smallest simple shape around all your corner points, like a rubber band around them.</p>
+    <p>An L-shaped site, or one that bends around a stream, gets its gap filled in. So the drawn area comes out larger.</p>
+    <p>The system compares the drawn area with the contracted area and warns when they differ by more than 10%.</p>
+  </div>
+</details>
+
+<h3 class="faq-group">After you submit</h3>
+
+<details class="faq-item">
+  <summary>What happens after I submit?</summary>
+  <div class="faq-answer">
+    <p>The report is marked <strong>Pending</strong> and your CENRO administrator is notified.</p>
+    <p>They approve or reject it, and you get a notification either way.</p>
+    <p>You can follow it on the <a href="{{ url_for('dashboard.my_reports_page') }}">My Reports</a> page.</p>
+  </div>
+</details>
+
+<details class="faq-item">
+  <summary>My report was rejected. What now?</summary>
+  <div class="faq-answer">
+    <p>Open it in My Reports. The reviewer must give a reason when rejecting, and it is shown there along with any photo warnings.</p>
+    <p>A submitted report cannot be edited. Fix the problem and submit a new report.</p>
+  </div>
+</details>
+
+<details class="faq-item">
+  <summary>What happens when my report is approved?</summary>
+  <div class="faq-answer">
+    <p>The site's survival rate is updated to your report's figure.</p>
+    <p>If your corner photos made a boundary, it goes to the province for review before it appears on the map.</p>
+  </div>
+</details>

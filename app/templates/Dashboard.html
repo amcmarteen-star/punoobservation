@@ -8,7 +8,7 @@
   <div>
     <h2>Welcome, {{ session.username }}!</h2>
     <p class="text-secondary mb-0">
-      Reforestation activity across Districts 5 and 6, Eastern Pangasinan.
+      Reforestation activity across {{ area_label() }}.
     </p>
   </div>
   <div id="dashboard-clock" class="dashboard-clock" role="timer" aria-live="off">
@@ -259,8 +259,8 @@
     <div class="chart-card chart-card-fill">
       <h5>Most recommended species</h5>
       <p class="takeaway">
-        How often each species appears in a barangay's top five across all 478
-        barangays.
+        How often each species appears in a barangay's top five across all
+        <span id="speciesBarangays">the</span> barangays.
       </p>
       <div class="chart-box"><canvas id="chartSpecies" role="img"
                 aria-label="Horizontal bar chart of how often each species appears in a barangay's top five."></canvas></div>
@@ -488,7 +488,7 @@
     document.getElementById("dash").hidden = false;
 
     document.querySelector('.page-header p').textContent =
-      d.scope + ' \u2014 Districts 5 and 6, Eastern Pangasinan';
+      d.scope + ' \u2014 ' + {{ area_label()|tojson }};
 
 
     buildKpis(d.headline);
@@ -499,6 +499,8 @@
     buildCost(d.by_municipality);
     buildPlantNext(d);
     buildSpecies(d.species_rank);
+    document.getElementById("speciesBarangays").textContent =
+      d.barangays_scored.toLocaleString();
     buildUnplanted(d.unplanted_top);
   }
 

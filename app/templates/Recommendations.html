@@ -821,7 +821,12 @@
       }
     }
 
+    // The Purpose choice rides along on every load. "all" is the default,
+    // so it is left out to keep the address short.
     function urlFor(params) {
+      if (form.purpose && form.purpose.value && form.purpose.value !== "{{ purpose_all }}") {
+        params.purpose = form.purpose.value;
+      }
       const url = new URL(form.action || window.location.href, window.location.href);
       url.search = new URLSearchParams(params).toString();
       return url.pathname + url.search;
@@ -847,6 +852,7 @@
     window.addEventListener("popstate", function () {
       const q = new URLSearchParams(window.location.search);
       form.municipality.value = q.get("municipality") || "";
+      if (form.purpose) form.purpose.value = q.get("purpose") || "{{ purpose_all }}";
       load(window.location.pathname + window.location.search, { push: false });
     });
   })();
@@ -902,6 +908,22 @@
       </select>
     </div>
 
+    {# Only categories with tagged species are listed (purpose_choices in
+       dashboard.recommendations), so the field is absent until then. #}
+    {% if purpose_choices %}
+    <div class="um-field">
+      <label for="purpose">Purpose</label>
+      <select name="purpose" id="purpose">
+        <option value="{{ purpose_all }}">All species</option>
+        {% for c in purpose_choices %}
+          <option value="{{ c }}" {% if c == selected_purpose %}selected{% endif %}>
+            {{ c }}
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+    {% endif %}
+
     <div class="um-field rec-show-field">
       <button type="submit" class="um-btn-confirm rec-show-btn" id="rec-show-btn"
               {% if not selected_brgy %}disabled{% endif %}>
@@ -955,10 +977,12 @@
   <!-- ============ RESULTS HEADER + TOGGLE ============ -->
   <div class="results-bar">
     <span class="results-bar-label" id="resultCount">
-      Showing top 5 of {{ result.total_species }} species
+      Showing top 5 of {{ result.total_species }}
+      {% if result.purpose != purpose_all %}{{ result.purpose }} {% endif %}species
     </span>
     <button type="button" id="toggleAll" class="um-btn-ghost">
-      Show all {{ result.total_species }} species
+      Show all {{ result.total_species }}
+      {% if result.purpose != purpose_all %}{{ result.purpose }} {% endif %}species
     </button>
   </div>
 
@@ -1073,7 +1097,7 @@
            <td data-label="Temperature">{{ r.temperature_range }}</td>
             <td data-label="Rainfall">{{ r.rainfall_range }}</td>
 <td data-label="Preferred soil">{{ r.preferred_soil or '—' }}</td>
-<td class="num-cell" data-label="Features used">{{ r.features_used }} of 4</td>
+<td class="num-cell" data-label="Features used">{{ r.features_used }} of {{ result.site_vector|length }}</td>
           </tr>
           {% endfor %}
         </tbody>
@@ -1591,6 +1615,8 @@
       const label = document.getElementById('resultCount');
       const rows = document.querySelectorAll('tr.beyond-top');
       const total = {{ result.total_species }};
+      // "species", or "Timber species" when the Purpose filter is on
+      const noun = {{ ((((result.purpose ~ ' ') if result.purpose != purpose_all else '') ~ 'species')) | tojson }};
 
       let expanded = false;
 
@@ -1603,10 +1629,10 @@
 
         if (expanded) {
           btn.textContent = 'Show top 5 only';
-          label.textContent = 'Showing all ' + total + ' species';
+          label.textContent = 'Showing all ' + total + ' ' + noun;
         } else {
-          btn.textContent = 'Show all ' + total + ' species';
-          label.textContent = 'Showing top 5 of ' + total + ' species';
+          btn.textContent = 'Show all ' + total + ' ' + noun;
+          label.textContent = 'Showing top 5 of ' + total + ' ' + noun;
         }
       });
     })();
@@ -1716,8 +1742,8 @@
       Pick a barangay above and this table fills with the ranked species for it.
     {% else %}
       Pick a municipality and barangay above and this table fills with the
-      ranked species for that site. Recommendations cover all 478 barangays in
-      Districts 5 and 6 of Eastern Pangasinan.
+      ranked species for that site. Recommendations cover all
+      {{ "{:,}".format(barangay_total) }} barangays in {{ area_label() }}.
     {% endif %}
   </p>
 

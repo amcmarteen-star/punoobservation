@@ -1,0 +1,45 @@
+{# FAQ for the Provincial / CENRO Overview (admin.provincial_overview).
+   Read-only. Behaviour described lives in that route. #}
+{% set threshold = '%g'|format(sampling_rule.survivalThreshold) %}
+
+<details class="faq-item">
+  <summary>What is this page for?</summary>
+  <div class="faq-answer">
+    <p>Oversight. It lists the requests and monitoring reports CENRO offices have already approved, in one place.</p>
+  </div>
+</details>
+
+<details class="faq-item">
+  <summary>Why can't I approve or edit anything here?</summary>
+  <div class="faq-answer">
+    <p>The page is read-only on purpose. Decisions stay with the CENRO that owns the record. Boundary publication has its own page.</p>
+  </div>
+</details>
+
+<details class="faq-item">
+  <summary>Why don't I see every CENRO?</summary>
+  <div class="faq-answer">
+    <p>A CENRO account sees its own office only. A province-wide account sees every CENRO, including offices with no approved work yet.</p>
+  </div>
+</details>
+
+<details class="faq-item">
+  <summary>Why is a report I know about missing?</summary>
+  <div class="faq-answer">
+    <p>Only <strong>approved</strong> reports and requests appear. Pending, rejected or cancelled ones do not.</p>
+  </div>
+</details>
+
+<details class="faq-item">
+  <summary>How is "Mean survival" worked out?</summary>
+  <div class="faq-answer">
+    <p>The average survival rate of all approved reports. "Below {{ threshold }}%" counts the reports under the DENR threshold.</p>
+  </div>
+</details>
+
+<details class="faq-item">
+  <summary>Why does the table say "Showing the most recent"?</summary>
+  <div class="faq-answer">
+    <p>Long tables are cut to the newest rows to keep the page quick. The numbers at the top still count everything.</p>
+  </div>
+</details>

@@ -1,0 +1,57 @@
+{# FAQ for User Management (admin.user_management). System
+   administrators only. Behaviour described lives in the user routes in
+   admin.py. #}
+
+<h3 class="faq-group">Roles</h3>
+
+<details class="faq-item">
+  <summary>What can each role do?</summary>
+  <div class="faq-answer">
+    <ul>
+      <li><strong>System Administrator:</strong> user accounts, the reference dataset and the audit log. Never reviews or publishes.</li>
+      <li><strong>CENRO Administrator:</strong> reviews requests and monitoring reports for one CENRO.</li>
+      <li><strong>Provincial Administrator:</strong> province-wide oversight, and publishes site boundaries.</li>
+      <li><strong>Field Officer:</strong> submits monitoring reports.</li>
+      <li><strong>Normal User:</strong> submits reforestation requests.</li>
+    </ul>
+  </div>
+</details>
+
+<details class="faq-item">
+  <summary>How do I make a Provincial Administrator?</summary>
+  <div class="faq-answer">
+    <p>Choose the Administrator role and set the jurisdiction to <strong>PENRO &mdash; Province-wide</strong>. Choosing a CENRO instead makes a CENRO Administrator.</p>
+  </div>
+</details>
+
+<h3 class="faq-group">Accounts</h3>
+
+<details class="faq-item">
+  <summary>How does a new user get their password?</summary>
+  <div class="faq-answer">
+    <p>You set a temporary password when you add them. Give it to them directly, never by email.</p>
+    <p>They must choose their own password the first time they sign in.</p>
+  </div>
+</details>
+
+<details class="faq-item">
+  <summary>Someone forgot their password. What do I do?</summary>
+  <div class="faq-answer">
+    <p>Press <strong>Reset password</strong> on their row and set a temporary one. It works once.</p>
+  </div>
+</details>
+
+<details class="faq-item">
+  <summary>Should I deactivate or delete an account?</summary>
+  <div class="faq-answer">
+    <p><strong>Deactivate</strong> in most cases. The person can no longer sign in, but their work stays linked to their name. You can reactivate them later.</p>
+    <p><strong>Delete</strong> only for accounts with no reports, requests or published boundaries. It cannot be undone.</p>
+  </div>
+</details>
+
+<details class="faq-item">
+  <summary>Why can't I deactivate my own account?</summary>
+  <div class="faq-answer">
+    <p>You would lock yourself out of this page. For the same reason, the last active system administrator can't be deactivated.</p>
+  </div>
+</details>

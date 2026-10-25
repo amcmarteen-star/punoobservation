@@ -279,7 +279,7 @@ endblock %} {% set active_page = 'reports' %} {% block content %}
         multiple
         accept="image/*"
         data-upload-zone
-        data-max-mb="15"
+        data-max-mb="{{ app_limits.maxFileMb }}"
       />
       <p class="um-field-hint">
         Evidence of what you counted. One per plot is ideal.
@@ -297,7 +297,7 @@ endblock %} {% set active_page = 'reports' %} {% block content %}
         multiple
         accept="image/*"
         data-upload-zone
-        data-max-mb="15"
+        data-max-mb="{{ app_limits.maxFileMb }}"
       />
       <p class="um-field-hint">
         Stand at each corner of the site and take one photo.

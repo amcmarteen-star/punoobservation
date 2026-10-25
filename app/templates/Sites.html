@@ -202,7 +202,7 @@
             <h2>Reforestation Sites</h2>
             <span class="um-count-pill" id="sites-count">{{ ns.sites|length }}</span>
         </div>
-        <p class="um-subtitle">All registered reforestation sites across Eastern Pangasinan.</p>
+        <p class="um-subtitle">All registered reforestation sites across {{ area_label() }}.</p>
         <p class="text-secondary small mb-0">Showing: {{ scope }}</p>
     </div>
     {% if session.role in ['admin', 'superadmin'] %}

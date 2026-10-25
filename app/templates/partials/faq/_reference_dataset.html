@@ -1,0 +1,48 @@
+{# FAQ for Reference Dataset (admin.reference_dataset). System
+   administrators only. Behaviour described lives in
+   admin.preview_denr_data and admin.import_denr_data. #}
+
+<details class="faq-item">
+  <summary>What file can I upload?</summary>
+  <div class="faq-answer">
+    <p>An official DENR NGP contract-profile Excel file (.xlsx or .xls), up to 10 MB.</p>
+    <p>Sheets 2021, 2022, 2023 and Retention Fee are read. Other sheets, such as Summary, are skipped.</p>
+  </div>
+</details>
+
+<details class="faq-item">
+  <summary>Will uploading the same file twice make duplicates?</summary>
+  <div class="faq-answer">
+    <p>No. Sites are matched by <strong>Site Code</strong>, so existing sites are updated instead of copied.</p>
+    <p>That is why site codes must never be changed in the file.</p>
+  </div>
+</details>
+
+<details class="faq-item">
+  <summary>What does Preview do?</summary>
+  <div class="faq-answer">
+    <p>It reads the file and shows what would change, without saving anything. Use it to catch wrong rows before you import.</p>
+  </div>
+</details>
+
+<details class="faq-item">
+  <summary>What gets imported?</summary>
+  <div class="faq-answer">
+    <p>Site details, areas, contract dates, costs, seedling targets and numbers planted, survival rates, and validation dates.</p>
+    <p>New municipalities, barangays and partner organisations are added if they are not there yet.</p>
+  </div>
+</details>
+
+<details class="faq-item">
+  <summary>Why do imported sites say "Unspecified (Pending Match)" for species?</summary>
+  <div class="faq-answer">
+    <p>Matching tree species from the file is not built yet. Every imported record gets this placeholder until it is.</p>
+  </div>
+</details>
+
+<details class="faq-item">
+  <summary>Where can I see past imports?</summary>
+  <div class="faq-answer">
+    <p>Under <strong>Recent imports</strong> on this page, or in the <a href="{{ url_for('admin.audit_log') }}">Audit Log</a>.</p>
+  </div>
+</details>

@@ -1,0 +1,136 @@
+{# FAQ for the Species Recommendation page (dashboard.recommendations),
+   shown in the help panel from Base.html. The page is open to guests, so
+   answers assume no account.
+
+   Keep answers short and plain. The behaviour described lives in
+   services/recommender.py and services/recommender_eval.py; data
+   sources are listed in scripts/README.MD. Change this file when those
+   change. #}
+
+<h3 class="faq-group">The basics</h3>
+
+<details class="faq-item">
+  <summary>What does this page do?</summary>
+  <div class="faq-answer">
+    <p>It suggests tree species that suit a barangay's growing conditions.</p>
+    <p>Pick a municipality and a barangay, then press <strong>Show recommendations</strong>.</p>
+  </div>
+</details>
+
+<details class="faq-item">
+  <summary>How are the species ranked?</summary>
+  <div class="faq-answer">
+    <p>The system compares the barangay with each species' published growing conditions:</p>
+    <ul>
+      <li>elevation</li>
+      <li>temperature</li>
+      <li>rainfall</li>
+      <li>soil texture</li>
+      <li>coastal exposure (how salty the area is)</li>
+    </ul>
+    <p>Each species gets a similarity score. The closest match is ranked first.</p>
+    <p>Every species is scored. The top 5 are shown, and <strong>Show all</strong> lists the rest.</p>
+  </div>
+</details>
+
+<details class="faq-item">
+  <summary>What does the similarity score mean?</summary>
+  <div class="faq-answer">
+    <p>It runs from 0 to 1. Closer to 1 means the species' conditions are closer to the barangay's.</p>
+    <p>Scores are usually close together, so compare the ranks rather than reading much into small gaps.</p>
+  </div>
+</details>
+
+{% if purpose_choices %}
+<details class="faq-item">
+  <summary>What does the Purpose filter do?</summary>
+  <div class="faq-answer">
+    <p>It ranks only the species tagged for that use, such as Timber or Agroforestry. The scores themselves do not change.</p>
+    <p>Choose <strong>All species</strong> to rank every species again.</p>
+  </div>
+</details>
+{% endif %}
+
+<details class="faq-item">
+  <summary>Why can't I find my barangay?</summary>
+  <div class="faq-answer">
+    <p>Only barangays with measured elevation, climate and soil data are listed.</p>
+    <p>If you are signed in to a CENRO account, you only see municipalities in your CENRO's area.</p>
+  </div>
+</details>
+
+<h3 class="faq-group">Reading the table</h3>
+
+<details class="faq-item">
+  <summary>What does "Within published ranges" mean?</summary>
+  <div class="faq-answer">
+    <p>It is a separate yes-or-no check. It shows whether the barangay falls inside <em>every</em> range published for that species.</p>
+  </div>
+</details>
+
+<details class="faq-item">
+  <summary>Why does a top species say "Outside"?</summary>
+  <div class="faq-answer">
+    <p>The ranking compares the middle of each species' range, not the whole range.</p>
+    <p>So a species can be a close match overall, yet have one condition just outside its range. Check which one before you choose it.</p>
+  </div>
+</details>
+
+<details class="faq-item">
+  <summary>What does "Features used" mean?</summary>
+  <div class="faq-answer">
+    <p>It shows how many conditions could be compared for that species.</p>
+    <p>Some species have no published data for a condition. That condition is skipped, never guessed.</p>
+  </div>
+</details>
+
+<details class="faq-item">
+  <summary>Why are there no mangroves for my barangay?</summary>
+  <div class="faq-answer">
+    <p>Mangroves need salt water. An inland barangay has none, so mangroves score low there and drop down the list.</p>
+  </div>
+</details>
+
+<details class="faq-item">
+  <summary>What happens when I click a species?</summary>
+  <div class="faq-answer">
+    <ul>
+      <li><strong>Click the photo</strong> for a short description of the species.</li>
+      <li><strong>Click the name</strong> for evaluation numbers: why this barangay scored as it did, and how well the system recommends this species overall.</li>
+    </ul>
+  </div>
+</details>
+
+<details class="faq-item">
+  <summary>What are precision and recall?</summary>
+  <div class="faq-answer">
+    <p>They check the species against its published ranges, across all barangays you can see:</p>
+    <ul>
+      <li><strong>Precision:</strong> of the barangays where the species is in the top 5, how many are inside its ranges.</li>
+      <li><strong>Recall:</strong> of the barangays inside its ranges, how many have it in the top 5.</li>
+    </ul>
+    <p>Higher is better for both. "Not defined" means there was nothing to measure, for example the species is never in a top 5.</p>
+  </div>
+</details>
+
+<h3 class="faq-group">Using the results</h3>
+
+<details class="faq-item">
+  <summary>Should I only plant the top species?</summary>
+  <div class="faq-answer">
+    <p>No. Use the list as a starting point, not a final decision.</p>
+    <p>Published ranges describe the best growing conditions, not the limits a tree can survive. Always check the site in person, along with seedling supply and what the planting is for.</p>
+  </div>
+</details>
+
+<details class="faq-item">
+  <summary>Where does the data come from?</summary>
+  <div class="faq-answer">
+    <ul>
+      <li><strong>Elevation:</strong> OpenTopoData (SRTM, 30 m).</li>
+      <li><strong>Temperature and rainfall:</strong> Open-Meteo, averaged over 2014&ndash;2023.</li>
+      <li><strong>Soil:</strong> BSWM Philippine Soil Series.</li>
+      <li><strong>Species:</strong> published growing ranges. The source is named at the bottom of the results.</li>
+    </ul>
+  </div>
+</details>

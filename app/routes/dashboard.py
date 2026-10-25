@@ -5,7 +5,7 @@ from app.utils.decorators import login_required
 from app.models import (
     Site, ReforestationRecord, MonitoringReport, MonitoringPlot,
     MonitoringPhoto, Location, Notification, Request, RequestAttachment,
-    User, TreeSpecie, AuditLog,
+    User, TreeSpecie, AuditLog, SpeciesCategory,
 )
 from app.utils.audit import log_action
 from sqlalchemy import func
@@ -500,7 +500,11 @@ def recommendations():
     municipalities = [
         m[0] for m in q.distinct().order_by(Location.municipality).all()
     ]
- 
+    # barangays with data, for the "Recommendations cover all N" note
+    barangay_total = scope_locations(
+        Location.query.filter(Location.elevation_m.isnot(None))
+    ).count()
+
     selected_muni = request.args.get('municipality', '')
     selected_brgy = request.args.get('barangay', '')
     # Purpose filter: which CENRO category to score (default: all species).
@@ -510,7 +514,19 @@ def recommendations():
         check_purpose(selected_purpose)
     except ValueError as e:
         abort(400, description=str(e))
- 
+
+    # The Purpose dropdown offers only categories with at least one
+    # reference species tagged (scripts/tools/load_species_categories.py).
+    # An untagged category would score nothing, so until species are
+    # tagged the dropdown is not shown at all.
+    tagged = {
+        c for (c,) in db.session.query(SpeciesCategory.category)
+        .join(TreeSpecie, TreeSpecie.tree_id == SpeciesCategory.species_id)
+        .filter(TreeSpecie.is_reference.is_(True))
+        .distinct()
+    }
+    purpose_choices = [c for c in SPECIES_CATEGORIES if c in tagged]
+
     barangays = []
     if selected_muni:
         barangays = (
@@ -537,10 +553,12 @@ def recommendations():
         'Recommendations.html',
         active_page='recommendations',
         municipalities=municipalities,
+        barangay_total=barangay_total,
         barangays=barangays,
         selected_muni=selected_muni,
         selected_brgy=selected_brgy,
         species_categories=SPECIES_CATEGORIES,
+        purpose_choices=purpose_choices,
         purpose_all=PURPOSE_ALL,
         selected_purpose=selected_purpose,
         result=result,
@@ -2056,7 +2074,7 @@ def api_dashboard_analytics():
             },
             "by_year": [], "by_municipality": [], "by_zone": [],
             "plant_next": _plant_next([]),
-            "unplanted_top": [], "species_rank": [],
+            "unplanted_top": [], "species_rank": [], "barangays_scored": 0,
         })
  
     targets = dict(
@@ -2279,6 +2297,8 @@ def api_dashboard_analytics():
         "plant_next": plant_next,
         "unplanted_top": unplanted[:15],
         "species_rank": species_rank,
+        # barangays with a top five, the base species_rank counts over
+        "barangays_scored": len(suitability_points),
     })
  
  
