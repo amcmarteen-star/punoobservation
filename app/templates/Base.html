@@ -41,8 +41,8 @@
         try {
           var w = parseInt(localStorage.getItem("sidebarWidth"), 10);
           if (w) {
-            // two states only: the 64px icon rail or the 240px full rail
-            w = w < 150 ? 64 : 240;
+            // two states only: the 64px icon rail or the 272px full rail
+            w = w < 150 ? 64 : 272;
             var root = document.documentElement;
             root.style.setProperty("--sidebar-init-w", w + "px");
             if (w < 150) root.classList.add("sidebar-init-collapsed");
@@ -115,7 +115,11 @@
         <div class="role-pill">
           {% if session.username %}
           {% set avatar_class = 'role-avatar' %}
-          {% include 'partials/_avatar.html' %}
+          {# Signed in = online, so the dot is always shown here. #}
+          <span class="role-avatar-wrap">
+            {% include 'partials/_avatar.html' %}
+            <span class="online-dot" title="Online" aria-label="Online"></span>
+          </span>
           <div class="role-pill-text">
             <span class="role-pill-username">{{ session.username }}</span>
             <span class="role-pill-role">{{ session.role|capitalize }}</span>
@@ -575,13 +579,21 @@
             type="button"
             class="theme-toggle"
             id="theme-toggle"
-            onclick="toggleTheme()"
-            aria-pressed="false"
-            aria-label="Switch to dark theme"
+            role="switch"
+            aria-checked="false"
+            aria-label="Dark theme"
             title="Switch to dark theme"
           >
-            <svg class="theme-icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
-            <svg class="theme-icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9"/></svg>
+            {# A switch: thumb on the left is dark, on the right is light.
+               Click it, or drag the thumb either way. #}
+            <span class="theme-switch-track" aria-hidden="true">
+              <svg class="theme-track-icon theme-track-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9"/></svg>
+              <svg class="theme-track-icon theme-track-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
+              <span class="theme-switch-thumb">
+                <svg class="theme-icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
+                <svg class="theme-icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9"/></svg>
+              </span>
+            </span>
           </button>
           <div class="notif-bell-wrap">
             <button
@@ -753,7 +765,7 @@
       // with their own script.
 
       // Sidebar width. Two states, switched only by the round button on the
-      // rail's edge: the full 240px rail, or the 64px icon rail where nav
+      // rail's edge: the full 272px rail, or the 64px icon rail where nav
       // labels hide and only icons show (links still work as real <a> tags).
       (function () {
         const sidebar = document.querySelector(".sidebar");
@@ -762,7 +774,7 @@
         const CHEVRON_COLLAPSE = "m15 18-6-6 6-6";
         const CHEVRON_EXPAND = "m9 18 6-6-6-6";
         const COLLAPSED_WIDTH = 64;
-        const EXPANDED_WIDTH = 240;
+        const EXPANDED_WIDTH = 272;
 
         function setCollapsed(collapsed) {
           const px = collapsed ? COLLAPSED_WIDTH : EXPANDED_WIDTH;
@@ -861,15 +873,23 @@
           document.documentElement.getAttribute("data-theme") === "dark";
         var btn = document.getElementById("theme-toggle");
         if (!btn) return;
-        var label = dark ? "Switch to light theme" : "Switch to dark theme";
-        btn.setAttribute("aria-pressed", String(dark));
-        btn.setAttribute("aria-label", label);
-        btn.setAttribute("title", label);
+        btn.setAttribute("aria-checked", String(dark));
+        btn.setAttribute(
+          "title",
+          dark ? "Switch to light theme" : "Switch to dark theme"
+        );
       }
 
       function toggleTheme() {
+        setTheme(document.documentElement.getAttribute("data-theme") !== "dark");
+      }
+
+      function setTheme(goingDark) {
         var root = document.documentElement;
-        var goingDark = root.getAttribute("data-theme") !== "dark";
+        if (goingDark === (root.getAttribute("data-theme") === "dark")) {
+          updateThemeToggle();
+          return;
+        }
         if (goingDark) {
           root.setAttribute("data-theme", "dark");
         } else {
@@ -887,6 +907,68 @@
       }
 
       updateThemeToggle();
+
+      /* Click flips the switch. Dragging moves the thumb with the finger;
+         on release it lands on whichever side it is nearer (left = dark,
+         right = light). A drag swallows the click that follows it. */
+      (function () {
+        var btn = document.getElementById("theme-toggle");
+        if (!btn) return;
+        var thumb = btn.querySelector(".theme-switch-thumb");
+        var startX = 0, startPos = 0, pos = 0, travel = 0;
+        var pointerId = null, dragging = false, skipClickUntil = 0;
+
+        function isDark() {
+          return document.documentElement.getAttribute("data-theme") === "dark";
+        }
+
+        btn.addEventListener("pointerdown", function (e) {
+          if (e.button !== 0) return;
+          var track = thumb.parentElement;
+          travel = track.clientWidth - thumb.offsetWidth - thumb.offsetLeft * 2;
+          startPos = isDark() ? 0 : travel;
+          pos = startPos;
+          startX = e.clientX;
+          pointerId = e.pointerId;
+          dragging = false;
+          btn.classList.add("is-pressed");
+          btn.setPointerCapture(pointerId);
+        });
+
+        btn.addEventListener("pointermove", function (e) {
+          if (e.pointerId !== pointerId) return;
+          var dx = e.clientX - startX;
+          if (!dragging && Math.abs(dx) < 4) return;
+          dragging = true;
+          btn.classList.add("is-dragging");
+          pos = Math.max(0, Math.min(travel, startPos + dx));
+          thumb.style.transform = "translateX(" + pos + "px)";
+        });
+
+        function release(e) {
+          if (e.pointerId !== pointerId) return;
+          pointerId = null;
+          btn.classList.remove("is-pressed", "is-dragging");
+          thumb.style.transform = "";
+          if (dragging) {
+            skipClickUntil = Date.now() + 400;
+            setTheme(pos < travel / 2);
+          }
+          dragging = false;
+        }
+        btn.addEventListener("pointerup", release);
+        btn.addEventListener("pointercancel", release);
+
+        btn.addEventListener("click", function () {
+          if (Date.now() < skipClickUntil) return;
+          toggleTheme();
+        });
+
+        btn.addEventListener("keydown", function (e) {
+          if (e.key === "ArrowLeft") { e.preventDefault(); setTheme(true); }
+          if (e.key === "ArrowRight") { e.preventDefault(); setTheme(false); }
+        });
+      })();
 
       function toggleNotifDropdown() {
         document.getElementById("notif-dropdown").classList.toggle("active");

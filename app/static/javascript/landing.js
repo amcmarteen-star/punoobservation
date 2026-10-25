@@ -305,10 +305,11 @@
         var centre = 1;
         var timer = null;
 
-        /* Clicking any photograph opens it in the viewer, and also brings
-           it to the middle, so closing the viewer leaves the set on the
-           picture that was being looked at. Each card is a keyboard target
-           too (Enter or Space). */
+        /* Only the middle photograph opens the viewer. Clicking a side one
+           slides it to the middle instead, so the set scrolls; a second
+           click on it then opens it. Closing the viewer leaves the set on
+           the picture that was being looked at. Each card is a keyboard
+           target too (Enter or Space). */
         var viewer = createViewer(slides, function (i) {
             centre = i;
             paint();
@@ -319,14 +320,23 @@
             slide.setAttribute("tabindex", "0");
             slide.setAttribute("role", "button");
             slide.setAttribute("aria-label", "View photo: " + (img ? img.alt : "photograph"));
-            slide.addEventListener("click", function () { viewer.open(i); });
+            slide.addEventListener("click", function () { activate(i); });
             slide.addEventListener("keydown", function (e) {
                 if (e.key === "Enter" || e.key === " ") {
                     e.preventDefault();
-                    viewer.open(i);
+                    activate(i);
                 }
             });
         });
+
+        function activate(i) {
+            if (i === centre) {
+                viewer.open(i);
+            } else {
+                centre = i;
+                paint();
+            }
+        }
 
         /* Steps forward from the middle card, so the one before it comes
            out as count - 1 and lands in the left-hand slot. */
