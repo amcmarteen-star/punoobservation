@@ -197,6 +197,11 @@ def normalize_municipality(name):
     return MUNICIPALITY_ALIASES.get(key, key)
 
 
+# Trailing Roman numerals in barangay names, for place_key().
+_ROMAN = {"i": 1, "ii": 2, "iii": 3, "iv": 4, "v": 5, "vi": 6, "vii": 7,
+          "viii": 8, "ix": 9, "x": 10}
+
+
 def place_key(municipality, barangay):
     """
     One barangay's identity for matching names from different sources.
@@ -207,11 +212,21 @@ def place_key(municipality, barangay):
     folds the rest the way normalize_municipality() does. Used by the
     dataset import and its preview, so the preview's "known barangay"
     means the import will reuse it rather than make a copy.
+
+    Numbered barangays are folded too. The map files write Bolinao's
+    "Luciente II" as "Luciente2.0", so a trailing Roman numeral and a
+    whole number written with ".0" both become the plain digit:
+    "Luciente II", "Luciente 2" and "Luciente2.0" are one place.
     """
     def expand(s):
-        s = str(s or "").lower()
+        s = str(s or "").lower().strip()
         s = re.sub(r"\bsta\b\.?", "santa", s)
-        return re.sub(r"\bsto\b\.?", "santo", s)
+        s = re.sub(r"\bsto\b\.?", "santo", s)
+        s = re.sub(r"(\d+)\.0+\b", r"\1", s)
+        m = re.search(r"\s(i{1,3}|iv|vi{0,3}|ix|x)$", s)
+        if m:
+            s = s[:m.start()] + " " + str(_ROMAN[m.group(1)])
+        return s
 
     return (normalize_municipality(expand(municipality)),
             normalize_municipality(expand(barangay)))

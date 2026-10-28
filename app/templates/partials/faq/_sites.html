@@ -48,9 +48,22 @@
 
 {% if session.role in ['admin', 'superadmin'] %}
 <details class="faq-item">
-  <summary>What is in the Excel export?</summary>
+  <summary>What can I export to Excel?</summary>
   <div class="faq-answer">
-    <p>The sites you can see, in the DENR contract profile layout, with their reports and requests.</p>
+    <p>Press <strong>Export to Excel</strong> and tick what you need:</p>
+    <ul>
+      <li><strong>Sites:</strong> the DENR contract profile, one sheet per contract year.</li>
+      <li><strong>Monitoring reports:</strong> approved reports for the sites you export.</li>
+      <li><strong>Requests:</strong> reforestation requests from your area.</li>
+    </ul>
+    <p>You can also narrow it to one municipality, some contract years, or one request status.</p>
+  </div>
+</details>
+
+<details class="faq-item">
+  <summary>Can I import the exported file again?</summary>
+  <div class="faq-answer">
+    <p>Yes, the Sites sheets. They use the same layout as the DENR file on the Reference Dataset page, and sites are matched by site code.</p>
   </div>
 </details>
 {% endif %}

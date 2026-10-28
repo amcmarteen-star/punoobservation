@@ -578,6 +578,19 @@ def reset_password(user_id):
           "next time they sign in.", "success")
     return redirect(url_for('admin.user_management'))
 # Upload excel file
+# What the export dialog on Reforestation Sites can include, in sheet order.
+EXPORT_PARTS = {
+    'sites': "Sites (DENR contract profile)",
+    'reports': "Approved monitoring reports",
+    'requests': "Reforestation requests",
+}
+EXPORT_REQUEST_STATUSES = {
+    'Pending': ('Submitted', 'Under Review'),
+    'Approved': ('Approved',),
+    'Rejected': ('Rejected',),
+}
+
+
 @admin_bp.route('/export/sites.xlsx')
 @admin_required
 def export_sites_excel():
@@ -589,51 +602,132 @@ def export_sites_excel():
     CENRO, PENRO and superadmin get the province. Reports follow the
     exported sites; requests follow the CENRO's municipalities, the same
     rule Review Requests uses.
+
+    The export dialog on Reforestation Sites narrows it down. Every option
+    is optional, and a plain link with none exports everything:
+      include         sites, reports, requests (repeated); the dialog
+                      also sends options=1, so ticking nothing is refused
+                      instead of read as "everything"
+      year            contract years to keep, 'none' for sites without
+                      one (repeated). Applies to sites and their reports.
+      municipality    one municipality inside the user's scope
+      request_status  Pending, Approved or Rejected; anything else is all
     """
-    sites = (
-        scope_sites(Site.query.join(Location, Site.location_id == Location.location_id))
-        .order_by(Site.year_contracted, Location.municipality,
-                  Location.barangay, Site.site_name)
-        .all()
-    )
+    back = redirect(url_for('dashboard.Reforestation_sites'))
+    args = request.args
+
+    include = [p for p in EXPORT_PARTS if p in args.getlist('include')]
+    if not include:
+        if args.get('options'):
+            flash("Choose at least one thing to export.", "warning")
+            return back
+        include = list(EXPORT_PARTS)
+
+    municipality = (args.get('municipality') or '').strip()
+    if municipality and not can_see_municipality(municipality):
+        flash("That municipality is outside your jurisdiction.", "danger")
+        return back
+
+    # None in years means "sites with no contract year"; years itself is
+    # None when every year is wanted.
+    years = None
+    raw_years = args.getlist('year')
+    if raw_years:
+        years = set()
+        for y in raw_years:
+            if y == 'none':
+                years.add(None)
+            elif y.isdigit():
+                years.add(int(y))
+
+    status = args.get('request_status')
+    if status not in EXPORT_REQUEST_STATUSES:
+        status = None
+
+    # --- sites: always worked out, because reports follow them ---
+    sites_query = scope_sites(
+        Site.query.join(Location, Site.location_id == Location.location_id))
+    if municipality:
+        sites_query = sites_query.filter(Location.municipality == municipality)
+    if years is not None:
+        wanted = [Site.year_contracted.in_([y for y in years if y is not None])]
+        if None in years:
+            wanted.append(Site.year_contracted.is_(None))
+        sites_query = sites_query.filter(or_(*wanted))
+    sites = (sites_query
+             .order_by(Site.year_contracted, Location.municipality,
+                       Location.barangay, Site.site_name)
+             .all())
     site_ids = [s.site_id for s in sites]
 
-    reports = []
-    if site_ids:
-        reports = (
-            MonitoringReport.query
-            .filter(MonitoringReport.site_id.in_(site_ids),
-                    MonitoringReport.approval_status == 'Approved')
-            .order_by(MonitoringReport.monitoring_date.desc())
-            .all()
-        )
+    reports = None
+    if 'reports' in include:
+        reports = []
+        if site_ids:
+            reports = (
+                MonitoringReport.query
+                .filter(MonitoringReport.site_id.in_(site_ids),
+                        MonitoringReport.approval_status == 'Approved')
+                .order_by(MonitoringReport.monitoring_date.desc())
+                .all()
+            )
 
-    requests_query = Request.query
-    munis = allowed_municipalities()
-    if munis is not None:
-        requests_query = (
-            requests_query
-            .join(Location, Request.location_id == Location.location_id)
-            .filter(Location.municipality.in_(munis))
-        )
-    requests_list = requests_query.order_by(Request.date_submitted.desc()).all()
+    requests_list = None
+    if 'requests' in include:
+        requests_query = Request.query.join(
+            Location, Request.location_id == Location.location_id)
+        munis = allowed_municipalities()
+        if munis is not None:
+            requests_query = requests_query.filter(
+                Location.municipality.in_(munis))
+        if municipality:
+            requests_query = requests_query.filter(
+                Location.municipality == municipality)
+        if status:
+            requests_query = requests_query.filter(
+                Request.status.in_(EXPORT_REQUEST_STATUSES[status]))
+        requests_list = requests_query.order_by(
+            Request.date_submitted.desc()).all()
+
+    # The choices, in words, for the Summary sheet and the audit log.
+    filters = [("Included", ", ".join(EXPORT_PARTS[p] for p in include))]
+    if municipality:
+        filters.append(("Municipality", municipality))
+    if years is not None:
+        names = [str(y) for y in sorted(y for y in years if y is not None)]
+        if None in years:
+            names.append("no contract year")
+        filters.append(("Contract years", ", ".join(names) or "none"))
+    if requests_list is not None and status:
+        filters.append(("Request status", status))
 
     scope = scope_label()
     workbook = build_sites_workbook(
-        sites, reports, requests_list,
-        exported_by=session.get('username'), scope=scope,
+        sites if 'sites' in include else None, reports, requests_list,
+        exported_by=session.get('username'), scope=scope, filters=filters,
     )
 
-    log_action('export_sites', 'site', None,
-               f"Exported {len(sites)} site(s), {len(reports)} report(s) and "
-               f"{len(requests_list)} request(s) to Excel ({scope})",
-               commit=True)
+    counts = []
+    if 'sites' in include:
+        counts.append(f"{len(sites)} site(s)")
+    if reports is not None:
+        counts.append(f"{len(reports)} report(s)")
+    if requests_list is not None:
+        counts.append(f"{len(requests_list)} request(s)")
+    detail = f"Exported {', '.join(counts)} to Excel ({scope}"
+    for label, value in filters[1:]:
+        detail += f"; {label}: {value}"
+    log_action('export_sites', 'site', None, detail + ")", commit=True)
 
+    # The file name says what is inside when only one part was chosen.
+    what = {'sites': "Sites", 'reports': "Monitoring Reports",
+            'requests': "Requests"}[include[0]] if len(include) == 1 else "Export"
+    where = f"{scope} - {municipality}" if municipality else scope
     stamp = datetime.now(ZoneInfo("Asia/Manila")).strftime('%Y-%m-%d')
     return send_file(
         workbook,
         as_attachment=True,
-        download_name=f"PuNoObservation Sites - {scope} - {stamp}.xlsx",
+        download_name=f"PuNoObservation {what} - {where} - {stamp}.xlsx",
         mimetype=("application/vnd.openxmlformats-officedocument."
                   "spreadsheetml.sheet"),
     )
@@ -1004,9 +1098,13 @@ def preview_denr_data():
     except Exception as e:
         return jsonify({"ok": False, "error": f"Could not read file: {e}"}), 400
 
-    # every known barangay, indexed by normalised municipality + barangay
+    # every barangay with map data, indexed by normalised municipality +
+    # barangay. An empty copy left by an earlier import (no elevation, so
+    # no site characteristics) does not count: otherwise the warning
+    # disappears the second time the same file is previewed, while the
+    # barangay is still missing from the map.
     known = set()
-    for loc in Location.query.all():
+    for loc in Location.query.filter(Location.elevation_m.isnot(None)):
         known.add(place_key(loc.municipality, loc.barangay))
 
     # site codes already in the database - these will be UPDATED not created
@@ -1108,11 +1206,12 @@ def preview_denr_data():
             "level": "danger",
             "title": f"{n} row(s) name a barangay that is not in the map data",
             "detail": (
-                "These rows will create Location records with no coordinates "
-                "and no site characteristics. They will not appear on the map "
-                "and will not receive species recommendations. Check for "
-                "spelling differences, or for section headers that are not "
-                "barangay names."
+                "These rows will be placed on a barangay with no coordinates "
+                "and no site characteristics (an earlier import may already "
+                "have added it as an empty copy). Their sites will not appear "
+                "on the map and will not receive species recommendations. "
+                "Check for spelling differences, or for section headers that "
+                "are not barangay names."
             ),
             "items": [f"{k} ({v} row{'s' if v > 1 else ''})"
                       for k, v in sorted(unmatched.items(),

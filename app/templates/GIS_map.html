@@ -1626,8 +1626,9 @@
 <div class="map-topbar">
   {# Area, then district. Province-wide users pick an area (one per
      CENRO) and then one of its districts. CENRO staff have one area, so
-     they go straight to its districts. "None" sits in the first row:
-     every district stays, without its colour. #}
+     they go straight to its districts. "All" draws every district in one
+     shared colour, picking one gives it its own colour, and "None" (in
+     both rows) draws no colour or outline at all. #}
   {% set many_areas = map_areas|length > 1 %}
   {% if district_files %}
   {% if many_areas %}
@@ -1674,13 +1675,12 @@
         <span class="seg-word">District </span>{{ d.district }}
       </label>
       {% endfor %}
-      {% if not many_areas %}
+      {# No data-area, so it shows for whichever area is chosen. #}
       <label>
         <input type="radio" name="districtFilter" value="none"
                onchange="filterDistricts(this.value)" />
         None
       </label>
-      {% endif %}
     </div>
   </div>
 
@@ -2966,9 +2966,28 @@
         return base ? base + 0.3 : 0;
       }
 
-      function applyDistrictFill() {
-        Object.values(districtLayers).forEach(function (lyr) {
-          lyr.setStyle({ fillOpacity: districtFillOpacity() });
+      /* How the districts look, from the filters:
+           - "None": no colour and no outline. The towns stay clickable.
+           - one district on the map: its own colour, so it stands out
+           - several ("All"): one shared colour, so no district looks
+             singled out until the user picks it
+         The outline also follows "District outlines" in the Layers menu. */
+      const ALL_DISTRICTS_COLOR = "#2563EB";
+
+      function applyDistrictStyle() {
+        const single = visibleDistricts().length === 1;
+        const outline = showDistrictFill && showDistrictBorders;
+        Object.entries(districtLayers).forEach(function ([key, lyr]) {
+          const color = single
+            ? (DISTRICT_COLORS[key] || "#64748B")
+            : ALL_DISTRICTS_COLOR;
+          lyr.setStyle({
+            color: color,
+            fillColor: color,
+            fillOpacity: districtFillOpacity(),
+            weight: outline ? 2 : 0,
+            opacity: outline ? 1 : 0,
+          });
         });
       }
 
@@ -3050,6 +3069,7 @@
         MAP_FILES.areas.length === 1 ? MAP_FILES.areas[0].cenro : "all";
       let currentDistrict = "all";
       let showDistrictFill = true; // false while "None" is chosen
+      let showDistrictBorders = true; // "District outlines" in Layers
 
       function buildTreeIcon(b, zoom) {
         const detailed = zoom >= 12;
@@ -3448,7 +3468,7 @@
         }
 
         if (!metric) {
-          applyDistrictFill();
+          applyDistrictStyle();
           return;
         }
 
@@ -3520,7 +3540,7 @@
           heatLayer.addTo(map);
           heatLayer.bringToBack();
           // district fills would hide the shading, so thin them out
-          applyDistrictFill();
+          applyDistrictStyle();
 
           buildLegend(data);
         } catch (err) {
@@ -3541,12 +3561,8 @@
       };
 
       window.toggleDistrictBorders = function (show) {
-        Object.values(districtLayers).forEach(function (lyr) {
-          lyr.setStyle({
-            weight: show ? 2 : 0,
-            opacity: show ? 1 : 0,
-          });
-        });
+        showDistrictBorders = show;
+        applyDistrictStyle();
       };
 
       function buildLegend(data) {
@@ -3921,6 +3937,12 @@
 
       loadSiteMarkers();
 
+      // The districts were drawn in their own colours; restyle them from
+      // the filters ("All" by default: one shared colour). Called here,
+      // not where the districts are drawn, because it reads heatLayer,
+      // which is declared further up the setup than the districts.
+      applyDistrictStyle();
+
       /* The district step lists only the chosen area's districts. It
          stays hidden for "All", and for an area with a single district,
          where the area choice already says everything. */
@@ -3938,22 +3960,22 @@
         if (all) all.checked = true;
       }
 
-      // expose for the area and district radios. "None" is "All" without
-      // the colour: every district stays, with its outlines and clickable
-      // towns, and every marker shows.
+      // expose for the area and district radios. "None" keeps the same
+      // districts as "All" but draws nothing: no colour, no outline. The
+      // towns stay clickable and every marker in them shows.
       window.filterArea = function (value) {
         showDistrictFill = value !== "none";
         currentArea = value === "none" ? "all" : value;
         currentDistrict = "all";
         syncDistrictChoices();
-        applyDistrictFill();
+        applyDistrictStyle();
         applyDistrictView();
       };
 
       window.filterDistricts = function (value) {
         showDistrictFill = value !== "none";
         currentDistrict = value === "none" ? "all" : value;
-        applyDistrictFill();
+        applyDistrictStyle();
         applyDistrictView();
       };
 

@@ -206,15 +206,100 @@
         <p class="text-secondary small mb-0">Showing: {{ scope }}</p>
     </div>
     {% if session.role in ['admin', 'superadmin'] %}
-    {# Downloads every site in this scope, not only the rows the filters
-       below are showing. #}
+    {# Opens the export dialog below, where the user picks what goes in.
+       The plain link still works without JavaScript and exports
+       everything in this scope. #}
     <a href="{{ url_for('admin.export_sites_excel') }}" class="um-btn-add"
-       title="Download the sites in {{ scope }} as an Excel file in the DENR contract profile layout">
+       onclick="siteOpenExport(); return false;"
+       title="Choose what to download as an Excel file">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V3"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/></svg>
         Export to Excel
     </a>
     {% endif %}
 </div>
+
+{% if session.role in ['admin', 'superadmin'] %}
+<!-- ============ EXPORT OPTIONS ============ -->
+{# Sends a GET to admin.export_sites_excel; its docstring lists the
+   options. options=1 tells the server the dialog was used, so ticking
+   nothing is refused instead of exporting everything. #}
+<div class="um-modal-overlay" id="site-export-modal">
+  <div class="um-modal" role="dialog" aria-modal="true" aria-labelledby="site-export-title">
+    <div class="um-modal-head">
+      <h3 id="site-export-title">Export to Excel</h3>
+      <button type="button" class="um-modal-close" aria-label="Close dialog" onclick="siteCloseExport()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+      </button>
+    </div>
+    <form method="GET" action="{{ url_for('admin.export_sites_excel') }}" id="site-export-form">
+      <input type="hidden" name="options" value="1">
+      <div class="um-modal-body">
+        <fieldset class="exp-group">
+          <legend>What to include</legend>
+          <label class="exp-check">
+            <input type="checkbox" name="include" value="sites" checked>
+            <span><strong>Sites</strong><small>DENR contract profile, one sheet per contract year. Can be imported again.</small></span>
+          </label>
+          <label class="exp-check">
+            <input type="checkbox" name="include" value="reports" checked>
+            <span><strong>Monitoring reports</strong><small>Approved reports for the sites you export.</small></span>
+          </label>
+          <label class="exp-check">
+            <input type="checkbox" name="include" value="requests" checked>
+            <span><strong>Requests</strong><small>Reforestation requests from your area.</small></span>
+          </label>
+        </fieldset>
+
+        <div class="um-field">
+          <label for="site-export-muni">Municipality</label>
+          <select name="municipality" id="site-export-muni">
+            <option value="">All municipalities</option>
+            {% for municipality in grouped.keys()|sort %}
+            <option value="{{ municipality }}">{{ municipality }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        {% if export_years or export_has_no_year %}
+        <fieldset class="exp-group" id="site-export-years">
+          <legend class="exp-legend-row">
+            <span>Contract year <small>(sites and their reports)</small></span>
+            <span class="exp-quick">
+              <button type="button" class="exp-link" onclick="siteExportYears(true)">All</button>
+              <button type="button" class="exp-link" onclick="siteExportYears(false)">None</button>
+            </span>
+          </legend>
+          <div class="exp-years">
+            {% for y in export_years %}
+            <label class="exp-chip"><input type="checkbox" name="year" value="{{ y }}" checked> {{ y }}</label>
+            {% endfor %}
+            {% if export_has_no_year %}
+            <label class="exp-chip"><input type="checkbox" name="year" value="none" checked> No year</label>
+            {% endif %}
+          </div>
+        </fieldset>
+        {% endif %}
+
+        <div class="um-field" id="site-export-status-field">
+          <label for="site-export-status">Request status</label>
+          <select name="request_status" id="site-export-status">
+            <option value="all">All statuses</option>
+            <option value="Pending">Pending</option>
+            <option value="Approved">Approved</option>
+            <option value="Rejected">Rejected</option>
+          </select>
+        </div>
+
+        <p class="exp-error" id="site-export-error" role="alert" hidden></p>
+      </div>
+      <div class="um-modal-foot">
+        <button type="button" class="um-btn-cancel" onclick="siteCloseExport()">Cancel</button>
+        <button type="submit" class="um-btn-confirm" id="site-export-submit">Download</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endif %}
 
 <div class="um-table-card dt-card">
     {% if ns.sites %}
@@ -412,6 +497,8 @@
     var totalRows = allRows.length;
 
     var currentMunicipality = 'all';
+    // the export dialog starts on the municipality the table is showing
+    window.siteExportMunicipality = function () { return currentMunicipality; };
 
     /* ---- phone cards: View + "Show all details" under Area (ha) ----
        The labels and the "extra" columns are already set in the template
@@ -580,5 +667,106 @@
     render();
 })();
 </script>
+
+{% if session.role in ['admin', 'superadmin'] %}
+<script>
+/* Export dialog. Each option only shows when it can affect the file:
+   contract years need sites or reports, request status needs requests.
+   Options that do not apply are disabled, so the browser leaves them out
+   of the download address. */
+(function () {
+    var modal = document.getElementById('site-export-modal');
+    var form = document.getElementById('site-export-form');
+    if (!modal || !form) return;
+
+    var parts = form.querySelectorAll('input[name="include"]');
+    var years = form.querySelectorAll('input[name="year"]');
+    var yearGroup = document.getElementById('site-export-years');
+    var statusField = document.getElementById('site-export-status-field');
+    var statusSelect = document.getElementById('site-export-status');
+    var muniSelect = document.getElementById('site-export-muni');
+    var error = document.getElementById('site-export-error');
+    var opener = null;
+
+    function included(part) {
+        return form.querySelector('input[name="include"][value="' + part + '"]').checked;
+    }
+
+    function sync() {
+        var wantsYears = included('sites') || included('reports');
+        if (yearGroup) yearGroup.hidden = !wantsYears;
+        statusField.hidden = !included('requests');
+        error.hidden = true;
+    }
+
+    window.siteOpenExport = function () {
+        opener = document.activeElement;
+        var muni = window.siteExportMunicipality ? window.siteExportMunicipality() : 'all';
+        muniSelect.value = muni === 'all' ? '' : muni;
+        sync();
+        modal.classList.add('open');
+        parts[0].focus();
+    };
+
+    window.siteCloseExport = function () {
+        modal.classList.remove('open');
+        if (opener) opener.focus();
+    };
+
+    window.siteExportYears = function (on) {
+        years.forEach(function (y) { y.checked = on; });
+        error.hidden = true;
+    };
+
+    parts.forEach(function (p) { p.addEventListener('change', sync); });
+    years.forEach(function (y) { y.addEventListener('change', function () { error.hidden = true; }); });
+
+    modal.addEventListener('click', function (e) {
+        if (e.target === modal) window.siteCloseExport();
+    });
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && modal.classList.contains('open')) window.siteCloseExport();
+    });
+
+    function fail(message) {
+        error.textContent = message;
+        error.hidden = false;
+    }
+
+    form.addEventListener('submit', function (e) {
+        var anyPart = Array.prototype.some.call(parts, function (p) { return p.checked; });
+        if (!anyPart) {
+            e.preventDefault();
+            return fail('Choose at least one thing to export.');
+        }
+
+        var wantsYears = included('sites') || included('reports');
+        var ticked = Array.prototype.filter.call(years, function (y) { return y.checked; });
+        if (wantsYears && years.length && !ticked.length) {
+            e.preventDefault();
+            return fail('Choose at least one contract year.');
+        }
+
+        // Leave out what does not apply: years when every year is ticked
+        // (or sites and reports are both off), the status when requests
+        // are off or "All statuses" is chosen, and an empty municipality.
+        var skip = [];
+        if (!wantsYears || ticked.length === years.length) {
+            skip = skip.concat(Array.prototype.slice.call(years));
+        }
+        if (!included('requests') || statusSelect.value === 'all') skip.push(statusSelect);
+        if (!muniSelect.value) skip.push(muniSelect);
+        skip.forEach(function (el) { el.disabled = true; });
+
+        // The download starts in the background; close the dialog and put
+        // the fields back for next time.
+        setTimeout(function () {
+            skip.forEach(function (el) { el.disabled = false; });
+            window.siteCloseExport();
+        }, 300);
+    });
+})();
+</script>
+{% endif %}
 
 {% endblock %}

@@ -300,7 +300,14 @@ def Reforestation_sites():
 
     site_totals = {t.site_id: t for t in totals}
 
-    return render_template('Sites.html', grouped=grouped, site_totals=site_totals, scope = scope_label(),)
+    # Choices for the export dialog: the contract years these sites have.
+    export_years = sorted({s.year_contracted for s in sites
+                           if s.year_contracted is not None})
+    export_has_no_year = any(s.year_contracted is None for s in sites)
+
+    return render_template('Sites.html', grouped=grouped, site_totals=site_totals, scope = scope_label(),
+                           export_years=export_years,
+                           export_has_no_year=export_has_no_year)
 
 @dashboard_bp.route('/notifications')
 @login_required

@@ -156,44 +156,52 @@ REQUEST_COLUMNS = [
 # public
 # ----------------------------------------------------------------------
 
-def build_sites_workbook(sites, reports, requests, exported_by, scope):
+def build_sites_workbook(sites, reports, requests, exported_by, scope,
+                         filters=()):
     """
-    The whole export as .xlsx bytes in a BytesIO, ready for send_file.
+    The export as .xlsx bytes in a BytesIO, ready for send_file.
 
     sites, reports and requests must already be limited to what the user
-    may see; this function exports everything it is given.
+    may see; this function exports everything it is given. Any of them
+    may be None, meaning the user left that part out: its sheets are not
+    written. filters is a list of (label, value) pairs describing the
+    user's choices, listed on the Summary sheet.
     """
-    site_ids = [s.site_id for s in sites]
-    records = _records_by_site(site_ids)
-    species = _species_by_site(site_ids)
-
     wb = Workbook()
     summary = wb.active
     summary.title = "Summary"
 
-    by_year = defaultdict(list)
-    for site in sites:
-        by_year[site.year_contracted].append(site)
+    if sites is not None:
+        site_ids = [s.site_id for s in sites]
+        records = _records_by_site(site_ids)
+        species = _species_by_site(site_ids)
 
-    for year in sorted(y for y in by_year if y is not None):
-        _write_contract_sheet(wb.create_sheet(str(year)), by_year[year],
-                              records, species)
+        by_year = defaultdict(list)
+        for site in sites:
+            by_year[site.year_contracted].append(site)
 
-    if None in by_year:
-        _write_contract_sheet(
-            wb.create_sheet(NO_YEAR_SHEET), by_year[None], records, species,
-            note=("Sites with no contract year yet, such as sites created "
-                  "from requests. A site with no site code is added as a "
-                  "new site each time this file is imported."),
-        )
+        for year in sorted(y for y in by_year if y is not None):
+            _write_contract_sheet(wb.create_sheet(str(year)), by_year[year],
+                                  records, species)
 
-    _write_summary(summary, sites, exported_by, scope)
-    _write_table(wb.create_sheet("Monitoring Reports"),
-                 "APPROVED MONITORING REPORTS", REPORT_COLUMNS,
-                 [_report_row(r) for r in reports])
-    _write_table(wb.create_sheet("Requests"),
-                 "REFORESTATION REQUESTS", REQUEST_COLUMNS,
-                 [_request_row(q) for q in requests])
+        if None in by_year:
+            _write_contract_sheet(
+                wb.create_sheet(NO_YEAR_SHEET), by_year[None], records, species,
+                note=("Sites with no contract year yet, such as sites created "
+                      "from requests. A site with no site code is added as a "
+                      "new site each time this file is imported."),
+            )
+
+    _write_summary(summary, sites, reports, requests, exported_by, scope,
+                   list(filters))
+    if reports is not None:
+        _write_table(wb.create_sheet("Monitoring Reports"),
+                     "APPROVED MONITORING REPORTS", REPORT_COLUMNS,
+                     [_report_row(r) for r in reports])
+    if requests is not None:
+        _write_table(wb.create_sheet("Requests"),
+                     "REFORESTATION REQUESTS", REQUEST_COLUMNS,
+                     [_request_row(q) for q in requests])
 
     out = io.BytesIO()
     wb.save(out)
@@ -426,10 +434,10 @@ def _write_table(ws, title, columns, rows):
     ws.freeze_panes = "A4"
 
 
-def _write_summary(ws, sites, exported_by, scope):
+def _write_area_pivot(ws, sites):
     """
     The DENR summary pivot: actual area planted, per CENRO and contract
-    year, with Total Result on both axes. Then who exported what, and when.
+    year, with Total Result on both axes. Returns the last row written.
     """
     bold = Font(bold=True)
     no_year = "No year"
@@ -470,23 +478,44 @@ def _write_summary(ws, sites, exported_by, scope):
     ws.cell(row=row, column=total_col,
             value=round(sum(area.values()), 3)).font = bold
 
-    ws.column_dimensions["A"].width = 26
     for i in range(2, total_col + 1):
         ws.column_dimensions[get_column_letter(i)].width = 13
+    return row
 
-    exported_on = manila_now()
+
+def _write_summary(ws, sites, reports, requests, exported_by, scope, filters):
+    """
+    The area pivot when sites are in the export, then who exported what,
+    when, and with which choices. sites, reports and requests are None
+    when that part was left out.
+    """
+    bold = Font(bold=True)
+    ws.column_dimensions["A"].width = 26
+
+    row = 1
+    if sites is not None:
+        row = _write_area_pivot(ws, sites) + 2
+
     info = [
         ("Exported by", exported_by),
-        ("Exported on", exported_on),
+        ("Exported on", manila_now()),
         ("Scope", scope),
-        ("Sites", len(sites)),
-        ("About this file",
-         "Each year sheet follows the DENR contract profile layout and can "
-         "be imported again on the Reference Dataset page. Sites are matched "
-         "by SITE CODE, so a site without one is added as a new site on "
-         "every import."),
+        *filters,
     ]
-    row += 2
+    if sites is not None:
+        info.append(("Sites", len(sites)))
+    if reports is not None:
+        info.append(("Monitoring reports", len(reports)))
+    if requests is not None:
+        info.append(("Requests", len(requests)))
+    if sites is not None:
+        info.append(
+            ("About this file",
+             "Each year sheet follows the DENR contract profile layout and can "
+             "be imported again on the Reference Dataset page. Sites are matched "
+             "by SITE CODE, so a site without one is added as a new site on "
+             "every import."))
+
     for label, value in info:
         ws.cell(row=row, column=1, value=label).font = bold
         cell = ws.cell(row=row, column=2, value=value)

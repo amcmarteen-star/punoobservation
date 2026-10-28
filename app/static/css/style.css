@@ -6267,3 +6267,160 @@ body.help-open {
     outline: 2px solid var(--brand-solid);
     outline-offset: 2px;
 }
+
+/* ======================================================================
+   EXPORT DIALOG (Sites.html, #site-export-modal)
+   ====================================================================== */
+#site-export-modal .um-modal {
+    width: min(100%, 30rem);
+    max-height: calc(100vh - 3rem);
+    display: flex;
+    flex-direction: column;
+}
+
+#site-export-modal form {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+#site-export-modal .um-modal-body {
+    overflow-y: auto;
+}
+
+.exp-group {
+    margin: 0 0 1rem;
+    padding: 0;
+    border: none;
+}
+
+.exp-group legend {
+    margin-bottom: 0.45rem;
+    padding: 0;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-strong);
+}
+
+.exp-group legend small {
+    font-weight: 400;
+    color: var(--text-2);
+}
+
+.exp-check {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.65rem;
+    padding: 0.6rem 0.75rem;
+    margin-bottom: 0.4rem;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    cursor: pointer;
+}
+
+.exp-check:hover {
+    background-color: var(--surface-2);
+}
+
+.exp-check:has(input:checked) {
+    border-color: var(--ok-line);
+    background-color: var(--ok-bg);
+}
+
+.exp-check input {
+    flex: none;
+    width: 1.1rem;
+    height: 1.1rem;
+    margin-top: 0.15rem;
+    accent-color: var(--brand-solid);
+}
+
+.exp-check span {
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+    font-size: 0.9rem;
+    color: var(--text-heading);
+}
+
+.exp-check small {
+    font-size: 0.8rem;
+    line-height: 1.4;
+    color: var(--text-2);
+}
+
+.exp-years {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+}
+
+.exp-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    min-height: 2.25rem;
+    padding: 0.3rem 0.75rem;
+    border: 1px solid var(--line-strong);
+    border-radius: 999px;
+    font-size: 0.85rem;
+    color: var(--text-body);
+    cursor: pointer;
+}
+
+.exp-chip:has(input:checked) {
+    border-color: var(--brand-solid);
+    color: var(--brand-text);
+    font-weight: 600;
+}
+
+.exp-chip input {
+    accent-color: var(--brand-solid);
+}
+
+.exp-error {
+    margin: 0;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--danger-strong);
+}
+
+/* space between the municipality box and the year group */
+.um-field + .exp-group {
+    margin-top: 1rem;
+}
+
+/* "All" and "None" for the years, on the legend's line */
+.exp-group legend.exp-legend-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    width: 100%;
+}
+
+.exp-quick {
+    display: flex;
+    flex: none;
+    gap: 0.25rem;
+}
+
+.exp-link {
+    padding: 0.1rem 0.4rem;
+    border: none;
+    border-radius: 6px;
+    background: none;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--brand-text);
+    cursor: pointer;
+}
+
+.exp-link:hover {
+    background-color: var(--surface-3);
+}
+
+.exp-link:focus-visible {
+    outline: 2px solid var(--brand-solid);
+    outline-offset: 1px;
+}
