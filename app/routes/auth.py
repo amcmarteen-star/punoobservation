@@ -3,12 +3,16 @@ import time
 from collections import defaultdict
 from datetime import timedelta
 
+import hashlib
+
 from flask import (
     Blueprint, render_template, request, redirect, url_for, session, flash,
     current_app, jsonify,
 )
+from itsdangerous import BadSignature, SignatureExpired, URLSafeTimedSerializer
 from app.extensions import db
 from app.models import User, Organization, Location, Site
+from app.services.mailer import external_url, send_template
 from app.utils.audit import log_action, log_login
 from app.utils.security import password_problem
 from app.utils.timeutil import manila_now
@@ -220,6 +224,148 @@ def _locked_message(locked_until, now):
     return (f"Too many wrong passwords. Try again in {minutes} "
             f"minute{'s' if minutes != 1 else ''}, or ask an administrator "
             "to reset your password.")
+
+
+# ----------------------------------------------------------------------
+# forgot password
+# ----------------------------------------------------------------------
+#
+# The reset link carries a signed token, not a database row: the user id
+# and a fingerprint of the current password hash, signed with SECRET_KEY
+# and timed. That makes the link
+#   - impossible to forge without SECRET_KEY,
+#   - expire after PASSWORD_RESET_MINUTES (itsdangerous checks the time),
+#   - single-use: saving a new password changes the hash, so the
+#     fingerprint no longer matches and the same link is refused.
+#
+# The form never says whether an email address has an account. It shows
+# the same message either way, so it cannot be used to find out who uses
+# the system.
+
+RESET_SALT = 'password-reset'
+
+# user_id -> time of the last reset email. In memory, so it resets with
+# the server and is per worker; it only has to stop a flood, not count.
+_last_reset_email = {}
+
+
+def _reset_serializer():
+    return URLSafeTimedSerializer(current_app.config['SECRET_KEY'],
+                                  salt=RESET_SALT)
+
+
+def _password_fingerprint(user):
+    return hashlib.sha256(user.password_hash.encode()).hexdigest()[:16]
+
+
+def make_reset_token(user):
+    return _reset_serializer().dumps(
+        {'u': user.user_id, 'p': _password_fingerprint(user)})
+
+
+def user_from_reset_token(token):
+    """The User a reset token is for, or (None, reason) when it is not
+    usable: expired, altered, already used, or the account is off."""
+    max_age = current_app.config['PASSWORD_RESET_MINUTES'] * 60
+    try:
+        data = _reset_serializer().loads(token, max_age=max_age)
+    except SignatureExpired:
+        return None, "This reset link has expired."
+    except BadSignature:
+        return None, "This reset link is not valid."
+    user = db.session.get(User, data.get('u')) if isinstance(data, dict) else None
+    if user is None or not user.is_active:
+        return None, "This reset link is not valid."
+    if data.get('p') != _password_fingerprint(user):
+        return None, "This reset link was already used."
+    return user, None
+
+
+@auth_bp.route('/forgot-password', methods=['GET', 'POST'])
+def forgot_password():
+    if request.method == 'POST':
+        email = (request.form.get('email_address') or '').strip().lower()
+        user = User.query.filter_by(email_address=email).first() if email else None
+
+        if user is not None and user.is_active:
+            now = time.time()
+            cooldown = current_app.config['PASSWORD_RESET_COOLDOWN_SECONDS']
+            if now - _last_reset_email.get(user.user_id, 0) >= cooldown:
+                _last_reset_email[user.user_id] = now
+                try:
+                    reset_url = external_url('auth.reset_password',
+                                             token=make_reset_token(user))
+                except RuntimeError:
+                    current_app.logger.error(
+                        "Password reset email not sent: APP_BASE_URL is not set.")
+                    reset_url = None
+                if reset_url:
+                    send_template(
+                        'password_reset', to=user.email_address,
+                        subject="Reset your PuNoObservation password",
+                        name=user.username, username=user.username,
+                        reset_url=reset_url,
+                        minutes=current_app.config['PASSWORD_RESET_MINUTES'],
+                    )
+                    log_action('password_reset_requested', 'users',
+                               user.user_id, "Reset link emailed",
+                               commit=True)
+
+        # The same answer whether or not the address has an account.
+        flash("If that email address belongs to an account, a link to reset "
+              "the password is on its way. Check your inbox and spam folder.",
+              "success")
+        return redirect(url_for('auth.login'))
+
+    return render_template('Forgotpassword.html')
+
+
+@auth_bp.route('/reset-password/<token>', methods=['GET', 'POST'])
+def reset_password(token):
+    user, problem = user_from_reset_token(token)
+    if user is None:
+        return render_template('Resetpassword.html', invalid=problem)
+
+    if request.method == 'POST':
+        password = request.form.get('new_password', '')
+        confirm = request.form.get('confirm_password', '')
+        error = password_problem(password)
+        if not error and password != confirm:
+            error = "The two passwords do not match."
+        if error:
+            return render_template('Resetpassword.html', token=token,
+                                   username=user.username, error=error)
+
+        user.set_password(password)
+        user.must_change_password = False
+        user.password_changed_at = manila_now()
+        # a reset also lifts a lock from too many wrong passwords
+        user.failed_login_count = 0
+        user.locked_until = None
+        log_action('password_reset', 'users', user.user_id,
+                   "Password changed with an emailed reset link")
+        db.session.commit()
+
+        send_template(
+            'password_changed', to=user.email_address,
+            subject="Your PuNoObservation password was changed",
+            name=user.username, username=user.username,
+            login_url=_email_link('auth.login'),
+        )
+
+        session.clear()
+        flash("Your password was changed. Sign in with the new one.", "success")
+        return redirect(url_for('auth.login'))
+
+    return render_template('Resetpassword.html', token=token,
+                           username=user.username)
+
+
+def _email_link(endpoint, **values):
+    try:
+        return external_url(endpoint, **values)
+    except RuntimeError:
+        return url_for(endpoint, **values)
 
 
 @auth_bp.route('/session/status')

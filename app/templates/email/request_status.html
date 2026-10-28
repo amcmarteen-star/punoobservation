@@ -1,0 +1,25 @@
+{# Sent by admin.review_request when a CENRO sets a request's status. #}
+{% extends 'email/_layout.html' %}
+{% set button_url = requests_url %}
+{% set button_text = 'See my requests' %}
+{% block heading %}Your request is now {{ status }}{% endblock %}
+{% block body %}
+<p style="margin:0 0 16px;">Hello {{ name }},</p>
+<table role="presentation" cellpadding="0" cellspacing="0"
+       style="margin:0 0 16px; font-size:15px; color:#2f4239;">
+  <tr><td style="padding:2px 16px 2px 0; color:#5f6f66;">Request</td><td>#{{ request_id }} &middot; {{ request_type }}</td></tr>
+  <tr><td style="padding:2px 16px 2px 0; color:#5f6f66;">Location</td><td>{{ where }}</td></tr>
+  <tr><td style="padding:2px 16px 2px 0; color:#5f6f66;">Status</td><td><strong>{{ status }}</strong></td></tr>
+</table>
+{% if note %}
+<p style="margin:0 0 4px; color:#5f6f66; font-size:14px;">Note from the CENRO:</p>
+<p style="margin:0 0 16px; padding:12px 14px; background-color:#f7faf8; border-left:4px solid #15803d; white-space:pre-line;">{{ note }}</p>
+{% endif %}
+{% if status == 'Approved' %}
+<p style="margin:0;">Your request was approved. The CENRO office will continue from here.</p>
+{% elif status == 'Rejected' %}
+<p style="margin:0;">Your request was not approved. The note above gives the reason. You can send a new request at any time.</p>
+{% elif status == 'Under Review' %}
+<p style="margin:0;">The CENRO office is checking your request. You will get another email when it is decided.</p>
+{% endif %}
+{% endblock %}

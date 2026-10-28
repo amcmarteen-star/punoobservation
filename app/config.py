@@ -35,6 +35,31 @@ class Config:
     # not say "you were signed out for inactivity".
     PERMANENT_SESSION_LIFETIME = timedelta(hours=12)
 
+    # --- email -----------------------------------------------------------
+    # The live site sends through Brevo's SMTP relay; .env.example lists
+    # where each value comes from. Plain SMTP, so another service is a
+    # change to .env only. app/services/mailer.py does the sending. With
+    # MAIL_SERVER empty nothing is sent: each email is written to the
+    # server log instead, which is how development and the tests run.
+    MAIL_SERVER = os.environ.get('MAIL_SERVER', '')
+    MAIL_PORT = int(os.environ.get('MAIL_PORT', '587'))
+    MAIL_USERNAME = os.environ.get('MAIL_USERNAME', '')
+    MAIL_PASSWORD = os.environ.get('MAIL_PASSWORD', '')
+    # 'starttls' (usually port 587), 'ssl' (usually 465) or 'none'
+    MAIL_SECURITY = os.environ.get('MAIL_SECURITY', 'starttls').lower()
+    MAIL_FROM = os.environ.get(
+        'MAIL_FROM', 'PuNoObservation <noreply@punoobservation.app>')
+    # The site's public address, for links in emails, e.g.
+    # https://punoobservation.app. Required once MAIL_SERVER is set: links
+    # are never built from the request's Host header, which a visitor can
+    # forge to point a password reset link at their own site.
+    APP_BASE_URL = os.environ.get('APP_BASE_URL', '').rstrip('/')
+    # How long a "forgot password" link works.
+    PASSWORD_RESET_MINUTES = 60
+    # The least time between two reset emails to one account, so the form
+    # cannot be used to flood someone's inbox.
+    PASSWORD_RESET_COOLDOWN_SECONDS = 120
+
     # --- map tiles -------------------------------------------------------
     # Where every map in the system gets its background pictures.
     #

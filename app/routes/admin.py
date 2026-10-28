@@ -21,6 +21,7 @@ from app.services.monitoring import save_species_photo, delete_species_photo
 from app.services.wikipedia import refresh_species_summary, WikipediaUnavailable
 from app.services.request_site import boundary_dict, barangay_point, SITE_REQUEST_TYPES
 from app.services.export_report import build_sites_workbook
+from app.services.mailer import send_template, external_url
 from app.utils.timeutil import manila_now
 from app.utils.security import password_problem
 from sqlalchemy.exc import IntegrityError
@@ -1039,11 +1040,54 @@ def review_request(request_id):
     log_action('review_request', 'request', req.request_id,
                f"Marked {new_status}"
                + (f": {note}" if note else ""))
-        
+
     db.session.commit()
+
+    # After the commit: the decision stands whether or not the email
+    # goes out, and a slow mail server must not hold the record open.
+    _email_request_status(req, new_status, note)
 
     flash(f"Request #{req.request_id} marked {new_status}.", "success")
     return redirect(url_for('admin.review_requests'))
+
+
+def _email_request_status(req, status, note):
+    """
+    Tell the requester by email, alongside the in-app notification.
+
+    Requesters are often residents who rarely sign in, so the email is how
+    most of them hear the outcome. It goes to the account's address, with
+    the contact person on the form copied in when that is someone else.
+    """
+    requester = req.requester
+    to = requester.email_address if requester else None
+    contact = (req.contact_email or '').strip().lower()
+    if not to and not contact:
+        return
+    where = (f"{req.location.barangay}, {req.location.municipality}"
+             if req.location else "your requested site")
+    send_template(
+        'request_status',
+        to=to or contact,
+        cc=contact if to and contact != (to or '').lower() else None,
+        subject=f"Your reforestation request is now {status}",
+        name=req.contact_name or (requester.username if requester else "there"),
+        status=status,
+        note=note,
+        request_id=req.request_id,
+        request_type=req.request_type,
+        where=where,
+        requests_url=_email_link('dashboard.requests_page'),
+    )
+
+
+def _email_link(endpoint, **values):
+    """A link for an email, or the bare path when no base address is set
+    (send_template then refuses the email and logs why)."""
+    try:
+        return external_url(endpoint, **values)
+    except RuntimeError:
+        return url_for(endpoint, **values)
 
 """
 DATASET PREVIEW - dry run before import

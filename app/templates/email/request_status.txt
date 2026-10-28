@@ -1,0 +1,24 @@
+{# Sent by admin.review_request when a CENRO sets a request's status. #}
+Hello {{ name }},
+
+Your reforestation request is now: {{ status }}
+
+Request:  #{{ request_id }} - {{ request_type }}
+Location: {{ where }}
+{% if note %}
+Note from the CENRO:
+{{ note }}
+{% endif %}
+{% if status == 'Approved' %}
+Your request was approved. The CENRO office will continue from here.
+{% elif status == 'Rejected' %}
+Your request was not approved. The note above gives the reason. You can send a new request at any time.
+{% elif status == 'Under Review' %}
+The CENRO office is checking your request. You will get another email when it is decided.
+{% endif %}
+See all your requests:
+{{ requests_url }}
+
+--
+PuNoObservation, the DENR reforestation monitoring system for Pangasinan.
+Replies to this address are not read.

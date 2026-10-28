@@ -242,6 +242,15 @@ html:has(> body.lg-body) { height: 100%; scrollbar-gutter: auto; }
 }
 .lg-register a { color: #7fd0a2; font-weight: 700; text-decoration: none; }
 .lg-register a:hover { text-decoration: underline; }
+/* "Forgot password?" between the password box and Sign in */
+.lg-forgot {
+    margin: -0.4rem 0 1.1rem;
+    text-align: right;
+    font-size: 0.88rem;
+}
+.lg-forgot a { color: #7fd0a2; font-weight: 600; text-decoration: none; }
+.lg-forgot a:hover,
+.lg-forgot a:focus-visible { text-decoration: underline; }
 .lg-note {
     margin: 1.6rem 0 0;
     text-align: center;
