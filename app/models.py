@@ -262,7 +262,11 @@ class MonitoringReport(db.Model):
                                 default=datetime.utcnow)
 
     # --- computed from the sampling plots, never typed by the officer ---
-    survival_rate = db.Column(db.Float, nullable=False, default=0.0)
+    # None means unknown: the site has no "seedlings actually planted" on
+    # record (sites made from a request start without one), so survivors
+    # cannot be turned into a rate. Never stored as 0, which would read as
+    # every seedling dead and pull down every average it joins.
+    survival_rate = db.Column(db.Float, nullable=True)
     plots_recorded = db.Column(db.Integer, nullable=True)
     plot_size_sqm = db.Column(db.Float, nullable=True)
     total_counted = db.Column(db.Integer, nullable=True)

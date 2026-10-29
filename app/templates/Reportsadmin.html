@@ -108,10 +108,11 @@
             <div class="text-secondary small">Sent {{ r.submitted_at|datetime_ph }}</div>
           </td>
           <td class="num-cell">{{ r.plots_recorded or '—' }}</td>
-          <td class="num-cell sites-fw-semibold {% if r.survival_rate >= 85 %}text-success{% else %}text-danger{% endif %}">
-            {{ r.survival_rate }}%
+          <td class="num-cell sites-fw-semibold {% if r.survival_rate is none %}text-secondary{% elif r.survival_rate >= 85 %}text-success{% else %}text-danger{% endif %}"
+              {% if r.survival_rate is none %}title="No seedlings actually planted on record for this site"{% endif %}>
+            {{ r.survival_rate|survival }}
           </td>
-          <td class="num-cell">{{ r.sampling_intensity or '—' }}%</td>
+          <td class="num-cell">{% if r.sampling_intensity is not none %}{{ r.sampling_intensity }}%{% else %}&mdash;{% endif %}</td>
           <td class="num-cell">{{ r.photos | length }}</td>
           <td>
             {% if flagged %}

@@ -26,6 +26,13 @@ def create_app():
     app.jinja_env.filters['datetime_ph'] = format_datetime
     app.jinja_env.filters['date_ph'] = format_date
 
+    # A report's survival rate: {{ r.survival_rate|survival }} -> 87.5%,
+    # or "Unknown" when the site has no planted figure.
+    from app.services.monitoring import survival_text
+    app.jinja_env.filters['survival'] = (
+        lambda rate: survival_text(rate).capitalize()
+        if rate is None else survival_text(rate))
+
     # The current user's area in words, for page subtitles:
     #   {{ area_label() }}  ->  Districts 5 and 6, Eastern Pangasinan
     from app.utils.jurisdiction import area_label

@@ -179,18 +179,21 @@
 </div>
 
 <!-- ============ HEADLINE ============ -->
-<div class="rep-headline {% if report.survival_rate < 85 %}fail{% endif %}">
+<div class="rep-headline {% if report.survival_rate is none %}unknown{% elif report.survival_rate < 85 %}fail{% endif %}">
   <div>
     <span class="lbl">Survival rate</span>
     <span class="sub">
-      {% if report.survival_rate >= 85 %}
+      {% if report.survival_rate is none %}
+        Cannot be worked out: this site has no seedlings actually planted
+        on record. The counts below are saved.
+      {% elif report.survival_rate >= 85 %}
         Meets the 85% DENR reference threshold
       {% else %}
         Below the 85% DENR reference threshold
       {% endif %}
     </span>
   </div>
-  <span class="big">{{ report.survival_rate }}%</span>
+  <span class="big">{{ report.survival_rate|survival }}</span>
 </div>
 
 <!-- ============ SITE ============ -->
@@ -276,7 +279,7 @@
   <div class="rep-calc-line">
     <span class="lbl">Sampling intensity</span>
     <span class="val">
-      {{ report.sampling_intensity }}%
+      {% if report.sampling_intensity is not none %}{{ report.sampling_intensity }}%{% else %}&mdash;{% endif %}
       {# against the rule for this site's size: 100% under 20 ha, else 10% #}
       {% if plan and report.sampling_intensity is not none
             and report.sampling_intensity < plan.target_pct %}
@@ -490,10 +493,17 @@
     {% endif %}
 
     <div class="um-alert um-alert-warning mt-3 mb-0">
+      {% if report.survival_rate is none %}
+      <strong>No survival rate to record.</strong>
+      This site has no seedlings actually planted on record, so approving
+      leaves its planting record unchanged. The count and photos are kept
+      with the report.
+      {% else %}
       <strong>Approving writes to the planting record.</strong>
-      The survival rate of {{ report.survival_rate }}% and the monitoring date
-      will be saved against the reforestation record for this site, and will
-      appear in reports and dashboards.
+      The survival rate of {{ report.survival_rate|survival }} and the
+      monitoring date will be saved against the reforestation record for this
+      site, and will appear in reports and dashboards.
+      {% endif %}
     </div>
   </form>
 </div>
@@ -516,8 +526,13 @@
     <strong>Approved</strong>
     {% if report.reviewer %}by {{ report.reviewer.username }}{% endif %}
     {% if report.date_reviewed %}on {{ report.date_reviewed|datetime_ph }}{% endif %}.
-    The survival rate of {{ report.survival_rate }}% is now recorded against
-    the planting record for this site.
+    {% if report.survival_rate is none %}
+    No survival rate was recorded, because this site has no seedlings
+    actually planted on record.
+    {% else %}
+    The survival rate of {{ report.survival_rate|survival }} is now recorded
+    against the planting record for this site.
+    {% endif %}
     {% if report.review_note and not public_view %}<br /><br />Note: {{ report.review_note }}{% endif %}
   </div>
 

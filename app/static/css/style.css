@@ -4605,6 +4605,11 @@ table[data-freeze="2"].is-scrolled-x th:nth-child(2) {
     background-color: var(--danger-solid);
 }
 
+/* No planted figure, so no rate: neither a pass nor a fail colour */
+.rep-headline.unknown {
+    background-color: #475569;
+}
+
 .rep-headline .lbl {
     display: block;
     font-size: 0.75rem;

@@ -214,12 +214,13 @@
           <td class="num-cell" data-label="Plots">{{ r.plots_recorded or '—' }}</td>
           <td class="num-cell" data-label="Counted alive">{{ r.total_counted or '—' }}</td>
           <td
-            class="mr-survival num-cell sites-fw-semibold {% if r.survival_rate >= 85 %}text-success{% else %}text-danger{% endif %}"
+            class="mr-survival num-cell sites-fw-semibold {% if r.survival_rate is none %}text-secondary{% elif r.survival_rate >= 85 %}text-success{% else %}text-danger{% endif %}"
             data-label="Survival rate"
+            {% if r.survival_rate is none %}title="No seedlings actually planted on record for this site"{% endif %}
           >
-            {{ r.survival_rate }}%
+            {{ r.survival_rate|survival }}
           </td>
-          <td class="num-cell" data-label="Sampling intensity">{{ r.sampling_intensity }}%</td>
+          <td class="num-cell" data-label="Sampling intensity">{% if r.sampling_intensity is not none %}{{ r.sampling_intensity }}%{% else %}&mdash;{% endif %}</td>
           <td class="mr-status" data-label="Status">
             <span class="um-status st-{{ r.approval_status|lower }}"
               >{{ r.approval_status }}</span

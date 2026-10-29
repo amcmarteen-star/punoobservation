@@ -2136,7 +2136,7 @@
           trendHtml = `
             <div class="trend-box">
               <span class="lbl">Latest survival rate</span>
-              <span class="big">${d.latest_survival}%</span>
+              <span class="big">${survivalLabel(d.latest_survival)}</span>
               <span class="lbl">
                 ${d.report_count} monitoring visit${d.report_count > 1 ? 's' : ''}
                 ${d.trend.length > 1 ? '&middot; oldest to newest below' : ''}
@@ -2158,11 +2158,11 @@
                  alt="monitoring photo">`).join('');
 
           return `
-            <div class="hist-visit ${h.meets_threshold ? '' : 'below'}">
+            <div class="hist-visit ${h.meets_threshold === false ? 'below' : ''}">
               <div class="hist-head">
                 <span class="hist-date">${h.date_display}</span>
-                <span class="hist-rate ${h.meets_threshold ? '' : 'below'}">
-                  ${h.survival_rate}%
+                <span class="hist-rate ${h.meets_threshold === false ? 'below' : ''}">
+                  ${survivalLabel(h.survival_rate)}
                 </span>
               </div>
 
@@ -2665,6 +2665,12 @@
         // Zoom in to at least 14, but never pull a closer view back out.
         map.flyTo([lat, lon], Math.max(map.getZoom(), 14), { duration: 0.8 });
       };
+
+      // A visit's survival rate. null means unknown: the site has no
+      // seedlings actually planted on record, so there is no rate.
+      function survivalLabel(rate) {
+        return rate === null || rate === undefined ? "Unknown" : rate + "%";
+      }
 
       // small helper: keeps apostrophes in names from breaking the
       // inline onclick attributes above
@@ -3880,12 +3886,12 @@
               <div class="bp-card">
                 <p class="bp-kicker">Monitoring history</p>
                 <h4 style="margin:0 0 0.5rem; font-size:0.98rem; color:var(--text-heading);">${escBoundary(s.site_name)}</h4>
-                <div class="bp-latest"><b>${d.latest_survival}%</b>
+                <div class="bp-latest"><b>${survivalLabel(d.latest_survival)}</b>
                   <span class="bp-muted">${d.report_count} monitoring visit${d.report_count > 1 ? "s" : ""}</span></div>
                 <ul class="bp-visits">
                   ${d.history.map((h) => `
                     <li><span>${escBoundary(h.date_display)}</span>
-                        <strong class="${h.meets_threshold ? "" : "below"}">${h.survival_rate}%</strong></li>`).join("")}
+                        <strong class="${h.meets_threshold === false ? "below" : ""}">${survivalLabel(h.survival_rate)}</strong></li>`).join("")}
                 </ul>
                 <button type="button" class="back-link" style="width:100%; margin:0.6rem 0 0;"
                         onclick="showSiteHistory(${s.site_id})">View monitoring history</button>

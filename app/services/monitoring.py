@@ -191,6 +191,17 @@ TARGET_INTENSITY = 10.0      # from that area up: plots cover 10% of it
 SAMPLE_PLOT_SQM = SQM_PER_HA  # each plot 100 m x 100 m
 
 
+def survival_text(rate):
+    """
+    A survival rate for messages: "87.5%", or "unknown" when there is no
+    rate because the site has no planted figure (see compute_survival).
+    Templates use it as {{ rate|survival }}, which capitalises "Unknown".
+    """
+    if rate is None:
+        return "unknown"
+    return f"{rate:g}%"
+
+
 def sampling_plan(site_area_ha):
     """
     How a site of this size is surveyed.

@@ -42,6 +42,7 @@ from app.utils.jurisdiction import (
 from app.services.recommender_eval import species_evaluation
 import json, os, re
 from app.services.monitoring import (
+    DENR_THRESHOLD, survival_text,
     extract_photo_metadata, check_timestamp, compute_survival,
     build_boundary, point_in_geojson, haversine_m, save_photo, save_request_file,
 )
@@ -1805,7 +1806,8 @@ def submit_report():
         site_id=site.site_id,
         user_id=user_id,
         monitoring_date=monitoring_date,
-        survival_rate=calc['survival_rate'] or 0.0,
+        # None when the site has no planted figure (see the model)
+        survival_rate=calc['survival_rate'],
         plots_recorded=calc['plots_recorded'],
         # None for a whole-site count: there are no plots
         plot_size_sqm=calc['plot_size_sqm'],
@@ -1958,7 +1960,7 @@ def submit_report():
             notification_type='Report',
             message=(
                 f"{session.get('username')} submitted a monitoring report "
-                f"for {where}. Survival {report.survival_rate}%."
+                f"for {where}. Survival {survival_text(report.survival_rate)}."
             ),
             report_id=report.report_id,
             is_read=False,
@@ -1967,11 +1969,11 @@ def submit_report():
     log_action('submit_report', 'monitoring_report', report.report_id,
                f"Submitted for {site.site_name}: "
                f"{calc['plots_recorded']} plots, "
-               f"survival {report.survival_rate}%") 
+               f"survival {survival_text(report.survival_rate)}")
     db.session.commit()
- 
+
     msg = (
-        f"Report submitted. Survival {report.survival_rate}% "
+        f"Report submitted. Survival {survival_text(report.survival_rate)} "
         f"from {calc['plots_recorded']} plots. Awaiting review."
     )
     flash(msg, "success")
@@ -2517,7 +2519,9 @@ def api_site_history(site_id):
             # two record when the report was sent and when it was approved.
             "submitted_at": format_datetime(r.submitted_at, empty=None),
             "survival_rate": r.survival_rate,
-            "meets_threshold": r.survival_rate >= 85,
+            # None when the rate is unknown: neither met nor missed
+            "meets_threshold": (r.survival_rate >= DENR_THRESHOLD
+                                if r.survival_rate is not None else None),
             "plots_recorded": r.plots_recorded,
             "total_counted": r.total_counted,
             "mean_per_plot": r.mean_per_plot,
@@ -2537,10 +2541,12 @@ def api_site_history(site_id):
             ],
         })
 
-    # survival trend, oldest first, for the small chart
+    # survival trend, oldest first, for the small chart. Visits with an
+    # unknown rate have no bar to draw.
     trend = [
         {"date": h["monitoring_date"], "rate": h["survival_rate"]}
         for h in reversed(history)
+        if h["survival_rate"] is not None
     ]
 
     return jsonify({

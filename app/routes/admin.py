@@ -17,7 +17,9 @@ from app.utils.jurisdiction import (
     CENRO_LIST, CENRO_MUNICIPALITIES, place_key,
 )
 from app.utils.decorators import superadmin_required
-from app.services.monitoring import save_species_photo, delete_species_photo
+from app.services.monitoring import (
+    save_species_photo, delete_species_photo, survival_text,
+)
 from app.services.wikipedia import refresh_species_summary, WikipediaUnavailable
 from app.services.request_site import boundary_dict, barangay_point, SITE_REQUEST_TYPES
 from app.services.export_report import build_sites_workbook
@@ -1431,9 +1433,11 @@ def review_report(report_id):
     report.date_reviewed = manila_now()
  
     if new_status == 'Approved':
-        # survival data is CENRO's call and takes effect immediately
+        # survival data is CENRO's call and takes effect immediately.
+        # An unknown rate (no planted figure) leaves the record as it
+        # is: it says nothing new, and must not wipe a real figure.
         record = ReforestationRecord.query.get(report.record_id)
-        if record:
+        if record and report.survival_rate is not None:
             record.survival_rate = report.survival_rate
             record.date_validated = report.monitoring_date
 
@@ -1515,7 +1519,7 @@ def review_report(report_id):
 
     log_action('review_report', 'monitoring_report', report.report_id,
                f"Marked {new_status} "
-               f"(survival {report.survival_rate}%)"
+               f"(survival {survival_text(report.survival_rate)})"
                + (f": {note}" if note else ""))
 
     db.session.commit()
