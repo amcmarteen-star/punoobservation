@@ -1,0 +1,182 @@
+{% extends "Base.html" %}
+{# visits.new_visit: a field officer records one visit to a site made
+   from a request. On an error the route renders this again with the
+   values sent, in `form`. #}
+{% block title %}Record Site Visit - PuNoObservation{% endblock %}
+{% block content_class %}page-content-wide{% endblock %}
+
+{% block extra_head %}
+<style>
+  fieldset.um-field { border: 0; padding: 0; margin-inline: 0; min-width: 0; }
+  fieldset.um-field legend { margin-bottom: 0.45rem; padding: 0; font-size: 0.875rem; font-weight: 600; color: var(--text-strong); }
+  .sv-choice { display: grid; gap: 0.5rem; }
+  .sv-option { display: flex; align-items: flex-start; gap: 0.65rem; padding: 0.7rem 0.85rem;
+               border: 1px solid var(--line); border-radius: 10px; cursor: pointer; }
+  .sv-option:has(input:checked) { border-color: var(--ok-line); background: var(--ok-bg); }
+  .sv-option input { margin-top: 0.2rem; accent-color: var(--brand-solid); width: 1.05rem; height: 1.05rem; flex: none; }
+  .sv-option strong { display: block; color: var(--text-heading); }
+  .sv-option small { color: var(--text-2); line-height: 1.45; }
+  .sv-check { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.5rem 1rem;
+              padding: 0.65rem 0; border-bottom: 1px solid var(--line); }
+  .sv-check:last-child { border-bottom: none; }
+  .sv-check span { color: var(--text-strong); }
+  .sv-yn { display: inline-flex; gap: 0.35rem; }
+  .sv-yn label { display: inline-flex; align-items: center; gap: 0.3rem; padding: 0.3rem 0.7rem;
+                 border: 1px solid var(--line-strong); border-radius: 999px; font-size: 0.85rem; cursor: pointer; }
+  .sv-yn label:has(input:checked) { border-color: var(--brand-solid); color: var(--brand-text); font-weight: 600; }
+  .sv-yn input { accent-color: var(--brand-solid); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="um-header">
+  <div>
+    <div class="um-title-row"><h2>Record Site Visit</h2></div>
+    <p class="um-subtitle">
+      {{ site.site_name }} &middot; {{ site.location.barangay }}, {{ site.location.municipality }}
+      &middot; from request #{{ req.request_id }}
+    </p>
+  </div>
+  <a href="{{ url_for('visits.site_visits', site_id=site.site_id) }}" class="um-btn-ghost">Back to the visits</a>
+</div>
+
+<form method="POST" action="{{ url_for('visits.new_visit', site_id=site.site_id) }}"
+      enctype="multipart/form-data" id="visitForm"
+      data-upload-form data-upload-title="Saving site visit"
+      data-upload-processing="Reading photo locations...">
+
+  <!-- 1. the visit -->
+  <div class="um-panel">
+    <div class="um-panel-head"><span class="um-step-num">1</span><h3>The visit</h3></div>
+    <div class="um-field">
+      <label for="visit_date">Date of the visit *</label>
+      <input type="date" id="visit_date" name="visit_date" max="{{ today }}"
+             value="{{ form.get('visit_date', '') }}" required>
+    </div>
+    <fieldset class="um-field">
+      <legend class="form-label fw-semibold">Type of visit *</legend>
+      <div class="sv-choice">
+        <label class="sv-option">
+          <input type="radio" name="visit_type" value="Pre-planting check"
+                 {% if form.get('visit_type') == 'Pre-planting check' %}checked{% endif %} required>
+          <span><strong>Pre-planting check</strong>
+            <small>Look at the land before anything is planted, and walk its corners for the boundary.</small></span>
+        </label>
+        <label class="sv-option">
+          <input type="radio" name="visit_type" value="Planting confirmed"
+                 {% if form.get('visit_type') == 'Planting confirmed' %}checked{% endif %}>
+          <span><strong>Planting confirmed</strong>
+            <small>The seedlings are in the ground. Record how many, so later monitoring reports get a survival rate.</small></span>
+        </label>
+      </div>
+    </fieldset>
+
+    <div id="plantedFields" {% if form.get('visit_type') != 'Planting confirmed' %}hidden{% endif %}>
+      <div class="um-field-row">
+        <div class="um-field">
+          <label for="seedlings_planted">Seedlings actually planted *</label>
+          <input type="number" id="seedlings_planted" name="seedlings_planted" min="1"
+                 inputmode="numeric" value="{{ form.get('seedlings_planted', '') }}">
+        </div>
+        <div class="um-field">
+          <label for="date_planted">Date planted *</label>
+          <input type="date" id="date_planted" name="date_planted" max="{{ today }}"
+                 value="{{ form.get('date_planted', '') }}">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. the land -->
+  <div class="um-panel">
+    <div class="um-panel-head"><span class="um-step-num">2</span><h3>The land</h3></div>
+    {% for field, question in land_checks %}
+    <div class="sv-check">
+      <span>{{ question }}</span>
+      <span class="sv-yn" role="radiogroup" aria-label="{{ question }}">
+        <label><input type="radio" name="{{ field }}" value="yes" {% if form.get(field) == 'yes' %}checked{% endif %}> Yes</label>
+        <label><input type="radio" name="{{ field }}" value="no" {% if form.get(field) == 'no' %}checked{% endif %}> No</label>
+        <label><input type="radio" name="{{ field }}" value="" {% if not form.get(field) %}checked{% endif %}> Not checked</label>
+      </span>
+    </div>
+    {% endfor %}
+
+    <fieldset class="um-field mt-3">
+      <legend class="form-label fw-semibold">Is the site suitable for planting? *</legend>
+      <div class="sv-choice">
+        <label class="sv-option">
+          <input type="radio" name="finding" value="Suitable" {% if form.get('finding') == 'Suitable' %}checked{% endif %} required>
+          <span><strong>Suitable</strong><small>Planting can go ahead here.</small></span>
+        </label>
+        <label class="sv-option">
+          <input type="radio" name="finding" value="Not suitable" {% if form.get('finding') == 'Not suitable' %}checked{% endif %}>
+          <span><strong>Not suitable</strong>
+            <small>Say why in the remarks. Your CENRO will suggest a new planting site to the requester.</small></span>
+        </label>
+      </div>
+    </fieldset>
+  </div>
+
+  <!-- 3. photos -->
+  <div class="um-panel">
+    <div class="um-panel-head"><span class="um-step-num">3</span><h3>Photographs</h3></div>
+    <div class="um-note mb-3">
+      <strong>Use a GPS camera app.</strong>
+      The location and time are read from each photo. A photo without GPS is
+      still accepted, and marked for the reviewer.
+    </div>
+    <div class="um-field">
+      <label for="site_photos">Site photographs</label>
+      <input type="file" id="site_photos" name="site_photos" multiple accept="image/*"
+             data-upload-zone data-max-mb="{{ app_limits.maxFileMb }}">
+      <p class="um-field-hint">The land as you found it.</p>
+    </div>
+    <div class="um-field">
+      <label for="boundary_photos">Corner photographs &mdash; site boundary</label>
+      <input type="file" id="boundary_photos" name="boundary_photos" multiple accept="image/*"
+             data-upload-zone data-max-mb="{{ app_limits.maxFileMb }}">
+      <p class="um-field-hint">
+        Stand at each corner of the site and take one photo. At least 4 corners
+        make the boundary, which goes to the province for publication once your
+        CENRO approves the visit.
+      </p>
+    </div>
+  </div>
+
+  <!-- 4. remarks -->
+  <div class="um-panel">
+    <div class="um-panel-head"><span class="um-step-num">4</span><h3>Remarks and save</h3></div>
+    <div class="um-field">
+      <label for="remarks">Remarks</label>
+      <textarea id="remarks" name="remarks" rows="3"
+                placeholder="What you found: land cover, access, people met, problems.">{{ form.get('remarks', '') }}</textarea>
+    </div>
+    <div class="d-flex justify-content-end gap-2 mt-3">
+      <a href="{{ url_for('visits.site_visits', site_id=site.site_id) }}" class="um-btn-cancel">Cancel</a>
+      <button type="submit" class="um-btn-confirm">Save site visit</button>
+    </div>
+  </div>
+</form>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  // The planted fields only matter for a planting confirmation.
+  (function () {
+    var box = document.getElementById("plantedFields");
+    var count = document.getElementById("seedlings_planted");
+    var day = document.getElementById("date_planted");
+    function sync() {
+      var on = document.querySelector('input[name="visit_type"]:checked');
+      var planting = !!on && on.value === "Planting confirmed";
+      box.hidden = !planting;
+      count.required = planting;
+      day.required = planting;
+    }
+    document.querySelectorAll('input[name="visit_type"]').forEach(function (r) {
+      r.addEventListener("change", sync);
+    });
+    sync();
+  })();
+</script>
+{% endblock %}

@@ -1,0 +1,92 @@
+{% extends "Base.html" %}
+{# visits.index: every site made from a request in the user's area, with
+   where it stands. The field officer's "Site Visits" sidebar link. #}
+{% block title %}Site Visits - PuNoObservation{% endblock %}
+{% block content_class %}page-content-wide{% endblock %}
+
+{% block extra_head %}
+<style>
+  .sv-stage { display: inline-block; padding: 0.15rem 0.6rem; border-radius: 999px;
+              font-size: 0.8rem; font-weight: 600; white-space: nowrap; }
+  .sv-stage.s0 { background: var(--warn-bg); color: var(--warn-strong); }
+  .sv-stage.s1, .sv-stage.s2 { background: var(--info-bg); color: var(--info-strong); }
+  .sv-stage.s3 { background: var(--surface-3); color: var(--text-strong); }
+  .sv-stage.s4 { background: var(--ok-bg); color: var(--ok-text); }
+  .sv-stage.s5 { background: var(--danger-bg); color: var(--danger-strong); }
+  .sv-actions { display: flex; flex-wrap: wrap; gap: 0.4rem; justify-content: flex-end; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="um-header">
+  <div>
+    <div class="um-title-row">
+      <h2>Site Visits</h2>
+      <span class="um-count-pill">{{ rows|length }}</span>
+    </div>
+    <p class="um-subtitle">
+      Sites made from residents' requests. Check the land, walk its corners
+      for the boundary, and confirm planting.
+    </p>
+  </div>
+  <a href="{{ url_for('dashboard.gis_map') }}" class="um-btn-ghost">Open the map</a>
+</div>
+
+<div class="um-table-card">
+  {% if rows %}
+  <div class="um-scroll-wrap">
+    <table class="um-table">
+      <thead>
+        <tr>
+          <th>Site</th>
+          <th>Location</th>
+          <th>Where it stands</th>
+          <th class="text-end">Visits</th>
+          <th>Latest visit</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in rows %}
+        {% set s = r.site %}
+        <tr>
+          <td data-label="Site"><strong>{{ s.site_name }}</strong>
+            <div class="text-secondary small">From request #{{ s.source_request_id }}</div></td>
+          <td data-label="Location">{{ s.location.barangay }}, {{ s.location.municipality }}</td>
+          <td data-label="Where it stands"><span class="sv-stage s{{ r.order }}">{{ r.stage }}</span></td>
+          <td data-label="Visits" class="num-cell">{{ r.count }}</td>
+          <td data-label="Latest visit">
+            {% if r.latest %}
+              {{ r.latest.visit_date.strftime('%d %b %Y') }} &middot; {{ r.latest.visit_type }}
+              <div class="text-secondary small">{{ r.latest.finding }} &middot; {{ r.latest.status }}</div>
+            {% else %}
+              <span class="text-secondary">None yet</span>
+            {% endif %}
+          </td>
+          <td>
+            <div class="sv-actions">
+              <a href="{{ url_for('visits.site_visits', site_id=s.site_id) }}" class="um-btn-ghost">View</a>
+              {# hidden only once a site is found not suitable; a published
+                 site may still need its planting confirmed #}
+              {% if is_officer and r.order != 5 %}
+              <a href="{{ url_for('visits.new_visit', site_id=s.site_id) }}" class="um-btn-add">Record visit</a>
+              {% endif %}
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="um-empty">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/></svg>
+    <strong>No sites to visit</strong>
+    <p>
+      A site appears here once your CENRO approves a New Planting Site
+      request and creates the site from it.
+    </p>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

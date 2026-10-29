@@ -1,0 +1,17 @@
+{# Sent by visits.review_visit when a CENRO approves a "Not suitable" visit. #}
+{% extends 'email/_layout.html' %}
+{% set button_url = requests_url %}
+{% set button_text = 'Send a new request' %}
+{% block heading %}A new planting site is suggested{% endblock %}
+{% block body %}
+<p style="margin:0 0 16px;">Hello {{ name }},</p>
+<p style="margin:0 0 16px;">A DENR field officer visited the site for your reforestation request
+  <strong>#{{ request_id }}</strong> ({{ where }}). The site was found <strong>not suitable</strong> for planting.</p>
+{% if reason %}
+<p style="margin:0 0 4px; color:#5f6f66; font-size:14px;">What the officer found:</p>
+<p style="margin:0 0 16px; padding:12px 14px; background-color:#f7faf8; border-left:4px solid #b91c1c; white-space:pre-line;">{{ reason }}</p>
+{% endif %}
+<p style="margin:0 0 4px; color:#5f6f66; font-size:14px;">The CENRO suggests a new planting site:</p>
+<p style="margin:0 0 16px; padding:12px 14px; background-color:#f7faf8; border-left:4px solid #15803d; white-space:pre-line;">{% if suggested %}<strong>{{ suggested }}</strong><br>{% endif %}{{ suggestion }}</p>
+<p style="margin:0;">You can send a new request for the suggested site at any time.</p>
+{% endblock %}

@@ -357,6 +357,25 @@ def reviewing_admins(cenro):
     return admins
 
 
+def boundary_publishers():
+    """
+    Who is told that a boundary is waiting for publication: the active
+    provincial administrators (role 'admin' with no CENRO), the only
+    accounts Boundary Publications lets act.
+
+    Fallback: a province with no provincial administrator would get no
+    notice at all, so the superadmins get it instead and the queue is at
+    least seen. Used for monitoring reports and site visits alike.
+    """
+    people = User.query.filter(
+        User.role == 'admin',
+        User.cenro.is_(None),
+        User.is_active.is_(True),
+    ).all()
+    return people or User.query.filter_by(role='superadmin',
+                                          is_active=True).all()
+
+
 # Roles that plan, survey, review or publish sites. They see sites made
 # from a request, and their proposed boundaries, before anything is
 # official. Guests and normal users see only official records.

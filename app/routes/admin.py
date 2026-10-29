@@ -1,7 +1,7 @@
 # app/routes/admin.py
 from flask import Blueprint, render_template, request, flash, redirect, url_for, session, jsonify, current_app, send_file, g
 from app.extensions import db
-from app.models import User, Location, Organization, Site, TreeSpecie, ReforestationRecord, Request, Notification, MonitoringReport, MonitoringPlot, MonitoringPhoto,ReforestationRecord,Site,AuditLog
+from app.models import User, Location, Organization, Site, TreeSpecie, ReforestationRecord, Request, Notification, MonitoringReport, MonitoringPlot, MonitoringPhoto,ReforestationRecord,Site,AuditLog, SiteVisit
 from app.utils.decorators import admin_required, superadmin_required
 from app.utils.audit import log_action
 import pandas as pd
@@ -9,12 +9,13 @@ from datetime import datetime as dt
 from datetime import datetime, timedelta
 from dateutil import parser as date_parser
 from sqlalchemy import or_, func
+from sqlalchemy.orm import joinedload, selectinload
 from zoneinfo import ZoneInfo
 from app.models import Request as ReforestationRequest
 from app.utils.jurisdiction import (
     scope_sites, scope_locations, allowed_municipalities,
     can_see_municipality, current_cenro, is_superadmin, scope_label,
-    CENRO_LIST, CENRO_MUNICIPALITIES, place_key,
+    CENRO_LIST, CENRO_MUNICIPALITIES, place_key, boundary_publishers,
 )
 from app.utils.decorators import superadmin_required
 from app.services.monitoring import (
@@ -23,7 +24,10 @@ from app.services.monitoring import (
 from app.services.wikipedia import refresh_species_summary, WikipediaUnavailable
 from app.services.request_site import boundary_dict, barangay_point, SITE_REQUEST_TYPES
 from app.services.export_report import build_sites_workbook
-from app.services.mailer import send_template, external_url
+from app.services.mailer import send_template, external_url, email_link
+from app.services.boundary_publication import (
+    apply_publication, publication_problem,
+)
 from app.utils.timeutil import manila_now
 from app.utils.security import password_problem
 from sqlalchemy.exc import IntegrityError
@@ -462,6 +466,9 @@ def _user_work_counts(user):
         "requests submitted": ReforestationRequest.query.filter_by(user_id=uid).count(),
         "requests reviewed": ReforestationRequest.query.filter_by(reviewed_by=uid).count(),
         "site boundaries published": Site.query.filter_by(boundary_published_by=uid).count(),
+        "site visits recorded": SiteVisit.query.filter_by(user_id=uid).count(),
+        "site visits reviewed": SiteVisit.query.filter_by(reviewed_by=uid).count(),
+        "site visit boundaries published": SiteVisit.query.filter_by(published_by=uid).count(),
     }
     return {k: v for k, v in counts.items() if v}
 
@@ -1079,17 +1086,8 @@ def _email_request_status(req, status, note):
         request_id=req.request_id,
         request_type=req.request_type,
         where=where,
-        requests_url=_email_link('dashboard.requests_page'),
+        requests_url=email_link('dashboard.requests_page'),
     )
-
-
-def _email_link(endpoint, **values):
-    """A link for an email, or the bare path when no base address is set
-    (send_template then refuses the email and logs why)."""
-    try:
-        return external_url(endpoint, **values)
-    except RuntimeError:
-        return url_for(endpoint, **values)
 
 """
 DATASET PREVIEW - dry run before import
@@ -1458,20 +1456,8 @@ def review_report(report_id):
         # An approval with no boundary is oversight information, not a
         # task, so that one still goes to superadmin.
         if report.boundary_geojson:
-            recipients = User.query.filter(
-                User.role == 'admin',
-                User.cenro.is_(None),
-                User.is_active.is_(True),
-            ).all()
-
-            # A province with no provincial administrator would get no
-            # notice at all, which is the failure being fixed here.
-            # Fall back to superadmin so it is at least visible.
-            if not recipients:
-                recipients = User.query.filter_by(
-                    role='superadmin', is_active=True
-                ).all()
-
+            # provincial admins, or superadmins when there are none
+            recipients = boundary_publishers()
             message = (
                 f"Boundary awaiting publication: "
                 f"{report.site.site_name if report.site else 'a site'} "
@@ -1549,24 +1535,48 @@ def publications():
         return redirect(url_for('admin.provincial_overview'))
     status_filter = request.args.get('status', 'Pending Publication')
 
-    query = MonitoringReport.query.filter(
-        MonitoringReport.approval_status == 'Approved',
-        MonitoringReport.boundary_geojson.isnot(None),
-    )
-
-    if status_filter:
-        query = query.filter(
-            MonitoringReport.publication_status == status_filter
-        )
-
-    reports = query.order_by(MonitoringReport.date_reviewed.desc()).all()
-
-    def count(status):
+    # Boundaries come from two kinds of field work: monitoring reports and
+    # site visits (app/routes/visits.py). Both are listed together, newest
+    # decision first, and publish through the same steps.
+    def report_query():
         return MonitoringReport.query.filter(
             MonitoringReport.approval_status == 'Approved',
             MonitoringReport.boundary_geojson.isnot(None),
-            MonitoringReport.publication_status == status,
-        ).count()
+        )
+
+    def visit_query():
+        return SiteVisit.query.filter(
+            SiteVisit.status == 'Approved',
+            SiteVisit.finding == 'Suitable',
+            SiteVisit.boundary_geojson.isnot(None),
+        )
+
+    # Everything a card shows comes with the list, not one query per card.
+    reports = report_query().options(
+        selectinload(MonitoringReport.photos),
+        joinedload(MonitoringReport.officer),
+        joinedload(MonitoringReport.reviewer),
+        joinedload(MonitoringReport.site).joinedload(Site.location),
+    )
+    visits = visit_query().options(
+        selectinload(SiteVisit.photos),
+        joinedload(SiteVisit.officer),
+        joinedload(SiteVisit.reviewer),
+        joinedload(SiteVisit.site).joinedload(Site.location),
+    )
+    if status_filter:
+        reports = reports.filter(MonitoringReport.publication_status == status_filter)
+        visits = visits.filter(SiteVisit.publication_status == status_filter)
+
+    items = [_publication_item(r) for r in reports] + \
+            [_publication_item(v) for v in visits]
+    items.sort(key=lambda i: i['date_reviewed'] or datetime.min, reverse=True)
+
+    def count(status):
+        return (report_query().filter(
+                    MonitoringReport.publication_status == status).count()
+                + visit_query().filter(
+                    SiteVisit.publication_status == status).count())
 
     counts = {
         'Pending Publication': count('Pending Publication'),
@@ -1579,11 +1589,50 @@ def publications():
     return render_template(
         'Publications.html',
         active_page='publications',
-        reports=reports,
+        items=items,
         counts=counts,
         status_filter=status_filter,
         published_sites=published_sites,
     )
+
+
+def _publication_item(source):
+    """One card on Boundary Publications, from a report or a site visit,
+    with the same keys either way so the template needs no branches."""
+    is_visit = isinstance(source, SiteVisit)
+    corners = [p for p in source.photos if p.photo_type == 'boundary']
+    if is_visit:
+        label = f"Site visit #{source.visit_id}"
+        detail_url = url_for('visits.visit_detail', visit_id=source.visit_id)
+        action_url = url_for('visits.publish_visit_boundary', visit_id=source.visit_id)
+        key = f"v{source.visit_id}"
+    else:
+        label = f"Report #{source.report_id}"
+        detail_url = url_for('admin.review_report_detail', report_id=source.report_id)
+        action_url = url_for('admin.publish_boundary', report_id=source.report_id)
+        key = f"r{source.report_id}"
+    return {
+        'key': key,
+        'label': label,
+        'kind': 'Site visit' if is_visit else 'Monitoring report',
+        'detail_url': detail_url,
+        'action_url': action_url,
+        'site': source.site,
+        'officer': source.officer,
+        'reviewer': source.reviewer,
+        'date_reviewed': source.date_reviewed,
+        'field_date': source.field_date,
+        'captured_area_ha': source.captured_area_ha,
+        'area_difference_pct': source.area_difference_pct,
+        # a visit records no survival; a report's may be unknown
+        'survival': None if is_visit else source.survival_rate,
+        'show_survival': not is_visit,
+        'corners_flagged': sum(1 for p in corners if p.flags),
+        'corners_total': len(corners),
+        'publication_status': source.publication_status,
+        'publication_note': source.publication_note,
+        'boundary_geojson': source.boundary_geojson,
+    }
 
 
 @admin_bp.route('/publications/<int:report_id>/publish', methods=['POST'])
@@ -1628,41 +1677,15 @@ def publish_boundary(report_id):
         flash("Give a reason when declining a boundary.", "danger")
         return redirect(url_for('admin.publications'))
 
-    now = manila_now()
+    problem = publication_problem(report, action)
+    if problem:
+        flash(problem, "danger")
+        return redirect(url_for('admin.publications'))
+
     site = report.site
-
-    if action == 'publish':
-        site.boundary_geojson = report.boundary_geojson
-        site.boundary_area_ha = report.captured_area_ha
-        site.boundary_captured_at = report.monitoring_date
-        site.boundary_published = True
-        site.boundary_published_by = session.get('user_id')
-        site.boundary_published_at = now
-        site.boundary_source_report_id = report.report_id
-
-        # only one boundary per site may be the published one
-        (MonitoringReport.query
-            .filter(MonitoringReport.site_id == site.site_id,
-                    MonitoringReport.report_id != report.report_id,
-                    MonitoringReport.publication_status == 'Published')
-            .update({'publication_status': 'Not Applicable'},
-                    synchronize_session=False))
-
-        report.publication_status = 'Published'
-        msg = f"Boundary published for {site.site_name}."
-
-    elif action == 'unpublish':
-        site.boundary_published = False
-        report.publication_status = 'Pending Publication'
-        msg = f"Boundary withdrawn from the map for {site.site_name}."
-
-    else:  # decline
-        report.publication_status = 'Declined'
-        msg = f"Boundary declined for {site.site_name}."
-
-    report.published_by = session.get('user_id')
-    report.published_at = now
-    report.publication_note = note or None
+    # the same steps a site visit's boundary goes through
+    msg = apply_publication(report, action, note, session.get('user_id'),
+                            manila_now())
 
     # tell the officer and the reviewing admin
     recipients = {report.user_id}

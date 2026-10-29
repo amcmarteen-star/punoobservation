@@ -42,7 +42,7 @@ from app.utils.jurisdiction import (
 from app.services.recommender_eval import species_evaluation
 import json, os, re
 from app.services.monitoring import (
-    DENR_THRESHOLD, survival_text,
+    DENR_THRESHOLD, survival_text, inspect_photo,
     extract_photo_metadata, check_timestamp, compute_survival,
     build_boundary, point_in_geojson, haversine_m, save_photo, save_request_file,
 )
@@ -263,6 +263,8 @@ def municipality_info(name):
                 "lon": position[1] if position else location.longitude,
                 # False: lat/lon is the barangay centre, not the site.
                 "exact": position is not None,
+                # made from a request: the map offers Site visits to staff
+                "from_request": site.source_request_id is not None,
             })
 
     first = locations[0]
@@ -327,7 +329,9 @@ def notifications_page():
     elif tab == 'requests':
         query = query.filter(Notification.notification_type.in_(REQUEST_TYPES))
     elif tab == 'reports':
-        query = query.filter(Notification.notification_type == 'Report')
+        # field work: monitoring reports and site visits
+        query = query.filter(Notification.notification_type.in_(
+            ('Report', 'Site Visit')))
 
     notifications = query.order_by(Notification.created_at.desc()).all()
 
@@ -372,8 +376,9 @@ def notifications_page():
     counts = {
         'unread': base.filter(Notification.is_read.is_(False)).count(),
         'all': base.count(),
-        'reports': base.filter(
-            Notification.notification_type == 'Report').count(),
+        # field work, the same two types the Reports tab lists
+        'reports': base.filter(Notification.notification_type.in_(
+            ('Report', 'Site Visit'))).count(),
         'requests': base.filter(
             Notification.notification_type.in_(REQUEST_TYPES)).count(),
     }
@@ -413,6 +418,7 @@ def api_notifications():
                 "message": n.message,
                 "is_read": n.is_read,
                 "report_id": n.report_id,
+                "visit_id": n.visit_id,
                 "created_at": (
                     n.created_at.strftime('%b %d, %I:%M %p')
                     if n.created_at else ""
@@ -894,6 +900,8 @@ def api_sites_geo():
             "zone_type": site.zone_type,
             "target_trees": target,
             "actual_trees": actual,
+            # made from a request: the map offers Site visits to staff
+            "from_request": site.source_request_id is not None,
         })
 
     out = list(grouped.values())
@@ -1667,6 +1675,7 @@ def api_sites_in_barangay():
             "boundary_area_ha": site.boundary_area_ha,
             # The requester's drawn area, only until a boundary is published.
             "proposed_area": proposed_area_for_site(site),
+            "from_request": site.source_request_id is not None,
             "barangay": loc.barangay,
             "municipality": loc.municipality,
         })
@@ -1852,40 +1861,10 @@ def submit_report():
                 continue
  
             photo_index += 1
-            meta = extract_photo_metadata(f)
-            flags = list(meta['flags'])
- 
-            # duplicate within this submission
-            if meta['file_hash'] in seen_hashes:
-                flags.append('duplicate_in_report')
-            seen_hashes.add(meta['file_hash'])
- 
-            # duplicate against every earlier report
-            if meta['file_hash'] and MonitoringPhoto.query.filter_by(
-                file_hash=meta['file_hash']
-            ).first():
-                flags.append('duplicate_of_earlier_photo')
- 
-            stale = check_timestamp(meta['date_time_taken'], monitoring_date)
-            if stale:
-                flags.append('stale_date')
- 
-            inside = False
-            distance = None
- 
-            if meta['latitude'] is not None and barangay_geom:
-                inside = point_in_geojson(
-                    meta['longitude'], meta['latitude'], barangay_geom
-                )
-                if not inside:
-                    flags.append('outside_barangay')
- 
-                if site.location and site.location.latitude:
-                    distance = round(haversine_m(
-                        meta['latitude'], meta['longitude'],
-                        site.location.latitude, site.location.longitude,
-                    ), 1)
- 
+            # the same checks a site visit runs (services/monitoring.py)
+            meta, flags, inside, distance = inspect_photo(
+                f, monitoring_date, barangay_geom, site.location, seen_hashes)
+
             path = save_photo(f, static_folder, report.report_id, photo_index)
  
             photo = MonitoringPhoto(
@@ -2432,9 +2411,12 @@ def api_proposed_boundaries():
     if not can_see_unofficial_sites():
         return jsonify({"count": 0, "boundaries": []})
 
+    # A site a visit found not suitable keeps its record but loses its
+    # outline: the requester has been offered another site instead.
     q = Site.query.filter(
         Site.source_request_id.isnot(None),
         Site.boundary_published.is_(False),
+        Site.site_status != 'Not Suitable',
     )
 
     out = []

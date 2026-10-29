@@ -1,0 +1,19 @@
+{# Sent by visits.review_visit when a CENRO approves a "Not suitable" visit. #}
+Hello {{ name }},
+
+A DENR field officer visited the site for your reforestation request #{{ request_id }} ({{ where }}).
+The site was found not suitable for planting.
+{% if reason %}
+What the officer found:
+{{ reason }}
+{% endif %}
+The CENRO suggests a new planting site:
+{% if suggested %}{{ suggested }}
+{% endif %}{{ suggestion }}
+
+You can send a new request for the suggested site at any time:
+{{ requests_url }}
+
+--
+PuNoObservation, the DENR reforestation monitoring system for Pangasinan.
+Replies to this address are not read.

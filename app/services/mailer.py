@@ -123,6 +123,18 @@ def external_url(endpoint, **values):
     return url_for(endpoint, _external=True, **values)
 
 
+def email_link(endpoint, **values):
+    """
+    external_url() for a link inside an email's text. Without
+    APP_BASE_URL it gives the bare path instead of raising: the email
+    itself is then refused by send_template(), which logs why.
+    """
+    try:
+        return external_url(endpoint, **values)
+    except RuntimeError:
+        return url_for(endpoint, **values)
+
+
 def _deliver(settings, msg):
     """Hand one message to the SMTP server. Logs and returns False on any
     failure: wrong password, server down, address refused."""

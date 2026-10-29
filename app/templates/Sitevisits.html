@@ -1,0 +1,122 @@
+{% extends "Base.html" %}
+{# visits.site_visits: every visit to one site made from a request, and
+   the button to record a new one. Opened from the GIS map's Site visits
+   button and from Reforestation Sites. #}
+{% block title %}Site Visits - PuNoObservation{% endblock %}
+{% block content_class %}page-content-wide{% endblock %}
+
+{% block extra_head %}
+<style>
+  .sv-facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(12rem, 100%), 1fr)); gap: 0.75rem 1.25rem; }
+  .sv-facts dt { font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-2); }
+  .sv-facts dd { margin: 0.15rem 0 0; color: var(--text-heading); font-weight: 600; }
+  .sv-boundary { display: inline-flex; align-items: center; gap: 0.4rem; }
+  .sv-dot { width: 0.6rem; height: 0.6rem; border-radius: 50%; background: var(--text-3); }
+  .sv-dot.is-published { background: var(--ok-solid); }
+  .sv-dot.is-captured { background: var(--warn-solid); }
+  .sv-finding-bad { color: var(--danger-strong); font-weight: 600; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="um-header">
+  <div>
+    <div class="um-title-row">
+      <h2>Site Visits</h2>
+      <span class="um-count-pill">{{ visits|length }}</span>
+    </div>
+    <p class="um-subtitle">{{ site.site_name }}</p>
+  </div>
+  <div class="d-flex gap-2 flex-wrap">
+    <a href="{{ url_for('dashboard.gis_map') }}" class="um-btn-ghost">Back to the map</a>
+    {% if can_record %}
+    <a href="{{ url_for('visits.new_visit', site_id=site.site_id) }}" class="um-btn-add">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+      Record site visit
+    </a>
+    {% endif %}
+  </div>
+</div>
+
+{% if not_suitable %}
+<div class="um-alert um-alert-danger mb-3" role="status">
+  <strong>Not suitable.</strong>
+  An approved visit found this site not suitable for planting. The requester
+  was told, with the CENRO's suggested new site.
+</div>
+{% endif %}
+
+<div class="um-panel">
+  <div class="um-panel-head">
+    <h3>The site</h3>
+  </div>
+  <dl class="sv-facts">
+    <div><dt>Location</dt><dd>{{ site.location.barangay }}, {{ site.location.municipality }}</dd></div>
+    <div><dt>CENRO</dt><dd>{{ site.cenro or '—' }}</dd></div>
+    <div><dt>Planned area</dt><dd>{{ site.area_size_ha }} ha</dd></div>
+    <div><dt>From request</dt><dd>#{{ req.request_id }}{% if req.requester %} &middot; {{ req.requester.username }}{% endif %}</dd></div>
+    <div>
+      <dt>Boundary</dt>
+      <dd class="sv-boundary">
+        {% if site.boundary_published %}
+          <span class="sv-dot is-published" aria-hidden="true"></span> Published
+        {% elif site.boundary_geojson %}
+          <span class="sv-dot is-captured" aria-hidden="true"></span> Captured, not published
+        {% else %}
+          <span class="sv-dot" aria-hidden="true"></span> Not surveyed yet
+        {% endif %}
+      </dd>
+    </div>
+    <div>
+      <dt>Requester's drawn area</dt>
+      <dd>{% if proposed and proposed.area_ha %}{{ '%.2f'|format(proposed.area_ha) }} ha{% elif proposed %}Pin only{% else %}—{% endif %}</dd>
+    </div>
+  </dl>
+</div>
+
+<div class="um-table-card">
+  {% if visits %}
+  <div class="um-scroll-wrap">
+    <table class="um-table">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Type</th>
+          <th>Finding</th>
+          <th>Officer</th>
+          <th class="text-end">Boundary</th>
+          <th class="text-end">Planted</th>
+          <th>Status</th>
+          <th>Publication</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for v in visits %}
+        <tr>
+          <td data-label="Date">{{ v.visit_date.strftime('%d %b %Y') }}</td>
+          <td data-label="Type">{{ v.visit_type }}</td>
+          <td data-label="Finding" class="{% if v.finding == 'Not suitable' %}sv-finding-bad{% endif %}">{{ v.finding }}</td>
+          <td data-label="Officer">{{ v.officer.username if v.officer else '—' }}</td>
+          <td data-label="Boundary" class="num-cell">{% if v.captured_area_ha %}{{ v.captured_area_ha }} ha{% else %}&mdash;{% endif %}</td>
+          <td data-label="Planted" class="num-cell">{% if v.seedlings_planted %}{{ "{:,}".format(v.seedlings_planted) }}{% else %}&mdash;{% endif %}</td>
+          <td data-label="Status"><span class="um-status st-{{ v.status|lower }}">{{ v.status }}</span></td>
+          <td data-label="Publication">{{ v.publication_status if v.publication_status != 'Not Applicable' else '—' }}</td>
+          <td><a href="{{ url_for('visits.visit_detail', visit_id=v.visit_id) }}" class="um-btn-ghost">View</a></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="um-empty">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/></svg>
+    <strong>No visits yet</strong>
+    <p>
+      A field officer of CENRO {{ site.cenro }} records the first visit to
+      check the land and walk its corners for a GPS boundary.
+    </p>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

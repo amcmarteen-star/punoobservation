@@ -129,6 +129,55 @@ def extract_photo_metadata(file_storage):
     return result
 
 
+def photo_used_before(file_hash):
+    """True when the same photo is already on a report or a site visit."""
+    from app.models import MonitoringPhoto, SiteVisitPhoto
+    return bool(
+        MonitoringPhoto.query.filter_by(file_hash=file_hash).first()
+        or SiteVisitPhoto.query.filter_by(file_hash=file_hash).first()
+    )
+
+
+def inspect_photo(file_storage, field_date, barangay_geom, site_location,
+                  seen_hashes):
+    """
+    Read one uploaded photo and run every check on it. Shared by
+    monitoring reports and site visits, so both flag the same things.
+
+    seen_hashes is a set the caller keeps for one submission, to spot the
+    same photo uploaded twice in it. Nothing is ever rejected: each
+    problem becomes a flag for the reviewing CENRO.
+
+    Returns (meta, flags, inside_barangay, metres_from_barangay_centre).
+    """
+    meta = extract_photo_metadata(file_storage)
+    flags = list(meta['flags'])
+
+    if meta['file_hash'] in seen_hashes:
+        flags.append('duplicate_in_report')
+    seen_hashes.add(meta['file_hash'])
+    if meta['file_hash'] and photo_used_before(meta['file_hash']):
+        flags.append('duplicate_of_earlier_photo')
+
+    if check_timestamp(meta['date_time_taken'], field_date):
+        flags.append('stale_date')
+
+    inside = False
+    distance = None
+    if meta['latitude'] is not None and barangay_geom:
+        inside = point_in_geojson(meta['longitude'], meta['latitude'],
+                                  barangay_geom)
+        if not inside:
+            flags.append('outside_barangay')
+        if site_location and site_location.latitude:
+            distance = round(haversine_m(
+                meta['latitude'], meta['longitude'],
+                site_location.latitude, site_location.longitude,
+            ), 1)
+
+    return meta, flags, inside, distance
+
+
 def check_timestamp(taken, monitoring_date, max_days=60):
     """
     Flag a photo taken long before the monitoring date.

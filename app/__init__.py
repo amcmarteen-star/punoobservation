@@ -96,6 +96,11 @@ def create_app():
         'dashboard.my_report_detail': 'partials/faq/_report_detail.html',
         'dashboard.public_report_detail': 'partials/faq/_report_detail.html',
         'admin.review_report_detail': 'partials/faq/_report_detail.html',
+        # site visits, for sites made from a request (staff)
+        'visits.index': 'partials/faq/_site_visits.html',
+        'visits.site_visits': 'partials/faq/_site_visits.html',
+        'visits.new_visit': 'partials/faq/_site_visits.html',
+        'visits.visit_detail': 'partials/faq/_site_visits.html',
         # CENRO and provincial administrators
         'admin.review_requests': 'partials/faq/_review_requests.html',
         'admin.review_request_detail': 'partials/faq/_request_detail.html',
@@ -131,10 +136,12 @@ def create_app():
     from app.routes.auth import auth_bp
     from app.routes.dashboard import dashboard_bp
     from app.routes.admin import admin_bp
+    from app.routes.visits import visits_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(dashboard_bp)
     app.register_blueprint(admin_bp)
+    app.register_blueprint(visits_bp)
 
     with app.app_context():
         from app import models

@@ -319,8 +319,10 @@
   {% endfor %}
 </div>
 
-{% if reports %}
-{% for r in reports %}
+{# One card per boundary, from a monitoring report or a site visit.
+   admin._publication_item gives both the same keys. #}
+{% if items %}
+{% for r in items %}
 <div class="pub-card">
   <div class="pub-card-head">
     <div>
@@ -330,6 +332,7 @@
           {{ r.site.location.barangay }}, {{ r.site.location.municipality }}
           &middot; CENRO {{ r.site.cenro or 'unassigned' }}
         {% endif %}
+        &middot; {{ r.kind }}
       </div>
     </div>
     <span
@@ -342,12 +345,10 @@
   <div class="pub-grid">
     <div>
       <div class="pub-line">
-        <span class="lbl">Report</span>
+        <span class="lbl">Source</span>
         <span class="val">
-          #{{ r.report_id }} &middot;
-          <a href="{{ url_for('admin.review_report_detail', report_id=r.report_id) }}">
-            view full report
-          </a>
+          {{ r.label }} &middot;
+          <a href="{{ r.detail_url }}">view in full</a>
         </span>
       </div>
       <div class="pub-line">
@@ -362,8 +363,8 @@
         </span>
       </div>
       <div class="pub-line">
-        <span class="lbl">Monitored</span>
-        <span class="val">{{ r.monitoring_date.strftime('%d %b %Y') }}</span>
+        <span class="lbl">Field work</span>
+        <span class="val">{{ r.field_date.strftime('%d %b %Y') }}</span>
       </div>
       <div class="pub-line">
         <span class="lbl">Contracted area</span>
@@ -381,16 +382,15 @@
           {{ r.area_difference_pct }}%
         </span>
       </div>
+      {% if r.show_survival %}
       <div class="pub-line">
         <span class="lbl">Survival recorded</span>
-        <span class="val">{{ r.survival_rate|survival }}</span>
+        <span class="val">{{ r.survival|survival }}</span>
       </div>
+      {% endif %}
       <div class="pub-line">
         <span class="lbl">Corner photos flagged</span>
-        <span class="val">
-          {{ r.photos | selectattr('flags') | list | length }} of
-          {{ r.photos | selectattr('photo_type', 'equalto', 'boundary') | list | length }}
-        </span>
+        <span class="val">{{ r.corners_flagged }} of {{ r.corners_total }}</span>
       </div>
 
       {% if r.publication_note %}
@@ -401,13 +401,13 @@
     </div>
 
     <div>
-      <div class="pub-map" id="map-{{ r.report_id }}"></div>
+      <div class="pub-map" id="map-{{ r.key }}"></div>
     </div>
   </div>
 
   <form
     method="POST"
-    action="{{ url_for('admin.publish_boundary', report_id=r.report_id) }}"
+    action="{{ r.action_url }}"
     class="pub-form row g-2 align-items-end mt-3 pt-3"
   >
     <div class="col-md-6">
@@ -447,7 +447,7 @@
   <strong>Nothing {{ status_filter|lower }}</strong>
   <p>
     Boundaries appear here once a CENRO administrator approves a monitoring
-    report containing corner photographs.
+    report or a site visit with corner photographs.
   </p>
 </div>
 {% endif %}
@@ -455,10 +455,10 @@
 <script src="{{ url_for('static', filename='vendor/leaflet/leaflet.js') }}"></script>
 <script>
   // One small map per card
-  {% if reports %}
-  {% for r in reports %}
+  {% if items %}
+  {% for r in items %}
   (function () {
-    const el = document.getElementById('map-{{ r.report_id }}');
+    const el = document.getElementById('map-{{ r.key }}');
     const geoData = {{ r.boundary_geojson | tojson }};
 
     if (!el || !geoData) return;

@@ -1,0 +1,264 @@
+{% extends "Base.html" %}
+{# visits.visit_detail: one site visit, its photos and boundary, and the
+   CENRO's decision. The decision form shows only to an admin of the
+   site's CENRO while the visit is Pending (can_review). #}
+{% block title %}Site Visit #{{ visit.visit_id }} - PuNoObservation{% endblock %}
+{% block content_class %}page-content-wide{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='vendor/leaflet/leaflet.css') }}">
+<style>
+  .sv-facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(12rem, 100%), 1fr)); gap: 0.75rem 1.25rem; }
+  .sv-facts dt { font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-2); }
+  .sv-facts dd { margin: 0.15rem 0 0; color: var(--text-heading); font-weight: 600; }
+  .sv-checks { list-style: none; margin: 0; padding: 0; }
+  .sv-checks li { display: flex; justify-content: space-between; gap: 1rem; padding: 0.5rem 0; border-bottom: 1px solid var(--line); }
+  .sv-checks li:last-child { border-bottom: none; }
+  .sv-yes { color: var(--ok-text); font-weight: 600; }
+  .sv-no { color: var(--danger-strong); font-weight: 600; }
+  .sv-unset { color: var(--text-3); }
+  .sv-map { height: 320px; border-radius: 10px; border: 1px solid var(--line); }
+  .sv-key { display: flex; flex-wrap: wrap; gap: 1rem; margin-top: 0.5rem; font-size: 0.82rem; color: var(--text-2); }
+  .sv-key span::before { content: ""; display: inline-block; width: 1.4rem; height: 0; margin-right: 0.35rem; vertical-align: middle; border-top: 3px solid #15803d; }
+  .sv-key .is-proposed::before { border-top: 2px dashed #0ea5e9; }
+  .sv-finding { display: inline-block; padding: 0.15rem 0.6rem; border-radius: 999px; font-weight: 700; }
+  .sv-finding.ok { background: var(--ok-bg); color: var(--ok-text); }
+  .sv-finding.bad { background: var(--danger-bg); color: var(--danger-strong); }
+  #suggestBox[hidden] { display: none; }
+  .sv-choice { display: grid; gap: 0.4rem; }
+  .sv-choice label { display: inline-flex; align-items: center; gap: 0.5rem; }
+  .sv-choice input { accent-color: var(--brand-solid); width: 1.05rem; height: 1.05rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="um-header">
+  <div>
+    <div class="um-title-row">
+      <h2>Site Visit #{{ visit.visit_id }}</h2>
+      <span class="um-status st-{{ visit.status|lower }}">{{ visit.status }}</span>
+    </div>
+    <p class="um-subtitle">
+      {{ site.site_name }} &middot; {{ site.location.barangay }}, {{ site.location.municipality }}
+    </p>
+  </div>
+  <a href="{{ url_for('visits.site_visits', site_id=site.site_id) }}" class="um-btn-ghost">All visits to this site</a>
+</div>
+
+<!-- the visit -->
+<div class="um-panel">
+  <div class="um-panel-head"><h3>The visit</h3></div>
+  <dl class="sv-facts">
+    <div><dt>Date</dt><dd>{{ visit.visit_date.strftime('%d %b %Y') }}</dd></div>
+    <div><dt>Type</dt><dd>{{ visit.visit_type }}</dd></div>
+    <div><dt>Field officer</dt><dd>{{ visit.officer.username if visit.officer else '—' }}</dd></div>
+    <div><dt>Recorded</dt><dd>{{ visit.submitted_at|datetime_ph }}</dd></div>
+    <div><dt>Finding</dt><dd><span class="sv-finding {{ 'ok' if visit.finding == 'Suitable' else 'bad' }}">{{ visit.finding }}</span></dd></div>
+    {% if visit.seedlings_planted %}
+    <div><dt>Seedlings actually planted</dt><dd>{{ "{:,}".format(visit.seedlings_planted) }}{% if visit.date_planted %} on {{ visit.date_planted.strftime('%d %b %Y') }}{% endif %}</dd></div>
+    {% endif %}
+  </dl>
+
+  <ul class="sv-checks mt-3">
+    {% for field, question in land_checks %}
+    {% set answer = visit[field] %}
+    <li>
+      <span>{{ question }}</span>
+      {% if answer is sameas true %}<span class="sv-yes">Yes</span>
+      {% elif answer is sameas false %}<span class="sv-no">No</span>
+      {% else %}<span class="sv-unset">Not checked</span>{% endif %}
+    </li>
+    {% endfor %}
+  </ul>
+
+  {% if visit.remarks %}
+  <p class="mt-3 mb-0" style="white-space: pre-line;">{{ visit.remarks }}</p>
+  {% endif %}
+</div>
+
+<!-- boundary -->
+<div class="um-panel">
+  <div class="um-panel-head"><h3>Boundary</h3></div>
+  {% if visit.boundary_geojson %}
+  <p class="mb-2">
+    Captured <strong>{{ visit.captured_area_ha }} ha</strong> from the corner photos,
+    against a planned {{ site.area_size_ha }} ha
+    {% if visit.area_difference_pct is not none %}({{ visit.area_difference_pct }}% difference){% endif %}.
+    {% if visit.publication_status != 'Not Applicable' %}
+      Publication: <strong>{{ visit.publication_status }}</strong>.
+    {% endif %}
+  </p>
+  {% else %}
+  <p class="text-secondary mb-2">
+    No boundary on this visit. It needs at least 4 corner photos with GPS.
+  </p>
+  {% endif %}
+  {% if visit.boundary_geojson or (proposed and (proposed.geometry or proposed.pin)) %}
+  <div class="sv-map" id="visitMap"></div>
+  <div class="sv-key">
+    {% if visit.boundary_geojson %}<span>Captured on this visit</span>{% endif %}
+    {% if proposed and proposed.geometry %}<span class="is-proposed">Requester's drawn area</span>{% endif %}
+  </div>
+  {% endif %}
+</div>
+
+<!-- photos -->
+{% for title, group in [('Corner photographs', corner_photos), ('Site photographs', site_photos)] %}
+{% if group %}
+<div class="um-panel">
+  <div class="um-panel-head"><h3>{{ title }}</h3><span class="um-count-pill">{{ group|length }}</span></div>
+  <div class="rep-photo-grid">
+    {% for p in group %}
+    <div class="rep-photo-card">
+      <a href="{{ url_for('static', filename=p.photo_url) }}" target="_blank">
+        <img src="{{ url_for('static', filename=p.photo_url) }}" alt="{{ title|lower }}">
+      </a>
+      <div class="rep-photo-meta">
+        {% if p.latitude %}
+          <div>{{ "%.5f"|format(p.latitude) }}, {{ "%.5f"|format(p.longitude) }}</div>
+        {% else %}
+          <div class="text-secondary">no GPS data</div>
+        {% endif %}
+        {% if p.date_time_taken %}<div>{{ p.date_time_taken.strftime('%d %b %Y, %I:%M %p') }}</div>{% endif %}
+        <div class="mt-1">
+          {% if p.flags %}
+            {% for f in p.flags.split(',') %}<span class="rep-badge-flag">{{ f | replace('_', ' ') }}</span>{% endfor %}
+          {% elif p.latitude %}
+            <span class="rep-badge-ok">inside barangay</span>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+{% endfor %}
+
+<!-- decision -->
+<div class="um-panel">
+  <div class="um-panel-head"><h3>Decision</h3></div>
+
+  {% if visit.status != 'Pending' %}
+  <div class="um-alert {{ 'um-alert-success' if visit.status == 'Approved' else 'um-alert-danger' }} mb-0">
+    <strong>{{ visit.status }}</strong>
+    {% if visit.reviewer %}by {{ visit.reviewer.username }}{% endif %}
+    {% if visit.date_reviewed %}on {{ visit.date_reviewed|datetime_ph }}{% endif %}.
+    {% if visit.review_note %}<br>Note: {{ visit.review_note }}{% endif %}
+    {% if visit.suggestion_note %}
+    <br><br><strong>Suggested new planting site:</strong>
+    {% if visit.suggested_location %}{{ visit.suggested_location.barangay }}, {{ visit.suggested_location.municipality }}.{% endif %}
+    {{ visit.suggestion_note }}
+    {% endif %}
+  </div>
+
+  {% elif can_review %}
+  <form method="POST" action="{{ url_for('visits.review_visit', visit_id=visit.visit_id) }}">
+    {% if visit.finding == 'Suitable' %}
+    <div class="um-note mb-3">
+      Approving
+      {% if visit.seedlings_planted %} saves <strong>{{ "{:,}".format(visit.seedlings_planted) }} seedlings planted</strong> to the site's planting record{% endif %}
+      {% if visit.seedlings_planted and visit.boundary_geojson %} and{% endif %}
+      {% if visit.boundary_geojson %} sends the boundary to the provincial administrator for publication{% endif %}
+      {% if not visit.seedlings_planted and not visit.boundary_geojson %} records the visit{% endif %}.
+    </div>
+    {% else %}
+    <div class="um-note um-note-warn mb-3">
+      The officer found this site <strong>not suitable</strong>. Approving marks
+      the site Not Suitable and sends your suggested new planting site to the
+      requester.
+    </div>
+    {% endif %}
+
+    <div class="sv-choice um-field">
+      <label class="um-field-inline"><input type="radio" name="status" value="Approved" required> Approve</label>
+      <label class="um-field-inline"><input type="radio" name="status" value="Rejected"> Reject <span class="text-secondary">(a reason is required)</span></label>
+    </div>
+
+    {% if visit.finding == 'Not suitable' %}
+    <div id="suggestBox" class="mt-3">
+      <h4 class="h6 fw-bold">Suggest a new planting site</h4>
+      <div class="um-field-row">
+        <div class="um-field">
+          <label for="suggested_municipality">Municipality</label>
+          <select id="suggested_municipality" name="suggested_municipality">
+            <option value="">Choose (optional)</option>
+            {% for m in suggest_munis %}<option value="{{ m }}">{{ m }}</option>{% endfor %}
+          </select>
+        </div>
+        <div class="um-field">
+          <label for="suggested_barangay">Barangay</label>
+          <select id="suggested_barangay" name="suggested_barangay" disabled>
+            <option value="">Pick a municipality first</option>
+          </select>
+        </div>
+      </div>
+      <div class="um-field">
+        <label for="suggestion_note">Suggestion for the requester *</label>
+        <textarea id="suggestion_note" name="suggestion_note" rows="3"
+                  placeholder="Where to plant instead, and why. The requester receives this."></textarea>
+      </div>
+    </div>
+    {% endif %}
+
+    <div class="um-field">
+      <label for="review_note">Note to the field officer</label>
+      <textarea id="review_note" name="review_note" rows="2"></textarea>
+    </div>
+    <div class="d-flex justify-content-end mt-3">
+      <button type="submit" class="um-btn-confirm">Save decision</button>
+    </div>
+  </form>
+
+  {% else %}
+  <p class="text-secondary mb-0">Waiting for CENRO {{ site.cenro }} to review this visit.</p>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{{ url_for('static', filename='vendor/leaflet/leaflet.js') }}"></script>
+<script>
+  (function () {
+    var el = document.getElementById("visitMap");
+    if (!el || !window.L) return;
+    var map = L.map(el, { scrollWheelZoom: false });
+    L.tileLayer(MAP_TILES.street.url, { maxZoom: 19, attribution: MAP_TILES.street.attribution }).addTo(map);
+    var group = L.featureGroup().addTo(map);
+    var proposed = {{ (proposed.geometry if proposed else None) | tojson }};
+    var pin = {{ (proposed.pin if proposed else None) | tojson }};
+    var captured = {{ visit.boundary_geojson | tojson }};
+    if (proposed) L.geoJSON(proposed, { style: { color: "#0ea5e9", weight: 2, dashArray: "6,5", fillOpacity: 0.05 } }).addTo(group);
+    if (pin) L.circleMarker(pin, { radius: 6, color: "#0ea5e9" }).addTo(group);
+    if (captured) L.geoJSON(JSON.parse(captured), { style: { color: "#15803d", weight: 3, fillColor: "#15803d", fillOpacity: 0.2 } }).addTo(group);
+    if (group.getLayers().length) map.fitBounds(group.getBounds(), { padding: [20, 20], maxZoom: 17 });
+  })();
+
+  // Suggested barangay: the list for the chosen municipality.
+  (function () {
+    var muni = document.getElementById("suggested_municipality");
+    var brgy = document.getElementById("suggested_barangay");
+    if (!muni || !brgy) return;
+    muni.addEventListener("change", function () {
+      brgy.innerHTML = '<option value="">Loading…</option>';
+      brgy.disabled = true;
+      if (!muni.value) {
+        brgy.innerHTML = '<option value="">Pick a municipality first</option>';
+        return;
+      }
+      fetch("/api/barangays/" + encodeURIComponent(muni.value))
+        .then(function (r) { return r.json(); })
+        .then(function (names) {
+          brgy.innerHTML = '<option value="">Choose a barangay</option>' +
+            names.map(function (n) {
+              var o = document.createElement("option");
+              o.value = n; o.textContent = n;
+              return o.outerHTML;
+            }).join("");
+          brgy.disabled = false;
+        })
+        .catch(function () { brgy.innerHTML = '<option value="">Could not load</option>'; });
+    });
+  })();
+</script>
+{% endblock %}

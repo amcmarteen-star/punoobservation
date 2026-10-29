@@ -1311,6 +1311,19 @@
     color: #ffffff;
   }
 
+  /* "Site visits" in the dashed outline's popup (siteVisitsButton) */
+  .popup-visits-link {
+    display: inline-block;
+    margin-top: 0.45rem;
+    padding: 0.3rem 0.7rem;
+    border-radius: 6px;
+    background: #14532d;
+    color: #ffffff !important;
+    font-weight: 600;
+    text-decoration: none;
+  }
+  .popup-visits-link:hover { background: #166534; }
+
   .muni-panel .stat-row span {
     min-width: 0;
     word-break: break-word;
@@ -1879,6 +1892,15 @@
   const CAN_REPORT = ["field_officer", "admin", "superadmin"].includes(
     USER_ROLE,
   );
+  // Staff open Site visits on a site made from a request
+  // (app/routes/visits.py checks the CENRO again).
+  const CAN_VISIT = {{ 'true' if can_see_proposed else 'false' }};
+  const SITE_VISITS_URL = "{{ url_for('visits.site_visits', site_id=0) }}";
+  function siteVisitsButton(siteId, fromRequest, cls) {
+    if (!CAN_VISIT || !fromRequest) return "";
+    const href = SITE_VISITS_URL.replace(/\/0(?=\/)/, "/" + Number(siteId));
+    return `<a class="${cls}" href="${href}" onclick="event.stopPropagation();">Site visits</a>`;
+  }
   const pangasinanBounds = L.latLngBounds(
     L.latLng(15.5, 119.6),
     L.latLng(16.55, 122.9),
@@ -2350,6 +2372,7 @@
                         History
                       </button>
                       ${googleMapsButton(s.lat, s.lon, s.exact, "btn-locate")}
+                      ${siteVisitsButton(s.site_id, s.from_request, "btn-report")}
                       ${window.reqMode ? reqMode.adoptButton(s, s.municipality, s.barangay) : ""}
                       {% if session.role == 'field_officer'%}
                         ${
@@ -3406,6 +3429,7 @@
                 From request #${escBoundary(b.request_id)}. Replaced when the
                 province publishes a GPS boundary.
               </span>
+              ${siteVisitsButton(b.site_id, true, "popup-visits-link")}
             `;
             if (b.geometry) {
               L.geoJSON(b.geometry, { style: style, pane: "boundaryPane" })
@@ -3794,6 +3818,7 @@
                 View monitoring history
               </button>
               ${googleMapsButton(b.lat, b.lon, b.exact, "back-link")}
+              ${siteVisitsButton(s.site_id, s.from_request, "back-link")}
               ${window.reqMode ? reqMode.adoptButton(s, b.municipality, b.barangay) : ""}
             </div>`).join("")}
         `;

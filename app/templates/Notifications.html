@@ -369,6 +369,8 @@
                     {% else %}
                         {% set details_url = url_for('dashboard.my_report_detail', report_id=n.report_id) %}
                     {% endif %}
+                {% elif n.visit_id %}
+                    {% set details_url = url_for('visits.visit_detail', visit_id=n.visit_id) %}
                 {% elif n.notification_type == 'New Request' %}
                     {% set details_url = url_for('admin.review_requests') %}
                 {% elif n.notification_type == 'Request Update' %}
@@ -376,7 +378,7 @@
                 {% endif %}
                 <div class="notif-row {% if not n.is_read %}unread{% endif %}"
                      data-id="{{ n.notification_id }}"
-                     data-type="{{ 'reports' if n.notification_type == 'Report' else ('requests' if n.notification_type in ['New Request', 'Request Update'] else 'other') }}"
+                     data-type="{{ 'reports' if n.notification_type in ['Report', 'Site Visit'] else ('requests' if n.notification_type in ['New Request', 'Request Update'] else 'other') }}"
                      data-date="{{ n.created_at.strftime('%Y-%m-%d') if n.created_at else '' }}">
                     <input type="checkbox" class="notif-row-checkbox"
                            data-id="{{ n.notification_id }}"

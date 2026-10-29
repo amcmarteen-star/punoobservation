@@ -12,7 +12,7 @@ from flask import (
 from itsdangerous import BadSignature, SignatureExpired, URLSafeTimedSerializer
 from app.extensions import db
 from app.models import User, Organization, Location, Site
-from app.services.mailer import external_url, send_template
+from app.services.mailer import email_link, external_url, send_template
 from app.utils.audit import log_action, log_login
 from app.utils.security import password_problem
 from app.utils.timeutil import manila_now
@@ -350,7 +350,7 @@ def reset_password(token):
             'password_changed', to=user.email_address,
             subject="Your PuNoObservation password was changed",
             name=user.username, username=user.username,
-            login_url=_email_link('auth.login'),
+            login_url=email_link('auth.login'),
         )
 
         session.clear()
@@ -359,13 +359,6 @@ def reset_password(token):
 
     return render_template('Resetpassword.html', token=token,
                            username=user.username)
-
-
-def _email_link(endpoint, **values):
-    try:
-        return external_url(endpoint, **values)
-    except RuntimeError:
-        return url_for(endpoint, **values)
 
 
 @auth_bp.route('/session/status')

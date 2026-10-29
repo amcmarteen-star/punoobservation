@@ -120,6 +120,8 @@ class Site(db.Model):
     )
     boundary_published_at = db.Column(db.DateTime, nullable=True)
     boundary_source_report_id = db.Column(db.Integer, nullable=True)
+    # set instead when the published boundary came from a site visit
+    boundary_source_visit_id = db.Column(db.Integer, nullable=True)
     boundary_area_ha = db.Column(db.Float, nullable=True)
     boundary_captured_at = db.Column(db.DateTime, nullable=True)
     # land_map_boundary = db.Column(Geometry('POLYGON', srid=4326), nullable=True)
@@ -336,6 +338,11 @@ class MonitoringReport(db.Model):
         backref=db.backref('published_reports', foreign_keys=[published_by])
     )
 
+    @property
+    def field_date(self):
+        """The day of the field work, under the name a site visit uses too."""
+        return self.monitoring_date
+
 class MonitoringPhoto(db.Model):
     __tablename__ = 'monitoring_photo'
 
@@ -373,6 +380,106 @@ class MonitoringPhoto(db.Model):
     inside_boundary = db.Column(db.Boolean, nullable=False, default=False)
     distance_from_centroid_m = db.Column(db.Float, nullable=True)
     flags = db.Column(db.String(300), nullable=True)
+
+class SiteVisit(db.Model):
+    """
+    A field officer's visit to a site made from a request, before or at
+    planting (app/routes/visits.py).
+
+    A monitoring report counts surviving seedlings, which a new site does
+    not have yet. A visit checks the land instead: does it match the
+    request, is ownership confirmed, can it be reached. It can also walk
+    the corners for a GPS boundary, and record the seedlings actually
+    planted, which later monitoring reports need for a survival rate.
+
+    A site can have several visits (a pre-planting check, then a planting
+    confirmation). Each one is reviewed by the site's CENRO. An approved
+    boundary goes to the same provincial publication queue as a report's;
+    a "Not suitable" finding comes with the CENRO's suggested new site.
+    """
+    __tablename__ = 'site_visit'
+
+    visit_id = db.Column(db.Integer, primary_key=True)
+    site_id = db.Column(db.Integer, db.ForeignKey('site.site_id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.user_id'), nullable=False)
+    visit_date = db.Column(db.Date, nullable=False)
+    # VISIT_TYPES in app/routes/visits.py
+    visit_type = db.Column(db.String(40), nullable=False)
+
+    # the land check; None = not answered
+    land_matches = db.Column(db.Boolean, nullable=True)
+    ownership_confirmed = db.Column(db.Boolean, nullable=True)
+    accessible = db.Column(db.Boolean, nullable=True)
+    # 'Suitable' | 'Not suitable'
+    finding = db.Column(db.String(20), nullable=False)
+
+    # at a planting confirmation
+    seedlings_planted = db.Column(db.Integer, nullable=True)
+    date_planted = db.Column(db.Date, nullable=True)
+    remarks = db.Column(db.Text, nullable=True)
+
+    # boundary from GPS corner photos, as on a monitoring report
+    boundary_geojson = db.Column(db.Text, nullable=True)
+    captured_area_ha = db.Column(db.Float, nullable=True)
+    area_difference_pct = db.Column(db.Float, nullable=True)
+
+    # Pending | Approved | Rejected, set by the site's CENRO
+    status = db.Column(db.String(30), nullable=False, default='Pending')
+    review_note = db.Column(db.Text, nullable=True)
+    reviewed_by = db.Column(db.Integer, db.ForeignKey('users.user_id'), nullable=True)
+    date_reviewed = db.Column(db.DateTime, nullable=True)
+
+    # A "Not suitable" visit, once approved: where the CENRO suggests
+    # planting instead. Passed on to the requester.
+    suggested_location_id = db.Column(
+        db.Integer, db.ForeignKey('location.location_id'), nullable=True)
+    suggestion_note = db.Column(db.Text, nullable=True)
+
+    # Not Applicable | Pending Publication | Published | Declined, the same
+    # values and the same queue as MonitoringReport.publication_status
+    publication_status = db.Column(db.String(30), nullable=False,
+                                   default='Not Applicable',
+                                   server_default='Not Applicable')
+    published_by = db.Column(db.Integer, db.ForeignKey('users.user_id'), nullable=True)
+    published_at = db.Column(db.DateTime, nullable=True)
+    publication_note = db.Column(db.Text, nullable=True)
+
+    submitted_at = db.Column(db.DateTime, nullable=False, default=manila_now)
+
+    site = db.relationship('Site', backref=db.backref(
+        'site_visits', order_by='SiteVisit.visit_date.desc()'))
+    photos = db.relationship('SiteVisitPhoto', backref='visit', lazy=True,
+                             cascade="all, delete-orphan")
+    suggested_location = db.relationship('Location')
+    officer = db.relationship('User', foreign_keys=[user_id])
+    reviewer = db.relationship('User', foreign_keys=[reviewed_by])
+    publisher = db.relationship('User', foreign_keys=[published_by])
+
+    @property
+    def field_date(self):
+        """The day of the field work, under the name a report uses too."""
+        return self.visit_date
+
+
+class SiteVisitPhoto(db.Model):
+    """A photo from a site visit. Same checks as MonitoringPhoto."""
+    __tablename__ = 'site_visit_photo'
+
+    photo_id = db.Column(db.Integer, primary_key=True)
+    visit_id = db.Column(db.Integer, db.ForeignKey('site_visit.visit_id'), nullable=False)
+    photo_url = db.Column(db.String(255), nullable=False)
+    file_hash = db.Column(db.String(64), nullable=True)
+    # 'site'     - the land as found
+    # 'boundary' - a site corner, used to build the polygon
+    photo_type = db.Column(db.String(20), nullable=False, default='site')
+    latitude = db.Column(db.Float, nullable=True)
+    longitude = db.Column(db.Float, nullable=True)
+    date_time_taken = db.Column(db.DateTime, nullable=True)
+    upload_time = db.Column(db.DateTime, nullable=False, default=manila_now)
+    inside_boundary = db.Column(db.Boolean, nullable=False, default=False)
+    distance_from_centroid_m = db.Column(db.Float, nullable=True)
+    flags = db.Column(db.String(300), nullable=True)
+
 
 class MonitoringPlot(db.Model):
     """
@@ -496,6 +603,8 @@ class Notification(db.Model):
     notification_id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.user_id'), nullable=False)
     report_id = db.Column(db.Integer, db.ForeignKey('monitoring_report.report_id'), nullable=True)
+    # set on 'Site Visit' notifications, so the row links to the visit
+    visit_id = db.Column(db.Integer, db.ForeignKey('site_visit.visit_id'), nullable=True)
     notification_type = db.Column(db.String(100), nullable=False)
     message = db.Column(db.Text, nullable=False)
     is_read = db.Column(db.Boolean, nullable=False, default=False)
