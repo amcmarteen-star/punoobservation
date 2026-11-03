@@ -66,14 +66,136 @@
   .cs-req {
     color: var(--danger-strong);
   }
+
+  .cs-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--text-2);
+    text-decoration: none;
+  }
+
+  .cs-back:hover {
+    color: var(--brand-text);
+  }
+
+  .cs-back svg {
+    width: 1rem;
+    height: 1rem;
+  }
+
+  /* 12 columns, the same widths the Bootstrap classes here were asking for.
+     This project does not load Bootstrap, so they stacked in one column. */
+  .cs-form {
+    display: grid;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    gap: 1.1rem 1rem;
+  }
+
+  .cs-col-4 { grid-column: span 4; }
+  .cs-col-6 { grid-column: span 6; }
+  .cs-col-8 { grid-column: span 8; }
+
+  .cs-form .form-control,
+  .cs-form .form-select {
+    min-height: 2.625rem;
+  }
+
+  /* Matched to .form-control so the dropdowns sit level with the inputs. */
+  .cs-form .form-select {
+    width: 100%;
+    padding: 0.6rem 2.25rem 0.6rem 0.8rem;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    font-size: 0.875rem;
+    font-family: inherit;
+    color: var(--text-strong);
+    background-color: var(--surface-1);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.7rem center;
+    background-size: 1rem;
+    appearance: none;
+    cursor: pointer;
+    outline: none;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  }
+
+  .cs-form .form-select:focus {
+    border-color: var(--brand-text);
+    box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.12);
+  }
+
+  .cs-actions {
+    grid-column: 1 / -1;
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    margin-top: 0.25rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--line);
+  }
+
+  .cs-btn,
+  .cs-btn-ghost {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.6rem 1rem;
+    border-radius: 9px;
+    font: inherit;
+    font-size: 0.86rem;
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+    transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease;
+  }
+
+  .cs-btn {
+    border: 1px solid transparent;
+    background: var(--brand-solid);
+    color: #fff;
+  }
+
+  .cs-btn:hover {
+    background: var(--ok-solid);
+    color: #fff;
+  }
+
+  .cs-btn-ghost {
+    border: 1px solid var(--line-strong);
+    background: var(--surface-1);
+    color: var(--brand-text);
+  }
+
+  .cs-btn-ghost:hover {
+    border-color: var(--ok-solid);
+    background: var(--ok-bg);
+    color: var(--brand-text);
+  }
+
+  @media (max-width: 767px) {
+    .cs-col-4,
+    .cs-col-6,
+    .cs-col-8 {
+      grid-column: 1 / -1;
+    }
+
+    .cs-actions > * {
+      flex: 1;
+    }
+  }
 </style>
 {% endblock %}
 
 {% block content %}
 
 <a href="{{ url_for('admin.review_request_detail', request_id=req.request_id) }}"
-   class="text-secondary small">
-  &larr; Back to request #{{ req.request_id }}
+   class="cs-back">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
+  Back to request #{{ req.request_id }}
 </a>
 
 <div class="page-header mt-2 mb-4">
@@ -144,8 +266,8 @@
 <div class="cs-panel">
   <h5>The new site</h5>
 
-  <form method="POST" class="row g-3">
-    <div class="col-md-8">
+  <form method="POST" class="cs-form">
+    <div class="cs-col-8">
       <label for="site_name" class="form-label fw-semibold">
         Site name <span class="cs-req">*</span>
       </label>
@@ -153,14 +275,14 @@
              maxlength="150" required value="{{ form.site_name }}">
     </div>
 
-    <div class="col-md-4">
+    <div class="cs-col-4">
       <label for="site_code" class="form-label fw-semibold">Site code</label>
       <input type="text" name="site_code" id="site_code" class="form-control"
              maxlength="50" value="{{ form.site_code }}"
              placeholder="Optional, must be unique">
     </div>
 
-    <div class="col-md-6">
+    <div class="cs-col-6">
       <label for="organization_id" class="form-label fw-semibold">
         Organisation <span class="cs-req">*</span>
       </label>
@@ -183,7 +305,7 @@
       </div>
     </div>
 
-    <div class="col-md-6">
+    <div class="cs-col-6">
       <label for="new_organization" class="form-label fw-semibold">
         Or add a new organisation
       </label>
@@ -194,7 +316,7 @@
       <div class="cs-help">If you type a name here, it is used instead of the list.</div>
     </div>
 
-    <div class="col-md-4">
+    <div class="cs-col-4">
       <label for="area_size_ha" class="form-label fw-semibold">
         Area (ha) <span class="cs-req">*</span>
       </label>
@@ -207,7 +329,7 @@
       </div>
     </div>
 
-    <div class="col-md-4">
+    <div class="cs-col-4">
       <label for="target_seedlings" class="form-label fw-semibold">
         Target seedlings <span class="cs-req">*</span>
       </label>
@@ -217,7 +339,7 @@
       <div class="cs-help">Pre-filled from the requester's estimate when there is one.</div>
     </div>
 
-    <div class="col-md-4">
+    <div class="cs-col-4">
       <label for="zone_type" class="form-label fw-semibold">Zone</label>
       <select name="zone_type" id="zone_type" class="form-select">
         <option value="">Not set</option>
@@ -227,7 +349,7 @@
       </select>
     </div>
 
-    <div class="col-md-4">
+    <div class="cs-col-4">
       <label for="date_established" class="form-label fw-semibold">
         Date established <span class="cs-req">*</span>
       </label>
@@ -235,7 +357,7 @@
              class="form-control" required value="{{ form.date_established }}">
     </div>
 
-    <div class="col-md-4">
+    <div class="cs-col-4">
       <label for="date_planted" class="form-label fw-semibold">
         Planned planting date <span class="cs-req">*</span>
       </label>
@@ -243,17 +365,17 @@
              class="form-control" required value="{{ form.date_planted }}">
     </div>
 
-    <div class="col-md-4">
+    <div class="cs-col-4">
       <label for="contact_person" class="form-label fw-semibold">Contact person</label>
       <input type="text" name="contact_person" id="contact_person"
              class="form-control" maxlength="120"
              value="{{ form.contact_person }}">
     </div>
 
-    <div class="col-12 d-flex gap-2 justify-content-end">
+    <div class="cs-actions">
       <a href="{{ url_for('admin.review_request_detail', request_id=req.request_id) }}"
-         class="btn btn-outline-secondary">Cancel</a>
-      <button type="submit" class="btn btn-success">Create site</button>
+         class="cs-btn-ghost">Cancel</a>
+      <button type="submit" class="cs-btn">Create site</button>
     </div>
   </form>
 </div>
