@@ -1,0 +1,17 @@
+{# Sent by admin.create_field_officer. The temporary password is never emailed. #}
+Hello {{ name }},
+
+A system administrator created a PuNoObservation account for you.
+
+Username: {{ username }}
+
+The administrator gives you your temporary password directly. You choose your own password the first time you sign in.
+
+Sign in:
+{{ login_url }}
+
+If you were not expecting this, contact your system administrator.
+
+--
+PuNoObservation, the DENR reforestation monitoring system for Pangasinan.
+Replies to this address are not read.

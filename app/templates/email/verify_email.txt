@@ -1,0 +1,15 @@
+{# Sent by auth.register and auth.resend_verification. #}
+Hello {{ name }},
+
+Your PuNoObservation account ({{ username }}) was created.
+
+To verify your email address and finish signing up, open this link:
+{{ verify_url }}
+
+The link works for {{ hours }} hours.
+
+If you did not sign up, ignore this email. The account cannot be used without this link.
+
+--
+PuNoObservation, the DENR reforestation monitoring system for Pangasinan.
+Replies to this address are not read.

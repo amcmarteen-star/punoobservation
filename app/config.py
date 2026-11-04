@@ -56,6 +56,8 @@ class Config:
     APP_BASE_URL = os.environ.get('APP_BASE_URL', '').rstrip('/')
     # How long a "forgot password" link works.
     PASSWORD_RESET_MINUTES = 60
+    # How long a new account's email verification link works.
+    EMAIL_VERIFY_HOURS = 48
     # The least time between two reset emails to one account, so the form
     # cannot be used to flood someone's inbox.
     PASSWORD_RESET_COOLDOWN_SECONDS = 120

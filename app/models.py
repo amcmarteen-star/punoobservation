@@ -92,6 +92,15 @@ class User(db.Model):
     # rather than once per device.
     tour_completed_at = db.Column(db.DateTime, nullable=True)
 
+    # False only from signing up until the emailed link is opened; the
+    # login refuses until then. True for every other account: an
+    # administrator vouches for the ones they create, and accounts older
+    # than this check were never asked. Opening a password reset link
+    # proves the address too, so it also sets this.
+    email_verified = db.Column(
+        db.Boolean, nullable=False, default=True, server_default=db.true()
+    )
+
     # Relationships
     # reports = db.relationship('MonitoringReport', backref='officer', lazy=True)
     notifications = db.relationship('Notification', backref='user', lazy=True)
@@ -461,6 +470,40 @@ class SiteVisit(db.Model):
         return self.visit_date
 
 
+class VisitAssignment(db.Model):
+    """
+    A CENRO admin asking one field officer to visit one site.
+
+    This is how an officer learns about a new site: they are notified and
+    emailed, and only an officer with an open assignment can record a
+    visit. A site can have any number over time, one per visit.
+
+    Open       waiting for the officer
+    Done       the officer recorded visit_id
+    Cancelled  the admin withdrew it, or the site was closed
+    A rejected visit reopens its assignment, so the officer can redo it.
+    """
+    __tablename__ = 'visit_assignment'
+
+    assignment_id = db.Column(db.Integer, primary_key=True)
+    site_id = db.Column(db.Integer, db.ForeignKey('site.site_id'), nullable=False)
+    officer_id = db.Column(db.Integer, db.ForeignKey('users.user_id'), nullable=False)
+    assigned_by = db.Column(db.Integer, db.ForeignKey('users.user_id'), nullable=False)
+    # VISIT_TYPES in app/services/visit_assignment.py
+    visit_type = db.Column(db.String(40), nullable=False)
+    target_date = db.Column(db.Date, nullable=True)
+    note = db.Column(db.Text, nullable=True)
+    status = db.Column(db.String(20), nullable=False, default='Open')
+    visit_id = db.Column(db.Integer, db.ForeignKey('site_visit.visit_id'), nullable=True)
+    created_at = db.Column(db.DateTime, nullable=False, default=manila_now)
+
+    site = db.relationship('Site', backref=db.backref(
+        'visit_assignments', order_by='VisitAssignment.created_at.desc()'))
+    officer = db.relationship('User', foreign_keys=[officer_id])
+    assigner = db.relationship('User', foreign_keys=[assigned_by])
+    visit = db.relationship('SiteVisit', foreign_keys=[visit_id])
+
+
 class SiteVisitPhoto(db.Model):
     """A photo from a site visit. Same checks as MonitoringPhoto."""
     __tablename__ = 'site_visit_photo'
@@ -605,6 +648,8 @@ class Notification(db.Model):
     report_id = db.Column(db.Integer, db.ForeignKey('monitoring_report.report_id'), nullable=True)
     # set on 'Site Visit' notifications, so the row links to the visit
     visit_id = db.Column(db.Integer, db.ForeignKey('site_visit.visit_id'), nullable=True)
+    # set on visit assignment notices, so the row links to the site's visits
+    site_id = db.Column(db.Integer, db.ForeignKey('site.site_id'), nullable=True)
     notification_type = db.Column(db.String(100), nullable=False)
     message = db.Column(db.Text, nullable=False)
     is_read = db.Column(db.Boolean, nullable=False, default=False)

@@ -1,0 +1,11 @@
+{# Sent by auth.register and auth.resend_verification. #}
+{% extends 'email/_layout.html' %}
+{% set button_url = verify_url %}
+{% set button_text = 'Verify my email' %}
+{% block heading %}Verify your email address{% endblock %}
+{% block body %}
+<p style="margin:0 0 16px;">Hello {{ name }},</p>
+<p style="margin:0 0 16px;">Your PuNoObservation account (<strong>{{ username }}</strong>) was created. Verify your email address to finish signing up.</p>
+<p style="margin:0 0 16px;">The button works for {{ hours }} hours.</p>
+<p style="margin:0; font-size:14px; color:#5f6f66;">If you did not sign up, ignore this email. The account cannot be used without this link.</p>
+{% endblock %}

@@ -112,14 +112,19 @@ def register():
             username=username,
             email_address=email_address,
             role="normal_user",
-            organization_id=int(organization_id) if organization_id else None
+            organization_id=int(organization_id) if organization_id else None,
+            # the login refuses until the emailed link is opened
+            email_verified=False,
         )
         new_user.set_password(password)
 
         db.session.add(new_user)
         db.session.commit()
 
-        flash("Registration successful! Please log in.", "success")
+        _send_verification(new_user)
+        flash("Almost done. We sent a link to your email address. Open it to "
+              "verify your account, then sign in. Check your spam folder too.",
+              "success")
         return redirect(url_for('auth.login'))
 
     return _render_register()
@@ -178,6 +183,16 @@ def login():
                 error="That account has been deactivated. "
                       "Contact a system administrator."
             )
+
+        # After the password too, so only the account's holder learns this.
+        if password_ok and not user.email_verified:
+            log_login(username, False, user_id=user.user_id,
+                      detail='Blocked: email address not verified')
+            return render_template(
+                'Log_in.html',
+                error="Verify your email address before signing in. Open the "
+                      "link we sent you.",
+                show_resend=True)
 
         if password_ok:
             user.failed_login_count = 0
@@ -243,10 +258,12 @@ def _locked_message(locked_until, now):
 # the system.
 
 RESET_SALT = 'password-reset'
+VERIFY_SALT = 'email-verify'
 
 # user_id -> time of the last reset email. In memory, so it resets with
 # the server and is per worker; it only has to stop a flood, not count.
 _last_reset_email = {}
+_last_verify_email = {}
 
 
 def _reset_serializer():
@@ -342,6 +359,8 @@ def reset_password(token):
         # a reset also lifts a lock from too many wrong passwords
         user.failed_login_count = 0
         user.locked_until = None
+        # the link arrived at that address, which is what verifying proves
+        user.email_verified = True
         log_action('password_reset', 'users', user.user_id,
                    "Password changed with an emailed reset link")
         db.session.commit()
@@ -359,6 +378,82 @@ def reset_password(token):
 
     return render_template('Resetpassword.html', token=token,
                            username=user.username)
+
+
+# ----------------------------------------------------------------------
+# verifying the email address of a new sign-up
+# ----------------------------------------------------------------------
+#
+# Same signed, timed token as a password reset, with its own salt so one
+# can never be used as the other. It carries the address too, so a link
+# stops working if the account's address changes.
+
+def _verify_serializer():
+    return URLSafeTimedSerializer(current_app.config['SECRET_KEY'],
+                                  salt=VERIFY_SALT)
+
+
+def make_verify_token(user):
+    return _verify_serializer().dumps(
+        {'u': user.user_id, 'e': user.email_address})
+
+
+def _send_verification(user):
+    """Email the link. Never fatal, like every email: a sign-up whose email
+    fails can ask for another, or an administrator can reset the account."""
+    _last_verify_email[user.user_id] = time.time()
+    send_template(
+        'verify_email', to=user.email_address,
+        subject="Verify your PuNoObservation email address",
+        name=user.username, username=user.username,
+        verify_url=email_link('auth.verify_email',
+                              token=make_verify_token(user)),
+        hours=current_app.config['EMAIL_VERIFY_HOURS'],
+    )
+
+
+@auth_bp.route('/verify-email/<token>')
+def verify_email(token):
+    max_age = current_app.config['EMAIL_VERIFY_HOURS'] * 3600
+    problem = None
+    user = None
+    try:
+        data = _verify_serializer().loads(token, max_age=max_age)
+        user = db.session.get(User, data.get('u')) if isinstance(data, dict) else None
+        if (user is None or not user.is_active
+                or user.email_address != data.get('e')):
+            problem = "This verification link is not valid."
+    except SignatureExpired:
+        problem = "This verification link has expired."
+    except BadSignature:
+        problem = "This verification link is not valid."
+
+    if problem:
+        return render_template('Resendverification.html', invalid=problem)
+
+    if not user.email_verified:
+        user.email_verified = True
+        log_action('verify_email', 'users', user.user_id,
+                   "Email address verified")
+        db.session.commit()
+    flash("Your email address is verified. You can sign in now.", "success")
+    return redirect(url_for('auth.login'))
+
+
+@auth_bp.route('/resend-verification', methods=['GET', 'POST'])
+def resend_verification():
+    if request.method == 'POST':
+        email = (request.form.get('email_address') or '').strip().lower()
+        user = User.query.filter_by(email_address=email).first() if email else None
+        if user is not None and user.is_active and not user.email_verified:
+            cooldown = current_app.config['PASSWORD_RESET_COOLDOWN_SECONDS']
+            if time.time() - _last_verify_email.get(user.user_id, 0) >= cooldown:
+                _send_verification(user)
+        # The same answer whether or not the address has an account.
+        flash("If that address has an account waiting to be verified, a new "
+              "link is on its way. Check your inbox and spam folder.", "success")
+        return redirect(url_for('auth.login'))
+    return render_template('Resendverification.html')
 
 
 @auth_bp.route('/session/status')

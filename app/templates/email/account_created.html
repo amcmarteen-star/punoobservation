@@ -1,0 +1,11 @@
+{# Sent by admin.create_field_officer. The temporary password is never emailed. #}
+{% extends 'email/_layout.html' %}
+{% set button_url = login_url %}
+{% set button_text = 'Sign in' %}
+{% block heading %}Your account was created{% endblock %}
+{% block body %}
+<p style="margin:0 0 16px;">Hello {{ name }},</p>
+<p style="margin:0 0 16px;">A system administrator created a PuNoObservation account for you. Your username is <strong>{{ username }}</strong>.</p>
+<p style="margin:0 0 16px;">The administrator gives you your temporary password directly. You choose your own password the first time you sign in.</p>
+<p style="margin:0; font-size:14px; color:#5f6f66;">If you were not expecting this, contact your system administrator.</p>
+{% endblock %}
