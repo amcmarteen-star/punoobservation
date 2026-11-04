@@ -1639,20 +1639,16 @@
 <div class="map-topbar">
   {# Area, then district. Province-wide users pick an area (one per
      CENRO) and then one of its districts. CENRO staff have one area, so
-     they go straight to its districts. "All" draws every district in one
-     shared colour, picking one gives it its own colour, and "None" (in
-     both rows) draws no colour or outline at all. #}
+     they go straight to its districts. "None" (in both rows) is the
+     default and draws no colour or outline. Picking an area colours its
+     districts in one shared colour, and picking a district gives it its
+     own colour. #}
   {% set many_areas = map_areas|length > 1 %}
   {% if district_files %}
   {% if many_areas %}
   <div class="toolbar-group tb-district">
     <span class="toolbar-label" id="areaLabel">Area</span>
     <div class="seg" role="radiogroup" aria-labelledby="areaLabel">
-      <label>
-        <input type="radio" name="areaFilter" value="all" checked
-               onchange="filterArea(this.value)" />
-        All
-      </label>
       {% for a in map_areas %}
       <label title="{{ a.region }} &middot; CENRO {{ a.cenro }}">
         <input type="radio" name="areaFilter" value="{{ a.cenro }}"
@@ -1661,7 +1657,7 @@
       </label>
       {% endfor %}
       <label>
-        <input type="radio" name="areaFilter" value="none"
+        <input type="radio" name="areaFilter" value="none" checked
                onchange="filterArea(this.value)" />
         None
       </label>
@@ -1676,11 +1672,6 @@
     {% endif %}
     <span class="toolbar-label" id="districtLabel">District</span>
     <div class="seg" role="radiogroup" aria-labelledby="districtLabel">
-      <label>
-        <input type="radio" name="districtFilter" value="all" checked
-               onchange="filterDistricts(this.value)" />
-        All
-      </label>
       {% for d in district_files %}
       <label data-area="{{ d.cenro }}" {% if many_areas %}hidden{% endif %}>
         <input type="radio" name="districtFilter" value="{{ d.district }}"
@@ -1690,7 +1681,7 @@
       {% endfor %}
       {# No data-area, so it shows for whichever area is chosen. #}
       <label>
-        <input type="radio" name="districtFilter" value="none"
+        <input type="radio" name="districtFilter" value="none" checked
                onchange="filterDistricts(this.value)" />
         None
       </label>
@@ -2998,8 +2989,8 @@
       /* How the districts look, from the filters:
            - "None": no colour and no outline. The towns stay clickable.
            - one district on the map: its own colour, so it stands out
-           - several ("All"): one shared colour, so no district looks
-             singled out until the user picks it
+           - several (an area picked, no district yet): one shared colour,
+             so no district looks singled out until the user picks it
          The outline also follows "District outlines" in the Layers menu. */
       const ALL_DISTRICTS_COLOR = "#2563EB";
 
@@ -3092,12 +3083,13 @@
       let siteLayer = null;
       let allSiteMarkers = [];
       // The area and district filters. Area is "all" or a CENRO name.
-      // District is "all" or a district number as a string ("5"). CENRO
-      // staff have one area, so theirs is chosen from the start.
+      // District is "all" or a district number as a string ("5"). "all"
+      // is only the state behind the filters, no longer a choice on screen.
+      // CENRO staff have one area, so theirs is chosen from the start.
       let currentArea =
         MAP_FILES.areas.length === 1 ? MAP_FILES.areas[0].cenro : "all";
       let currentDistrict = "all";
-      let showDistrictFill = true; // false while "None" is chosen
+      let showDistrictFill = false; // false while "None" is chosen, the default
       let showDistrictBorders = true; // "District outlines" in Layers
 
       function buildTreeIcon(b, zoom) {
@@ -3969,14 +3961,15 @@
       loadSiteMarkers();
 
       // The districts were drawn in their own colours; restyle them from
-      // the filters ("All" by default: one shared colour). Called here,
+      // the filters ("None" by default: no colour, no outline). Called here,
       // not where the districts are drawn, because it reads heatLayer,
       // which is declared further up the setup than the districts.
       applyDistrictStyle();
 
       /* The district step lists only the chosen area's districts. It
-         stays hidden for "All", and for an area with a single district,
-         where the area choice already says everything. */
+         stays hidden until an area is picked, and for an area with a single
+         district, where the area choice already says everything. No district
+         is ticked after picking an area: the whole area is showing. */
       function syncDistrictChoices() {
         const group = document.getElementById("districtGroup");
         if (!group) return;
@@ -3987,13 +3980,14 @@
         group.querySelectorAll("label[data-area]").forEach(function (lbl) {
           lbl.hidden = lbl.dataset.area !== currentArea;
         });
-        const all = group.querySelector('input[value="all"]');
-        if (all) all.checked = true;
+        group.querySelectorAll('input[name="districtFilter"]').forEach(function (r) {
+          r.checked = false;
+        });
       }
 
-      // expose for the area and district radios. "None" keeps the same
-      // districts as "All" but draws nothing: no colour, no outline. The
-      // towns stay clickable and every marker in them shows.
+      // expose for the area and district radios. "None" draws nothing: no
+      // colour, no outline. The towns stay clickable and every marker in
+      // them shows.
       window.filterArea = function (value) {
         showDistrictFill = value !== "none";
         currentArea = value === "none" ? "all" : value;
