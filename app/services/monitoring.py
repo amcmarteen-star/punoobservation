@@ -681,6 +681,13 @@ REQUEST_SUBDIR = os.path.join("uploads", "requests")
 ALLOWED_DOC_EXT = {".jpg", ".jpeg", ".png", ".heic", ".pdf"}
 
 
+def is_request_document(file_storage):
+    """True for a chosen file of a type save_request_file() accepts."""
+    if not file_storage or not file_storage.filename:
+        return False
+    return os.path.splitext(file_storage.filename)[1].lower() in ALLOWED_DOC_EXT
+
+
 def save_request_file(file_storage, static_folder, request_id, index):
     """
     Save one request attachment.

@@ -455,7 +455,7 @@ endblock %} {% set active_page = 'requests' %} {% block extra_head %}
             {% endif %}
           </td>
           <td>
-            {% if r.status in pending_statuses %}
+            {% if r.status in pending_statuses and not r.created_site %}
             <button type="button" class="req-cancel-btn"
                     data-action="{{ url_for('dashboard.cancel_request', request_id=r.request_id) }}"
                     data-label="{{ r.request_type }}{% if r.location %} for {{ r.location.barangay }}, {{ r.location.municipality }}{% endif %}"
@@ -800,7 +800,7 @@ endblock %} {% set active_page = 'requests' %} {% block extra_head %}
           </div>
 
           <div class="um-field">
-            <label for="attachments">Indicative Management Plan/Supporting Documents</label>
+            <label for="attachments">Indicative Management Plan/Supporting Documents *</label>
             <input
               type="file"
               name="attachments"
@@ -815,8 +815,7 @@ endblock %} {% set active_page = 'requests' %} {% block extra_head %}
             <div class="req-help">
               Photograph or scan of your Indicative Management Plan (IMP)/Supporting Documents.
               Images or PDF, up to {{ app_limits.maxRequestFiles }} files of
-              {{ app_limits.maxFileMb }} MB each. Optional, but a request with
-              an IMP is reviewed faster.
+              {{ app_limits.maxFileMb }} MB each. Attach at least one.
             </div>
           </div>
         </section>
@@ -1203,6 +1202,25 @@ endblock %} {% set active_page = 'requests' %} {% block extra_head %}
         placeHelp.textContent = problem;
         placeBox.classList.add("is-missing");
         placeBox.scrollIntoView({ behavior: "smooth", block: "center" });
+        return;
+      }
+      // Checked here because the upload zone hides the real file input, so
+      // the browser could not show a "required" message on it.
+      const docs = document.getElementById("attachments");
+      let docsMsg = document.getElementById("req-docs-missing");
+      if (docs && !docs.files.length) {
+        e.preventDefault();
+        if (!docsMsg) {
+          docsMsg = document.createElement("p");
+          docsMsg.id = "req-docs-missing";
+          docsMsg.className = "um-alert um-alert-danger";
+          docsMsg.setAttribute("role", "alert");
+          docsMsg.textContent = "Attach at least one supporting document.";
+          docs.closest(".um-field").appendChild(docsMsg);
+        }
+        docsMsg.scrollIntoView({ behavior: "smooth", block: "center" });
+      } else if (docsMsg) {
+        docsMsg.remove();
       }
     });
 

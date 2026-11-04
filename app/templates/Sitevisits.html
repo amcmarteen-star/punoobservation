@@ -1,20 +1,41 @@
 {% extends "Base.html" %}
-{# visits.site_visits: every visit to one site made from a request, and
-   the button to record a new one. Opened from the GIS map's Site visits
-   button and from Reforestation Sites. #}
+{# visits.site_visits: one site made from a request. The officer sees the
+   request behind it and records their visit; the CENRO admin assigns
+   officers, as many times as needed. Opened from the sidebar, the GIS map's
+   Site visits button, a notification and the assignment email. #}
 {% block title %}Site Visits - PuNoObservation{% endblock %}
 {% block content_class %}page-content-wide{% endblock %}
 
 {% block extra_head %}
+{% if proposed %}<link rel="stylesheet" href="{{ url_for('static', filename='vendor/leaflet/leaflet.css') }}" />{% endif %}
 <style>
-  .sv-facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(12rem, 100%), 1fr)); gap: 0.75rem 1.25rem; }
+  .sv-map { height: 320px; margin-top: 1rem; border: 1px solid var(--line); border-radius: 10px; background: var(--surface-2); }
+  .sv-map-link { margin: 0.5rem 0 0; font-size: 0.85rem; }
+  .sv-map-link a { color: var(--brand-text); font-weight: 600; }
+  .sv-facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(12rem, 100%), 1fr)); gap: 0.75rem 1.25rem; margin: 0; }
   .sv-facts dt { font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-2); }
-  .sv-facts dd { margin: 0.15rem 0 0; color: var(--text-heading); font-weight: 600; }
+  .sv-facts dd { margin: 0.15rem 0 0; color: var(--text-heading); font-weight: 600; overflow-wrap: anywhere; }
   .sv-boundary { display: inline-flex; align-items: center; gap: 0.4rem; }
   .sv-dot { width: 0.6rem; height: 0.6rem; border-radius: 50%; background: var(--text-3); }
   .sv-dot.is-published { background: var(--ok-solid); }
   .sv-dot.is-captured { background: var(--warn-solid); }
   .sv-finding-bad { color: var(--danger-strong); font-weight: 600; }
+  .sv-mine { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.75rem; }
+  .sv-desc { margin: 1rem 0 0; white-space: pre-line; color: var(--text-body); }
+  .sv-docs { list-style: none; margin: 0.25rem 0 0; padding: 0; }
+  .sv-docs li { padding: 0.25rem 0; overflow-wrap: anywhere; }
+  .sv-docs a { color: var(--brand-text); font-weight: 600; }
+  .sv-label { margin: 1rem 0 0; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-2); }
+  .sv-assign { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.5rem 1rem; padding: 0.7rem 0; border-bottom: 1px solid var(--line); }
+  .sv-assign:last-child { border-bottom: none; }
+  .sv-assign small { display: block; color: var(--text-2); }
+  .sv-tag { padding: 0.1rem 0.55rem; border-radius: 999px; font-size: 0.78rem; font-weight: 600; background: var(--surface-3); color: var(--text-strong); }
+  .sv-tag.is-open { background: var(--warn-bg); color: var(--warn-strong); }
+  .sv-assign-actions { display: flex; align-items: center; gap: 0.5rem; }
+  .sv-form-foot { display: flex; justify-content: flex-end; margin-top: 1rem; }
+  .sv-form-foot .um-btn-confirm { width: auto; flex: none; min-width: 9rem; }
+  .sv-link-danger { background: none; border: none; padding: 0.25rem; color: var(--danger-strong); font: inherit; font-size: 0.85rem; font-weight: 600; cursor: pointer; }
+  .sv-link-danger:hover { text-decoration: underline; }
 </style>
 {% endblock %}
 
@@ -28,33 +49,54 @@
     <p class="um-subtitle">{{ site.site_name }}</p>
   </div>
   <div class="d-flex gap-2 flex-wrap">
-    <a href="{{ url_for('dashboard.gis_map') }}" class="um-btn-ghost">Back to the map</a>
-    {% if can_record %}
-    <a href="{{ url_for('visits.new_visit', site_id=site.site_id) }}" class="um-btn-add">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
-      Record site visit
-    </a>
-    {% endif %}
+    <a href="{{ url_for('visits.index') }}" class="um-btn-ghost">All site visits</a>
+    <a href="{{ url_for('dashboard.gis_map') }}" class="um-btn-ghost">Open the map</a>
   </div>
 </div>
 
 {% if not_suitable %}
 <div class="um-alert um-alert-danger mb-3" role="status">
   <strong>Not suitable.</strong>
-  An approved visit found this site not suitable for planting. The requester
-  was told, with the CENRO's suggested new site.
+  This site is closed, and its request was rejected. The requester was told.
 </div>
 {% endif %}
 
+{% if my_assignment %}
 <div class="um-panel">
-  <div class="um-panel-head">
-    <h3>The site</h3>
+  <div class="sv-mine">
+    <div>
+      <strong>You are assigned this visit: {{ my_assignment.visit_type }}</strong>
+      <div class="text-secondary small">
+        {% if my_assignment.target_date %}Visit by {{ my_assignment.target_date.strftime('%d %b %Y') }}. {% endif %}
+        {% if my_assignment.assigner %}From {{ my_assignment.assigner.username }}.{% endif %}
+      </div>
+      {% if my_assignment.note %}<p class="sv-desc" style="margin-top:0.4rem;">{{ my_assignment.note }}</p>{% endif %}
+    </div>
+    <a href="{{ url_for('visits.new_visit', site_id=site.site_id) }}" class="um-btn-add">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+      Record site visit
+    </a>
   </div>
+</div>
+{% endif %}
+
+<!-- the request behind the site: what the officer goes out to check -->
+<div class="um-panel">
+  <div class="um-panel-head"><h3>The request</h3></div>
   <dl class="sv-facts">
     <div><dt>Location</dt><dd>{{ site.location.barangay }}, {{ site.location.municipality }}</dd></div>
     <div><dt>CENRO</dt><dd>{{ site.cenro or '—' }}</dd></div>
+    <div><dt>Request</dt><dd>#{{ req.request_id }} &middot; {{ req.status }}</dd></div>
+    <div><dt>Requested by</dt><dd>{{ req.requester.username if req.requester else '—' }}</dd></div>
+    <div><dt>Contact</dt><dd>{{ req.contact_name or '—' }}{% if req.contact_number %} &middot; {{ req.contact_number }}{% endif %}</dd></div>
+    <div><dt>Contact email</dt><dd>{{ req.contact_email or '—' }}</dd></div>
+    <div><dt>Ownership</dt><dd>{{ req.land_ownership or 'not stated' }}</dd></div>
+    <div><dt>On the land</dt><dd>{{ req.land_cover or 'not stated' }}</dd></div>
     <div><dt>Planned area</dt><dd>{{ site.area_size_ha }} ha</dd></div>
-    <div><dt>From request</dt><dd>#{{ req.request_id }}{% if req.requester %} &middot; {{ req.requester.username }}{% endif %}</dd></div>
+    <div>
+      <dt>Requester's drawn area</dt>
+      <dd>{% if proposed and proposed.area_ha %}{{ '%.2f'|format(proposed.area_ha) }} ha{% elif proposed %}Pin only{% else %}—{% endif %}</dd>
+    </div>
     <div>
       <dt>Boundary</dt>
       <dd class="sv-boundary">
@@ -67,11 +109,87 @@
         {% endif %}
       </dd>
     </div>
-    <div>
-      <dt>Requester's drawn area</dt>
-      <dd>{% if proposed and proposed.area_ha %}{{ '%.2f'|format(proposed.area_ha) }} ha{% elif proposed %}Pin only{% else %}—{% endif %}</dd>
-    </div>
   </dl>
+  {% if req.description %}<p class="sv-desc">{{ req.description }}</p>{% endif %}
+  {% if proposed %}
+  <div id="sv-map" class="sv-map" role="img" aria-label="Map of the land the requester marked"></div>
+  <p class="sv-map-link">
+    The requester's mark, not a surveyed boundary.
+    {% if proposed.pin %}<a href="https://www.google.com/maps?q={{ proposed.pin[0] }},{{ proposed.pin[1] }}" target="_blank" rel="noopener">Open in Google Maps</a>{% endif %}
+  </p>
+  {% endif %}
+  {% if req.attachments %}
+  <p class="sv-label">Supporting documents</p>
+  <ul class="sv-docs">
+    {% for a in req.attachments %}
+    <li><a href="{{ url_for('static', filename=a.file_url) }}" target="_blank" rel="noopener">{{ a.original_name or 'document' }}</a></li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+</div>
+
+<!-- who was sent, and sending someone next -->
+<div class="um-panel">
+  <div class="um-panel-head"><h3>Assignments</h3><span class="um-count-pill">{{ assignments|length }}</span></div>
+  {% for a in assignments %}
+  <div class="sv-assign">
+    <div>
+      <strong>{{ a.officer.username if a.officer else '—' }}</strong> &middot; {{ a.visit_type }}
+      <small>
+        Assigned {{ a.created_at|datetime_ph }}{% if a.assigner %} by {{ a.assigner.username }}{% endif %}{% if a.target_date %}. Visit by {{ a.target_date.strftime('%d %b %Y') }}{% endif %}
+      </small>
+      {% if a.note %}<small>{{ a.note }}</small>{% endif %}
+    </div>
+    <div class="sv-assign-actions">
+      <span class="sv-tag {% if a.status == 'Open' %}is-open{% endif %}">{{ a.status }}</span>
+      {% if a.visit_id %}<a href="{{ url_for('visits.visit_detail', visit_id=a.visit_id) }}" class="um-btn-ghost">View visit</a>{% endif %}
+      {% if can_assign and a.status == 'Open' %}
+      <form method="POST" action="{{ url_for('visits.cancel_assignment', assignment_id=a.assignment_id) }}">
+        <button type="submit" class="sv-link-danger">Withdraw</button>
+      </form>
+      {% endif %}
+    </div>
+  </div>
+  {% else %}
+  <p class="text-secondary mb-0">No officer has been assigned yet.</p>
+  {% endfor %}
+
+  {% if can_assign %}
+  <p class="sv-label" style="margin:1.25rem 0 0.75rem;">Assign a visit</p>
+  {% if officers %}
+  <form method="POST" action="{{ url_for('visits.assign_visit', site_id=site.site_id) }}">
+    <div class="um-field-row">
+      <div class="um-field">
+        <label for="officer_id">Field officer *</label>
+        <select name="officer_id" id="officer_id" required>
+          <option value="">Choose an officer</option>
+          {% for o in officers %}<option value="{{ o.user_id }}">{{ o.username }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="um-field">
+        <label for="visit_type">Type of visit *</label>
+        <select name="visit_type" id="visit_type" required>
+          {% for t in visit_types %}<option value="{{ t }}">{{ t }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="um-field">
+        <label for="target_date">Visit by</label>
+        <input type="date" name="target_date" id="target_date" min="{{ today }}">
+      </div>
+    </div>
+    <div class="um-field">
+      <label for="note">Note to the officer</label>
+      <textarea name="note" id="note" rows="2" placeholder="What to look out for, who to meet."></textarea>
+    </div>
+    <div class="sv-form-foot"><button type="submit" class="um-btn-confirm">Assign and notify</button></div>
+  </form>
+  {% else %}
+  <div class="um-note um-note-warn mb-0">
+    <strong>No field officer in CENRO {{ site.cenro }}.</strong>
+    Ask a system administrator to add one.
+  </div>
+  {% endif %}
+  {% endif %}
 </div>
 
 <div class="um-table-card">
@@ -112,11 +230,37 @@
   <div class="um-empty">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/></svg>
     <strong>No visits yet</strong>
-    <p>
-      A field officer of CENRO {{ site.cenro }} records the first visit to
-      check the land and walk its corners for a GPS boundary.
-    </p>
+    <p>The assigned field officer records the visit here.</p>
   </div>
   {% endif %}
 </div>
+{% endblock %}
+
+{% block extra_scripts %}
+{% if proposed %}
+<script src="{{ url_for('static', filename='vendor/leaflet/leaflet.js') }}"></script>
+<script>
+  (function () {
+    const pin = {{ proposed.pin | tojson }};
+    const area = {{ proposed.geometry | tojson }};
+    const map = L.map("sv-map", { scrollWheelZoom: false });
+    L.tileLayer(MAP_TILES.street.url, {
+      maxZoom: 19,
+      attribution: MAP_TILES.street.attribution,
+    }).addTo(map);
+    const mark = L.featureGroup().addTo(map);
+    if (area) {
+      L.geoJSON(area, {
+        style: { color: "#16a34a", weight: 2, dashArray: "6 4", fillColor: "#16a34a", fillOpacity: 0.15 },
+      }).addTo(mark);
+    }
+    if (pin) L.marker(pin).addTo(mark);
+    if (area) {
+      map.fitBounds(mark.getBounds(), { padding: [30, 30], maxZoom: 17 });
+    } else {
+      map.setView(pin, 16);
+    }
+  })();
+</script>
+{% endif %}
 {% endblock %}

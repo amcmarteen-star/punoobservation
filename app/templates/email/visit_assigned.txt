@@ -1,0 +1,19 @@
+{# Sent when a CENRO admin assigns an officer (services/visit_assignment.py). #}
+Hello {{ name }},
+
+{{ assigned_by }} assigned you a site visit.
+
+Site:     {{ site_name }}
+Location: {{ where }}
+Visit:    {{ visit_type }}
+{% if target_date %}Visit by: {{ target_date }}
+{% endif %}{% if note %}
+Note:
+{{ note }}
+{% endif %}
+See the request, its documents and the map, and record your visit:
+{{ visit_url }}
+
+--
+PuNoObservation, the DENR reforestation monitoring system for Pangasinan.
+Replies to this address are not read.

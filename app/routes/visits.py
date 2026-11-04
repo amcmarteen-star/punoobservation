@@ -1,7 +1,7 @@
 """
 Site visits: field validation of a site made from a request.
 
-A temporary site (created by a CENRO from an approved request) has no
+A temporary site (created by a CENRO from a request under review) has no
 seedlings to count yet, so a monitoring report does not fit its first
 field visits. A site visit checks the land instead, can walk the corners
 for a GPS boundary, and can confirm planting. See SiteVisit in
@@ -9,16 +9,20 @@ app/models.py.
 
 THE FLOW
 
-    field officer   records a visit from the site's page or the GIS map
-                    (Site visits button on a temporary site)
-    CENRO admin     approves or rejects it. On approval:
-                      Suitable      a captured boundary goes to Boundary
+    CENRO admin     creates the temporary site and assigns a field officer
+                    (VisitAssignment). More visits can be assigned later.
+    field officer   is notified and emailed, sees the request and its
+                    documents on the site's page, and records the visit
+    CENRO admin     approves or rejects it. A rejected visit reopens the
+                    assignment. On approval:
+                      Suitable      the request becomes Approved; a
+                                    captured boundary goes to Boundary
                                     Publications; a planting confirmation
                                     writes the seedlings actually planted
                                     to the planting record
                       Not suitable  the CENRO suggests a new planting
-                                    site; the site is marked Not Suitable
-                                    and the requester is told
+                                    site; the request becomes Rejected, the
+                                    site is closed and the requester told
     provincial      publishes or declines the boundary, exactly as for a
     admin           monitoring report (services/boundary_publication.py)
 
@@ -26,9 +30,9 @@ WHO SEES WHAT
 
     Staff only (field officers, admins). A CENRO's staff see their own
     CENRO's sites; province-wide staff see every site. Only a field
-    officer of the site's CENRO records a visit, and only that CENRO's
-    admin reviews it. A decision is final: a new visit is recorded
-    instead of reopening one.
+    officer with an open assignment records a visit, and only an admin of
+    the site's CENRO assigns officers and reviews visits. An approval is
+    final: a new visit is assigned instead of reopening one.
 """
 
 from datetime import datetime
@@ -43,7 +47,7 @@ from sqlalchemy.orm import contains_eager, selectinload
 
 from app.models import (
     Location, Notification, ReforestationRecord, Site, SiteVisit,
-    SiteVisitPhoto,
+    SiteVisitPhoto, VisitAssignment,
 )
 from app.services.boundary_publication import (
     NOT_SUITABLE, apply_publication, publication_problem,
@@ -51,6 +55,10 @@ from app.services.boundary_publication import (
 from app.services.mailer import email_link, send_template
 from app.services.monitoring import build_boundary, inspect_photo, save_photo
 from app.services.request_site import proposed_area_for_site
+from app.services.visit_assignment import (
+    VISIT_TYPES, assign_officer, assignment_problem, close_site,
+    email_assignment, officers_for, open_assignment_for,
+)
 from app.utils.audit import log_action
 from app.utils.decorators import admin_required, login_required
 from app.utils.jurisdiction import (
@@ -62,7 +70,6 @@ from app.utils.timeutil import manila_now
 
 visits_bp = Blueprint('visits', __name__)
 
-VISIT_TYPES = ('Pre-planting check', 'Planting confirmed')
 FINDINGS = ('Suitable', 'Not suitable')
 # the land check on the form: (field, question)
 LAND_CHECKS = (
@@ -84,10 +91,15 @@ def _can_view(site):
     return cenro is None or site.cenro == cenro
 
 
-def _can_record(site):
-    """A field officer of the site's CENRO."""
-    return (session.get('role') == 'field_officer'
-            and current_cenro() == site.cenro and site.cenro is not None)
+def _my_assignment(site):
+    """The open assignment that lets this user record a visit, or None:
+    a field officer of the site's CENRO, sent there by their CENRO, on a
+    site that is not closed."""
+    if (session.get('role') != 'field_officer' or site.cenro is None
+            or current_cenro() != site.cenro
+            or site.site_status == NOT_SUITABLE):
+        return None
+    return open_assignment_for(site, session.get('user_id'))
 
 
 def _can_review(site):
@@ -135,10 +147,9 @@ def _yes_no(value):
 def index():
     """
     The sites made from a request in the user's area, with where each one
-    stands, so an officer sees at a glance which still need a visit.
-
-    Sites waiting for field work come first: no visit yet, then a visit
-    pending review. Published and Not Suitable sites go to the end.
+    stands, so nobody has to ask what is waiting for them. Sites needing
+    an officer come first; published and Not Suitable sites go to the end.
+    An officer's own open assignments are also listed above the table.
     """
     if not can_see_unofficial_sites():
         flash("Site visits are for DENR staff.", "warning")
@@ -150,14 +161,24 @@ def index():
                                          Site.location_id == Location.location_id))
              .filter(Site.source_request_id.isnot(None))
              .options(contains_eager(Site.location),
-                      selectinload(Site.site_visits))
+                      selectinload(Site.site_visits),
+                      selectinload(Site.visit_assignments)
+                      .joinedload(VisitAssignment.officer))
              .order_by(Location.municipality, Location.barangay, Site.site_name)
              .all())
 
+    is_officer = session.get('role') == 'field_officer'
+    user_id = session.get('user_id')
+
     rows = []
+    mine = []
     for site in sites:
         visits = site.site_visits           # newest first (see the model)
         latest = visits[0] if visits else None
+        open_ones = [a for a in site.visit_assignments if a.status == 'Open']
+        my_open = [a for a in open_ones if a.officer_id == user_id] \
+            if is_officer and site.site_status != NOT_SUITABLE else []
+        mine.extend(my_open)
         if site.site_status == NOT_SUITABLE:
             stage, order = 'Not suitable', 5
         elif site.boundary_published:
@@ -166,19 +187,22 @@ def index():
             stage, order = 'Visit waiting for review', 1
         elif any(v.publication_status == 'Pending Publication' for v in visits):
             stage, order = 'Boundary waiting for the province', 2
+        elif open_ones:
+            stage, order = 'Officer assigned', 1
         elif not visits:
-            stage, order = 'Needs a first visit', 0
+            stage, order = 'Needs an officer', 0
         else:
             stage, order = 'Visited', 3
         rows.append({'site': site, 'count': len(visits), 'latest': latest,
-                     'stage': stage, 'order': order})
+                     'stage': stage, 'order': order, 'open': open_ones,
+                     'mine': bool(my_open)})
     rows.sort(key=lambda r: r['order'])
 
     return render_template(
         'Sitevisitsindex.html',
         active_page='site_visits',
         rows=rows,
-        is_officer=session.get('role') == 'field_officer',
+        my_assignments=sorted(mine, key=lambda a: a.created_at),
     )
 
 
@@ -192,6 +216,7 @@ def site_visits(site_id):
     site, stop = _visitable_site(site_id)
     if stop:
         return stop
+    can_assign = _can_review(site) and site.site_status != NOT_SUITABLE
     return render_template(
         'Sitevisits.html',
         active_page='site_visits',
@@ -199,10 +224,76 @@ def site_visits(site_id):
         req=site.source_request,
         proposed=proposed_area_for_site(site),
         visits=site.site_visits,
-        # a site found not suitable is closed: no new visits
-        can_record=_can_record(site) and site.site_status != NOT_SUITABLE,
+        my_assignment=_my_assignment(site),
+        assignments=site.visit_assignments,
+        can_assign=can_assign,
+        officers=officers_for(site.cenro) if can_assign else [],
+        visit_types=VISIT_TYPES,
+        today=_today().isoformat(),
         not_suitable=site.site_status == NOT_SUITABLE,
     )
+
+
+@visits_bp.route('/sites/<int:site_id>/assignments', methods=['POST'])
+@admin_required
+def assign_visit(site_id):
+    """An admin of the site's CENRO sends an officer on a visit. Used for
+    every visit after the first, which the create-site form assigns."""
+    site, stop = _visitable_site(site_id)
+    if stop:
+        return stop
+    back = redirect(url_for('visits.site_visits', site_id=site_id))
+    if not _can_review(site):
+        flash("Visits are assigned by the CENRO of the site.", "danger")
+        return back
+
+    raw_date = request.form.get('target_date')
+    target = _parse_date(raw_date)
+    if raw_date and target is None:
+        flash("Enter a valid target date.", "danger")
+        return back
+    officer_id = request.form.get('officer_id', type=int)
+    visit_type = request.form.get('visit_type')
+    problem = assignment_problem(site, officer_id, visit_type, target, _today())
+    if problem:
+        flash(problem, "danger")
+        return back
+
+    assignment = assign_officer(
+        site, officer_id, visit_type, target,
+        (request.form.get('note') or '').strip(), session.get('user_id'))
+    log_action('assign_site_visit', 'site', site.site_id,
+               f"{visit_type} for {site.site_name}")
+    db.session.commit()
+    email_assignment(assignment)
+    flash(f"{assignment.officer.username} was assigned and told.", "success")
+    return back
+
+
+@visits_bp.route('/assignments/<int:assignment_id>/cancel', methods=['POST'])
+@admin_required
+def cancel_assignment(assignment_id):
+    """Withdraw an open assignment, for example to send someone else."""
+    assignment = db.session.get(VisitAssignment, assignment_id)
+    if assignment is None or not _can_review(assignment.site):
+        flash("Visits are assigned by the CENRO of the site.", "danger")
+        return redirect(url_for('visits.index'))
+    back = redirect(url_for('visits.site_visits', site_id=assignment.site_id))
+    if assignment.status != 'Open':
+        flash("That assignment is no longer open.", "warning")
+        return back
+    assignment.status = 'Cancelled'
+    db.session.add(Notification(
+        user_id=assignment.officer_id, notification_type='Site Visit',
+        site_id=assignment.site_id, is_read=False,
+        message=(f"Your site visit to {assignment.site.site_name} was "
+                 "withdrawn by your CENRO."),
+    ))
+    log_action('cancel_site_visit_assignment', 'site', assignment.site_id,
+               f"{assignment.visit_type} for {assignment.site.site_name}")
+    db.session.commit()
+    flash("Assignment withdrawn. The officer was told.", "success")
+    return back
 
 
 @visits_bp.route('/sites/<int:site_id>/visits/new', methods=['GET', 'POST'])
@@ -211,13 +302,14 @@ def new_visit(site_id):
     site, stop = _visitable_site(site_id)
     if stop:
         return stop
-    if not _can_record(site):
-        flash("Only a field officer of this site's CENRO can record a "
-              "site visit.", "warning")
-        return redirect(url_for('visits.site_visits', site_id=site_id))
     if site.site_status == NOT_SUITABLE:
         flash("This site was found not suitable and is closed. The requester "
               "was offered another site.", "warning")
+        return redirect(url_for('visits.site_visits', site_id=site_id))
+    assignment = _my_assignment(site)
+    if assignment is None:
+        flash("Only a field officer assigned to this site can record a "
+              "visit. The site's CENRO assigns officers.", "warning")
         return redirect(url_for('visits.site_visits', site_id=site_id))
 
     def render(form, errors=()):
@@ -229,6 +321,7 @@ def new_visit(site_id):
             site=site,
             req=site.source_request,
             form=form,
+            assignment=assignment,
             visit_types=VISIT_TYPES,
             findings=FINDINGS,
             land_checks=LAND_CHECKS,
@@ -237,7 +330,7 @@ def new_visit(site_id):
 
     if request.method == 'GET':
         return render({'visit_date': _today().isoformat(),
-                       'visit_type': VISIT_TYPES[0]})
+                       'visit_type': assignment.visit_type})
 
     form = request.form
     errors = []
@@ -297,6 +390,8 @@ def new_visit(site_id):
     )
     db.session.add(visit)
     db.session.flush()          # visit_id for the photo file names
+    assignment.status = 'Done'
+    assignment.visit_id = visit.visit_id
 
     # --- photos: the same checks as a monitoring report ---
     from app.routes.dashboard import _load_barangay_geometry
@@ -442,7 +537,30 @@ def review_visit(visit_id):
     visit.reviewed_by = session.get('user_id')
     visit.date_reviewed = manila_now()
 
+    req = site.source_request
+    approved_request = False
+    if status == 'Rejected' and site.site_status != NOT_SUITABLE:
+        # the officer goes back: the assignment is open again
+        done = VisitAssignment.query.filter_by(visit_id=visit.visit_id).first()
+        if done is not None:
+            done.status = 'Open'
+            done.visit_id = None
+
     if status == 'Approved' and not not_suitable:
+        # The land was checked and found suitable, so the request goes ahead.
+        if req is not None and req.status != 'Approved':
+            req.status = 'Approved'
+            req.reviewed_by = session.get('user_id')
+            req.date_reviewed = manila_now()
+            approved_request = True
+            where = (f"{req.location.barangay}, {req.location.municipality}"
+                     if req.location else "your requested site")
+            db.session.add(Notification(
+                user_id=req.user_id, notification_type='Request Update',
+                is_read=False,
+                message=(f"Your reforestation request for {where} is now "
+                         "Approved, after a field visit."),
+            ))
         # the seedlings actually planted: what later survival rates need
         if visit.seedlings_planted:
             record = (ReforestationRecord.query.filter_by(site_id=site.site_id)
@@ -469,8 +587,13 @@ def review_visit(visit_id):
     if not_suitable:
         visit.suggested_location_id = suggested.location_id if suggested else None
         visit.suggestion_note = suggestion
-        site.site_status = NOT_SUITABLE
-        _decline_waiting_boundaries(site, visit)
+        close_site(site, f"site visit #{visit.visit_id} found the site not "
+                         "suitable for planting.", session.get('user_id'))
+        if req is not None:
+            req.status = 'Rejected'
+            req.review_note = _suggestion_words(suggested, suggestion)
+            req.reviewed_by = session.get('user_id')
+            req.date_reviewed = manila_now()
         _tell_requester_not_suitable(visit, site, suggested, suggestion)
 
     db.session.add(Notification(
@@ -486,30 +609,14 @@ def review_visit(visit_id):
 
     if not_suitable:
         _email_requester_not_suitable(visit, site, suggested, suggestion)
+    if approved_request:
+        from app.routes.admin import _email_request_status
+        _email_request_status(req, 'Approved', None)
+        flash(f"Request #{req.request_id} is now Approved.", "info")
 
     flash(f"Site visit {status.lower()}.", "success")
     return back
 
-
-
-
-def _decline_waiting_boundaries(site, visit):
-    """
-    A site found not suitable must never reach the public map, so every
-    boundary still waiting in the publication queue for it, from earlier
-    visits or monitoring reports, is declined with the reason.
-    """
-    from app.models import MonitoringReport
-    reason = (f"Declined automatically: site visit #{visit.visit_id} found "
-              "the site not suitable for planting.")
-    for model in (SiteVisit, MonitoringReport):
-        for source in model.query.filter(
-                model.site_id == site.site_id,
-                model.publication_status == 'Pending Publication'):
-            source.publication_status = 'Declined'
-            source.publication_note = reason
-            source.published_at = manila_now()
-            source.published_by = session.get('user_id')
 
 
 def _suggestion_words(suggested, suggestion):

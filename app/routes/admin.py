@@ -1,7 +1,7 @@
 # app/routes/admin.py
 from flask import Blueprint, render_template, request, flash, redirect, url_for, session, jsonify, current_app, send_file, g
 from app.extensions import db
-from app.models import User, Location, Organization, Site, TreeSpecie, ReforestationRecord, Request, Notification, MonitoringReport, MonitoringPlot, MonitoringPhoto,ReforestationRecord,Site,AuditLog, SiteVisit
+from app.models import User, Location, Organization, Site, TreeSpecie, ReforestationRecord, Request, Notification, MonitoringReport, MonitoringPlot, MonitoringPhoto,ReforestationRecord,Site,AuditLog, SiteVisit, VisitAssignment
 from app.utils.decorators import admin_required, superadmin_required
 from app.utils.audit import log_action
 import pandas as pd
@@ -16,6 +16,7 @@ from app.utils.jurisdiction import (
     scope_sites, scope_locations, allowed_municipalities,
     can_see_municipality, current_cenro, is_superadmin, scope_label,
     CENRO_LIST, CENRO_MUNICIPALITIES, place_key, boundary_publishers,
+    official_sites,
 )
 from app.utils.decorators import superadmin_required
 from app.services.monitoring import (
@@ -26,7 +27,11 @@ from app.services.request_site import boundary_dict, barangay_point, SITE_REQUES
 from app.services.export_report import build_sites_workbook
 from app.services.mailer import send_template, external_url, email_link
 from app.services.boundary_publication import (
-    apply_publication, publication_problem,
+    NOT_SUITABLE, apply_publication, publication_problem,
+)
+from app.services.visit_assignment import (
+    VISIT_TYPES, assign_officer, assignment_problem, close_site,
+    email_assignment, officers_for,
 )
 from app.utils.timeutil import manila_now
 from app.utils.security import password_problem
@@ -133,6 +138,15 @@ def create_field_officer():
                f"Created {role} '{username}'"
                + (f" for CENRO {cenro}" if cenro else " (province-wide)"))
     db.session.commit()
+
+    # The address is told an account exists. The temporary password is
+    # never emailed: the administrator hands it over directly.
+    send_template(
+        'account_created', to=email,
+        subject="Your PuNoObservation account was created",
+        name=username, username=username,
+        login_url=email_link('auth.login'),
+    )
 
     scope = f"CENRO {cenro}" if cenro else "province-wide (PENRO)"
     flash(f"Created {role} account '{username}' — {scope}.", "success")
@@ -469,6 +483,8 @@ def _user_work_counts(user):
         "site visits recorded": SiteVisit.query.filter_by(user_id=uid).count(),
         "site visits reviewed": SiteVisit.query.filter_by(reviewed_by=uid).count(),
         "site visit boundaries published": SiteVisit.query.filter_by(published_by=uid).count(),
+        "site visits assigned to them": VisitAssignment.query.filter_by(officer_id=uid).count(),
+        "site visits they assigned": VisitAssignment.query.filter_by(assigned_by=uid).count(),
     }
     return {k: v for k, v in counts.items() if v}
 
@@ -573,6 +589,9 @@ def reset_password(user_id):
 
     user.set_password(new_password)
     user.must_change_password = True
+    # the administrator vouches for the holder, so a sign-up whose
+    # verification email never arrived is not stuck
+    user.email_verified = True
     user.password_changed_at = None
     # A reset is also how an administrator unlocks a locked login.
     user.failed_login_count = 0
@@ -655,8 +674,8 @@ def export_sites_excel():
         status = None
 
     # --- sites: always worked out, because reports follow them ---
-    sites_query = scope_sites(
-        Site.query.join(Location, Site.location_id == Location.location_id))
+    sites_query = official_sites(scope_sites(
+        Site.query.join(Location, Site.location_id == Location.location_id)))
     if municipality:
         sites_query = sites_query.filter(Location.municipality == municipality)
     if years is not None:
@@ -1016,15 +1035,29 @@ def review_request(request_id):
         flash("Give a reason when rejecting a request.", "danger")
         return redirect(url_for('admin.review_requests'))
 
-    # A site made from this request is an official record. Moving the
-    # request away from Approved would leave that site with no approved
-    # request behind it.
-    if req.created_site is not None and new_status != 'Approved':
-        flash(f"Request #{req.request_id} already has a reforestation site "
-              f"({req.created_site.site_name}), so it must stay Approved.",
-              "danger")
-        return redirect(url_for('admin.review_request_detail',
-                                request_id=req.request_id))
+    # Once a site exists its status can still move, with three limits: a
+    # closed site stays closed, a published site is an official record so
+    # its request stays Approved, and a request cannot go back to Submitted.
+    # Rejecting while the site is still temporary closes the site.
+    site = req.created_site
+    if site is not None:
+        stop = None
+        if site.site_status == NOT_SUITABLE:
+            stop = (f"The site for request #{req.request_id} is closed, so "
+                    "its status can no longer change.")
+        elif site.boundary_published and new_status != 'Approved':
+            stop = (f"Request #{req.request_id} has an official site "
+                    f"({site.site_name}), so it must stay Approved.")
+        elif new_status == 'Submitted':
+            stop = (f"Request #{req.request_id} already has a site, so it "
+                    "cannot go back to Submitted.")
+        if stop:
+            flash(stop, "danger")
+            return redirect(url_for('admin.review_request_detail',
+                                    request_id=req.request_id))
+        if new_status == 'Rejected':
+            close_site(site, f"request #{req.request_id} was rejected.",
+                       session.get('user_id'))
 
     req.status = new_status
     req.review_note = note or None
@@ -1804,9 +1837,9 @@ def _request_for_site_creation(request_id):
         flash("That request is outside your CENRO jurisdiction.", "danger")
         return None, redirect(url_for('admin.review_requests'))
 
-    if req.status != 'Approved':
-        flash("Approve the request before creating a site from it.",
-              "warning")
+    if req.status not in ('Under Review', 'Approved'):
+        flash("Mark the request Under Review before creating a temporary "
+              "site from it.", "warning")
         return None, back
 
     if req.request_type not in SITE_REQUEST_TYPES:
@@ -1839,11 +1872,17 @@ def _parse_iso_date(value):
 @admin_required
 def create_site_from_request(request_id):
     """
-    Turn an approved request into a reforestation site.
+    Turn a request under review into a temporary site, and send an officer.
 
-    A person does this, not the Approve button, because a request does
-    not carry everything a site needs (a name, an organisation, a
-    planting date) and the site becomes an official record.
+    The site comes first so a field officer has something to visit: the
+    visit is what shows whether the request should be approved. A person
+    does this, not a status button, because a request does not carry
+    everything a site needs (a name, an organisation, a planting date).
+    Approved requests with no site yet can still use this.
+
+    The site stays temporary, hidden from the public and left out of the
+    official figures, until its request is approved and its boundary
+    published.
 
     Created:
       - a Site in the request's barangay, under this admin's CENRO,
@@ -1851,6 +1890,11 @@ def create_site_from_request(request_id):
       - a ReforestationRecord holding the target seedlings. Monitoring
         reports are refused for a site without one, so without it the
         site could never receive a GPS boundary.
+      - a VisitAssignment for the chosen field officer, who is notified
+        and emailed. Later visits are assigned from the site's visits page.
+
+    The organisation list works like sign-up: only organisations with a
+    site in this barangay, plus the requester's own. A new one can be typed.
 
     Not copied: the requester's drawn area. It stays on the request and
     shows on site pages as a proposed area until the province publishes a
@@ -1878,8 +1922,25 @@ def create_site_from_request(request_id):
         "target_seedlings": (str(req.estimated_seedlings)
                              if req.estimated_seedlings else ""),
         "date_planted": today.isoformat(),
-        "contact_person": req.requester.username if req.requester else "",
+        "contact_person": req.contact_name or (req.requester.username
+                                               if req.requester else ""),
+        "officer_id": "",
+        "visit_type": VISIT_TYPES[0],
+        "target_date": "",
+        "assignment_note": "",
     }
+
+    organizations = (
+        Organization.query
+        .join(Site, Site.organization_id == Organization.organization_id)
+        .filter(Site.location_id == req.location_id)
+        .distinct()
+        .order_by(Organization.organization_name)
+        .all()
+    )
+    if requester_org and requester_org not in organizations:
+        organizations.insert(0, requester_org)
+    officers = officers_for(current_cenro())
 
     def render(form):
         return render_template(
@@ -1887,10 +1948,13 @@ def create_site_from_request(request_id):
             active_page='review_requests',
             req=req,
             form=form,
-            organizations=Organization.query
-                .order_by(Organization.organization_name).all(),
+            organizations=organizations,
             requester_org=requester_org,
             zone_choices=SITE_ZONE_CHOICES,
+            officers=officers,
+            visit_types=VISIT_TYPES,
+            today=today.isoformat(),
+            attachments=req.attachments,
         )
 
     if request.method == 'GET':
@@ -1949,17 +2013,32 @@ def create_site_from_request(request_id):
             errors.append("The organisation name can be 150 characters "
                           "at most.")
     elif form['organization_id'].isdigit():
-        organization = db.session.get(Organization,
-                                      int(form['organization_id']))
+        organization = next(
+            (o for o in organizations
+             if o.organization_id == int(form['organization_id'])), None)
         if organization is None:
-            errors.append("That organisation no longer exists. Choose "
-                          "another.")
+            errors.append("Choose an organisation registered in this "
+                          "barangay, or type the name of a new one.")
     else:
         errors.append("Choose an organisation, or type the name of a new "
                       "one.")
 
     if len(form['contact_person']) > 120:
         errors.append("The contact person can be 120 characters at most.")
+
+    # the field officer sent to the site, checked against a site of this
+    # CENRO (it does not exist yet, so a stand-in carries the two fields read)
+    target_date = None
+    if form['target_date']:
+        target_date = _parse_iso_date(form['target_date'])
+        if target_date is None:
+            errors.append("Enter a valid target date for the visit.")
+    problem = assignment_problem(
+        Site(cenro=current_cenro(), site_status='Active'),
+        int(form['officer_id']) if form['officer_id'].isdigit() else None,
+        form['visit_type'], target_date, today)
+    if problem:
+        errors.append(problem)
 
     if errors:
         for e in errors:
@@ -2000,12 +2079,14 @@ def create_site_from_request(request_id):
         db.session.add(Notification(
             user_id=req.user_id,
             notification_type='Request Update',
-            message=(f"Your reforestation request for {where} is now a "
-                     f"reforestation site: {site_name}. It will appear on "
-                     "the public map once its surveyed boundary is "
-                     "published."),
+            message=(f"A field officer has been assigned to visit the site "
+                     f"for your reforestation request in {where}."),
             is_read=False,
         ))
+
+        assignment = assign_officer(
+            site, int(form['officer_id']), form['visit_type'], target_date,
+            form['assignment_note'], session.get('user_id'))
 
         log_action('create_site_from_request', 'site', site.site_id,
                    f"Created site '{site_name}' from request "
@@ -2020,8 +2101,9 @@ def create_site_from_request(request_id):
         return redirect(url_for('admin.review_request_detail',
                                 request_id=request_id))
 
-    flash(f"Site created: {site_name}. Field officers in CENRO "
-          f"{current_cenro()} can now submit monitoring reports for it.",
+    email_assignment(assignment)
+    flash(f"Temporary site created: {site_name}. "
+          f"{assignment.officer.username} was assigned the visit and told.",
           "success")
     return redirect(url_for('admin.review_request_detail',
                             request_id=request_id))

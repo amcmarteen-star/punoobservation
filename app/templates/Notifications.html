@@ -371,6 +371,8 @@
                     {% endif %}
                 {% elif n.visit_id %}
                     {% set details_url = url_for('visits.visit_detail', visit_id=n.visit_id) %}
+                {% elif n.site_id %}
+                    {% set details_url = url_for('visits.site_visits', site_id=n.site_id) %}
                 {% elif n.notification_type == 'New Request' %}
                     {% set details_url = url_for('admin.review_requests') %}
                 {% elif n.notification_type == 'Request Update' %}

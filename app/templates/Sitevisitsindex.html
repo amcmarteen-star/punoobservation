@@ -1,6 +1,7 @@
 {% extends "Base.html" %}
 {# visits.index: every site made from a request in the user's area, with
-   where it stands. The field officer's "Site Visits" sidebar link. #}
+   where it stands and who is sent. The "Site Visits" sidebar link of field
+   officers and CENRO admins. An officer's own open work comes first. #}
 {% block title %}Site Visits - PuNoObservation{% endblock %}
 {% block content_class %}page-content-wide{% endblock %}
 
@@ -14,6 +15,8 @@
   .sv-stage.s4 { background: var(--ok-bg); color: var(--ok-text); }
   .sv-stage.s5 { background: var(--danger-bg); color: var(--danger-strong); }
   .sv-actions { display: flex; flex-wrap: wrap; gap: 0.4rem; justify-content: flex-end; }
+  .sv-mine-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.5rem 1rem; padding: 0.7rem 0; border-bottom: 1px solid var(--line); }
+  .sv-mine-row:last-child { border-bottom: none; }
 </style>
 {% endblock %}
 
@@ -31,6 +34,26 @@
   </div>
   <a href="{{ url_for('dashboard.gis_map') }}" class="um-btn-ghost">Open the map</a>
 </div>
+
+{% if my_assignments %}
+<div class="um-panel">
+  <div class="um-panel-head"><h3>Assigned to you</h3><span class="um-count-pill">{{ my_assignments|length }}</span></div>
+  {% for a in my_assignments %}
+  <div class="sv-mine-row">
+    <div>
+      <strong>{{ a.site.site_name }}</strong> &middot; {{ a.visit_type }}
+      <div class="text-secondary small">
+        {{ a.site.location.barangay }}, {{ a.site.location.municipality }}{% if a.target_date %}. Visit by {{ a.target_date.strftime('%d %b %Y') }}{% endif %}
+      </div>
+    </div>
+    <div class="sv-actions">
+      <a href="{{ url_for('visits.site_visits', site_id=a.site_id) }}" class="um-btn-ghost">Details</a>
+      <a href="{{ url_for('visits.new_visit', site_id=a.site_id) }}" class="um-btn-add">Record visit</a>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
 
 <div class="um-table-card">
   {% if rows %}
@@ -53,7 +76,11 @@
           <td data-label="Site"><strong>{{ s.site_name }}</strong>
             <div class="text-secondary small">From request #{{ s.source_request_id }}</div></td>
           <td data-label="Location">{{ s.location.barangay }}, {{ s.location.municipality }}</td>
-          <td data-label="Where it stands"><span class="sv-stage s{{ r.order }}">{{ r.stage }}</span></td>
+          <td data-label="Where it stands"><span class="sv-stage s{{ r.order }}">{{ r.stage }}</span>
+            {% if r.open %}
+            <div class="text-secondary small">{{ r.open|map(attribute='officer.username')|join(', ') }}</div>
+            {% endif %}
+          </td>
           <td data-label="Visits" class="num-cell">{{ r.count }}</td>
           <td data-label="Latest visit">
             {% if r.latest %}
@@ -66,9 +93,8 @@
           <td>
             <div class="sv-actions">
               <a href="{{ url_for('visits.site_visits', site_id=s.site_id) }}" class="um-btn-ghost">View</a>
-              {# hidden only once a site is found not suitable; a published
-                 site may still need its planting confirmed #}
-              {% if is_officer and r.order != 5 %}
+              {# only the officer sent there can record a visit #}
+              {% if r.mine %}
               <a href="{{ url_for('visits.new_visit', site_id=s.site_id) }}" class="um-btn-add">Record visit</a>
               {% endif %}
             </div>
@@ -83,8 +109,8 @@
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/></svg>
     <strong>No sites to visit</strong>
     <p>
-      A site appears here once your CENRO approves a New Planting Site
-      request and creates the site from it.
+      A site appears here once your CENRO creates a temporary site from a
+      New Planting Site request.
     </p>
   </div>
   {% endif %}

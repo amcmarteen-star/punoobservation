@@ -466,7 +466,7 @@
             <input type="radio" name="status" value="Approved">
             <span class="rd-option-box">
               <span class="rd-option-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></span>
-              <span class="rd-option-text"><strong>Approve</strong><small>A site can then be created</small></span>
+              <span class="rd-option-text"><strong>Approve</strong><small>{% if req.request_type == 'New Planting Site' %}The site can be published once it has a boundary{% else %}The request is accepted{% endif %}</small></span>
             </span>
           </label>
           <label class="rd-option is-reject">
@@ -519,22 +519,32 @@
             GIS map.
           {% endif %}
         </p>
+        {% set open_visits = created_site.visit_assignments|selectattr('status', 'equalto', 'Open')|list %}
+        {% if open_visits %}
+        <p class="rd-note" style="margin:0.75rem 0 0; font-size:0.8rem;">
+          Assigned to visit: {{ open_visits|map(attribute='officer.username')|join(', ') }}.
+        </p>
+        {% endif %}
         <div class="rd-actions">
-          <a href="{{ url_for('dashboard.Reforestation_sites') }}" class="rd-btn-ghost">Open Reforestation Sites</a>
+          <a href="{{ url_for('visits.site_visits', site_id=created_site.site_id) }}" class="rd-btn-ghost">Site visits and assignments</a>
         </div>
 
-      {% elif req.status == 'Approved' %}
-        <p class="rd-note">This request is approved. Create the reforestation site so field officers can start monitoring it.</p>
+      {% elif req.status in ['Under Review', 'Approved'] %}
+        <p class="rd-note">Create a temporary site and send a field officer to check the land. You decide on this request after their visit.</p>
         <a href="{{ url_for('admin.create_site_from_request', request_id=req.request_id) }}"
            class="rd-btn" style="width:100%;">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
-          Create site from this request
+          Create temporary site and assign an officer
         </a>
 
       {% else %}
         <div class="rd-empty" style="padding:0.75rem 0.5rem;">
           <span class="rd-empty-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span>
-          <p>Approve the request first. A site can then be created from it.</p>
+          {% if req.status == 'Rejected' %}
+          <p>This request was rejected, so no site can be made from it.</p>
+          {% else %}
+          <p>Mark the request Under Review first. You can then create a temporary site and assign an officer.</p>
+          {% endif %}
         </div>
       {% endif %}
     </section>

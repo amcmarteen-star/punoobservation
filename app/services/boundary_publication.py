@@ -28,6 +28,7 @@ def publication_problem(source, action):
     Both publish routes call this before apply_publication(), so a stale
     tab or a hand-made form cannot:
       - publish the boundary of a site found not suitable,
+      - publish the boundary of a site whose request is not approved,
       - publish or decline a boundary that is already the published one,
       - withdraw a boundary that is not the published one, which would
         hide the site's real boundary from the map.
@@ -36,6 +37,10 @@ def publication_problem(source, action):
     published = source.publication_status == 'Published'
     if action == 'publish' and site.site_status == NOT_SUITABLE:
         return ("This site was found not suitable for planting, so its "
+                "boundary cannot be published.")
+    req = site.source_request
+    if action == 'publish' and req is not None and req.status != 'Approved':
+        return ("The CENRO has not approved this site's request yet, so its "
                 "boundary cannot be published.")
     if action in ('publish', 'decline') and published:
         return "This boundary is already the published one."

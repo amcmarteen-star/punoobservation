@@ -20,7 +20,7 @@ import re
 from flask import session
 from sqlalchemy import or_
 
-from app.models import Site, Location, User
+from app.models import Site, Location, Request, User
 
 
 # Which municipalities belong to which CENRO.
@@ -143,6 +143,20 @@ def scope_sites(query):
             Site.boundary_published.is_(True),
         ))
     return query
+
+
+def official_sites(query):
+    """
+    Leave out sites that are not real records yet, for official figures
+    and exports: a site whose request is still under review, and a site
+    closed as not suitable. Imported DENR sites have no request and stay.
+    The query must select from Site.
+    """
+    return query.filter(
+        Site.site_status != 'Not Suitable',
+        or_(Site.source_request_id.is_(None),
+            Site.source_request.has(Request.status == 'Approved')),
+    )
 
 
 def scope_locations(query):

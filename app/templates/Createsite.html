@@ -1,383 +1,215 @@
 {% extends "Base.html" %}
-{% block title %}Create Site from Request #{{ req.request_id }} - PuNoObservation{% endblock %}
+{# admin.create_site_from_request: a CENRO admin turns a request under
+   review into a temporary site and sends a field officer. Built from the
+   same panels as the monitoring report form. On an error the route renders
+   this again with the values sent, in `form`. #}
+{% block title %}Create Temporary Site - PuNoObservation{% endblock %}
 {% set active_page = 'review_requests' %}
 {% block content_class %}page-content-wide{% endblock %}
 
 {% block extra_head %}
 <style>
-  .cs-panel {
-    background: var(--surface-1);
-    border: 1px solid var(--line);
-    border-radius: 10px;
-    box-shadow: var(--sh-sm);
-    padding: 1.15rem 1.25rem;
-    margin-bottom: 1.25rem;
+  #createSiteForm .um-field-row + .um-field-row { margin-top: 1rem; }
+  .cs-layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 21rem); gap: 1.25rem; align-items: start; }
+  .cs-side { position: sticky; top: 1rem; }
+  .cs-facts { margin: 0; }
+  .cs-facts div { display: flex; justify-content: space-between; gap: 1rem; padding: 0.5rem 0; border-bottom: 1px solid var(--line); }
+  .cs-facts div:last-child { border-bottom: none; }
+  .cs-facts dt { font-size: 0.82rem; font-weight: 500; color: var(--text-2); }
+  .cs-facts dd { margin: 0; font-size: 0.88rem; font-weight: 600; text-align: right; color: var(--text-heading); overflow-wrap: anywhere; }
+  .cs-docs { list-style: none; margin: 0; padding: 0; }
+  .cs-docs li { padding: 0.35rem 0; font-size: 0.88rem; overflow-wrap: anywhere; }
+  .cs-docs a { color: var(--brand-text); font-weight: 600; }
+  .cs-or { display: flex; align-items: center; gap: 0.75rem; margin: 0.85rem 0 0; font-size: 0.78rem; color: var(--text-2); }
+  .cs-or::before, .cs-or::after { content: ""; flex: 1; border-top: 1px solid var(--line); }
+  .cs-actions { display: flex; justify-content: flex-end; gap: 0.5rem; margin-bottom: 1.5rem; }
+  .cs-actions .um-btn-cancel, .cs-actions .um-btn-confirm { width: auto; flex: none; min-width: 8rem; text-align: center; text-decoration: none; }
+  @media (max-width: 1000px) {
+    .cs-layout { grid-template-columns: minmax(0, 1fr); }
+    .cs-side { position: static; order: -1; }
   }
-
-  .cs-panel h5 {
-    margin: 0 0 0.9rem;
-    padding-bottom: 0.5rem;
-    border-bottom: 1px solid var(--line);
-    font-size: 1rem;
-    font-weight: 700;
-    color: var(--brand-deep-text);
-  }
-
-  .cs-line {
-    display: flex;
-    justify-content: space-between;
-    gap: 1rem;
-    padding: 0.4rem 0;
-    border-bottom: 1px solid var(--surface-3);
-    font-size: 0.88rem;
-  }
-
-  .cs-line:last-child {
-    border-bottom: none;
-  }
-
-  .cs-line .lbl {
-    color: var(--text-2);
-  }
-
-  .cs-line .val {
-    font-weight: 600;
-    text-align: right;
-  }
-
-  .cs-note {
-    margin-top: 0.9rem;
-    padding: 0.7rem 0.9rem;
-    border-left: 3px solid #16a34a;
-    border-radius: 0 8px 8px 0;
-    background: var(--surface-2);
-    font-size: 0.82rem;
-    line-height: 1.6;
-    color: var(--text-strong);
-  }
-
-  .cs-help {
-    margin-top: 0.3rem;
-    font-size: 0.78rem;
-    line-height: 1.5;
-    color: var(--text-2);
-  }
-
-  .cs-req {
-    color: var(--danger-strong);
-  }
-
-  .cs-back {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.35rem;
-    font-size: 0.82rem;
-    font-weight: 600;
-    color: var(--text-2);
-    text-decoration: none;
-  }
-
-  .cs-back:hover {
-    color: var(--brand-text);
-  }
-
-  .cs-back svg {
-    width: 1rem;
-    height: 1rem;
-  }
-
-  /* 12 columns, the same widths the Bootstrap classes here were asking for.
-     This project does not load Bootstrap, so they stacked in one column. */
-  .cs-form {
-    display: grid;
-    grid-template-columns: repeat(12, minmax(0, 1fr));
-    gap: 1.1rem 1rem;
-  }
-
-  .cs-col-4 { grid-column: span 4; }
-  .cs-col-6 { grid-column: span 6; }
-  .cs-col-8 { grid-column: span 8; }
-
-  .cs-form .form-control,
-  .cs-form .form-select {
-    min-height: 2.625rem;
-  }
-
-  /* Matched to .form-control so the dropdowns sit level with the inputs. */
-  .cs-form .form-select {
-    width: 100%;
-    padding: 0.6rem 2.25rem 0.6rem 0.8rem;
-    border: 1px solid var(--line);
-    border-radius: 8px;
-    font-size: 0.875rem;
-    font-family: inherit;
-    color: var(--text-strong);
-    background-color: var(--surface-1);
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: right 0.7rem center;
-    background-size: 1rem;
-    appearance: none;
-    cursor: pointer;
-    outline: none;
-    transition: border-color 0.15s ease, box-shadow 0.15s ease;
-  }
-
-  .cs-form .form-select:focus {
-    border-color: var(--brand-text);
-    box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.12);
-  }
-
-  .cs-actions {
-    grid-column: 1 / -1;
-    display: flex;
-    justify-content: flex-end;
-    gap: 0.5rem;
-    margin-top: 0.25rem;
-    padding-top: 1rem;
-    border-top: 1px solid var(--line);
-  }
-
-  .cs-btn,
-  .cs-btn-ghost {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0.6rem 1rem;
-    border-radius: 9px;
-    font: inherit;
-    font-size: 0.86rem;
-    font-weight: 600;
-    text-decoration: none;
-    cursor: pointer;
-    transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease;
-  }
-
-  .cs-btn {
-    border: 1px solid transparent;
-    background: var(--brand-solid);
-    color: #fff;
-  }
-
-  .cs-btn:hover {
-    background: var(--ok-solid);
-    color: #fff;
-  }
-
-  .cs-btn-ghost {
-    border: 1px solid var(--line-strong);
-    background: var(--surface-1);
-    color: var(--brand-text);
-  }
-
-  .cs-btn-ghost:hover {
-    border-color: var(--ok-solid);
-    background: var(--ok-bg);
-    color: var(--brand-text);
-  }
-
-  @media (max-width: 767px) {
-    .cs-col-4,
-    .cs-col-6,
-    .cs-col-8 {
-      grid-column: 1 / -1;
-    }
-
-    .cs-actions > * {
-      flex: 1;
-    }
+  @media (max-width: 560px) {
+    .cs-actions .um-btn-cancel, .cs-actions .um-btn-confirm { flex: 1; min-width: 0; }
   }
 </style>
 {% endblock %}
 
 {% block content %}
-
-<a href="{{ url_for('admin.review_request_detail', request_id=req.request_id) }}"
-   class="cs-back">
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
-  Back to request #{{ req.request_id }}
-</a>
-
-<div class="page-header mt-2 mb-4">
-  <h2 class="fw-bold text-dark">Create site from request #{{ req.request_id }}</h2>
-  <p class="text-secondary mb-0">
-    The site is added under CENRO {{ session.cenro }}. Field officers can
-    submit monitoring reports for it as soon as it is saved.
-  </p>
+<div class="um-header">
+  <div>
+    <div class="um-title-row"><h2>Create Temporary Site</h2></div>
+    <p class="um-subtitle">
+      From request #{{ req.request_id }}. The site stays hidden from the public
+      until the request is approved and its boundary is published.
+    </p>
+  </div>
+  <a href="{{ url_for('admin.review_request_detail', request_id=req.request_id) }}" class="um-btn-ghost">Back to the request</a>
 </div>
 
-<!-- ===== FROM THE REQUEST ===== -->
-<div class="cs-panel">
-  <h5>From the request</h5>
-
-  <div class="cs-line">
-    <span class="lbl">Type</span>
-    <span class="val">{{ req.request_type }}</span>
-  </div>
-  <div class="cs-line">
-    <span class="lbl">Barangay</span>
-    <span class="val">{{ req.location.barangay }}, {{ req.location.municipality }}</span>
-  </div>
-  <div class="cs-line">
-    <span class="lbl">Requester</span>
-    <span class="val">{{ req.requester.username if req.requester else 'unknown' }}</span>
-  </div>
-  <div class="cs-line">
-    <span class="lbl">Proposed area</span>
-    <span class="val">
-      {% if req.proposed_area_ha %}{{ req.proposed_area_ha }} ha
-        {% if req.boundary_area_ha %}(measured from the drawn area){% else %}(typed by the requester){% endif %}
-      {% else %}not stated{% endif %}
-    </span>
-  </div>
-  <div class="cs-line">
-    <span class="lbl">Estimated seedlings</span>
-    <span class="val">
-      {% if req.estimated_seedlings %}{{ "{:,}".format(req.estimated_seedlings) }}
-        ({{ "{:,}".format(req.planting_density_per_ha) }} per ha)
-      {% else %}not estimated{% endif %}
-    </span>
-  </div>
-  <div class="cs-line">
-    <span class="lbl">Land</span>
-    <span class="val">
-      {{ req.land_ownership or 'ownership not stated' }} &middot;
-      {{ req.land_cover or 'cover not stated' }}
-    </span>
-  </div>
-
-  <div class="cs-note">
-    {% if req.boundary_geojson %}
-      <strong>The drawn area is not copied as the site boundary.</strong>
-      It stays on this request and shows on the site as a proposed area
-      until the province publishes a GPS boundary. It never appears on the
-      GIS map.
-    {% elif req.latitude is not none %}
-      The requester dropped a pin but did not draw an area. The pin shows
-      on the site as a guide until the province publishes a GPS boundary.
-    {% else %}
-      The requester did not mark the site on the map. The site's boundary
-      will come from a field officer's GPS corner photos.
-    {% endif %}
-  </div>
-</div>
-
-<!-- ===== THE NEW SITE ===== -->
-<div class="cs-panel">
-  <h5>The new site</h5>
-
-  <form method="POST" class="cs-form">
-    <div class="cs-col-8">
-      <label for="site_name" class="form-label fw-semibold">
-        Site name <span class="cs-req">*</span>
-      </label>
-      <input type="text" name="site_name" id="site_name" class="form-control"
-             maxlength="150" required value="{{ form.site_name }}">
+<div class="cs-layout">
+  <form method="POST" id="createSiteForm">
+    <!-- 1. the site -->
+    <div class="um-panel">
+      <div class="um-panel-head"><span class="um-step-num">1</span><h3>The site</h3></div>
+      <div class="um-field-row">
+        <div class="um-field">
+          <label for="site_name">Site name *</label>
+          <input type="text" name="site_name" id="site_name" maxlength="150" required value="{{ form.site_name }}">
+        </div>
+        <div class="um-field">
+          <label for="site_code">Site code</label>
+          <input type="text" name="site_code" id="site_code" maxlength="50" value="{{ form.site_code }}"
+                 placeholder="Optional, must be unique">
+        </div>
+      </div>
+      <div class="um-field-row">
+        <div class="um-field">
+          <label for="area_size_ha">Planned area (ha) *</label>
+          <input type="number" step="0.01" min="0.01" name="area_size_ha" id="area_size_ha" required value="{{ form.area_size_ha }}">
+          <p class="um-field-hint">A GPS boundary later is compared against this.</p>
+        </div>
+        <div class="um-field">
+          <label for="target_seedlings">Target seedlings *</label>
+          <input type="number" step="1" min="1" name="target_seedlings" id="target_seedlings" required value="{{ form.target_seedlings }}">
+          <p class="um-field-hint">Filled from the requester's estimate when there is one.</p>
+        </div>
+      </div>
+      <div class="um-field-row">
+        <div class="um-field">
+          <label for="zone_type">Zone</label>
+          <select name="zone_type" id="zone_type">
+            <option value="">Not set</option>
+            {% for z in zone_choices %}
+            <option value="{{ z }}" {% if form.zone_type == z %}selected{% endif %}>{{ z }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="um-field">
+          <label for="contact_person">Contact person</label>
+          <input type="text" name="contact_person" id="contact_person" maxlength="120" value="{{ form.contact_person }}">
+        </div>
+      </div>
+      <div class="um-field-row">
+        <div class="um-field">
+          <label for="date_established">Date established *</label>
+          <input type="date" name="date_established" id="date_established" required value="{{ form.date_established }}">
+        </div>
+        <div class="um-field">
+          <label for="date_planted">Planned planting date *</label>
+          <input type="date" name="date_planted" id="date_planted" required value="{{ form.date_planted }}">
+        </div>
+      </div>
     </div>
 
-    <div class="cs-col-4">
-      <label for="site_code" class="form-label fw-semibold">Site code</label>
-      <input type="text" name="site_code" id="site_code" class="form-control"
-             maxlength="50" value="{{ form.site_code }}"
-             placeholder="Optional, must be unique">
-    </div>
-
-    <div class="cs-col-6">
-      <label for="organization_id" class="form-label fw-semibold">
-        Organisation <span class="cs-req">*</span>
-      </label>
-      <select name="organization_id" id="organization_id" class="form-select">
-        <option value="">Choose an organisation</option>
-        {% for org in organizations %}
-          <option value="{{ org.organization_id }}"
-                  {% if form.organization_id == org.organization_id|string %}selected{% endif %}>
-            {{ org.organization_name }}
+    <!-- 2. organisation -->
+    <div class="um-panel">
+      <div class="um-panel-head"><span class="um-step-num">2</span><h3>Organization</h3></div>
+      <div class="um-field">
+        <label for="organization_id">Organization in {{ req.location.barangay }}</label>
+        <select name="organization_id" id="organization_id">
+          <option value="">{{ 'Choose an organization' if organizations else 'None registered in this barangay yet' }}</option>
+          {% for org in organizations %}
+          <option value="{{ org.organization_id }}" {% if form.organization_id == org.organization_id|string %}selected{% endif %}>
+            {{ org.organization_name }}{% if org.organization_type %} ({{ org.organization_type }}){% endif %}
           </option>
-        {% endfor %}
-      </select>
-      <div class="cs-help">
-        {% if requester_org %}
-          The requester belongs to {{ requester_org.organization_name }}, so it
-          is chosen for you.
-        {% else %}
-          The requester has no organisation on file.
-        {% endif %}
+          {% endfor %}
+        </select>
+        <p class="um-field-hint">
+          Only organizations in this barangay are listed, as on the sign-up page.
+          {% if requester_org %}The requester belongs to {{ requester_org.organization_name }}, so it is chosen for you.{% endif %}
+        </p>
+      </div>
+      <p class="cs-or">or</p>
+      <div class="um-field">
+        <label for="new_organization">Add a new organization</label>
+        <input type="text" name="new_organization" id="new_organization" maxlength="150"
+               value="{{ form.new_organization }}" placeholder="e.g. Bacag Farmers Association">
+        <p class="um-field-hint">If you type a name here, it is used instead of the list.</p>
       </div>
     </div>
 
-    <div class="cs-col-6">
-      <label for="new_organization" class="form-label fw-semibold">
-        Or add a new organisation
-      </label>
-      <input type="text" name="new_organization" id="new_organization"
-             class="form-control" maxlength="150"
-             value="{{ form.new_organization }}"
-             placeholder="e.g. Bacag Farmers Association">
-      <div class="cs-help">If you type a name here, it is used instead of the list.</div>
-    </div>
-
-    <div class="cs-col-4">
-      <label for="area_size_ha" class="form-label fw-semibold">
-        Area (ha) <span class="cs-req">*</span>
-      </label>
-      <input type="number" step="0.01" min="0.01" name="area_size_ha"
-             id="area_size_ha" class="form-control" required
-             value="{{ form.area_size_ha }}">
-      <div class="cs-help">
-        The planned area. A GPS boundary later is stored separately and
-        compared against this.
+    <!-- 3. the visit -->
+    <div class="um-panel">
+      <div class="um-panel-head"><span class="um-step-num">3</span><h3>Assign the site visit</h3></div>
+      {% if officers %}
+      <div class="um-field-row">
+        <div class="um-field">
+          <label for="officer_id">Field officer *</label>
+          <select name="officer_id" id="officer_id" required>
+            <option value="">Choose an officer</option>
+            {% for o in officers %}
+            <option value="{{ o.user_id }}" {% if form.officer_id == o.user_id|string %}selected{% endif %}>{{ o.username }}</option>
+            {% endfor %}
+          </select>
+          <p class="um-field-hint">They get a notification and an email, and can then see this request and its documents.</p>
+        </div>
+        <div class="um-field">
+          <label for="visit_type">Type of visit *</label>
+          <select name="visit_type" id="visit_type" required>
+            {% for t in visit_types %}
+            <option value="{{ t }}" {% if form.visit_type == t %}selected{% endif %}>{{ t }}</option>
+            {% endfor %}
+          </select>
+        </div>
       </div>
-    </div>
-
-    <div class="cs-col-4">
-      <label for="target_seedlings" class="form-label fw-semibold">
-        Target seedlings <span class="cs-req">*</span>
-      </label>
-      <input type="number" step="1" min="1" name="target_seedlings"
-             id="target_seedlings" class="form-control" required
-             value="{{ form.target_seedlings }}">
-      <div class="cs-help">Pre-filled from the requester's estimate when there is one.</div>
-    </div>
-
-    <div class="cs-col-4">
-      <label for="zone_type" class="form-label fw-semibold">Zone</label>
-      <select name="zone_type" id="zone_type" class="form-select">
-        <option value="">Not set</option>
-        {% for z in zone_choices %}
-          <option value="{{ z }}" {% if form.zone_type == z %}selected{% endif %}>{{ z }}</option>
-        {% endfor %}
-      </select>
-    </div>
-
-    <div class="cs-col-4">
-      <label for="date_established" class="form-label fw-semibold">
-        Date established <span class="cs-req">*</span>
-      </label>
-      <input type="date" name="date_established" id="date_established"
-             class="form-control" required value="{{ form.date_established }}">
-    </div>
-
-    <div class="cs-col-4">
-      <label for="date_planted" class="form-label fw-semibold">
-        Planned planting date <span class="cs-req">*</span>
-      </label>
-      <input type="date" name="date_planted" id="date_planted"
-             class="form-control" required value="{{ form.date_planted }}">
-    </div>
-
-    <div class="cs-col-4">
-      <label for="contact_person" class="form-label fw-semibold">Contact person</label>
-      <input type="text" name="contact_person" id="contact_person"
-             class="form-control" maxlength="120"
-             value="{{ form.contact_person }}">
+      <div class="um-field">
+        <label for="target_date">Visit by</label>
+        <input type="date" name="target_date" id="target_date" min="{{ today }}" value="{{ form.target_date }}">
+      </div>
+      <div class="um-field">
+        <label for="assignment_note">Note to the officer</label>
+        <textarea name="assignment_note" id="assignment_note" rows="2"
+                  placeholder="What to look out for, who to meet.">{{ form.assignment_note }}</textarea>
+      </div>
+      {% else %}
+      <div class="um-note um-note-warn mb-0">
+        <strong>No field officer in CENRO {{ session.cenro }}.</strong>
+        A site needs an officer to visit it. Ask a system administrator to add one.
+      </div>
+      {% endif %}
     </div>
 
     <div class="cs-actions">
-      <a href="{{ url_for('admin.review_request_detail', request_id=req.request_id) }}"
-         class="cs-btn-ghost">Cancel</a>
-      <button type="submit" class="cs-btn">Create site</button>
+      <a href="{{ url_for('admin.review_request_detail', request_id=req.request_id) }}" class="um-btn-cancel">Cancel</a>
+      <button type="submit" class="um-btn-confirm" {% if not officers %}disabled{% endif %}>Create and assign</button>
     </div>
   </form>
-</div>
 
+  <!-- the request, for reference while filling in the form -->
+  <aside class="cs-side">
+    <div class="um-panel">
+      <div class="um-panel-head"><h3>From the request</h3></div>
+      <dl class="cs-facts">
+        <div><dt>Type</dt><dd>{{ req.request_type }}</dd></div>
+        <div><dt>Status</dt><dd>{{ req.status }}</dd></div>
+        <div><dt>Barangay</dt><dd>{{ req.location.barangay }}, {{ req.location.municipality }}</dd></div>
+        <div><dt>Requester</dt><dd>{{ req.requester.username if req.requester else 'unknown' }}</dd></div>
+        <div><dt>Proposed area</dt><dd>{% if req.proposed_area_ha %}{{ req.proposed_area_ha }} ha{% else %}not stated{% endif %}</dd></div>
+        <div><dt>Estimated seedlings</dt><dd>{% if req.estimated_seedlings %}{{ "{:,}".format(req.estimated_seedlings) }}{% else %}not estimated{% endif %}</dd></div>
+        <div><dt>Ownership</dt><dd>{{ req.land_ownership or 'not stated' }}</dd></div>
+        <div><dt>On the land</dt><dd>{{ req.land_cover or 'not stated' }}</dd></div>
+      </dl>
+      {% if attachments %}
+      <p class="um-field-hint mt-3 mb-0">Supporting documents</p>
+      <ul class="cs-docs">
+        {% for a in attachments %}
+        <li><a href="{{ url_for('static', filename=a.file_url) }}" target="_blank" rel="noopener">{{ a.original_name or 'document' }}</a></li>
+        {% endfor %}
+      </ul>
+      {% endif %}
+      <div class="um-note mt-3 mb-0">
+        {% if req.boundary_geojson %}
+          The requester's drawn area is not the site boundary. The boundary comes
+          from the officer's GPS corner photos.
+        {% elif req.latitude is not none %}
+          The requester dropped a pin but drew no area. The boundary comes from
+          the officer's GPS corner photos.
+        {% else %}
+          The requester did not mark the site. The boundary comes from the
+          officer's GPS corner photos.
+        {% endif %}
+      </div>
+    </div>
+  </aside>
+</div>
 {% endblock %}

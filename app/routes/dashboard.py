@@ -45,9 +45,10 @@ from app.services.monitoring import (
     DENR_THRESHOLD, survival_text, inspect_photo,
     extract_photo_metadata, check_timestamp, compute_survival,
     build_boundary, point_in_geojson, haversine_m, save_photo, save_request_file,
+    is_request_document,
 )
 from app.utils.jurisdiction import (
-    scope_sites, scope_locations, allowed_municipalities,
+    scope_sites, scope_locations, allowed_municipalities, official_sites,
     can_see_municipality, canonical_municipality,
     current_cenro, is_superadmin, scope_label,
     CENRO_LIST, CENRO_MUNICIPALITIES,
@@ -419,6 +420,7 @@ def api_notifications():
                 "is_read": n.is_read,
                 "report_id": n.report_id,
                 "visit_id": n.visit_id,
+                "site_id": n.site_id,
                 "created_at": (
                     n.created_at.strftime('%b %d, %I:%M %p')
                     if n.created_at else ""
@@ -840,6 +842,9 @@ def api_sites_geo():
     grouped = {}
 
     for loc, site in rows:
+        # closed: the requester was offered another site
+        if site.site_status == 'Not Suitable':
+            continue
         kind = ("proposed"
                 if site.source_request_id and not site.boundary_published
                 else "official")
@@ -974,7 +979,7 @@ def api_heatmap():
         db.session.query(Location, Site)
         .join(Site, Site.location_id == Location.location_id)
     )
-    rows = scope_sites(q).all()
+    rows = official_sites(scope_sites(q)).all()
 
     planted = dict(
         db.session.query(
@@ -1170,6 +1175,14 @@ def requests_page():
             max_files=current_app.config['MAX_REQUEST_FILES'])
         if problem:
             flash(problem, "danger")
+            return redirect(url_for('dashboard.requests_page'))
+
+        # At least one document the CENRO can open is required. Checked by
+        # type too, because a file of another type would not be attached.
+        if not any(is_request_document(f)
+                   for f in request.files.getlist('attachments')):
+            flash("Attach your Indicative Management Plan or another "
+                  "supporting document, as an image or PDF.", "danger")
             return redirect(url_for('dashboard.requests_page'))
 
         # --- adoption: the existing site being taken on ---
@@ -1442,6 +1455,13 @@ def cancel_request(request_id):
             "longer be cancelled.",
             "warning",
         )
+        return redirect(back)
+
+    # A site points at this request, and an officer may be on the way.
+    if req.created_site is not None:
+        flash("A field visit is already arranged for this request, so it can "
+              "no longer be cancelled here. Please contact your CENRO.",
+              "warning")
         return redirect(back)
 
     where = (
@@ -2059,7 +2079,8 @@ def api_dashboard_analytics():
         db.session.query(Site, Location)
         .join(Location, Site.location_id == Location.location_id)
     )
-    rows = scope_sites(q).all()
+    # official figures: no site still under review or closed
+    rows = official_sites(scope_sites(q)).all()
 
     if not rows:
         return jsonify({

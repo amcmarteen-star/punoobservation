@@ -40,6 +40,15 @@
   <a href="{{ url_for('visits.site_visits', site_id=site.site_id) }}" class="um-btn-ghost">Back to the visits</a>
 </div>
 
+{% if assignment %}
+<div class="um-note mb-3">
+  <strong>Assigned: {{ assignment.visit_type }}.</strong>
+  {% if assignment.assigner %}From {{ assignment.assigner.username }}.{% endif %}
+  {% if assignment.target_date %}Visit by {{ assignment.target_date.strftime('%d %b %Y') }}.{% endif %}
+  {% if assignment.note %}<br>{{ assignment.note }}{% endif %}
+</div>
+{% endif %}
+
 <form method="POST" action="{{ url_for('visits.new_visit', site_id=site.site_id) }}"
       enctype="multipart/form-data" id="visitForm"
       data-upload-form data-upload-title="Saving site visit"

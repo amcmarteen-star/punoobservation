@@ -1,0 +1,20 @@
+{# Sent when a CENRO admin assigns an officer (services/visit_assignment.py). #}
+{% extends 'email/_layout.html' %}
+{% set button_url = visit_url %}
+{% set button_text = 'Open the site' %}
+{% block heading %}You have a site visit{% endblock %}
+{% block body %}
+<p style="margin:0 0 16px;">Hello {{ name }},</p>
+<p style="margin:0 0 16px;">{{ assigned_by }} assigned you a site visit.</p>
+<table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 0 16px; font-size:15px; color:#2f4239;">
+  <tr><td style="padding:2px 16px 2px 0; color:#5f6f66;">Site</td><td>{{ site_name }}</td></tr>
+  <tr><td style="padding:2px 16px 2px 0; color:#5f6f66;">Location</td><td>{{ where }}</td></tr>
+  <tr><td style="padding:2px 16px 2px 0; color:#5f6f66;">Visit</td><td><strong>{{ visit_type }}</strong></td></tr>
+  {% if target_date %}<tr><td style="padding:2px 16px 2px 0; color:#5f6f66;">Visit by</td><td>{{ target_date }}</td></tr>{% endif %}
+</table>
+{% if note %}
+<p style="margin:0 0 4px; color:#5f6f66; font-size:14px;">Note:</p>
+<p style="margin:0 0 16px; padding:12px 14px; background-color:#f7faf8; border-left:4px solid #15803d; white-space:pre-line;">{{ note }}</p>
+{% endif %}
+<p style="margin:0;">Open the site to see the request, its documents and the map, and to record your visit.</p>
+{% endblock %}
