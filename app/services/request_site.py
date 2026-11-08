@@ -405,6 +405,22 @@ def site_position(site):
     return None
 
 
+def approximate_position(site):
+    """
+    (lat, lon) at the centre of the site's synthetic area, or None.
+
+    For a site with no position of its own (site_position() is None): the
+    map then gives it its own tree there instead of grouping it at the
+    barangay centre. The position is MADE UP inside the right barangay
+    (scripts/tools/make_synthetic_areas.py); callers must label it as
+    approximate and never treat it as surveyed.
+    """
+    area = getattr(site, "synthetic_area", None)
+    if area is None:
+        return None
+    return geometry_centre(area.geometry_geojson)
+
+
 def points_outside(points, geometry):
     """How many (lng, lat) points fall outside a GeoJSON geometry."""
     return sum(1 for lng, lat in points

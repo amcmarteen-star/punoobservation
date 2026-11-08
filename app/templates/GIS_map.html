@@ -1117,6 +1117,11 @@
     border-top: 2px dashed #0ea5e9;
   }
 
+  /* approximate (synthetic) site areas: green dotted, as the map draws them */
+  .boundary-key-line.is-approximate {
+    border-top: 2.5px dotted #15803d;
+  }
+
   /* --- legend --- */
   .heat-legend {
     background: var(--surface-glass);
@@ -1150,6 +1155,30 @@
     color: var(--text-2);
     font-size: 0.68rem;
     max-width: 190px;
+  }
+
+  /* --- site areas view --- */
+  /* Heat map and Show as side by side; on a narrow bar they wrap */
+  .map-topbar .tb-heat {
+    gap: 0.75rem;
+    flex-wrap: wrap;
+  }
+
+  .map-topbar .heat-view select {
+    min-width: 9rem;
+  }
+
+  /* "these squares are made up", impossible to miss under the legend */
+  .heat-legend .synthetic-note {
+    margin-top: 0.45rem;
+    padding: 0.3rem 0.45rem;
+    max-width: 190px;
+    border-left: 3px solid #d97706;
+    background: rgba(217, 119, 6, 0.1);
+    color: var(--text-strong);
+    font-size: 0.7rem;
+    font-weight: 600;
+    line-height: 1.4;
   }
 
   /* --- tree markers --- */
@@ -1730,12 +1759,13 @@
         <span class="layer-opt-text">
           <span>Site boundaries</span>
           <span class="layer-opt-sub site-count-note" id="boundaryCount"></span>
-          {% if can_see_proposed %}
           <span class="boundary-key" aria-hidden="true">
             <span class="boundary-key-line"></span>Official
+            {% if can_see_proposed %}
             <span class="boundary-key-line is-proposed"></span>Proposed
+            {% endif %}
+            <span class="boundary-key-line is-approximate"></span>Approximate
           </span>
-          {% endif %}
         </span>
       </label>
 
@@ -1773,6 +1803,16 @@
         <option value="seedlings">Seedlings planted</option>
         <option value="target">Target seedlings</option>
         <option value="area">Area (hectares)</option>
+      </select>
+    </label>
+    {# Site areas: one shape per site (its surveyed boundary, or a synthetic
+       square of its size). Whole barangays: the shading of each barangay. #}
+    <label class="heat-select heat-view">
+      <span class="toolbar-label">Show as</span>
+      <select id="heatView" disabled
+              onchange="setHeatmap(document.getElementById('heatMetric').value)">
+        <option value="areas">Site areas</option>
+        <option value="barangays">Whole barangays</option>
       </select>
     </label>
   </div>
@@ -1875,8 +1915,7 @@
   <div class="lb-caption" id="lightboxCaption"></div>
 </div>
 {% endblock %} {% block extra_scripts %}
-<script src="{{ url_for('static', filename='vendor/leaflet/leaflet.js') }}"></script>
-<script>
+<script src="{{ url_for('static', filename='vendor/leaflet/leaflet.js') }}"></script><script>
   // Jinja renders this once. The panel is built with innerHTML, so the
   // role has to be available to plain JavaScript.
   const USER_ROLE = "{{ session.role or '' }}";
@@ -2321,13 +2360,15 @@
       /* "Google Maps" button for a site card. Most DENR-imported sites have
          no position of their own and sit at the barangay centre; the hover
          text says which one Google Maps will open. */
-      function googleMapsButton(lat, lon, exact, cls) {
+      function googleMapsButton(lat, lon, exact, cls, approximate) {
         if (lat === null || lat === undefined || lon === null || lon === undefined) return "";
         const url = "https://www.google.com/maps/search/?api=1&query="
           + encodeURIComponent(lat + "," + lon);
-        const where = exact
-          ? "Open this site in Google Maps"
-          : "Opens the barangay centre: this site has no exact position yet";
+        const where = approximate
+          ? "Opens an approximate spot in the barangay: this site has no surveyed position yet"
+          : exact
+            ? "Open this site in Google Maps"
+            : "Opens the barangay centre: this site has no exact position yet";
         return `<a class="${cls}" href="${url}" target="_blank" rel="noopener noreferrer"
                    title="${where}" onclick="event.stopPropagation();">Google Maps</a>`;
       }
@@ -2362,7 +2403,7 @@
                                        showSiteHistory(${s.site_id})">
                         History
                       </button>
-                      ${googleMapsButton(s.lat, s.lon, s.exact, "btn-locate")}
+                      ${googleMapsButton(s.lat, s.lon, s.exact, "btn-locate", s.approximate)}
                       ${siteVisitsButton(s.site_id, s.from_request, "btn-report")}
                       ${window.reqMode ? reqMode.adoptButton(s, s.municipality, s.barangay) : ""}
                       {% if session.role == 'field_officer'%}
@@ -3188,9 +3229,11 @@
             const status = b.kind === "proposed"
               ? `<br><span style="color:#0369a1; font-weight:600;">Proposed site, not yet surveyed</span>`
               : "";
-            const placed = b.exact
-              ? `<br><span style="color:#64748b; font-size:.72rem;">Placed at the ${escBoundary(b.placed_by)}</span>`
-              : "";
+            const placed = b.approximate
+              ? `<br><span style="color:#15803d; font-size:.72rem; font-weight:600;">Approximate position, not surveyed</span>`
+              : b.exact
+                ? `<br><span style="color:#64748b; font-size:.72rem;">Placed at the ${escBoundary(b.placed_by)}</span>`
+                : "";
 
             marker.bindTooltip(
               `${title}<br>
@@ -3300,14 +3343,15 @@
       // Staff only. The API checks the role too; this flag only saves a
       // request that would come back empty.
       const CAN_SEE_PROPOSED = {{ 'true' if can_see_proposed else 'false' }};
-      const boundaryCounts = { official: 0, proposed: 0 };
+      const boundaryCounts = { official: 0, proposed: 0, approximate: 0 };
 
       function renderBoundaryCount() {
         const note = document.getElementById("boundaryCount");
         if (!note) return;
-        note.textContent = CAN_SEE_PROPOSED
-          ? `(${boundaryCounts.official} official, ${boundaryCounts.proposed} proposed)`
-          : `(${boundaryCounts.official})`;
+        const parts = [`${boundaryCounts.official} official`];
+        if (CAN_SEE_PROPOSED) parts.push(`${boundaryCounts.proposed} proposed`);
+        parts.push(`${boundaryCounts.approximate} approximate`);
+        note.textContent = `(${parts.join(", ")})`;
       }
 
       function escBoundary(value) {
@@ -3364,9 +3408,9 @@
         }
       }
 
-      // One toggle for both: official and proposed boundaries.
+      // One toggle for all three: official, proposed and approximate.
       window.toggleBoundaries = function (show) {
-        [boundaryLayer, proposedLayer].forEach(function (layer) {
+        [boundaryLayer, proposedLayer, approxLayer].forEach(function (layer) {
           if (!layer) return;
           if (show) layer.addTo(map);
           else map.removeLayer(layer);
@@ -3440,6 +3484,67 @@
       }
 
       loadProposedBoundaries();
+
+      // ==============================================================
+      // APPROXIMATE SITE AREAS
+      // Sites from the DENR workbook have no coordinates. Each gets an
+      // area of its real hectares at a made-up spot inside its barangay
+      // (scripts/tools/make_synthetic_areas.py), never overlapping another
+      // site. Green and dotted, and said to be approximate everywhere, so
+      // it never reads as surveyed. A published boundary replaces it.
+      // ==============================================================
+      let approxLayer = null;
+
+      async function loadApproximateAreas() {
+        try {
+          const res = await fetch("/api/approximate-areas");
+          const data = await res.json();
+
+          boundaryCounts.approximate = data.count;
+          renderBoundaryCount();
+          if (!data.count) return;
+
+          approxLayer = L.geoJSON(
+            data.boundaries.map((b) => ({
+              type: "Feature",
+              geometry: b.geometry,
+              properties: b,
+            })),
+            {
+              pane: "boundaryPane",
+              style: {
+                color: "#15803d",
+                weight: 2,
+                dashArray: "2,5",
+                fillColor: "#22c55e",
+                fillOpacity: 0.15,
+              },
+              onEachFeature: function (feature, layer) {
+                const p = feature.properties;
+                const drawn = p.drawn_ha && Math.abs(p.drawn_ha - p.area_ha) > 0.01
+                  ? `<br>Drawn at ${escBoundary(p.drawn_ha)} ha to fit the barangay`
+                  : "";
+                layer.bindPopup(`
+                  <strong>${escBoundary(p.site_name)}</strong><br>
+                  ${escBoundary(p.barangay)}, ${escBoundary(p.municipality)}<br>
+                  <span style="color:#15803d; font-weight:600;">Approximate area, not surveyed</span><br>
+                  ${escBoundary(p.area_ha)} ha${drawn}<br>
+                  <span style="color:#64748b; font-size:.72rem;">
+                    ${escBoundary(data.note)}
+                  </span>
+                `);
+              },
+            },
+          );
+
+          const toggle = document.getElementById("boundaryToggle");
+          if (!toggle || toggle.checked) approxLayer.addTo(map);
+        } catch (err) {
+          console.error("Approximate area load failed:", err);
+        }
+      }
+
+      loadApproximateAreas();
       // ==============================================================
       // HEATMAP LAYER
       // All 478 barangay polygons, shaded by a chosen metric.
@@ -3478,32 +3583,79 @@
         return HEAT_COLORS[Math.min(breaks.length, HEAT_COLORS.length - 1)];
       }
 
+      /* ---- site areas ----------------------------------------------
+         "Site areas" view: one shape per site from /api/site-areas,
+         coloured by the chosen metric with the same green bands as the
+         barangays. A site's shape is its published GPS boundary (solid
+         outline) or, without one, a square of its hectares at a made-up
+         spot inside its barangay (dashed outline; scripts/tools/
+         make_synthetic_areas.py). The barangay outlines stay underneath,
+         and the legend says the dashed squares are synthetic. */
+      let siteAreaLayer = null;
+      let heatRequest = 0;      // counts setHeatmap calls; the latest wins
+
+      function heatView() {
+        const el = document.getElementById("heatView");
+        return el ? el.value : "barangays";
+      }
+
+      function escHtml(s) {
+        return String(s === null || s === undefined ? "" : s)
+          .replace(/&/g, "&amp;").replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+      }
+
       window.setHeatmap = async function (metric) {
+        // any load still running for an earlier choice is now stale
+        const myRequest = ++heatRequest;
+
         // clear whatever is showing
         if (heatLayer) {
           map.removeLayer(heatLayer);
           heatLayer = null;
+        }
+        if (siteAreaLayer) {
+          map.removeLayer(siteAreaLayer);
+          siteAreaLayer = null;
         }
         if (heatLegend) {
           map.removeControl(heatLegend);
           heatLegend = null;
         }
 
+        // "Show as" only matters while a heat map is on
+        const viewEl = document.getElementById("heatView");
+        if (viewEl) viewEl.disabled = !metric;
+
         if (!metric) {
           applyDistrictStyle();
           return;
         }
 
+        const areasView = heatView() === "areas";
+
         try {
-          const res = await fetch(
-            "/api/heatmap?metric=" + encodeURIComponent(metric),
-          );
+          // The barangay figures feed the tooltips and clicks in both
+          // views; the site area view also needs the shapes.
+          const [res, areasRes] = await Promise.all([
+            fetch("/api/heatmap?metric=" + encodeURIComponent(metric)),
+            areasView
+              ? fetch("/api/site-areas?metric=" + encodeURIComponent(metric))
+              : Promise.resolve(null),
+          ]);
           const data = await res.json();
+          const areas = areasRes ? await areasRes.json() : null;
 
           if (data.error) {
             console.error(data.error);
             return;
           }
+          if (areas && areas.error) {
+            console.error(areas.error);
+            return;
+          }
+          // the choice changed while this was loading: a newer call wins
+          if (myRequest !== heatRequest) return;
 
           // index by normalised municipality + barangay so the geojson
           // spelling does not have to match the database spelling
@@ -3521,6 +3673,16 @@
                 "|" +
                 normalizeName(feature.properties.NAME_3);
               const rec = lookup[key];
+
+              // Site areas: outlines only. The fill stays (invisible) so
+              // a barangay can still be hovered and clicked.
+              if (areasView) {
+                return Object.assign(barangayOutlineStyle(), {
+                  fillColor: "#000000",
+                  fillOpacity: 0,
+                  smoothFactor: 1.5,
+                });
+              }
 
               return {
                 color: "#334155",
@@ -3564,16 +3726,72 @@
           // district fills would hide the shading, so thin them out
           applyDistrictStyle();
 
-          buildLegend(data);
+          if (areasView) {
+            siteAreaLayer = L.geoJSON(areas, {
+              style: function (feature) {
+                const p = feature.properties;
+                return {
+                  color: "#14532d",
+                  weight: 1.5,
+                  opacity: 0.9,
+                  // dashed = synthetic square, solid = surveyed boundary
+                  dashArray: p.synthetic ? "5 4" : null,
+                  fillColor: p.value > 0
+                    ? heatColor(p.value, areas.breaks)
+                    : NO_DATA_COLOR,
+                  fillOpacity: 0.75,
+                };
+              },
+              onEachFeature: function (feature, layer) {
+                const p = feature.properties;
+                const drawn = p.synthetic && p.drawn_ha &&
+                  Math.abs(p.drawn_ha - p.area_ha) > 0.01
+                  ? `<br>Drawn at ${p.drawn_ha} ha to fit the barangay`
+                  : "";
+                layer.bindTooltip(
+                  `<strong>${escHtml(p.site_name)}</strong><br>
+                   ${escHtml(p.barangay)}, ${escHtml(p.municipality)}<br>
+                   ${p.area_ha} ha · ${p.seedlings.toLocaleString()} planted of
+                   ${p.target.toLocaleString()} target${drawn}<br>
+                   <em>${p.synthetic
+                     ? "Synthetic area: real size, approximate position"
+                     : "Surveyed boundary"}</em>`,
+                  { sticky: true },
+                );
+                layer.on("click", function (e) {
+                  L.DomEvent.stopPropagation(e);
+                  showBarangaySitesPanel(p.municipality, p.barangay);
+                });
+              },
+            }).addTo(map);
+            buildAreaLegend(areas);
+          } else {
+            buildLegend(data);
+          }
         } catch (err) {
           console.error("Heatmap load failed:", err);
         }
       };
 
+      // Barangay outlines in the site area view: always drawn, so the
+      // sites can be read against the barangays; stronger when "Barangay
+      // borders" is ticked in the Layers menu.
+      function barangayOutlineStyle() {
+        return {
+          color: "#334155",
+          weight: showBarangayBorders ? 0.8 : 0.5,
+          opacity: showBarangayBorders ? 0.6 : 0.35,
+        };
+      }
+
       window.toggleBarangayBorders = function (show) {
         showBarangayBorders = show;
         if (!heatLayer) return;
 
+        if (siteAreaLayer) {
+          heatLayer.setStyle(barangayOutlineStyle);
+          return;
+        }
         heatLayer.setStyle(function () {
           return {
             weight: show ? 0.6 : 0,
@@ -3582,55 +3800,97 @@
         });
       };
 
+      function buildAreaLegend(areas) {
+        heatLegend = L.control({ position: "bottomleft" });
+
+        heatLegend.onAdd = function () {
+          const div = L.DomUtil.create("div", "heat-legend");
+          const outlines = `
+            <div><span class="swatch" style="border:2px dashed #14532d;background:transparent"></span>
+              Synthetic area</div>
+            <div><span class="swatch" style="border:2px solid #14532d;background:transparent"></span>
+              Surveyed boundary</div>`;
+
+          const body = areas.sites
+            ? bandRows(areas.breaks, "none recorded") + outlines + `
+               <div class="legend-note">
+                 ${areas.sites} site${areas.sites === 1 ? "" : "s"} on the map,
+                 ${areas.synthetic_sites} drawn as synthetic squares.
+                 Bands are quantiles over the sites.
+               </div>`
+            : `<div class="legend-note">
+                 No site areas yet. Choose "Whole barangays" in Show as,
+                 or ask the administrator to draw the site areas.
+               </div>`;
+
+          div.innerHTML = `
+            <h4>${areas.label}</h4>
+            ${body}
+            <div class="synthetic-note">${areas.note}</div>
+          `;
+
+          L.DomEvent.disableClickPropagation(div);
+          return div;
+        };
+
+        heatLegend.addTo(map);
+      }
+
       window.toggleDistrictBorders = function (show) {
         showDistrictBorders = show;
         applyDistrictStyle();
       };
+
+      // The colour bands of a legend, from quantile breaks, plus the grey
+      // "nothing recorded" row. Shared by both heat map views.
+      function bandRows(b, noneLabel) {
+        const WORDS = ["Very low", "Low", "Moderate", "High", "Very high"];
+
+        let rows = "";
+
+        if (!b.length) {
+          rows = `<div><span class="swatch"
+                   style="background:${HEAT_COLORS[4]}"></span>
+                   Has records</div>`;
+        } else {
+          const n = b.length + 1;
+          // pick evenly spaced words so 3 bands read low / moderate / high
+          const pick = [];
+          for (let i = 0; i < n; i++) {
+            pick.push(WORDS[Math.round((i * (WORDS.length - 1)) / (n - 1))]);
+          }
+
+          let prev = null;
+          for (let i = 0; i < b.length; i++) {
+            const range =
+              prev === null
+                ? `up to ${fmt(b[i])}`
+                : `${fmt(prev + 1)}–${fmt(b[i])}`;
+            rows += `<div><span class="swatch"
+                     style="background:${HEAT_COLORS[i]}"></span>
+                     ${pick[i]}
+                     <span style="color:#94a3b8;">(${range})</span></div>`;
+            prev = b[i];
+          }
+          rows += `<div><span class="swatch"
+                   style="background:${HEAT_COLORS[b.length]}"></span>
+                   ${pick[b.length]}
+                   <span style="color:#94a3b8;">(${fmt(prev + 1)}+)</span></div>`;
+        }
+
+        rows += `<div><span class="swatch"
+                 style="background:${NO_DATA_COLOR};opacity:0.35"></span>
+                 ${noneLabel}</div>`;
+
+        return rows;
+      }
 
       function buildLegend(data) {
         heatLegend = L.control({ position: "bottomleft" });
 
         heatLegend.onAdd = function () {
           const div = L.DomUtil.create("div", "heat-legend");
-          const b = data.breaks;
-
-          const WORDS = ["Very low", "Low", "Moderate", "High", "Very high"];
-
-          let rows = "";
-
-          if (!b.length) {
-            rows = `<div><span class="swatch"
-                     style="background:${HEAT_COLORS[4]}"></span>
-                     Has records</div>`;
-          } else {
-            const n = b.length + 1;
-            // pick evenly spaced words so 3 bands read low / moderate / high
-            const pick = [];
-            for (let i = 0; i < n; i++) {
-              pick.push(WORDS[Math.round((i * (WORDS.length - 1)) / (n - 1))]);
-            }
-
-            let prev = null;
-            for (let i = 0; i < b.length; i++) {
-              const range =
-                prev === null
-                  ? `up to ${fmt(b[i])}`
-                  : `${fmt(prev + 1)}–${fmt(b[i])}`;
-              rows += `<div><span class="swatch"
-                       style="background:${HEAT_COLORS[i]}"></span>
-                       ${pick[i]}
-                       <span style="color:#94a3b8;">(${range})</span></div>`;
-              prev = b[i];
-            }
-            rows += `<div><span class="swatch"
-                     style="background:${HEAT_COLORS[b.length]}"></span>
-                     ${pick[b.length]}
-                     <span style="color:#94a3b8;">(${fmt(prev + 1)}+)</span></div>`;
-          }
-
-          rows += `<div><span class="swatch"
-                   style="background:${NO_DATA_COLOR};opacity:0.35"></span>
-                   no record</div>`;
+          const rows = bandRows(data.breaks, "no record");
 
           div.innerHTML = `
             <h4>${data.label}</h4>
@@ -3809,7 +4069,7 @@
               <button type="button" class="back-link" onclick="showSiteHistory(${s.site_id})">
                 View monitoring history
               </button>
-              ${googleMapsButton(b.lat, b.lon, b.exact, "back-link")}
+              ${googleMapsButton(b.lat, b.lon, b.exact, "back-link", b.approximate)}
               ${siteVisitsButton(s.site_id, s.from_request, "back-link")}
               ${window.reqMode ? reqMode.adoptButton(s, b.municipality, b.barangay) : ""}
             </div>`).join("")}

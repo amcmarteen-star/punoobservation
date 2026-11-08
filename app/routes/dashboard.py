@@ -5,7 +5,7 @@ from app.utils.decorators import login_required
 from app.models import (
     Site, ReforestationRecord, MonitoringReport, MonitoringPlot,
     MonitoringPhoto, Location, Notification, Request, RequestAttachment,
-    User, TreeSpecie, AuditLog, SpeciesCategory,
+    User, TreeSpecie, AuditLog, SpeciesCategory, SyntheticSiteArea,
 )
 from app.utils.audit import log_action
 from sqlalchemy import func
@@ -28,7 +28,7 @@ from app.services.request_site import (
     parse_pin, parse_boundary, boundary_centre, boundary_points,
     points_outside, parse_spacing, density_from_spacing, estimate_seedlings,
     PLANTING_TYPES, proposed_area_for_site, site_position,
-    geometry_bbox,
+    geometry_bbox, approximate_position,
 )
 from app.utils.timeutil import manila_now, format_datetime
 from app.utils.security import (
@@ -159,6 +159,9 @@ def gis_map():
             "siteTypes": list(SITE_REQUEST_TYPES),
             "adoption": ADOPTION_REQUEST_TYPE,
             "municipalities": _request_municipalities(),
+            # True for CENRO staff, so the map blames jurisdiction; for
+            # everyone else a missing town just has no data yet.
+            "limited": current_cenro() is not None,
             "geojsonUrls": barangay_urls,
             "formUrl": url_for('dashboard.requests_page'),
         } if request_mode else None,
@@ -242,8 +245,11 @@ def municipality_info(name):
                 continue
 
             # The site's own position when it has one, so Locate lands on
-            # its tree; otherwise the barangay centroid, as before.
+            # its tree; else the centre of its approximate area (its tree
+            # stands there too); otherwise the barangay centroid.
             position = site_position(site)
+            approx = None if position else approximate_position(site)
+            spot = position or approx
             totals = db.session.query(
                 func.sum(ReforestationRecord.target_quantity),
                 func.sum(ReforestationRecord.actual_quantity_planted)
@@ -260,10 +266,13 @@ def municipality_info(name):
                 "date_established": site.date_established.strftime('%Y-%m-%d') if site.date_established else None,
                 "target_trees": totals[0] or 0,
                 "actual_trees": totals[1] or 0,
-                "lat": position[0] if position else location.latitude,
-                "lon": position[1] if position else location.longitude,
-                # False: lat/lon is the barangay centre, not the site.
+                "lat": spot[0] if spot else location.latitude,
+                "lon": spot[1] if spot else location.longitude,
+                # False: lat/lon is the barangay centre or a made-up
+                # spot in the barangay, not the site's surveyed position.
                 "exact": position is not None,
+                # True: lat/lon is the centre of a synthetic area
+                "approximate": approx is not None,
                 # made from a request: the map offers Site visits to staff
                 "from_request": site.source_request_id is not None,
             })
@@ -520,19 +529,21 @@ def recommendations():
  
     Open to guests, same as the GIS map, so the panel can see it
     without logging in.
+
+    Province-wide for every role: a recommendation is reference
+    information, not a CENRO record, so jurisdiction does not limit it.
     """
     q = (
         db.session.query(Location.municipality)
         .filter(Location.elevation_m.isnot(None))
     )
-    q = scope_locations(q)
     municipalities = [
         m[0] for m in q.distinct().order_by(Location.municipality).all()
     ]
     # barangays with data, for the "Recommendations cover all N" note
-    barangay_total = scope_locations(
-        Location.query.filter(Location.elevation_m.isnot(None))
-    ).count()
+    barangay_total = (
+        Location.query.filter(Location.elevation_m.isnot(None)).count()
+    )
 
     selected_muni = request.args.get('municipality', '')
     selected_brgy = request.args.get('barangay', '')
@@ -626,12 +637,8 @@ def api_recommend_by_name():
             "found": False,
             "reason": "Provide both municipality and barangay."
         }), 400
-    if not can_see_municipality(muni):
-        return jsonify({
-            "found": False,
-            "reason": "Outside your CENRO jurisdiction.",
-        }), 403
- 
+    # Province-wide, like the recommendation page: no jurisdiction check.
+
     def squash(col):
         """Strip spaces, dots and dashes, then lowercase - in SQL."""
         expr = func.lower(col)
@@ -669,9 +676,8 @@ def api_species_evaluation(tree_id):
     (precision, recall, F1, confusion matrix), and the engine-wide
     Precision@K / NDCG@K for context.
 
-    Open to guests, same as the recommendation page itself. Metrics are
-    computed over the barangays the caller is allowed to see, so an admin
-    gets figures for their own CENRO rather than the province.
+    Open to guests, same as the recommendation page itself. Province-wide
+    for every role: metrics are computed over every barangay with data.
     """
     species = TreeSpecie.query.get(tree_id)
     if species is None:
@@ -687,11 +693,6 @@ def api_species_evaluation(tree_id):
     location = Location.query.get(location_id)
     if location is None:
         return jsonify({"found": False, "reason": "Barangay not found."}), 404
-    if not can_see_municipality(location.municipality):
-        return jsonify({
-            "found": False,
-            "reason": "Outside your CENRO jurisdiction.",
-        }), 403
 
     species_list = TreeSpecie.query.filter_by(is_reference=True).all()
     if not species_list:
@@ -700,8 +701,7 @@ def api_species_evaluation(tree_id):
             "reason": "No reference species to evaluate against.",
         }), 404
 
-    q_loc = Location.query.filter(Location.elevation_m.isnot(None))
-    locations = scope_locations(q_loc).all()
+    locations = Location.query.filter(Location.elevation_m.isnot(None)).all()
 
     payload = species_evaluation(species, location, locations, species_list)
     payload["scope"] = scope_label()
@@ -849,6 +849,13 @@ def api_sites_geo():
                 if site.source_request_id and not site.boundary_published
                 else "official")
         position = site_position(site)
+        # No position of its own: the centre of its synthetic area, so
+        # every site still gets its own tree (labelled approximate).
+        approx = None
+        if position is None:
+            approx = approximate_position(site)
+            if approx is not None:
+                position = (approx[0], approx[1], "approximate area")
 
         bbox = None
         if position is not None:
@@ -858,6 +865,8 @@ def api_sites_geo():
             # hide the tree once that boundary is large on screen.
             if placed_by == "published boundary":
                 bbox = geometry_bbox(site.boundary_geojson)
+            elif approx is not None:
+                bbox = geometry_bbox(site.synthetic_area.geometry_geojson)
             elif site.source_request is not None:
                 bbox = geometry_bbox(site.source_request.boundary_geojson)
         else:
@@ -876,6 +885,9 @@ def api_sites_geo():
                 # True: this marker is one site at its own position.
                 # False: sites grouped at the barangay centroid.
                 "exact": position is not None,
+                # True: the position is the centre of a synthetic area,
+                # made up inside the barangay, not surveyed
+                "approximate": approx is not None,
                 "placed_by": placed_by,
                 # [south, west, north, east], or None when the tree has
                 # no boundary of its own to give way to
@@ -1055,6 +1067,139 @@ def api_heatmap():
         "breaks": breaks,
         "with_data": len(out),
         "barangays": out,
+    })
+
+
+SYNTHETIC_NOTE = ("Approximate areas are synthetic, for visualization: each "
+                  "has the site's real hectares, but its shape and place "
+                  "in the barangay are made up.")
+
+
+@dashboard_bp.route('/api/site-areas')
+def api_site_areas():
+    """
+    One shape per site for the "Site areas" view of the GIS map heat map,
+    coloured by a metric.
+
+    ?metric=sites|seedlings|target|area    the value each shape carries
+                                           (default: seedlings)
+    ?municipality=...  ?barangay=...        optional filters
+
+    The shape is the site's published GPS boundary when it has one
+    ("synthetic": false), else the square made by
+    scripts/tools/make_synthetic_areas.py ("synthetic": true): the site's
+    size, at an INVENTED position inside its barangay. Sites with neither
+    are left out.
+
+    Same sites as /api/heatmap: scope_sites (CENRO staff see their own
+    CENRO; unofficial sites hidden from the public) and official_sites
+    (no sites still under review or closed as not suitable). "breaks" are
+    quantile breaks over the sites, as /api/heatmap gives per barangay.
+    """
+    metric = request.args.get('metric', 'seedlings')
+    valid = {'sites', 'seedlings', 'target', 'area'}
+    if metric not in valid:
+        return jsonify({
+            "error": f"Unknown metric. Use one of: {', '.join(sorted(valid))}"
+        }), 400
+
+    q = (
+        db.session.query(Site, Location)
+        .join(Location, Location.location_id == Site.location_id)
+    )
+    q = official_sites(scope_sites(q))
+
+    municipality = (request.args.get('municipality') or '').strip()
+    if municipality:
+        name = canonical_municipality(municipality) or municipality
+        q = q.filter(func.lower(Location.municipality) == name.lower())
+    barangay = (request.args.get('barangay') or '').strip()
+    if barangay:
+        q = q.filter(func.lower(Location.barangay) == barangay.lower())
+
+    rows = q.all()
+    ids = [site.site_id for site, _loc in rows]
+
+    squares = {}
+    planted, targets = {}, {}
+    if ids:
+        squares = {
+            a.site_id: a for a in
+            SyntheticSiteArea.query.filter(SyntheticSiteArea.site_id.in_(ids))
+        }
+        for sid, p, t in (
+            db.session.query(
+                ReforestationRecord.site_id,
+                func.sum(ReforestationRecord.actual_quantity_planted),
+                func.sum(ReforestationRecord.target_quantity),
+            )
+            .filter(ReforestationRecord.site_id.in_(ids))
+            .group_by(ReforestationRecord.site_id)
+        ):
+            planted[sid], targets[sid] = int(p or 0), int(t or 0)
+
+    features = []
+    for site, loc in rows:
+        geometry, synthetic, note, drawn = None, False, None, None
+        if site.boundary_published and site.boundary_geojson:
+            try:
+                geometry = json.loads(site.boundary_geojson)
+            except ValueError:
+                geometry = None
+            drawn = site.boundary_area_ha
+        if geometry is None and site.site_id in squares:
+            sq = squares[site.site_id]
+            geometry = json.loads(sq.geometry_geojson)
+            synthetic, note, drawn = True, sq.placement_note, sq.area_ha
+        if geometry is None:
+            continue
+
+        seedlings = planted.get(site.site_id, 0)
+        target = targets.get(site.site_id, 0)
+        value = {
+            'sites': 1,
+            'seedlings': seedlings,
+            'target': target,
+            'area': round(float(site.area_size_ha or 0), 2),
+        }[metric]
+
+        features.append({
+            "type": "Feature",
+            "geometry": geometry,
+            "properties": {
+                "site_id": site.site_id,
+                "site_name": site.site_name,
+                "municipality": loc.municipality,
+                "barangay": loc.barangay,
+                "synthetic": synthetic,
+                "area_ha": site.area_size_ha,
+                "drawn_ha": drawn,
+                "placement_note": note,
+                "seedlings": seedlings,
+                "target": target,
+                "value": value,
+            },
+        })
+
+    labels = {
+        "sites": "Reforestation sites",
+        "seedlings": "Seedlings planted",
+        "target": "Target seedlings",
+        "area": "Area under contract (ha)",
+    }
+
+    return jsonify({
+        "type": "FeatureCollection",
+        "metric": metric,
+        "label": labels[metric],
+        "breaks": _quantile_breaks(
+            [f["properties"]["value"] for f in features
+             if f["properties"]["value"] > 0]),
+        "note": SYNTHETIC_NOTE,
+        "sites": len(features),
+        "synthetic_sites": sum(1 for f in features if f["properties"]["synthetic"]),
+        "sites_without_shape": len(rows) - len(features),
+        "features": features,
     })
 
 
@@ -2458,6 +2603,47 @@ def api_proposed_boundaries():
         })
 
     return jsonify({"count": len(out), "boundaries": out})
+
+
+@dashboard_bp.route('/api/approximate-areas')
+def api_approximate_areas():
+    """
+    The synthetic areas (scripts/tools/make_synthetic_areas.py) for the
+    "Site boundaries" layer: one per site that has no position of its own.
+
+    Each is drawn at the site's recorded size, at a MADE-UP spot inside its
+    barangay, and never overlaps another site. The map labels them as
+    approximate. A site that gets a published boundary or a requester's
+    pin is dropped here, so its real shape takes over.
+
+    Same sites as the rest of the map: scope_sites and official_sites.
+    """
+    q = (
+        db.session.query(Site, SyntheticSiteArea)
+        .join(SyntheticSiteArea, SyntheticSiteArea.site_id == Site.site_id)
+    )
+    out = []
+    for site, area in official_sites(scope_sites(q)).all():
+        if site_position(site) is not None:
+            continue
+        try:
+            geom = json.loads(area.geometry_geojson)
+        except ValueError:
+            continue
+        out.append({
+            "site_id": site.site_id,
+            "site_name": site.site_name,
+            "site_code": site.site_code,
+            "municipality": site.location.municipality if site.location else None,
+            "barangay": site.location.barangay if site.location else None,
+            "area_ha": site.area_size_ha,
+            "drawn_ha": area.area_ha,
+            "placement_note": area.placement_note,
+            "geometry": geom,
+        })
+
+    return jsonify({"count": len(out), "boundaries": out,
+                    "note": SYNTHETIC_NOTE})
 
 
 @dashboard_bp.route('/api/site-history/<int:site_id>')

@@ -658,7 +658,8 @@
   .rec-picker-row .um-field {
     flex: 0 0 auto !important; width: 100%; margin-left: 0 !important;
   }
-  .rec-picker-row select { width: 100%; min-height: 44px; font-size: 16px; }
+  .rec-picker-row select,
+  .rec-picker-row input { width: 100%; min-height: 44px; font-size: 16px; }
 
   .profile-strip { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; }
   .profile-chip { min-width: 0; padding: 0.55rem 0.75rem; }
@@ -747,6 +748,70 @@
 
   .method-note { font-size: 0.8rem; padding: 0.8rem 0.9rem; }
 }
+
+/* --- Municipality search box ------------------------------------------ */
+/* .um-table-card clips its content (overflow hidden, or auto on phones),
+   which cut the town list off at the card's edge. The picker card has no
+   table to clip, so it lets the list hang below it, above the results. */
+.um-table-card.rec-picker-card {
+  overflow: visible;
+  position: relative;
+  z-index: 20;
+}
+
+.rec-combo { position: relative; }
+
+.rec-combo input:disabled {
+  background-color: var(--surface-2);
+  color: var(--text-2);
+  cursor: not-allowed;
+}
+
+.rec-combo-list {
+  position: absolute;
+  z-index: 30;
+  top: 100%;
+  left: 0;
+  right: 0;
+  margin: 4px 0 0;
+  padding: 4px;
+  list-style: none;
+  max-height: 260px;
+  overflow-y: auto;
+  background: var(--surface-1);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+}
+
+.rec-combo-list li {
+  padding: 0.5rem 0.65rem;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  color: var(--text-strong);
+  cursor: pointer;
+}
+
+.rec-combo-list li.is-active,
+.rec-combo-list li:hover {
+  background: var(--surface-2);
+}
+
+.rec-combo-list li mark {
+  background: none;
+  color: var(--brand-text);
+  font-weight: 700;
+}
+
+.rec-combo-list li.rec-combo-empty {
+  color: var(--text-2);
+  cursor: default;
+  background: none;
+}
+
+@media (max-width: 640px) {
+  .rec-combo-list li { padding: 0.75rem 0.7rem; }
+}
 </style>
 {% endblock %}
 
@@ -764,15 +829,24 @@
     if (!form || !results || !btn) return;
     const label = btn.querySelector(".rec-show-label");
 
+    // A barangay counts only once it is picked from the list and still in
+    // the box, so half-typed text never enables the button.
+    function brgyValue() {
+      // runs only on user events, after brgyCombo below is set up
+      if (!brgyCombo) return form.barangay.value;
+      const c = brgyCombo.chosen();
+      return c && form.barangay.value.trim() === c ? c : "";
+    }
+
     window.recSyncShowButton = function () {
       if (!btn.classList.contains("is-loading")) {
-        btn.disabled = !form.barangay.value;
+        btn.disabled = !brgyValue();
       }
     };
 
     function setLoading(on, text) {
       btn.classList.toggle("is-loading", on);
-      btn.disabled = on || !form.barangay.value;
+      btn.disabled = on || !brgyValue();
       label.textContent = on ? text : "Show recommendations";
       results.classList.toggle("is-loading", on);
       results.setAttribute("aria-busy", String(on));
@@ -796,10 +870,13 @@
         if (!res.ok) throw new Error(res.status);
         const doc = new DOMParser().parseFromString(await res.text(), "text/html");
 
-        const newSelect = doc.getElementById("barangay");
-        if (newSelect) {
-          form.barangay.innerHTML = newSelect.innerHTML;
-          form.barangay.disabled = newSelect.disabled;
+        // the new town's barangays go into the barangay search box
+        const newBrgy = doc.getElementById("barangay");
+        const newBrgyData = doc.getElementById("barangay-data");
+        if (newBrgy && newBrgyData && brgyCombo) {
+          form.barangay.disabled = newBrgy.disabled;
+          form.barangay.placeholder = newBrgy.placeholder;
+          brgyCombo.reset(JSON.parse(newBrgyData.textContent), newBrgy.value);
         }
         const newSlot = doc.getElementById("rec-count-slot");
         const slot = document.getElementById("rec-count-slot");
@@ -833,18 +910,200 @@
     }
 
     window.recPickMunicipality = function (f) {
-      f.barangay.value = "";
+      if (brgyCombo) brgyCombo.reset([], "");
+      else f.barangay.value = "";
       load(urlFor({ municipality: f.municipality.value }), {
         loadingText: "Loading barangays…",
       });
     };
 
+    // ---- search boxes (municipality and barangay) --------------------------
+    // Typing filters the names; names that start with the text come first,
+    // then names that contain it. Spaces, dots and dashes are ignored, so
+    // "sanman" finds "San Manuel" and "urdaneta" finds "Urdaneta City".
+    function fold(s) { return String(s).toLowerCase().replace(/[\s.\-']/g, ""); }
+    function esc(s) {
+      return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    }
+
+    // Bold the typed text inside the name, when it appears as typed.
+    function highlight(name, q) {
+      const i = q ? name.toLowerCase().indexOf(q.toLowerCase()) : -1;
+      if (i < 0) return esc(name);
+      return esc(name.slice(0, i)) + "<mark>" + esc(name.slice(i, i + q.length))
+        + "</mark>" + esc(name.slice(i + q.length));
+    }
+
+    // opts: input, list, items, noun ("municipality"), onPick(name),
+    // onType() (optional, after every keystroke)
+    function makeCombo(opts) {
+      const input = opts.input;
+      const list = opts.list;
+      let items = opts.items;
+      let chosen = input.value;   // the last name picked from the list
+      let shown = [];
+      let active = -1;
+
+      function matches(q) {
+        const key = fold(q);
+        if (!key) return items.slice();
+        const starts = [], contains = [];
+        items.forEach(function (t) {
+          const f = fold(t);
+          if (f.startsWith(key)) starts.push(t);
+          else if (f.indexOf(key) !== -1) contains.push(t);
+        });
+        return starts.concat(contains);
+      }
+
+      function open() {
+        if (input.disabled) return;
+        const q = input.value.trim();
+        // Right after a pick the box holds the full name; show every name
+        // then, so clicking it again works like the old dropdown.
+        const all = q === chosen;
+        shown = all ? items.slice() : matches(q);
+        active = shown.length ? Math.max(0, all ? shown.indexOf(chosen) : 0) : -1;
+        list.innerHTML = shown.length
+          ? shown.map(function (t, i) {
+              return '<li role="option" id="' + list.id + '-opt-' + i + '" data-i="' + i + '">'
+                + highlight(t, all ? "" : q) + "</li>";
+            }).join("")
+          : '<li class="rec-combo-empty">No ' + opts.noun + ' matches “' + esc(q) + '”.</li>';
+        list.hidden = false;
+        input.setAttribute("aria-expanded", "true");
+        syncActive();
+      }
+
+      function close() {
+        list.hidden = true;
+        input.setAttribute("aria-expanded", "false");
+        input.removeAttribute("aria-activedescendant");
+      }
+
+      function syncActive() {
+        list.querySelectorAll("li[data-i]").forEach(function (li) {
+          const on = Number(li.dataset.i) === active;
+          li.classList.toggle("is-active", on);
+          li.setAttribute("aria-selected", on ? "true" : "false");
+          if (on) li.scrollIntoView({ block: "nearest" });
+        });
+        if (active >= 0) input.setAttribute("aria-activedescendant", list.id + "-opt-" + active);
+      }
+
+      function pick(name) {
+        input.value = name;
+        close();
+        if (name !== chosen) {
+          chosen = name;
+          opts.onPick(name);
+        }
+      }
+
+      input.addEventListener("focus", function () { input.select(); open(); });
+      input.addEventListener("click", open);
+      input.addEventListener("input", function () {
+        open();
+        if (opts.onType) opts.onType();
+      });
+
+      input.addEventListener("keydown", function (e) {
+        if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+          e.preventDefault();
+          if (list.hidden) { open(); return; }
+          if (!shown.length) return;
+          active = (active + (e.key === "ArrowDown" ? 1 : -1) + shown.length) % shown.length;
+          syncActive();
+        } else if (e.key === "Enter") {
+          // Enter picks the highlighted name instead of submitting the form.
+          if (!list.hidden && active >= 0) {
+            e.preventDefault();
+            pick(shown[active]);
+          } else if (input.value.trim() !== chosen) {
+            e.preventDefault();
+          }
+        } else if (e.key === "Escape") {
+          input.value = chosen;
+          close();
+          if (opts.onType) opts.onType();
+        }
+      });
+
+      // mousedown, not click: it fires before the input loses focus
+      list.addEventListener("mousedown", function (e) {
+        const li = e.target.closest("li[data-i]");
+        e.preventDefault();
+        if (li) pick(shown[Number(li.dataset.i)]);
+      });
+
+      // Leaving the box with half-typed text: take the name if the text
+      // names exactly one, else put back the name already chosen.
+      input.addEventListener("blur", function () {
+        close();
+        const q = input.value.trim();
+        if (q === chosen) return;
+        const exact = items.find(function (t) { return fold(t) === fold(q); });
+        const only = matches(q);
+        if (exact) pick(exact);
+        else if (q && only.length === 1) pick(only[0]);
+        else {
+          input.value = chosen;
+          if (opts.onType) opts.onType();
+        }
+      });
+
+      return {
+        chosen: function () { return chosen; },
+        setChosen: function (name) { chosen = name; input.value = name; },
+        // new list of names (e.g. another town's barangays) and its value
+        reset: function (newItems, value) {
+          items = newItems;
+          chosen = value || "";
+          input.value = chosen;
+          close();
+        },
+      };
+    }
+
+    const muniInput = form.municipality;
+    const muniList = document.getElementById("municipality-list");
+    const muniData = document.getElementById("municipality-data");
+    const muniCombo = muniInput && muniList && muniData ? makeCombo({
+      input: muniInput,
+      list: muniList,
+      items: JSON.parse(muniData.textContent),
+      noun: "municipality",
+      onPick: function () { window.recPickMunicipality(form); },
+    }) : null;
+
+    const brgyList = document.getElementById("barangay-list");
+    const brgyData = document.getElementById("barangay-data");
+    const brgyCombo = form.barangay && brgyList && brgyData ? makeCombo({
+      input: form.barangay,
+      list: brgyList,
+      items: JSON.parse(brgyData.textContent),
+      noun: "barangay",
+      onPick: function () { window.recSyncShowButton(); },
+      // half-typed text is not a barangay yet, so the button waits
+      onType: function () { window.recSyncShowButton(); },
+    }) : null;
+
+    // Back / Forward puts a different town in the box. Read from the
+    // address, since the page's own handler may run later. The barangay
+    // box is reset by load() from the page it fetches.
+    window.addEventListener("popstate", function () {
+      if (muniCombo) {
+        muniCombo.setChosen(new URLSearchParams(window.location.search).get("municipality") || "");
+      }
+    });
+
     form.addEventListener("submit", function (e) {
       e.preventDefault();
-      if (!form.barangay.value) return;
+      const brgy = brgyValue();
+      if (!brgy) return;
       load(urlFor({
-        municipality: form.municipality.value,
-        barangay: form.barangay.value,
+        municipality: muniCombo ? muniCombo.chosen() : form.municipality.value,
+        barangay: brgy,
       }), { loadingText: "Loading…" });
     });
 
@@ -878,34 +1137,32 @@
 <!-- ============ PICKER ============ -->
 <div class="um-table-card rec-picker-card">
   <form method="GET" class="rec-picker-row" id="rec-picker">
-    <div class="um-field">
+    {# Type-to-search municipality picker. The input itself carries the
+       value, so the page still works as a plain GET form without JS. #}
+    <div class="um-field rec-combo">
       <label for="municipality">Municipality</label>
-      <select name="municipality" id="municipality"
-              onchange="recPickMunicipality(this.form)">
-        <option value="">Choose a municipality</option>
-        {% for m in municipalities %}
-          <option value="{{ m }}" {% if m == selected_muni %}selected{% endif %}>
-            {{ m }}
-          </option>
-        {% endfor %}
-      </select>
+      <input type="text" name="municipality" id="municipality"
+             value="{{ selected_muni }}" placeholder="Search a municipality…"
+             autocomplete="off" spellcheck="false"
+             role="combobox" aria-autocomplete="list" aria-expanded="false"
+             aria-controls="municipality-list">
+      <ul class="rec-combo-list" id="municipality-list" role="listbox" hidden></ul>
+      <script type="application/json" id="municipality-data">{{ municipalities | tojson }}</script>
     </div>
 
-    <div class="um-field">
+    {# Same search box for the barangay. It is filled from barangay-data,
+       which the partial load swaps in when the municipality changes. #}
+    <div class="um-field rec-combo">
       <label for="barangay">Barangay</label>
-      <select name="barangay" id="barangay"
-              {% if not barangays %}disabled{% endif %}
-              onchange="recSyncShowButton()">
-        <option value="">
-          {% if barangays %}Choose a barangay{% else %}Pick a municipality first{% endif %}
-        </option>
-        {% for b in barangays %}
-          <option value="{{ b.barangay }}"
-                  {% if b.barangay == selected_brgy %}selected{% endif %}>
-            {{ b.barangay }}
-          </option>
-        {% endfor %}
-      </select>
+      <input type="text" name="barangay" id="barangay"
+             value="{{ selected_brgy if barangays else '' }}"
+             placeholder="{% if barangays %}Search a barangay…{% else %}Pick a municipality first{% endif %}"
+             {% if not barangays %}disabled{% endif %}
+             autocomplete="off" spellcheck="false"
+             role="combobox" aria-autocomplete="list" aria-expanded="false"
+             aria-controls="barangay-list">
+      <ul class="rec-combo-list" id="barangay-list" role="listbox" hidden></ul>
+      <script type="application/json" id="barangay-data">{{ barangays | map(attribute='barangay') | list | tojson }}</script>
     </div>
 
     {# Only categories with tagged species are listed (purpose_choices in
@@ -1743,7 +2000,7 @@
     {% else %}
       Pick a municipality and barangay above and this table fills with the
       ranked species for that site. Recommendations cover all
-      {{ "{:,}".format(barangay_total) }} barangays in {{ area_label() }}.
+      {{ "{:,}".format(barangay_total) }} barangays in Pangasinan.
     {% endif %}
   </p>
 

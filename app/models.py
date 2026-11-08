@@ -558,6 +558,49 @@ class MonitoringPlot(db.Model):
         foreign_keys='MonitoringPhoto.plot_id'
     )
 
+
+class SyntheticSiteArea(db.Model):
+    """
+    A made-up square for a site with no surveyed boundary, for the GIS map.
+
+    The DENR workbook gives each NGP site a barangay and a hectare figure
+    but no coordinates. scripts/tools/make_synthetic_areas.py draws a square
+    of the site's size inside its barangay and stores it here, so the map
+    can show one shape per site. Its POSITION is invented: never use it for
+    a location, an area check, a survival figure or a report. The map
+    labels it as synthetic. A site with a published GPS boundary gets no
+    row; the map draws the real boundary instead.
+
+    Kept apart from site, location and the monitoring tables, so making or
+    deleting squares can never change a real record. Deleting a site
+    deletes its square.
+    """
+    __tablename__ = 'synthetic_site_area'
+
+    id = db.Column(db.Integer, primary_key=True)
+    site_id = db.Column(
+        db.Integer,
+        db.ForeignKey('site.site_id', ondelete='CASCADE'),
+        nullable=False, unique=True,
+    )
+    # GeoJSON Polygon, longitude first, as on Site.boundary_geojson
+    geometry_geojson = db.Column(db.Text, nullable=False)
+    # the area as drawn; less than the site's when it had to shrink to fit
+    area_ha = db.Column(db.Float, nullable=False)
+    # what had to give way to fit it, e.g. "overlaps a neighbouring site"
+    placement_note = db.Column(db.String(300), nullable=True)
+    is_synthetic = db.Column(db.Boolean, nullable=False, default=True,
+                             server_default=db.true())
+    seed = db.Column(db.Integer, nullable=False)
+    created_at = db.Column(db.DateTime, nullable=False, default=manila_now)
+
+    site = db.relationship(
+        'Site',
+        backref=db.backref('synthetic_area', uselist=False,
+                           cascade='all, delete-orphan',
+                           passive_deletes=True),
+    )
+
 class Request(db.Model):
     __tablename__ = 'request'
 

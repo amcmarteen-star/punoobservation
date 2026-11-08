@@ -40,13 +40,14 @@
   <summary>What does the heat map show?</summary>
   <div class="faq-answer">
     <p>Where activity is concentrated. Choose what to measure: number of sites, seedlings planted, target seedlings or hectares.</p>
+    <p><strong>Show as</strong> picks how it is drawn. <em>Site areas</em> (the default) draws one shape per site. A solid outline is the site's surveyed boundary. A dashed outline is a synthetic approximation for visualization: it has the site's real size in hectares, but its shape and position inside the barangay are made up, because the DENR records give no coordinates. <em>Whole barangays</em> shades each barangay by its total instead.</p>
   </div>
 </details>
 
 <details class="faq-item">
-  <summary>Why is a site's marker in the middle of the barangay?</summary>
+  <summary>Is a site's tree at its real location?</summary>
   <div class="faq-answer">
-    <p>Sites imported from DENR records have no exact location, so they sit at the barangay centre.</p>
+    <p>Each tree is one site. Sites imported from DENR records have no exact location, so each stands in an <strong>approximate area</strong>: the site's real size in hectares, at a made-up place inside its barangay. Its tooltip says "Approximate position".</p>
     <p>A site moves to its real place once the province publishes its GPS boundary.</p>
   </div>
 </details>
@@ -62,10 +63,11 @@
 </details>
 
 <details class="faq-item">
-  <summary>What is the difference between a solid and a dashed boundary?</summary>
+  <summary>What do the different site boundaries mean?</summary>
   <div class="faq-answer">
-    <p><strong>Solid:</strong> an official boundary, measured with GPS and published by the province.</p>
-    <p><strong>Dashed:</strong> a proposed site from a request, not surveyed yet. Only staff see these.</p>
+    <p><strong>Solid blue:</strong> an official boundary, measured with GPS and published by the province.</p>
+    <p><strong>Dashed blue:</strong> a proposed site from a request, not surveyed yet. Only staff see these.</p>
+    <p><strong>Dotted green:</strong> an approximate area. It has the site's real size, but its shape and place are made up for the map. No two sites' areas overlap.</p>
   </div>
 </details>
 

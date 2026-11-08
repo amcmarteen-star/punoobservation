@@ -161,7 +161,9 @@
 
     if (isAdoption()) {
       if (site && !allowed.has(norm(site.municipality))) {
-        errors.push(site.municipality + " is outside your jurisdiction. Pick a site in a municipality you cover.");
+        errors.push(CFG.limited
+          ? site.municipality + " is outside your jurisdiction. Pick a site in a municipality you cover."
+          : site.municipality + " is not open for requests yet. Pick a site in another municipality.");
       }
       return { errors: errors, warnings: warnings };
     }
@@ -186,7 +188,9 @@
       if (!f) {
         errors.push(what + " is outside the area this system covers (Districts 5 and 6). Move it inside Eastern Pangasinan.");
       } else if (!allowed.has(norm(f.properties.NAME_2))) {
-        errors.push(what + " is in " + f.properties.NAME_2 + ", outside your jurisdiction.");
+        errors.push(CFG.limited
+          ? what + " is in " + f.properties.NAME_2 + ", outside your jurisdiction."
+          : what + " is in " + f.properties.NAME_2 + ", which is not open for requests yet.");
       } else if (corners.length >= 3) {
         const outside = corners.filter(function (c) { return !featureContains(f, c[0], c[1]); }).length;
         if (outside) {

@@ -9,7 +9,8 @@ DENR structure:
       CENRO Alaminos            Western Pangasinan      -> admin
 
 A superadmin sees the province. An admin sees their own CENRO. Field
-officers and ordinary users inherit whatever CENRO they are assigned.
+officers inherit whatever CENRO they are assigned. Normal users are not
+limited by jurisdiction at all.
 
 FAILS OPEN. A user with no CENRO sees everything. See the note in the
 Part 1 document for why.
@@ -49,6 +50,9 @@ CENRO_MUNICIPALITIES = {
 }
 
 CENRO_LIST = list(CENRO_MUNICIPALITIES.keys())
+
+# Roles held to their assigned CENRO. Everyone else is province-wide.
+CENRO_LIMITED_ROLES = ('admin', 'field_officer')
 
 # The part of the province each CENRO covers, as the interface names it.
 CENRO_REGIONS = {
@@ -108,10 +112,11 @@ def current_cenro():
     """
     The CENRO the logged-in user is limited to, or None for no limit.
 
-    None means province-wide: superadmins, and anyone without an
-    assignment.
+    None means province-wide: superadmins, normal users, guests, and staff
+    without an assignment. Only CENRO staff (admins and field officers)
+    are held to their CENRO; a normal user's CENRO does not limit them.
     """
-    if session.get('role') == 'superadmin':
+    if session.get('role') not in CENRO_LIMITED_ROLES:
         return None
     return session.get('cenro') or None
 
