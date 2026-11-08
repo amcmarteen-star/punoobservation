@@ -58,8 +58,9 @@ from app.services.request_site import site_position     # noqa: E402
 RESULTS = []
 NOTES = []
 
-# Inside the real Bacag, Villasis outline (app/static/geojson/eastern).
-CENTRE_LAT, CENTRE_LON = 15.94064, 120.58656
+# Inside the official Bacag, Villasis outline (app/static/geojson/eastern),
+# with room for the 0.004-degree test plot around it.
+CENTRE_LAT, CENTRE_LON = 15.92434, 120.58222
 PLOT = 0.002          # the requester's plot: centre +/- this many degrees
 CORNER = 0.0019       # the officer's corner photos, just inside the plot
 SITE_NAME = 'Temporary Test Site - Bacag'

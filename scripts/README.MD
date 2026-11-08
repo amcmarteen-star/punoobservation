@@ -93,6 +93,7 @@ climate, 2014–2023, CC BY 4.0), BSWM Philippine Soil Series.
 |---------|--------------|
 | `python -m scripts.tools.fix_names --dry-run` | Shows barangay and town names written without spaces ("SanJuan") and what they would become. Drop `--dry-run` to apply, in the database and the generated CSVs. |
 | `python -m scripts.tools.evaluate_recommender` | Scores the species recommender (Precision@K, NDCG@K). |
+| `python -m scripts.tools.official_boundaries "<folder>" --dry-run` | Replaces the map's town, barangay and province outlines with the official PSA/NAMRIA shapes (OCHA HDX "Philippines - Subnational Administrative Boundaries", the folder with `phl_admin2.shp` to `phl_admin4.shp`). Names and other properties stay as they are; only the shapes change. Drop `--dry-run` to write the files. The download is about 1.6 GB, so it is not kept in the project. |
 
 ## Where the original data came from
 
