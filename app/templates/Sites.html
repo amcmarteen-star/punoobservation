@@ -204,6 +204,12 @@
         </div>
         <p class="um-subtitle">All registered reforestation sites across {{ area_label() }}.</p>
         <p class="text-secondary small mb-0">Showing: {{ scope }}</p>
+        {% if archived_count %}
+        <p class="text-secondary small mb-0">
+            {{ archived_count }} archived site{{ 's' if archived_count != 1 }} not listed (found not suitable).
+            <a href="{{ url_for('visits.index') }}">See them in Site Visits</a>
+        </p>
+        {% endif %}
     </div>
     {% if session.role in ['admin', 'superadmin'] %}
     {# Opens the export dialog below, where the user picks what goes in.

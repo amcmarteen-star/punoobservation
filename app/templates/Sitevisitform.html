@@ -1,4 +1,5 @@
 {% extends "Base.html" %}
+{% from 'partials/_assets.html' import asset_v %}
 {# visits.new_visit: a field officer records one visit to a site made
    from a request. On an error the route renders this again with the
    values sent, in `form`. #}
@@ -25,7 +26,41 @@
                  border: 1px solid var(--line-strong); border-radius: 999px; font-size: 0.85rem; cursor: pointer; }
   .sv-yn label:has(input:checked) { border-color: var(--brand-solid); color: var(--brand-text); font-weight: 600; }
   .sv-yn input { accent-color: var(--brand-solid); }
+
+  /* plot preview (corner-preview.js) */
+  .cp-box { margin-top: 1rem; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+  .cp-head { padding: 0.7rem 0.9rem; border-bottom: 1px solid var(--line); }
+  .cp-head strong { display: block; color: var(--text-heading); font-size: 0.9rem; }
+  .cp-head small { color: var(--text-2); }
+  .cp-map { height: 320px; background: var(--surface-2); }
+  .cp-legend { display: flex; flex-wrap: wrap; gap: 0.3rem 1.1rem; padding: 0.55rem 0.9rem;
+               border-top: 1px solid var(--line); font-size: 0.78rem; color: var(--text-2); }
+  .cp-legend i { display: inline-block; width: 1.1rem; margin-right: 0.35rem; vertical-align: middle; border-top: 2px dashed; }
+  .cp-legend .k-plot { border-top: 2px solid #16a34a; }
+  .cp-legend .k-req { border-color: #0ea5e9; }
+  .cp-legend .k-brgy { border-color: #64748b; }
+  .cp-summary { margin: 0; padding: 0.7rem 0.9rem; border-top: 1px solid var(--line); font-size: 0.875rem;
+                font-weight: 600; color: var(--text-strong); }
+  .cp-summary.is-ok { background: var(--ok-bg); color: var(--ok-text); }
+  .cp-summary.is-warn { background: var(--warn-bg); color: var(--warn-strong); }
+  .cp-summary.is-bad { background: var(--danger-bg); color: var(--danger-strong); }
+  .cp-list { list-style: none; margin: 0; padding: 0; }
+  .cp-list li { display: flex; gap: 0.65rem; padding: 0.6rem 0.9rem; border-top: 1px solid var(--line); }
+  .cp-num { flex: none; display: inline-grid; place-items: center; width: 1.5rem; height: 1.5rem; border-radius: 50%;
+            font-size: 0.75rem; font-weight: 700; color: #fff; background: #16a34a; }
+  .cp-list li.is-warn .cp-num { background: #d97706; }
+  .cp-list li.is-bad .cp-num { background: #dc2626; }
+  .cp-body { min-width: 0; display: grid; gap: 0.1rem; }
+  .cp-name { font-size: 0.85rem; color: var(--text-strong); overflow-wrap: anywhere; }
+  .cp-meta { font-size: 0.78rem; color: var(--text-2); }
+  .cp-note { font-size: 0.8rem; font-weight: 600; color: var(--warn-strong); }
+  .cp-list li.is-bad .cp-note { color: var(--danger-strong); }
+  .cp-pin { display: grid !important; place-items: center; border-radius: 50%; border: 2px solid #fff;
+            font: 700 12px/1 Inter, sans-serif; color: #fff; background: #16a34a; box-shadow: 0 1px 4px rgba(0,0,0,.45); }
+  .cp-pin.is-warn { background: #d97706; }
+  .cp-pin.is-bad { background: #dc2626; }
 </style>
+<link rel="stylesheet" href="{{ url_for('static', filename='vendor/leaflet/leaflet.css') }}" />
 {% endblock %}
 
 {% block content %}
@@ -143,12 +178,28 @@
     <div class="um-field">
       <label for="boundary_photos">Corner photographs &mdash; site boundary</label>
       <input type="file" id="boundary_photos" name="boundary_photos" multiple accept="image/*"
-             data-upload-zone data-max-mb="{{ app_limits.maxFileMb }}">
+             data-upload-zone data-max-mb="{{ app_limits.maxFileMb }}"
+             data-corner-preview="#cornerPreview">
       <p class="um-field-hint">
         Stand at each corner of the site and take one photo. At least 4 corners
         make the boundary, which goes to the province for publication once your
         CENRO approves the visit.
       </p>
+    </div>
+
+    <div class="cp-box" id="cornerPreview">
+      <div class="cp-head">
+        <strong>Plot preview</strong>
+        <small>Drawn from the GPS in your corner photos, before you save. The order of the photos doesn't matter.</small>
+      </div>
+      <div class="cp-map" data-cp-map role="img" aria-label="Map of the corner photos and the plot they make"></div>
+      <div class="cp-legend">
+        <span><i class="k-plot"></i>Your plot</span>
+        {% if corner_preview.proposed %}<span><i class="k-req"></i>Requester's mark</span>{% endif %}
+        {% if corner_preview.barangay %}<span><i class="k-brgy"></i>{{ corner_preview.barangayName }} outline (approximate)</span>{% endif %}
+      </div>
+      <p class="cp-summary" data-cp-summary aria-live="polite">Add corner photos to see the plot they make.</p>
+      <ul class="cp-list" data-cp-list></ul>
     </div>
   </div>
 
@@ -188,4 +239,7 @@
     sync();
   })();
 </script>
+<script type="application/json" id="corner-preview-config">{{ corner_preview | tojson }}</script>
+<script src="{{ url_for('static', filename='vendor/leaflet/leaflet.js') }}"></script>
+<script src="{{ url_for('static', filename='js/corner-preview.js', v=asset_v) }}"></script>
 {% endblock %}
