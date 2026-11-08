@@ -150,15 +150,27 @@ def scope_sites(query):
     return query
 
 
+ARCHIVED_STATUS = 'Not Suitable'
+
+
+def without_archived(query):
+    """
+    Leave out archived sites: temporary sites closed as not suitable. They
+    are kept, with their visits, photos and the CENRO's suggestion, and
+    open from Site Visits, but no longer appear in the site lists.
+    The query must include Site.
+    """
+    return query.filter(Site.site_status != ARCHIVED_STATUS)
+
+
 def official_sites(query):
     """
     Leave out sites that are not real records yet, for official figures
-    and exports: a site whose request is still under review, and a site
-    closed as not suitable. Imported DENR sites have no request and stay.
+    and exports: a site whose request is still under review, and an
+    archived site. Imported DENR sites have no request and stay.
     The query must select from Site.
     """
-    return query.filter(
-        Site.site_status != 'Not Suitable',
+    return without_archived(query).filter(
         or_(Site.source_request_id.is_(None),
             Site.source_request.has(Request.status == 'Approved')),
     )

@@ -53,7 +53,9 @@ from app.services.boundary_publication import (
     NOT_SUITABLE, apply_publication, publication_problem,
 )
 from app.services.mailer import email_link, send_template
-from app.services.monitoring import build_boundary, inspect_photo, save_photo
+from app.services.monitoring import (
+    MIN_BOUNDARY_POINTS, build_boundary, inspect_photo, save_photo,
+)
 from app.services.request_site import proposed_area_for_site
 from app.services.visit_assignment import (
     VISIT_TYPES, assign_officer, assignment_problem, close_site,
@@ -180,7 +182,7 @@ def index():
             if is_officer and site.site_status != NOT_SUITABLE else []
         mine.extend(my_open)
         if site.site_status == NOT_SUITABLE:
-            stage, order = 'Not suitable', 5
+            stage, order = 'Archived: not suitable', 5
         elif site.boundary_published:
             stage, order = 'Boundary published', 4
         elif any(v.status == 'Pending' for v in visits):
@@ -315,6 +317,19 @@ def new_visit(site_id):
     def render(form, errors=()):
         for e in errors:
             flash(e, "danger")
+        # For the plot preview beside the corner photos (corner-preview.js):
+        # the barangay outline the photos are checked against, the
+        # requester's mark, and the planned area.
+        from app.routes.dashboard import _load_barangay_geometry
+        preview = {
+            "barangay": (_load_barangay_geometry(site.location.municipality,
+                                                 site.location.barangay)
+                         if site.location else None),
+            "barangayName": site.location.barangay if site.location else None,
+            "proposed": proposed_area_for_site(site),
+            "plannedHa": site.area_size_ha,
+            "minPoints": MIN_BOUNDARY_POINTS,
+        }
         return render_template(
             'Sitevisitform.html',
             active_page='site_visits',
@@ -326,6 +341,7 @@ def new_visit(site_id):
             findings=FINDINGS,
             land_checks=LAND_CHECKS,
             today=_today().isoformat(),
+            corner_preview=preview,
         )
 
     if request.method == 'GET':

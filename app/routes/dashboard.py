@@ -49,6 +49,7 @@ from app.services.monitoring import (
 )
 from app.utils.jurisdiction import (
     scope_sites, scope_locations, allowed_municipalities, official_sites,
+    without_archived,
     can_see_municipality, canonical_municipality,
     current_cenro, is_superadmin, scope_label,
     CENRO_LIST, CENRO_MUNICIPALITIES,
@@ -298,7 +299,10 @@ def Reforestation_sites():
         .order_by(Location.municipality, Location.barangay, Site.site_name)
     )
     q = scope_sites(q)
-    sites = q.all()
+    # Archived sites (closed as not suitable) are left out; the page says
+    # how many and where to find them.
+    archived_count = q.filter(Site.site_status == 'Not Suitable').count()
+    sites = without_archived(q).all()
 
     grouped = defaultdict(lambda: defaultdict(list))
     for s in sites:
@@ -319,6 +323,7 @@ def Reforestation_sites():
     export_has_no_year = any(s.year_contracted is None for s in sites)
 
     return render_template('Sites.html', grouped=grouped, site_totals=site_totals, scope = scope_label(),
+                           archived_count=archived_count,
                            export_years=export_years,
                            export_has_no_year=export_has_no_year)
 
@@ -1690,7 +1695,7 @@ def reports_page():
         db.session.query(Location.municipality)
         .join(Site, Site.location_id == Location.location_id)
     )
-    q = scope_sites(q)
+    q = without_archived(scope_sites(q))
     municipalities = [
         m[0] for m in q.distinct().order_by(Location.municipality).all()
     ]
@@ -1805,13 +1810,14 @@ def api_sites_in_barangay():
     if not can_see_municipality(muni):
         return jsonify([])
  
-    rows = (
+    # Archived sites are left out: the map panel and the report form's
+    # site list both read this.
+    rows = without_archived(
         db.session.query(Site, Location)
         .join(Location, Site.location_id == Location.location_id)
         .filter(Location.municipality == muni)
         .filter(Location.barangay == brgy)
-        .all()
-    )
+    ).all()
  
     out = []
     for site, loc in rows:
@@ -1905,6 +1911,15 @@ def submit_report():
     site = Site.query.get(site_id)
     if site is None:
         flash("Choose a site before submitting.", "danger")
+        return redirect(url_for('dashboard.reports_page'))
+    # The form only offers the officer's own CENRO's sites; a hand-made
+    # post for another CENRO's site is refused too.
+    if current_cenro() and site.cenro != current_cenro():
+        flash("That site is not in your jurisdiction.", "danger")
+        return redirect(url_for('dashboard.reports_page'))
+    if site.site_status == 'Not Suitable':
+        flash("That site is archived: a site visit found it not suitable "
+              "for planting.", "warning")
         return redirect(url_for('dashboard.reports_page'))
  
     record = (
