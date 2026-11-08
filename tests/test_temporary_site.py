@@ -8,12 +8,13 @@ publishes a GPS boundary. This test walks one such site through every
 step, through the real pages and forms:
 
     1  a resident requests a New Planting Site, with a pin and a plot
-    2  the CENRO approves the request
-    3  the CENRO creates the site from it            -> temporary site
+    2  the CENRO marks the request Under Review
+    3  the CENRO creates the site and assigns an officer -> temporary site
     4  who can see it while it is temporary
     5  a field officer submits a report with 4 GPS corner photos
     6  the CENRO approves the report                 -> waits for province
-    7  only the provincial administrator may publish
+    7  only the provincial administrator may publish, and only once the
+       request is Approved
     8  the province publishes                        -> official site
     9  withdrawing it hides it again; declining needs a reason
 
@@ -48,6 +49,7 @@ from app import create_app                              # noqa: E402
 from app.extensions import db                           # noqa: E402
 from app.models import (                                # noqa: E402
     MonitoringReport, Notification, ReforestationRecord, Request, Site,
+    VisitAssignment,
 )
 from app.routes import dashboard as dashboard_routes    # noqa: E402
 from app.services.request_site import site_position     # noqa: E402
@@ -178,7 +180,8 @@ def run(app, s):
         'planting_type': 'timber',
         'contact_name': 'Juan dela Cruz', 'contact_number': '09171234567',
         'contact_email': 'juan@synthetic.test',
-    })
+        'attachments': [(io.BytesIO(b'%PDF-1.4 synthetic'), 'plan.pdf')],
+    }, content_type='multipart/form-data')
     base.fresh()
     req = Request.query.filter_by(user_id=s.citizen_id,
                                   request_type='New Planting Site').first()
@@ -199,16 +202,16 @@ def run(app, s):
           Notification.query.filter_by(user_id=s.cenro_admin_id,
                                        notification_type='New Request').count() >= 1)
 
-    # --- 2. approve -------------------------------------------------------
-    step = '2 approve request'
-    r = dagupan.post('/admin/requests/%d/review' % req_id, data={'status': 'Approved'})
+    # --- 2. under review ----------------------------------------------------
+    step = '2 under review'
+    r = dagupan.post('/admin/requests/%d/review' % req_id, data={'status': 'Under Review'})
     base.fresh()
-    check(step, 'another CENRO cannot approve it',
+    check(step, 'another CENRO cannot review it',
           db.session.get(Request, req_id).status == 'Submitted')
-    r = cenro.post('/admin/requests/%d/review' % req_id, data={'status': 'Approved'})
+    r = cenro.post('/admin/requests/%d/review' % req_id, data={'status': 'Under Review'})
     base.fresh()
-    check(step, 'its own CENRO approves it',
-          db.session.get(Request, req_id).status == 'Approved')
+    check(step, 'its own CENRO marks it Under Review',
+          db.session.get(Request, req_id).status == 'Under Review')
 
     # --- 3. create the site -------------------------------------------------
     step = '3 create site'
@@ -218,6 +221,8 @@ def run(app, s):
         'area_size_ha': '19', 'date_established': today.isoformat(),
         'zone_type': 'Production', 'target_seedlings': '30000',
         'date_planted': today.isoformat(), 'contact_person': 'Juan dela Cruz',
+        'officer_id': str(s.officer_id), 'visit_type': 'Pre-planting check',
+        'target_date': '', 'assignment_note': '',
     }
     page = cenro.get('/admin/requests/%d/create-site' % req_id)
     check(step, 'create-site form opens for the CENRO', page.status_code == 200)
@@ -238,11 +243,13 @@ def run(app, s):
     r = cenro.post('/admin/requests/%d/create-site' % req_id, data=form)
     check(step, 'a second site cannot be made from the same request',
           Site.query.filter_by(source_request_id=req_id).count() == 1)
-    r = cenro.post('/admin/requests/%d/review' % req_id, data={'status': 'Rejected',
-                                                               'review_note': 'x'})
+    check(step, 'the chosen officer is assigned the visit',
+          VisitAssignment.query.filter_by(site_id=site_id, officer_id=s.officer_id,
+                                          status='Open').count() == 1)
+    r = cenro.post('/admin/requests/%d/review' % req_id, data={'status': 'Submitted'})
     base.fresh()
-    check(step, 'request is locked to Approved once it has a site',
-          db.session.get(Request, req_id).status == 'Approved')
+    check(step, 'request cannot go back to Submitted once it has a site',
+          db.session.get(Request, req_id).status == 'Under Review')
 
     # --- 4. while temporary -------------------------------------------------
     step = '4 temporary'
@@ -352,6 +359,14 @@ def run(app, s):
 
     # --- 7. who may publish ---------------------------------------------------
     step = '7 who may publish'
+    base.publish_post(penro, report_id, 'publish')
+    base.fresh()
+    check(step, 'not while the request is still Under Review',
+          not db.session.get(Site, site_id).boundary_published)
+    cenro.post('/admin/requests/%d/review' % req_id, data={'status': 'Approved'})
+    base.fresh()
+    check(step, 'the CENRO approves the request',
+          db.session.get(Request, req_id).status == 'Approved')
     for who, client in (('CENRO admin', cenro), ('system admin', superadmin),
                         ('field officer', officer)):
         base.publish_post(client, report_id, 'publish')
@@ -374,6 +389,13 @@ def run(app, s):
     check(step, "site boundary is the report's", site.boundary_geojson
           == report.boundary_geojson and site.boundary_source_report_id == report_id)
     check(step, 'report marked Published', report.publication_status == 'Published')
+    cenro.post('/admin/requests/%d/review' % req_id, data={'status': 'Rejected',
+                                                           'review_note': 'x'})
+    base.fresh()
+    check(step, 'request is locked to Approved once the site is published',
+          db.session.get(Request, req_id).status == 'Approved')
+    site = db.session.get(Site, site_id)
+    report = db.session.get(MonitoringReport, report_id)
     for who, client in (('guest', guest), ('resident', citizen)):
         v = visibility(client, site_id)
         check(step, f'{who}: now in the barangay site list', v['barangay_list'])
@@ -464,6 +486,9 @@ def main():
     real_save = dashboard_routes.save_photo
     dashboard_routes.save_photo = (
         lambda f, _static, report_id, index: real_save(f, photo_dir, report_id, index))
+    real_doc_save = dashboard_routes.save_request_file
+    dashboard_routes.save_request_file = (
+        lambda f, _static, request_id, index: real_doc_save(f, photo_dir, request_id, index))
 
     failed = 1
     try:
@@ -474,6 +499,7 @@ def main():
             failed = print_results()
     finally:
         dashboard_routes.save_photo = real_save
+        dashboard_routes.save_request_file = real_doc_save
         shutil.rmtree(base.TMPDIR, ignore_errors=True)
 
     return 1 if failed else 0

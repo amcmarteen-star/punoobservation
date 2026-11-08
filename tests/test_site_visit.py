@@ -2,10 +2,11 @@
 Site visits, end to end (app/routes/visits.py).
 
 A temporary site (made from a request) is checked in the field with site
-visits before it has seedlings to count. This test drives every part
-through the real pages and forms:
+visits before it has seedlings to count. The CENRO assigns an officer for
+each visit. This test drives every part through the real pages and forms:
 
-    1  who can open a site's visits, and the map's Site visits button
+    1  who can open a site's visits, the map's Site visits button, and
+       how an assignment lets the officer record a visit
     2  the form refuses bad input
     3  a pre-planting check with 4 GPS corner photos builds a boundary
     4  only the site's CENRO approves it; the boundary goes to the province
@@ -46,7 +47,7 @@ from app import create_app                              # noqa: E402
 from app.extensions import db                           # noqa: E402
 from app.models import (                                # noqa: E402
     Location, MonitoringReport, Notification, ReforestationRecord, Request,
-    Site, SiteVisit,
+    Site, SiteVisit, VisitAssignment,
 )
 from app.routes import visits as visits_routes          # noqa: E402
 from app.services import mailer                         # noqa: E402
@@ -61,11 +62,11 @@ def check(step, name, ok, detail=''):
 
 def make_temporary_site(s, name, with_plot=True):
     """A site as the CENRO's create-site form leaves it (tested in
-    test_temporary_site.py): from an approved request, no boundary, a
+    test_temporary_site.py): from a request under review, no boundary, a
     planting record with a target only."""
     loc = Location.query.filter_by(barangay='Bacag').first()
     req = Request(user_id=s.citizen_id, location_id=loc.location_id,
-                  request_type='New Planting Site', status='Approved',
+                  request_type='New Planting Site', status='Under Review',
                   contact_name='Juan dela Cruz',
                   contact_email='juan.contact@synthetic.test',
                   latitude=CENTRE_LAT, longitude=CENTRE_LON)
@@ -92,6 +93,13 @@ def make_temporary_site(s, name, with_plot=True):
         date_planted=date.today(), target_quantity=30000))
     db.session.commit()
     return site.site_id
+
+
+def assign(cenro, s, site_id, visit_type='Pre-planting check'):
+    """The CENRO sends the field officer, through the site's page."""
+    return cenro.post('/sites/%d/assignments' % site_id, data={
+        'officer_id': str(s.officer_id), 'visit_type': visit_type,
+        'target_date': '', 'note': ''})
 
 
 def corner_photos(day):
@@ -145,8 +153,10 @@ def run(app, s):
         check(step, f'{who} cannot open the visits', r.status_code == 302,
               r.status_code)
     page = officer.get(page_url).get_data(as_text=True)
-    check(step, "site's field officer opens it, with Record site visit",
-          'Site Visits' in page and 'Record site visit' in page)
+    check(step, "site's field officer opens it; no Record button until assigned",
+          'Site Visits' in page and 'Record site visit' not in page)
+    check(step, 'an officer who is not assigned cannot open the record form',
+          officer.get(new_url).status_code == 302)
     page = cenro.get(page_url).get_data(as_text=True)
     check(step, "site's CENRO admin opens it, without the record button",
           'Site Visits' in page and 'Record site visit' not in page)
@@ -172,10 +182,35 @@ def run(app, s):
           'href="/site-visits"' in nav and 'Site Visits' in nav)
     nav = cenro.get('/dashboard').get_data(as_text=True)
     nav = nav.split('class="sidebar-nav"')[1].split('</nav>')[0]
-    check(step, "CENRO admin's sidebar does not", 'href="/site-visits"' not in nav)
+    check(step, "CENRO admin's sidebar has it too", 'href="/site-visits"' in nav)
     page = officer.get('/site-visits').get_data(as_text=True)
-    check(step, 'Site Visits list shows the site as needing a first visit',
-          'Visit Test Site - Bacag' in page and 'Needs a first visit' in page
+    check(step, 'Site Visits list shows the site as needing an officer',
+          'Visit Test Site - Bacag' in page and 'Needs an officer' in page
+          and '/sites/%d/visits/new' % site_id not in page)
+    check(step, 'the CENRO sees the assign form',
+          'Assign a visit' in cenro.get(page_url).get_data(as_text=True))
+    box.clear()
+    dagupan.post('/sites/%d/assignments' % site_id, data={
+        'officer_id': str(s.officer_id), 'visit_type': 'Pre-planting check'})
+    check(step, 'another CENRO cannot assign',
+          VisitAssignment.query.filter_by(site_id=site_id).count() == 0)
+    assign(cenro, s, site_id)
+    base.fresh()
+    check(step, 'the CENRO assigns the officer',
+          VisitAssignment.query.filter_by(site_id=site_id, status='Open').count() == 1)
+    check(step, 'the officer is emailed the assignment',
+          box and box[-1].get('to') == [s.officer_name + '@synthetic.test']
+          and 'Visit Test Site - Bacag' in box[-1].get('subject', ''),
+          box[-1] if box else None)
+    _, notes = get_json(officer, '/api/notifications')
+    check(step, 'the notification links to the site',
+          any(x.get('site_id') == site_id for x in notes.get('notifications', [])))
+    page = officer.get(page_url).get_data(as_text=True)
+    check(step, 'the officer now sees the request and the Record button',
+          'Record site visit' in page and 'Juan dela Cruz' in page)
+    page = officer.get('/site-visits').get_data(as_text=True)
+    check(step, 'the list has it under Assigned to you, with Record visit',
+          'Assigned to you' in page and 'Officer assigned' in page
           and '/sites/%d/visits/new' % site_id in page)
     check(step, 'the list highlights Site Visits in the sidebar',
           'class="nav-link active"' in page.split('href="/site-visits"')[1][:80])
@@ -220,6 +255,11 @@ def run(app, s):
           sorted(p.photo_type for p in v.photos) == ['boundary'] * 4 + ['site']
           and not [p.flags for p in v.photos if p.flags],
           [(p.photo_type, p.flags) for p in v.photos])
+    used = VisitAssignment.query.filter_by(site_id=site_id).first()
+    check(step, 'the assignment is done and points at the visit',
+          used.status == 'Done' and used.visit_id == visit_id)
+    check(step, 'another visit needs another assignment',
+          officer.get(new_url).status_code == 302)
     check(step, 'the site is not touched before review',
           db.session.get(Site, site_id).boundary_geojson is None)
     n = Notification.query.filter_by(user_id=s.cenro_admin_id, visit_id=visit_id).first()
@@ -246,6 +286,13 @@ def run(app, s):
     v = latest_visit(site_id)
     check(step, 'approved; boundary waits for publication',
           v.status == 'Approved' and v.publication_status == 'Pending Publication')
+    base.fresh()
+    check(step, 'approving a Suitable visit approves the request',
+          db.session.get(Site, site_id).source_request.status == 'Approved')
+    check(step, 'the requester is told',
+          Notification.query.filter(Notification.user_id == s.citizen_id,
+                                    Notification.message.like('%Approved, after a field visit%')
+                                    ).count() == 1)
     check(step, 'provincial admin is notified',
           Notification.query.filter_by(user_id=s.penro_id, visit_id=visit_id).count() >= 1)
     check(step, 'field officer is told',
@@ -279,6 +326,7 @@ def run(app, s):
 
     # a second boundary for the same site, declined: withdrawing IT must not
     # take the published one off the map (review finding)
+    assign(cenro, s, site_id)
     data = visit_form(today)
     data['boundary_photos'] = corner_photos(today)
     officer.post(new_url, data=data, content_type='multipart/form-data')
@@ -300,6 +348,7 @@ def run(app, s):
     # --- 6. planting confirmation ------------------------------------------------------
     step = '6 planting'
     planted_on = today - timedelta(days=3)
+    assign(cenro, s, site_id, 'Planting confirmed')
     officer.post(new_url, data=visit_form(
         today, visit_type='Planting confirmed', seedlings_planted='15,000',
         date_planted=planted_on.isoformat(), remarks='Planted with the PO.'),
@@ -332,22 +381,26 @@ def run(app, s):
           visibility(officer, bad_id)['proposed'])
     # first a Suitable visit with a boundary, approved, waiting for the
     # province; then a second Suitable visit left pending
+    assign(cenro, s, bad_id)
     data = visit_form(today)
     data['boundary_photos'] = corner_photos(today)
     officer.post('/sites/%d/visits/new' % bad_id, data=data,
                  content_type='multipart/form-data')
     early = latest_visit(bad_id).visit_id
     cenro.post('/visits/%d/review' % early, data={'status': 'Approved'})
+    assign(cenro, s, bad_id)
     officer.post('/sites/%d/visits/new' % bad_id, data=visit_form(today),
                  content_type='multipart/form-data')
     waiting = latest_visit(bad_id).visit_id
     check(step, 'earlier boundary is waiting for the province',
           db.session.get(SiteVisit, early).publication_status == 'Pending Publication')
+    assign(cenro, s, bad_id)
     officer.post('/sites/%d/visits/new' % bad_id, data=visit_form(
         today, finding='Not suitable', remarks='Riverbank, floods every year.'),
         content_type='multipart/form-data')
     v3 = latest_visit(bad_id)
     check(step, 'Not suitable visit saved', v3 and v3.finding == 'Not suitable')
+    assign(cenro, s, bad_id)   # still open when the site is closed
     page = cenro.get('/visits/%d' % v3.visit_id).get_data(as_text=True)
     check(step, 'review form asks for a suggested new site',
           'Suggest a new planting site' in page)
@@ -370,6 +423,12 @@ def run(app, s):
           and 'upland' in (v3.suggestion_note or ''))
     check(step, 'site is marked Not Suitable',
           db.session.get(Site, bad_id).site_status == 'Not Suitable')
+    check(step, 'the request is rejected, with the suggestion as the note',
+          db.session.get(Site, bad_id).source_request.status == 'Rejected'
+          and 'upland' in (db.session.get(Site, bad_id).source_request.review_note or ''))
+    check(step, 'open assignments are withdrawn',
+          VisitAssignment.query.filter_by(site_id=bad_id, status='Open').count() == 0
+          and VisitAssignment.query.filter_by(site_id=bad_id, status='Cancelled').count() == 1)
     check(step, 'its boundary is not sent for publication',
           v3.publication_status == 'Not Applicable')
     told = Notification.query.filter(Notification.user_id == s.citizen_id,
@@ -408,14 +467,18 @@ def run(app, s):
                  content_type='multipart/form-data')
     check(step, 'no new visit can be recorded on the closed site',
           SiteVisit.query.filter_by(site_id=bad_id).count() == before)
+    assign(cenro, s, bad_id)
+    check(step, 'no officer can be assigned to the closed site',
+          VisitAssignment.query.filter_by(site_id=bad_id, status='Open').count() == 0)
     check(step, 'its visits page has no Record button',
           'Record site visit' not in officer.get('/sites/%d/visits' % bad_id)
           .get_data(as_text=True))
     check(step, 'visits page shows the Not suitable notice',
           'Not suitable.' in officer.get('/sites/%d/visits' % bad_id).get_data(as_text=True))
+    assign(cenro, s, site_id, 'Planting confirmed')
     page = officer.get('/site-visits').get_data(as_text=True)
     check(step, 'Site Visits list: not suitable, with no Record button',
-          'Not suitable</span>' in page
+          'Archived: not suitable</span>' in page
           and '/sites/%d/visits/new' % bad_id not in page)
     check(step, 'Site Visits list: the published site can still be visited',
           'Boundary published' in page and '/sites/%d/visits/new' % site_id in page)
@@ -478,6 +541,10 @@ def run(app, s):
             date_reviewed=datetime.now(), publication_status='Published',
             boundary_geojson=db.session.get(SiteVisit, visit_id).boundary_geojson,
             captured_area_ha=10.0))
+        db.session.add(VisitAssignment(
+            site_id=extra_site, officer_id=s.officer_id,
+            assigned_by=s.cenro_admin_id, visit_type='Planting confirmed',
+            status='Open'))
     db.session.commit()
     list_after = queries(officer, '/site-visits')
     pub_after = queries(penro, '/admin/publications?status=Published')
