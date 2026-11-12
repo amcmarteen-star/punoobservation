@@ -524,6 +524,26 @@ def tour_done():
         db.session.commit()
     return jsonify({"success": True})
 
+def _sign_up_barangay():
+    """
+    The Location picked at sign-up by the signed-in user, or None.
+
+    None for guests, for accounts made before the sign-up barangay was
+    saved, and when that barangay has no elevation data (the picker
+    cannot show it, so it is not a usable default).
+    """
+    user_id = session.get('user_id')
+    if not user_id:
+        return None
+    user = db.session.get(User, user_id)
+    if user is None or user.location_id is None:
+        return None
+    location = db.session.get(Location, user.location_id)
+    if location is None or location.elevation_m is None:
+        return None
+    return location
+
+
 @dashboard_bp.route('/recommendations')
 def recommendations():
     """
@@ -552,6 +572,15 @@ def recommendations():
 
     selected_muni = request.args.get('municipality', '')
     selected_brgy = request.args.get('barangay', '')
+    # A user starts on the barangay they picked at sign-up. This applies
+    # only when the page is opened with no picker values at all. The
+    # picker always sends both fields, so a cleared picker stays cleared
+    # and the user's own choice is never overwritten.
+    if 'municipality' not in request.args and 'barangay' not in request.args:
+        home = _sign_up_barangay()
+        if home is not None:
+            selected_muni = home.municipality
+            selected_brgy = home.barangay
     # Purpose filter: which CENRO category to score (default: all species).
     # An unknown value is refused, not ignored.
     selected_purpose = request.args.get('purpose') or PURPOSE_ALL

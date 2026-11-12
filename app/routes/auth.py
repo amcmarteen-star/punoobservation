@@ -113,6 +113,8 @@ def register():
             email_address=email_address,
             role="normal_user",
             organization_id=int(organization_id) if organization_id else None,
+            # the barangay they picked; the recommendation page starts here
+            location_id=location.location_id,
             # the login refuses until the emailed link is opened
             email_verified=False,
         )

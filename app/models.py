@@ -56,6 +56,13 @@ class User(db.Model):
     role = db.Column(db.String(20), nullable=False, default='normal_user')  # 'normal_user', 'field_officer', 'admin'
     cenro = db.Column(db.String(100), nullable=True)
 
+    # The barangay picked at sign-up. It is the default for the species
+    # recommendation page, and the holder can still pick another there.
+    # Nullable: accounts made before this column have none.
+    location_id = db.Column(
+        db.Integer, db.ForeignKey('location.location_id'), nullable=True
+    )
+
     # Accounts are deactivated, never deleted.
     #
     # Eight foreign keys point at users.user_id - the audit log, who
