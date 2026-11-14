@@ -722,6 +722,22 @@ html:has(> body.app-body) {
     flex-shrink: 0;
 }
 
+/* Sign Out is a button that posts to /logout. Reset the button look so it
+   matches the old link. */
+button.sign-out {
+    width: 100%;
+    background: none;
+    border: 0;
+    border-top: 1px solid rgba(255,255,255,0.08);
+    font-family: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+
+.sign-out-form {
+    margin: 0;
+}
+
 /* On the 64px icon rail there is only 32px inside the padding, so the
    bigger rows drop their side padding and just centre the icon. */
 .sidebar-init-collapsed .sidebar .nav-link,

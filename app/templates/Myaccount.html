@@ -575,8 +575,10 @@
       </p>
     </div>
     <div class="um-modal-foot">
-      <a href="{{ url_for('auth.logout') }}" class="um-btn-cancel"
-         style="text-align:center; text-decoration:none;">Sign out</a>
+      <form method="POST" action="{{ url_for('auth.logout') }}" style="display: contents;">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit" class="um-btn-cancel" style="text-align:center;">Sign out</button>
+      </form>
       <button type="button" class="um-btn-confirm" id="tempPasswordGo">Change password</button>
     </div>
   </div>

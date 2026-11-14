@@ -443,6 +443,7 @@
     up.importing = true;
     send(document.getElementById("dsForm").action, { processing: "Importing rows..." })
       .then(function (xhr) {
+        if (xhr.status === 400) throw new Error(JSON.parse(xhr.responseText).error || "Your page expired. Please try again.");
         // the server answers with the page it redirects to; show it in place
         if (xhr.responseURL) history.replaceState(null, "", xhr.responseURL);
         document.open();
@@ -546,6 +547,7 @@
     let data;
     try {
       const xhr = await send('/admin/reference-dataset/preview', { processing: "Reading workbook..." });
+      if (xhr.status === 400) throw new Error(JSON.parse(xhr.responseText).error || "Your page expired. Please try again.");
       data = JSON.parse(xhr.responseText);
       setState("selected", "Uploaded");
     } catch (err) {

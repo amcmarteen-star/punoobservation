@@ -483,7 +483,7 @@ def session_keepalive():
     })
 
 
-@auth_bp.route('/logout')
+@auth_bp.route('/logout', methods=['POST'])
 def logout():
     log_action('logout', 'users', session.get('user_id'), commit=True)
     session.clear()

@@ -127,6 +127,7 @@
 
     function markDone() {
       fetch("{{ url_for('dashboard.tour_done') }}", { method: "POST", headers: { "X-CSRFToken": csrfToken() } })
+        .then(function (res) { if (!res.ok) reportRequestFailed(res); })
         .catch(function () { /* tried again next time */ });
     }
 

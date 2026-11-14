@@ -922,7 +922,7 @@ endblock %} {% set active_page = 'reports' %} {% block content %}
     const c = await res.json();
 
     if (!c.ok) {
-      panel.innerHTML = `<div class="text-danger">${c.reason || "Cannot calculate."}</div>`;
+      panel.innerHTML = `<div class="text-danger">${c.reason || c.error || "Cannot calculate."}</div>`;
       return;
     }
 

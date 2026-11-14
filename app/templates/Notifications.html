@@ -586,7 +586,8 @@
                         method: 'POST', headers: { 'X-CSRFToken': csrfToken() } })
                 )
             );
-            if (results.some((r) => !r.ok)) throw new Error('some requests failed');
+            const failed = results.find((r) => !r.ok);
+            if (failed) await reportRequestFailed(failed);
         } catch (err) {
             console.error('Bulk notification action failed:', err);
             alert('Something went wrong. Please try again.');
@@ -606,7 +607,7 @@
                 `/api/notifications/${id}/${makeRead ? 'read' : 'unread'}`,
                 { method: 'POST', headers: { 'X-CSRFToken': csrfToken() } }
             );
-            if (!res.ok) throw new Error(res.status);
+            if (!res.ok) { await reportRequestFailed(res); return; }
 
             row.classList.toggle('unread', !makeRead);
             const label = makeRead ? 'Mark as unread' : 'Mark as read';
@@ -635,7 +636,7 @@
         btn.disabled = true;
         try {
             const res = await fetch(`/api/notifications/${id}/delete`, { method: 'POST', headers: { 'X-CSRFToken': csrfToken() } });
-            if (!res.ok) throw new Error(res.status);
+            if (!res.ok) { btn.disabled = false; await reportRequestFailed(res); return; }
         } catch (err) {
             console.error('Failed to delete notification:', err);
             btn.disabled = false;

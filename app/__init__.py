@@ -5,6 +5,8 @@ from flask import (
     Flask, session, request, flash, redirect, url_for, jsonify,
 )
 from werkzeug.exceptions import RequestEntityTooLarge
+from flask_wtf.csrf import CSRFError
+from urllib.parse import urlparse
 from app.config import Config
 from app.extensions import db, csrf
 from flask_migrate import Migrate
@@ -172,6 +174,24 @@ def create_app():
 
     # MAX_CONTENT_LENGTH: the form is refused before any route runs.
     # Send the user back with a message instead of a bare error page.
+    @app.errorhandler(CSRFError)
+    def _csrf_expired(_error):
+        """A form or fetch() sent a stale or missing token.
+
+        fetch() and upload calls send X-CSRFToken or X-Requested-With and
+        read JSON. Ordinary form posts flash a message and go back to the
+        page they came from.
+        """
+        message = "Your page expired. Please try again."
+        if (request.headers.get('X-CSRFToken')
+                or request.headers.get('X-Requested-With')):
+            return jsonify(ok=False, error=message), 400
+        flash(message, "warning")
+        back = request.referrer
+        if back and urlparse(back).netloc == request.host:
+            return redirect(back)
+        return redirect(url_for('dashboard.index'))
+
     @app.errorhandler(RequestEntityTooLarge)
     def _upload_too_large(_error):
         total_mb = app.config['MAX_CONTENT_LENGTH'] // (1024 * 1024)

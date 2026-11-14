@@ -293,6 +293,13 @@
             q(".up-o-cancel").disabled = true;   // the server has it now
         };
         xhr.onload = function () {
+            if (xhr.status === 400) {
+                // refused, e.g. an expired page: JSON, shown in this panel
+                var body = {};
+                try { body = JSON.parse(xhr.responseText); } catch (e) {}
+                fail(body.error || "Your page expired. Please try again.");
+                return;
+            }
             // the page the server answered with -- usually the redirect
             // target with its messages -- replaces this one
             if (xhr.responseURL) history.replaceState(null, "", xhr.responseURL);
@@ -306,6 +313,7 @@
         q(".up-o-close").addEventListener("click", close);
 
         xhr.open((form.getAttribute("method") || "POST").toUpperCase(), form.action);
+        xhr.setRequestHeader("X-Requested-With", "XMLHttpRequest");
         xhr.send(data);
         progress(0, files.reduce(function (n, f) { return n + f.size; }, 0) || 1);
         q(".up-o-cancel").focus();

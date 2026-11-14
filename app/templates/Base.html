@@ -23,6 +23,12 @@
         var m = document.querySelector('meta[name="csrf-token"]');
         return m ? m.getAttribute("content") : "";
       }
+      /* Shows the server message when a fetch() POST is refused. */
+      function reportRequestFailed(res) {
+        return res.json().catch(function () { return {}; }).then(function (data) {
+          alert(data.error || "Something went wrong. Please try again.");
+        });
+      }
       /* Runs before the body renders: setting the attribute afterwards
          would show one frame of the light theme first. Light stays the
          default -- dark applies only once someone has chosen it. */
@@ -540,7 +546,9 @@
         </nav>
 
         {% if session.username %}
-        <a href="{{ url_for('auth.logout') }}" class="sign-out" id="signOutLink">
+        <form method="POST" action="{{ url_for('auth.logout') }}" class="sign-out-form">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit" class="sign-out" id="signOutLink">
           <svg
             viewBox="0 0 24 24"
             fill="none"
@@ -554,7 +562,8 @@
             <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
           </svg>
           <span class="sign-out-text">Sign Out</span>
-        </a>
+        </button>
+        </form>
         {% else %}
         <a href="{{ url_for('auth.login') }}" class="sign-out">
           <svg
@@ -796,7 +805,10 @@
         </div>
         <div class="um-modal-foot">
           <button type="button" class="um-btn-cancel" data-signout-close>Stay signed in</button>
-          <a href="{{ url_for('auth.logout') }}" class="um-btn-confirm">Yes, sign out</a>
+          <form method="POST" action="{{ url_for('auth.logout') }}" style="display: contents;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="um-btn-confirm">Yes, sign out</button>
+          </form>
         </div>
       </div>
     </div>
@@ -839,7 +851,10 @@
           </p>
         </div>
         <div class="um-modal-foot">
-          <a href="{{ url_for('auth.logout') }}" class="um-btn-cancel" style="text-align:center; text-decoration:none;">Sign out now</a>
+          <form method="POST" action="{{ url_for('auth.logout') }}" style="display: contents;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="um-btn-cancel" style="text-align:center;">Sign out now</button>
+          </form>
           <button type="button" class="um-btn-confirm" id="idleStay">Stay signed in</button>
         </div>
       </div>
@@ -1304,10 +1319,11 @@
 
       async function markNotificationRead(id, el) {
         try {
-          await fetch(`/api/notifications/${id}/read`, {
+          const res = await fetch(`/api/notifications/${id}/read`, {
             method: "POST",
             headers: { "X-CSRFToken": csrfToken() },
           });
+          if (!res.ok) return reportRequestFailed(res);
           if (el) {
             el.classList.remove("unread");
           }
@@ -1319,10 +1335,11 @@
 
       async function markAllNotificationsRead() {
         try {
-          await fetch("/api/notifications/mark-all-read", {
+          const res = await fetch("/api/notifications/mark-all-read", {
             method: "POST",
             headers: { "X-CSRFToken": csrfToken() },
           });
+          if (!res.ok) return reportRequestFailed(res);
           document
             .querySelectorAll(".notif-item.unread, .notif-page-item.unread, .notif-row.unread")
             .forEach((el) => el.classList.remove("unread"));
@@ -1451,6 +1468,7 @@
           })
             .then(function (res) {
               if (res.status === 401) return signedOut();
+              if (res.status === 400) return reportRequestFailed(res);
               return res.json().then(function (data) {
                 hide();
                 schedule(data.remaining);

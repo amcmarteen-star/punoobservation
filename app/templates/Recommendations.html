@@ -1785,7 +1785,7 @@
             return res.json();
           })
           .then(function (data) {
-            if (!data.ok) throw new Error(data.reason || 'Refresh failed.');
+            if (!data.ok) throw new Error(data.reason || data.error || 'Refresh failed.');
             delete infoCache[treeId];
             return loadInfo(treeId);
           })
