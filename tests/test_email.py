@@ -322,6 +322,8 @@ def main():
     app = create_app()
     app.config['TESTING'] = True
     app.config['MAIL_SERVER'] = ''
+    # Forms are posted without a CSRF token; the CSRF checks live in tests/test_csrf.py.
+    app.config['WTF_CSRF_ENABLED'] = False
     app.config['APP_BASE_URL'] = ''
 
     failed = 1

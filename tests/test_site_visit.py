@@ -578,6 +578,8 @@ def main():
     app = create_app()
     app.config['TESTING'] = True
     app.config['MAIL_SERVER'] = ''
+    # Forms are posted without a CSRF token; the CSRF checks live in tests/test_csrf.py.
+    app.config['WTF_CSRF_ENABLED'] = False
 
     photo_dir = os.path.join(base.TMPDIR, 'static')
     real_save = visits_routes.save_photo

@@ -302,6 +302,15 @@ def run(app):
 
     login(client, s['provincial'])
     r = client.get('/org/organizations')
+    import re as _re
+    login(client, s['cenro_admin'])
+    html = client.get('/org/organizations').get_data(as_text=True)
+    row = _re.search(r'Synthetic Org A.*?</tr>', html, _re.S).group(0)
+    nums = [int(n) for n in _re.findall(r'<td>(\d+)</td>', row)]
+    check('13 waiting count counts verified pending people only',
+          nums == [3, 1, 0], f'members, leaders, waiting = {nums}')
+    login(client, s['provincial'])
+    r = client.get('/org/organizations')
     check('13 provincial admin sees every organization',
           r.status_code == 200 and b'Synthetic Org A' in r.data
           and b'Synthetic Org B' in r.data and b'Synthetic Org C' in r.data)
