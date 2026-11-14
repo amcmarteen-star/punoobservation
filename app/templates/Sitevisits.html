@@ -145,6 +145,7 @@
       {% if a.visit_id %}<a href="{{ url_for('visits.visit_detail', visit_id=a.visit_id) }}" class="um-btn-ghost">View visit</a>{% endif %}
       {% if can_assign and a.status == 'Open' %}
       <form method="POST" action="{{ url_for('visits.cancel_assignment', assignment_id=a.assignment_id) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <button type="submit" class="sv-link-danger">Withdraw</button>
       </form>
       {% endif %}
@@ -158,6 +159,7 @@
   <p class="sv-label" style="margin:1.25rem 0 0.75rem;">Assign a visit</p>
   {% if officers %}
   <form method="POST" action="{{ url_for('visits.assign_visit', site_id=site.site_id) }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <div class="um-field-row">
       <div class="um-field">
         <label for="officer_id">Field officer *</label>

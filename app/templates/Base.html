@@ -3,6 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="csrf-token" content="{{ csrf_token() }}" />
     <title>{% block title %}PuNoObservation{% endblock %}</title>
     <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='images/favicon-32.png', v=asset_v) }}">
     <link rel="apple-touch-icon" href="{{ url_for('static', filename='images/apple-touch-icon.png', v=asset_v) }}">
@@ -17,6 +18,11 @@
       href="{{ url_for('static', filename='css/style.css', v=asset_v) }}"
     />
     <script>
+      /* CSRF token for fetch() POSTs. Sent as the X-CSRFToken header. */
+      function csrfToken() {
+        var m = document.querySelector('meta[name="csrf-token"]');
+        return m ? m.getAttribute("content") : "";
+      }
       /* Runs before the body renders: setting the attribute afterwards
          would show one frame of the light theme first. Light stays the
          default -- dark applies only once someone has chosen it. */
@@ -1278,10 +1284,10 @@
       }
 
       function notifOpen(id) {
-        navigator.sendBeacon(
-          `/api/notifications/${id}/read`,
-          new Blob([], { type: "application/x-www-form-urlencoded" }),
-        );
+        // sendBeacon cannot set headers, so the token goes in the body.
+        var fd = new FormData();
+        fd.append("csrf_token", csrfToken());
+        navigator.sendBeacon(`/api/notifications/${id}/read`, fd);
       }
 
       async function loadNotifications() {
@@ -1298,7 +1304,10 @@
 
       async function markNotificationRead(id, el) {
         try {
-          await fetch(`/api/notifications/${id}/read`, { method: "POST" });
+          await fetch(`/api/notifications/${id}/read`, {
+            method: "POST",
+            headers: { "X-CSRFToken": csrfToken() },
+          });
           if (el) {
             el.classList.remove("unread");
           }
@@ -1310,7 +1319,10 @@
 
       async function markAllNotificationsRead() {
         try {
-          await fetch("/api/notifications/mark-all-read", { method: "POST" });
+          await fetch("/api/notifications/mark-all-read", {
+            method: "POST",
+            headers: { "X-CSRFToken": csrfToken() },
+          });
           document
             .querySelectorAll(".notif-item.unread, .notif-page-item.unread, .notif-row.unread")
             .forEach((el) => el.classList.remove("unread"));
@@ -1432,7 +1444,11 @@
         }
 
         stayBtn.addEventListener("click", function () {
-          fetch(KEEPALIVE_URL, { method: "POST", credentials: "same-origin" })
+          fetch(KEEPALIVE_URL, {
+            method: "POST",
+            credentials: "same-origin",
+            headers: { "X-CSRFToken": csrfToken() },
+          })
             .then(function (res) {
               if (res.status === 401) return signedOut();
               return res.json().then(function (data) {

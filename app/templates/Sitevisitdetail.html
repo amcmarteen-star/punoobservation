@@ -154,6 +154,7 @@
 
   {% elif can_review %}
   <form method="POST" action="{{ url_for('visits.review_visit', visit_id=visit.visit_id) }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     {% if visit.finding == 'Suitable' %}
     <div class="um-note mb-3">
       Approving

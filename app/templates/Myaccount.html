@@ -427,6 +427,7 @@
 
     <form method="POST" action="{{ url_for('dashboard.my_account') }}"
           class="acct-form" autocomplete="off">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <div class="um-field">
         <label for="current_password">Current password</label>
         <div class="acct-pw">

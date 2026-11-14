@@ -35,6 +35,14 @@ class Config:
     # not say "you were signed out for inactivity".
     PERMANENT_SESSION_LIFETIME = timedelta(hours=12)
 
+    # --- CSRF (Flask-WTF) ------------------------------------------------
+    # Lax keeps the cookie on normal links to the site but not on posts
+    # sent from other sites.
+    SESSION_COOKIE_SAMESITE = 'Lax'
+    # Tokens last as long as the session, not Flask-WTF's one-hour default,
+    # so a form left open for a while still works.
+    WTF_CSRF_TIME_LIMIT = None
+
     # --- email -----------------------------------------------------------
     # The live site sends through Brevo's SMTP relay; .env.example lists
     # where each value comes from. Plain SMTP, so another service is a

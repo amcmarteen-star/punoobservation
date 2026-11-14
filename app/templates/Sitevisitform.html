@@ -88,6 +88,7 @@
       enctype="multipart/form-data" id="visitForm"
       data-upload-form data-upload-title="Saving site visit"
       data-upload-processing="Reading photo locations...">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
   <!-- 1. the visit -->
   <div class="um-panel">

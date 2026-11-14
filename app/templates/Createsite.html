@@ -48,6 +48,7 @@
 
 <div class="cs-layout">
   <form method="POST" id="createSiteForm">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <!-- 1. the site -->
     <div class="um-panel">
       <div class="um-panel-head"><span class="um-step-num">1</span><h3>The site</h3></div>

@@ -81,6 +81,7 @@
             {% endwith %}
 
             <form action="{{ url_for('auth.login', next=request.args.get('next')) }}" method="POST" id="log_in_form">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <div class="lg-field">
                     <label for="username">Username</label>
                     <div class="lg-input">

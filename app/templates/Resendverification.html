@@ -58,6 +58,7 @@
             <p class="lg-sub">Enter the email address you signed up with. We will send you a new link.</p>
 
             <form action="{{ url_for('auth.resend_verification') }}" method="POST" id="resend_form">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <div class="lg-field">
                     <label for="email_address">Email address</label>
                     <div class="lg-input">

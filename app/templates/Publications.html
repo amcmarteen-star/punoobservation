@@ -410,6 +410,7 @@
     action="{{ r.action_url }}"
     class="pub-form row g-2 align-items-end mt-3 pt-3"
   >
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <div class="col-md-6">
       <label class="form-label fw-semibold small">
         Note <span class="text-secondary">(required to decline)</span>

@@ -582,7 +582,8 @@
             // endpoints (read / unread / delete).
             const results = await Promise.all(
                 ids.map((id) =>
-                    fetch(`/api/notifications/${id}/${action}`, { method: 'POST' })
+                    fetch(`/api/notifications/${id}/${action}`, {
+                        method: 'POST', headers: { 'X-CSRFToken': csrfToken() } })
                 )
             );
             if (results.some((r) => !r.ok)) throw new Error('some requests failed');
@@ -603,7 +604,7 @@
         try {
             const res = await fetch(
                 `/api/notifications/${id}/${makeRead ? 'read' : 'unread'}`,
-                { method: 'POST' }
+                { method: 'POST', headers: { 'X-CSRFToken': csrfToken() } }
             );
             if (!res.ok) throw new Error(res.status);
 
@@ -633,7 +634,7 @@
         const row = btn.closest('.notif-row');
         btn.disabled = true;
         try {
-            const res = await fetch(`/api/notifications/${id}/delete`, { method: 'POST' });
+            const res = await fetch(`/api/notifications/${id}/delete`, { method: 'POST', headers: { 'X-CSRFToken': csrfToken() } });
             if (!res.ok) throw new Error(res.status);
         } catch (err) {
             console.error('Failed to delete notification:', err);

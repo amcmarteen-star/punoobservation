@@ -531,6 +531,7 @@ endblock %} {% set active_page = 'requests' %} {% block extra_head %}
     </div>
     <!-- action is set by reqOpenCancel() from the clicked row -->
     <form method="POST" id="req-cancel-form" class="um-modal-foot">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <input type="hidden" name="status" value="{{ status_filter }}" />
       <button type="button" class="um-btn-cancel" onclick="reqClose('req-cancel-modal')">
         Keep request
@@ -570,6 +571,7 @@ endblock %} {% set active_page = 'requests' %} {% block extra_head %}
     <form method="POST" class="req-add-form" id="req-add-form"
           data-upload-form data-upload-title="Sending request"
           enctype="multipart/form-data">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <div class="um-modal-body">
 
         <!-- ---------- 0. request type ---------- -->

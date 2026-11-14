@@ -6,7 +6,7 @@ from flask import (
 )
 from werkzeug.exceptions import RequestEntityTooLarge
 from app.config import Config
-from app.extensions import db
+from app.extensions import db, csrf
 from flask_migrate import Migrate
 
 migrate = Migrate()  # no app yet
@@ -16,6 +16,7 @@ def create_app():
     app.config.from_object(Config)
 
     db.init_app(app)
+    csrf.init_app(app)
 
     migrate.init_app(app,db)
 

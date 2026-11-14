@@ -460,6 +460,7 @@
   {% endif %}
 
   <form method="POST" action="{{ url_for('admin.review_report', report_id=report.report_id) }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <div class="rep-decision-row">
       <div class="um-field">
         <label for="status">Status</label>

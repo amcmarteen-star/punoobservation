@@ -499,6 +499,7 @@ active_page = 'users' %} {% block extra_head %}
       </div>
     </div>
     <form method="POST" id="um-delete-form" class="um-modal-foot">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <button
         type="button"
         class="um-btn-cancel"
@@ -530,6 +531,7 @@ active_page = 'users' %} {% block extra_head %}
       </button>
     </div>
     <form method="POST" id="um-erase-form" autocomplete="off">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <div class="um-modal-body">
         <div class="um-warn">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3" /><path d="M12 9v4" /><path d="M12 17h.01" /></svg>
@@ -598,6 +600,7 @@ active_page = 'users' %} {% block extra_head %}
       </button>
     </div>
     <form method="POST" id="um-reset-form" autocomplete="off">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <div class="um-modal-body">
         <div class="um-warn">
           <svg
@@ -680,6 +683,7 @@ active_page = 'users' %} {% block extra_head %}
       </button>
     </div>
     <form method="POST" action="{{ url_for('admin.create_field_officer') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <div class="um-modal-body">
         <div class="um-field">
           <label for="um-username">Username</label>

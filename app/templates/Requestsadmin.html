@@ -411,6 +411,7 @@ active_page = 'review_requests' %} {% block extra_head %}
                 action="{{ url_for('admin.review_request', request_id=r.request_id) }}"
                 class="review-form"
               >
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <label class="req-summary-label" for="status-{{ r.request_id }}">Set status</label>
                 <select id="status-{{ r.request_id }}" name="status" required>
                   <option value="">Choose&hellip;</option>

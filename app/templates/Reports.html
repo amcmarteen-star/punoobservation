@@ -27,6 +27,7 @@ endblock %} {% set active_page = 'reports' %} {% block content %}
   data-upload-title="Submitting report"
   data-upload-processing="Reading photo locations..."
 >
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
   <!-- ============ STEP 1 : LOCATION ============ -->
   <div class="um-panel">
     <div class="um-panel-head">
@@ -910,7 +911,7 @@ endblock %} {% set active_page = 'reports' %} {% block content %}
 
     const res = await fetch("/api/preview-survival", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", "X-CSRFToken": csrfToken() },
       body: JSON.stringify({
         counts: counts,
         site_area_ha: currentSite.area_size_ha,
