@@ -304,7 +304,7 @@ def _fill_location_point(location):
     return True
 
 
-def _get_or_create_organization(name):
+def _get_or_create_organization(name, cenro=None):
     name = _clean(name) or "Unspecified Partner"
 
     org = Organization.query.filter(
@@ -316,7 +316,9 @@ def _get_or_create_organization(name):
 
     org = Organization(
         organization_name=name,
-        organization_type='Partner/Contractor'
+        organization_type='Partner/Contractor',
+        # the CENRO of the site this organization is created with
+        cenro=cenro,
     )
     db.session.add(org)
     db.session.flush()
@@ -2047,7 +2049,8 @@ def create_site_from_request(request_id):
 
     try:
         if organization is None:
-            organization = _get_or_create_organization(new_org_name)
+            organization = _get_or_create_organization(
+                new_org_name, cenro=current_cenro())
 
         site = Site(
             location_id=req.location_id,

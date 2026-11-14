@@ -359,6 +359,38 @@ def run(app):
           and b'>My Organization<' not in r.data)
 
     # ------------------------------------------------------------------
+    # 16. join link made on appointment, not on the members-page GET
+    # ------------------------------------------------------------------
+    db.session.remove()
+    org_e = Organization(organization_name='Synthetic Org E',
+                         organization_type='POs', cenro='Urdaneta City')
+    db.session.add(org_e)
+    db.session.flush()
+    e = org_e.organization_id
+    member_e = make_user('syn_member_e', org_id=e, org_role='member',
+                         org_status='active')
+    db.session.commit()
+    login(client, s['provincial'])
+    r = client.get(f'/org/{e}/members')
+    check('16 members page opens with no join link yet',
+          r.status_code == 200 and b'No invite link yet' in r.data)
+    check('16 members page GET does not create a join link',
+          db.session.get(Organization, e).join_token is None)
+    client.post(f'/org/{e}/leaders/{member_e}/appoint')
+    check('16 appointing a leader creates the join link',
+          db.session.get(Organization, e).join_token is not None)
+
+    # ------------------------------------------------------------------
+    # 17. organization made from a request takes the site's CENRO
+    # ------------------------------------------------------------------
+    from app.routes.admin import _get_or_create_organization
+    made = _get_or_create_organization('Synthetic From Request',
+                                       cenro='Dagupan')
+    db.session.commit()
+    check('17 new organization takes the CENRO given',
+          db.session.get(Organization, made.organization_id).cenro == 'Dagupan')
+
+    # ------------------------------------------------------------------
     # 14. audit rows
     # ------------------------------------------------------------------
     check('14 join requests are logged', audit_count('join_request') >= 1)

@@ -20,6 +20,7 @@
     <h3>Invite link</h3>
   </div>
   <div style="padding: 1.25rem;">
+    {% if invite_url %}
     <p>Share this link with people who want to join. Anyone who opens it
       can ask to join, and you approve each request below.</p>
     <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
@@ -36,6 +37,9 @@
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <button type="submit" class="um-btn-cancel">Make a new link</button>
     </form>
+    {% endif %}
+    {% else %}
+    <p>No invite link yet. It appears here once a leader is appointed.</p>
     {% endif %}
   </div>
 </div>

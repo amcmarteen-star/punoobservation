@@ -151,10 +151,6 @@ def org_members_page(org_id):
 
 
 def _members_view(org, user):
-    if not org.join_token:
-        ensure_join_token(org)
-        db.session.commit()
-
     waiting = (User.query
                .filter(User.organization_id == org.organization_id,
                        User.org_status == 'pending',
@@ -165,8 +161,9 @@ def _members_view(org, user):
                        User.org_status == 'active')
                .order_by(User.org_role.desc(), User.username).all())
 
-    invite_url = url_for('organization.join_page', token=org.join_token,
-                         _external=True)
+    # The link exists once a leader has been appointed. See appoint_leader.
+    invite_url = (url_for('organization.join_page', token=org.join_token,
+                          _external=True) if org.join_token else None)
     return render_template(
         'Orgmembers.html',
         active_page='my_org',
@@ -278,6 +275,7 @@ def appoint_leader(org_id, user_id):
         flash(f"{target.username} is already a leader.", "warning")
         return redirect(_members_url(org))
 
+    ensure_join_token(org)
     target.org_role = 'leader'
     log_action('appoint_leader', 'users', target.user_id,
                f"Made {target.username} leader of {org.organization_name}")
@@ -366,7 +364,8 @@ def organizations_list():
                 base, User.org_role == 'leader',
                 User.org_status == 'active').count(),
             'waiting': User.query.filter(
-                base, User.org_status == 'pending').count(),
+                base, User.org_status == 'pending',
+                User.email_verified.is_(True)).count(),
         })
     return render_template('Orglist.html', active_page='orgs', rows=rows,
                            provincial=is_provincial(user))
