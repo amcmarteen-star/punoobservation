@@ -1,0 +1,153 @@
+{% extends "Base.html" %}
+{% block title %}Members - PuNoObservation{% endblock %}
+{% block content %}
+
+<div class="um-header">
+  <div>
+    <div class="um-title-row">
+      <h2>{{ org.organization_name }}</h2>
+    </div>
+    <p class="um-subtitle">
+      {{ org.organization_type }} &middot;
+      {% if org.cenro %}{{ org.cenro }}{% else %}Provincial office{% endif %}
+    </p>
+  </div>
+</div>
+
+<!-- ============ INVITE LINK ============ -->
+<div class="um-panel">
+  <div class="um-panel-head">
+    <h3>Invite link</h3>
+  </div>
+  <div style="padding: 1.25rem;">
+    <p>Share this link with people who want to join. Anyone who opens it
+      can ask to join, and you approve each request below.</p>
+    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+      <input type="text" readonly id="invite-link" value="{{ invite_url }}"
+             style="flex: 1; min-width: 16rem;" onclick="this.select()"
+             aria-label="Invite link">
+      <button type="button" class="um-btn-confirm" id="copy-invite">Copy link</button>
+    </div>
+    {% if can_approve %}
+    <form method="POST"
+          action="{{ url_for('organization.regenerate_token', org_id=org.organization_id) }}"
+          style="margin-top: 1rem;"
+          onsubmit="return confirm('Make a new link? The old link will stop working.');">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button type="submit" class="um-btn-cancel">Make a new link</button>
+    </form>
+    {% endif %}
+  </div>
+</div>
+
+<!-- ============ WAITING FOR APPROVAL ============ -->
+<div class="um-panel">
+  <div class="um-panel-head">
+    <h3>Waiting for approval ({{ waiting|length }})</h3>
+  </div>
+  <div style="padding: 1.25rem;">
+    {% if waiting %}
+    <table class="um-table">
+      <thead>
+        <tr><th>Username</th><th>Actions</th></tr>
+      </thead>
+      <tbody>
+        {% for u in waiting %}
+        <tr>
+          <td>{{ u.username }}</td>
+          <td>
+            {% if can_approve %}
+            <form method="POST" style="display: inline;"
+                  action="{{ url_for('organization.approve_member', org_id=org.organization_id, user_id=u.user_id) }}">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <button type="submit" class="um-btn-confirm">Approve</button>
+            </form>
+            <form method="POST" style="display: inline;"
+                  action="{{ url_for('organization.reject_member', org_id=org.organization_id, user_id=u.user_id) }}"
+                  onsubmit="return confirm('Reject this request?');">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <button type="submit" class="um-btn-cancel">Reject</button>
+            </form>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p>No one is waiting for approval.</p>
+    {% endif %}
+  </div>
+</div>
+
+<!-- ============ MEMBERS ============ -->
+<div class="um-panel">
+  <div class="um-panel-head">
+    <h3>Members ({{ members|length }})</h3>
+  </div>
+  <div style="padding: 1.25rem;">
+    <table class="um-table">
+      <thead>
+        <tr><th>Username</th><th>Role</th><th>Actions</th></tr>
+      </thead>
+      <tbody>
+        {% for u in members %}
+        <tr>
+          <td>{{ u.username }}{% if u.user_id == me.user_id %} (you){% endif %}</td>
+          <td>{% if u.org_role == 'leader' %}Leader{% else %}Member{% endif %}</td>
+          <td>
+            {% if u.user_id != me.user_id %}
+              {% if can_appoint and u.org_role != 'leader' %}
+              <form method="POST" style="display: inline;"
+                    action="{{ url_for('organization.appoint_leader', org_id=org.organization_id, user_id=u.user_id) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="um-btn-confirm">Make leader</button>
+              </form>
+              {% endif %}
+              {% if can_appoint and u.org_role == 'leader' %}
+              <form method="POST" style="display: inline;"
+                    action="{{ url_for('organization.remove_leader', org_id=org.organization_id, user_id=u.user_id) }}"
+                    onsubmit="return confirm('Remove this person as leader?');">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="um-btn-cancel">Remove as leader</button>
+              </form>
+              {% endif %}
+              {% if can_approve and (u.org_role != 'leader' or can_appoint) %}
+              <form method="POST" style="display: inline;"
+                    action="{{ url_for('organization.remove_member', org_id=org.organization_id, user_id=u.user_id) }}"
+                    onsubmit="return confirm('Remove this member from the organization?');">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="um-btn-cancel">Remove</button>
+              </form>
+              {% endif %}
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+  (function () {
+    var btn = document.getElementById("copy-invite");
+    var box = document.getElementById("invite-link");
+    if (!btn || !box) return;
+    btn.addEventListener("click", function () {
+      box.select();
+      var done = function () { btn.textContent = "Copied"; };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(box.value).then(done, function () {
+          document.execCommand("copy");
+          done();
+        });
+      } else {
+        document.execCommand("copy");
+        done();
+      }
+    });
+  }());
+</script>
+
+{% endblock %}

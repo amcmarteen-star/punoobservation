@@ -40,6 +40,15 @@ class Organization(db.Model):
     organization_name = db.Column(db.String(150), nullable=False)
     organization_type = db.Column(db.String(100), nullable=False)
 
+    # The invite link is /join/<join_token>. A leader regenerates it, and
+    # the old one then stops working. NULL until first needed.
+    join_token = db.Column(db.String(64), unique=True, nullable=True)
+
+    # The CENRO that covers the organization, taken from its sites when
+    # they all sit in one CENRO. NULL means the provincial office handles
+    # its requests and members.
+    cenro = db.Column(db.String(100), nullable=True)
+
     # Relationships
     users = db.relationship('User', backref='organization', lazy=True)
     sites = db.relationship('Site', backref='organization', lazy=True)
@@ -107,6 +116,13 @@ class User(db.Model):
     email_verified = db.Column(
         db.Boolean, nullable=False, default=True, server_default=db.true()
     )
+
+    # Membership of the organization in organization_id.
+    #   org_role:   'leader' or 'member'. NULL for individuals.
+    #   org_status: 'pending' until a leader approves, then 'active'.
+    # Leader is separate from the system role: a leader stays normal_user.
+    org_role = db.Column(db.String(10), nullable=True)
+    org_status = db.Column(db.String(10), nullable=True)
 
     # Relationships
     # reports = db.relationship('MonitoringReport', backref='officer', lazy=True)

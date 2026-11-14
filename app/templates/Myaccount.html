@@ -333,6 +333,31 @@
 </div>
 {% endif %}
 
+<!-- ============ ORGANIZATION ============ -->
+{% if my_org %}
+<div class="um-panel">
+  <div class="um-panel-head">
+    <h3>Organization</h3>
+  </div>
+  <div class="acct-grid">
+    <div class="acct-fact">
+      <span class="lbl">Organization</span>
+      <span>{{ my_org.organization_name }}</span>
+    </div>
+    <div class="acct-fact">
+      <span class="lbl">Your status</span>
+      <span>{% if org_role == 'leader' %}Leader{% else %}Member{% endif %}{% if org_status == 'pending' %}, waiting for approval{% endif %}</span>
+    </div>
+  </div>
+  <form method="POST" action="{{ url_for('organization.leave_org') }}"
+        style="padding: 0 1.25rem 1.25rem;"
+        onsubmit="return confirm('Leave this organization?');">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <button type="submit" class="um-btn-cancel">Leave organization</button>
+  </form>
+</div>
+{% endif %}
+
 <!-- ============ ACCOUNT DETAILS ============ -->
 <div class="um-panel">
   <div class="um-panel-head">

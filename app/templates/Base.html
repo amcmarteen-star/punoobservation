@@ -254,6 +254,29 @@
             <span class="nav-link-text">Notifications</span>
           </a>
 
+          {% if org_role == 'leader' and org_status == 'active' %}
+          <a
+            href="{{ url_for('organization.members_page') }}"
+            class="nav-link {% if active_page == 'my_org' %}active{% endif %}"
+          >
+            <svg
+              class="nav-icon"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+              <circle cx="9" cy="7" r="4" />
+              <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+              <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+            </svg>
+            <span class="nav-link-text">My Organization</span>
+          </a>
+          {% endif %}
+
           {% if session.role == 'field_officer' %}
           <a
             href="{{ url_for('dashboard.reports_page') }}"
@@ -357,6 +380,25 @@
              ---------------------------------------------------------- #}
           {% if session.role == 'admin' %}
           <p class="nav-section-title">Administration</p>
+          <a
+            href="{{ url_for('organization.organizations_list') }}"
+            class="nav-link {% if active_page == 'orgs' %}active{% endif %}"
+          >
+            <svg
+              class="nav-icon"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M3 21h18" />
+              <path d="M5 21V7l7-4 7 4v14" />
+              <path d="M9 9h.01M15 9h.01M9 13h.01M15 13h.01M10 21v-4h4v4" />
+            </svg>
+            <span class="nav-link-text">Organizations</span>
+          </a>
           {% if session.cenro %}
           <a
             href="{{ url_for('admin.review_requests') }}"
@@ -749,6 +791,11 @@
           {# The one place flashes are rendered. Pages must not repeat this:
              get_flashed_messages returns the same list every time it is
              called within a request, so a second call prints them twice. #}
+          {% if org_status == 'pending' %}
+          <div class="um-alert um-alert-warning" role="status">
+            <span class="um-alert-text">Waiting for your leader to approve you.</span>
+          </div>
+          {% endif %}
           {% with messages = get_flashed_messages(with_categories=true) %}
           {% if messages %}
           <div class="flash-messages">

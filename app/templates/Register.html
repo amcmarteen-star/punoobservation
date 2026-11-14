@@ -74,6 +74,10 @@
 
                 <form action="{{ url_for('auth.register') }}" method="POST" id="register_form">
                   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    {% if join %}
+                    <p class="lg-hint">Joining <strong>{{ join.name }}</strong>. Your leader approves your account after you sign up.</p>
+                    <input type="hidden" name="join_token" value="{{ join.token }}">
+                    {% endif %}
                     {# Two steps in one form: the account first, then where the
                        person is and who they are with. Both are sent together
                        on Sign up. #}
@@ -151,7 +155,7 @@
                     </fieldset>
 
                     <fieldset class="lg-step" data-step="2" hidden>
-                        <legend class="visually-hidden">Location and organization</legend>
+                        <legend class="visually-hidden">Location</legend>
                         {# register.js fills each list from the one before it. #}
                         <div class="lg-field">
                             <label for="reg_province">Province</label>
@@ -180,18 +184,6 @@
                             </div>
                         </div>
 
-                        <div class="lg-field">
-                            <label for="organization_id">Organization / Affiliation</label>
-                            <div class="lg-input">
-                                <select name="organization_id" id="organization_id"
-                                        autocomplete="organization"
-                                        aria-describedby="organization_hint" disabled>
-                                    <option value="">Choose a barangay first</option>
-                                </select>
-                            </div>
-                            <p class="lg-hint" id="organization_hint">Only organizations in your barangay are listed. Pick "None / Individual User" if signing up on your own.</p>
-                        </div>
-
                         <div class="lg-step-actions">
                             <button type="button" class="lg-step-back" id="regBack">Back</button>
                             <button type="submit" class="lg-submit">Sign up</button>
@@ -205,9 +197,8 @@
     </div>
 
     <script id="register-data" type="application/json">
-        {{ {"locations": locations, "organizations": organizations,
-            "location_id": form.get("location_id", ""),
-            "organization_id": form.get("organization_id", "")} | tojson }}
+        {{ {"locations": locations,
+            "location_id": form.get("location_id", "")} | tojson }}
     </script>
     <script src="{{ url_for('static', filename='javascript/script.js') }}"></script>
     <script src="{{ url_for('static', filename='javascript/register.js', v=asset_v) }}"></script>

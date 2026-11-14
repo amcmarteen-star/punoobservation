@@ -1,0 +1,55 @@
+{% extends "Base.html" %}
+{% block title %}Organizations - PuNoObservation{% endblock %}
+{% block content_class %}page-content-wide{% endblock %}
+{% block content %}
+
+<div class="um-header">
+  <div>
+    <div class="um-title-row">
+      <h2>Organizations</h2>
+    </div>
+    <p class="um-subtitle">
+      {% if provincial %}Every organization in the province.{% else %}Organizations in your CENRO.{% endif %}
+    </p>
+  </div>
+</div>
+
+<div class="um-panel">
+  <div class="um-panel-head">
+    <h3>{{ rows|length }} organization{% if rows|length != 1 %}s{% endif %}</h3>
+  </div>
+  <div style="padding: 1.25rem;">
+    {% if rows %}
+    <table class="um-table">
+      <thead>
+        <tr>
+          <th>Organization</th>
+          <th>CENRO</th>
+          <th>Members</th>
+          <th>Leaders</th>
+          <th>Waiting</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in rows %}
+        <tr>
+          <td>{{ r.org.organization_name }}<br><small>{{ r.org.organization_type }}</small></td>
+          <td>{% if r.org.cenro %}{{ r.org.cenro }}{% else %}Provincial office{% endif %}</td>
+          <td>{{ r.members }}</td>
+          <td>{{ r.leaders }}</td>
+          <td>{{ r.waiting }}</td>
+          <td>
+            <a href="{{ url_for('organization.org_members_page', org_id=r.org.organization_id) }}">Members</a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p>No organizations yet.</p>
+    {% endif %}
+  </div>
+</div>
+
+{% endblock %}

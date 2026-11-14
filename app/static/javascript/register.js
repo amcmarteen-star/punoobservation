@@ -1,4 +1,4 @@
-/* Register page: Province -> Municipality / City -> Barangay -> Organization.
+/* Register page: Province -> Municipality / City -> Barangay.
    Each list stays locked until the one before it has a value. The data
    comes from the #register-data JSON block that Register.html renders. */
 (function () {
@@ -11,7 +11,6 @@
     var province = document.getElementById('reg_province');
     var municipality = document.getElementById('reg_municipality');
     var barangay = document.getElementById('location_id');
-    var organization = document.getElementById('organization_id');
 
     function unique(values) {
         return values.filter(function (v, i) { return values.indexOf(v) === i; });
@@ -44,7 +43,6 @@
 
     function onProvince() {
         lock(barangay, 'Choose a municipality first');
-        lock(organization, 'Choose a barangay first');
         if (!province.value) {
             lock(municipality, 'Choose a province first');
             return;
@@ -56,7 +54,6 @@
     }
 
     function onMunicipality() {
-        lock(organization, 'Choose a barangay first');
         if (!municipality.value) {
             lock(barangay, 'Choose a municipality first');
             return;
@@ -70,22 +67,8 @@
         fill(barangay, 'Choose a barangay', options);
     }
 
-    function onBarangay() {
-        if (!barangay.value) {
-            lock(organization, 'Choose a barangay first');
-            return;
-        }
-        var id = Number(barangay.value);
-        var options = data.organizations
-            .filter(function (o) { return o.locations.indexOf(id) !== -1; })
-            .map(function (o) { return { value: o.id, label: o.label }; });
-        fill(organization, 'None / Individual User', options);
-        organization.options[0].selected = true;
-    }
-
     province.addEventListener('change', onProvince);
     municipality.addEventListener('change', onMunicipality);
-    barangay.addEventListener('change', onBarangay);
 
     fill(province, 'Choose a province',
         asOptions(unique(data.locations.map(function (l) { return l.province; }))));
@@ -106,7 +89,5 @@
         municipality.value = chosen.municipality;
         onMunicipality();
         barangay.value = String(chosen.id);
-        onBarangay();
-        organization.value = String(data.organization_id || '');
     }
 }());

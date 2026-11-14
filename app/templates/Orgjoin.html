@@ -1,0 +1,38 @@
+{% extends "Base.html" %}
+{% block title %}Join an organization - PuNoObservation{% endblock %}
+{% block content %}
+
+<div class="um-header">
+  <div>
+    <div class="um-title-row">
+      <h2>Join an organization</h2>
+    </div>
+  </div>
+</div>
+
+<div class="um-panel">
+  <div class="um-panel-head">
+    <h3>{% if org %}Request to join {{ org.organization_name }}?{% else %}Invite link{% endif %}</h3>
+  </div>
+  <div style="padding: 1.25rem;">
+    {% if invalid %}
+      <p>{{ invalid }}</p>
+      {% if session.user_id %}
+        <p><a href="{{ url_for('dashboard.index') }}">Back to the dashboard</a></p>
+      {% else %}
+        <p><a href="{{ url_for('auth.register') }}">Sign up as an individual</a></p>
+      {% endif %}
+    {% elif blocked %}
+      <p>{{ blocked }}</p>
+      <p><a href="{{ url_for('dashboard.my_account') }}">Go to My Account to leave it</a></p>
+    {% else %}
+      <p>Your leader will review your request. You can use the system while you wait.</p>
+      <form method="POST" action="{{ url_for('organization.join_request', token=org.join_token) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit" class="um-btn-confirm">Request to join</button>
+      </form>
+    {% endif %}
+  </div>
+</div>
+
+{% endblock %}

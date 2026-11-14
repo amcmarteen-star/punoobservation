@@ -16,17 +16,13 @@ from app.services.mailer import email_link, external_url, send_template
 from app.utils.audit import log_action, log_login
 from app.utils.security import password_problem
 from app.utils.timeutil import manila_now
+from app.utils.organization import find_org_by_token
 
 auth_bp = Blueprint('auth', __name__)
 
 def _register_choices():
-    """Places and organizations for the sign-up location picker.
-
-    An organization has no address of its own. It belongs to the
-    barangays where it has sites, so one with sites in two barangays
-    is offered in both.
-    """
-    locations = [
+    """Places for the sign-up location picker."""
+    return [
         {"id": l.location_id, "province": l.province,
          "municipality": l.municipality, "barangay": l.barangay}
         for l in Location.query.order_by(
@@ -34,28 +30,21 @@ def _register_choices():
         )
     ]
 
-    org_locations = defaultdict(set)
-    for org_id, loc_id in db.session.query(
-        Site.organization_id, Site.location_id
-    ).distinct():
-        org_locations[org_id].add(loc_id)
 
-    organizations = [
-        {"id": o.organization_id,
-         "label": f"{o.organization_name} ({o.organization_type})",
-         "locations": sorted(org_locations[o.organization_id])}
-        for o in Organization.query.order_by(Organization.organization_name)
-        if org_locations[o.organization_id]
-    ]
-    return locations, organizations
-
-
-def _render_register(error=None):
-    locations, organizations = _register_choices()
+def _render_register(error=None, org=None):
+    """The sign-up page. org is set when the person came through an invite
+    link: the page then names the organization and carries the link's token.
+    """
+    join = ({"name": org.organization_name, "token": org.join_token}
+            if org else None)
     return render_template(
         'Register.html', error=error, form=request.form,
-        locations=locations, organizations=organizations,
+        locations=_register_choices(), join=join,
     )
+
+
+INVALID_JOIN_LINK = ("This link no longer works. Ask your leader for the "
+                     "new one.")
 
 
 @auth_bp.route('/register', methods=['GET', 'POST'])
@@ -66,58 +55,56 @@ def register():
         password = request.form.get('password', '')
         confirm_password = request.form.get('confirmPassword', '').strip()
         location_id = request.form.get('location_id', '')
-        organization_id = request.form.get('organization_id', '')
+        join_token = (request.form.get('join_token') or '').strip()
+
+        # An invite link is checked first. A stale one stops the sign-up
+        # with a message; the person can start again without the link.
+        org = None
+        if join_token:
+            org = find_org_by_token(join_token)
+            if org is None:
+                return _render_register(INVALID_JOIN_LINK)
 
         if not username or not password or not email_address:
-            return _render_register("Please fill in all required fields!")
+            return _render_register("Please fill in all required fields!", org)
 
         if confirm_password != password:
-            return _render_register("Passwords do not match!")
+            return _render_register("Passwords do not match!", org)
 
         problem = password_problem(password)
         if problem:
-            return _render_register(problem)
+            return _render_register(problem, org)
 
-        # Province, municipality and barangay come before the
-        # organization, so a barangay is required even for individuals.
+        # Province, municipality and barangay are required for everyone.
         location = (db.session.get(Location, int(location_id))
                     if location_id.isdigit() else None)
         if location is None:
             return _render_register(
-                "Please choose your province, municipality and barangay."
+                "Please choose your province, municipality and barangay.",
+                org,
             )
-
-        # The organization must be one registered in that barangay.
-        if organization_id:
-            in_barangay = organization_id.isdigit() and db.session.query(
-                Site.query.filter_by(
-                    organization_id=int(organization_id),
-                    location_id=location.location_id,
-                ).exists()
-            ).scalar()
-            if not in_barangay:
-                return _render_register(
-                    "That organization is not registered in the barangay "
-                    "you chose."
-                )
 
         existing_user = User.query.filter(
             (User.username == username) | (User.email_address == email_address)
         ).first()
 
         if existing_user:
-            return _render_register("Username or Email already exists!")
+            return _render_register("Username or Email already exists!", org)
 
         new_user = User(
             username=username,
             email_address=email_address,
             role="normal_user",
-            organization_id=int(organization_id) if organization_id else None,
             # the barangay they picked; the recommendation page starts here
             location_id=location.location_id,
             # the login refuses until the emailed link is opened
             email_verified=False,
         )
+        if org is not None:
+            # Joined through an invite link: waits for a leader to approve.
+            new_user.organization_id = org.organization_id
+            new_user.org_role = 'member'
+            new_user.org_status = 'pending'
         new_user.set_password(password)
 
         db.session.add(new_user)

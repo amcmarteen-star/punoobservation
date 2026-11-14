@@ -135,13 +135,31 @@ def create_app():
             due = user is not None and user.tour_completed_at is None
         return {"tour_due": due}
 
+    # Organization membership for the sidebar and the pending banner.
+    @app.context_processor
+    def _org_context():
+        from app.models import Organization, User
+        empty = {"org_role": None, "org_status": None, "my_org": None}
+        if not session.get('user_id'):
+            return empty
+        user = db.session.get(User, session['user_id'])
+        if user is None:
+            return empty
+        org = (db.session.get(Organization, user.organization_id)
+               if user.organization_id else None)
+        return {"org_role": user.org_role,
+                "org_status": user.org_status,
+                "my_org": org}
+
     # Register Blueprints
     from app.routes.auth import auth_bp
     from app.routes.dashboard import dashboard_bp
     from app.routes.admin import admin_bp
     from app.routes.visits import visits_bp
+    from app.routes.organization import org_bp
 
     app.register_blueprint(auth_bp)
+    app.register_blueprint(org_bp)
     app.register_blueprint(dashboard_bp)
     app.register_blueprint(admin_bp)
     app.register_blueprint(visits_bp)
