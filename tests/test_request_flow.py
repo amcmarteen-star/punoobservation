@@ -532,6 +532,9 @@ def main():
     app = create_app()
     app.config['TESTING'] = True
     app.config['MAIL_SERVER'] = ''
+    # Forms are posted without a CSRF token here; the CSRF checks are
+    # covered by the app itself. Same setting as the other test files.
+    app.config['WTF_CSRF_ENABLED'] = False
     app.config['APP_BASE_URL'] = 'http://localhost'
 
     temp = os.path.join(base.TMPDIR, 'static')
