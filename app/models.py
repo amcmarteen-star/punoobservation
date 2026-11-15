@@ -645,6 +645,14 @@ class Request(db.Model):
         db.Integer, db.ForeignKey('organization.organization_id'),
         nullable=True,
     )
+
+    # The organization's decision on the request (Pending Org Approval,
+    # then Submitted, Returned or Rejected). Kept apart from review_note,
+    # which is CENRO's. NULL until the organization acts.
+    org_reviewed_by = db.Column(
+        db.Integer, db.ForeignKey('users.user_id'), nullable=True)
+    org_reviewed_at = db.Column(db.DateTime, nullable=True)
+    org_review_note = db.Column(db.Text, nullable=True)
     proposed_area_ha = db.Column(db.Float, nullable=True)
     contact_number = db.Column(db.String(30), nullable=True)
     # Required on the form since October 2026. Older requests have none,
