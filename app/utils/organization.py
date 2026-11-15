@@ -113,6 +113,37 @@ def is_last_active_leader(user):
     return other is None
 
 
+STAFF_ROLES = ('admin', 'superadmin', 'field_officer')
+
+REQUEST_BLOCK_TEXT = {
+    'individual': "Only organization members can request sites. Ask your "
+                  "organization leader for an invite link.",
+    'pending': "You can request sites once your leader approves you.",
+    'staff_admin': "Staff create sites from approved requests.",
+    'staff_field': "Field officers record visits and reports. Site requests "
+                   "come from organizations.",
+}
+
+
+def request_block(user):
+    """Why this user may not send a site request, as (code, text).
+
+    None when they may. Only an active member of an organization may send
+    a request. Staff never send one: they create sites directly.
+    """
+    if user is None:
+        return ('individual', REQUEST_BLOCK_TEXT['individual'])
+    if user.role in STAFF_ROLES:
+        code = ('staff_field' if user.role == 'field_officer'
+                else 'staff_admin')
+        return (code, REQUEST_BLOCK_TEXT[code])
+    if user.organization_id and user.org_status == 'active':
+        return None
+    if user.organization_id and user.org_status == 'pending':
+        return ('pending', REQUEST_BLOCK_TEXT['pending'])
+    return ('individual', REQUEST_BLOCK_TEXT['individual'])
+
+
 def clear_membership(user):
     user.organization_id = None
     user.org_role = None

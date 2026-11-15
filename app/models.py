@@ -637,6 +637,14 @@ class Request(db.Model):
 
     request_type = db.Column(db.String(100), nullable=False)
     description = db.Column(db.Text, nullable=True)
+
+    # The organization the request was made for: the submitter's active
+    # membership when they sent it. It stays with the request if the member
+    # later leaves. NULL for requests made before this column existed.
+    organization_id = db.Column(
+        db.Integer, db.ForeignKey('organization.organization_id'),
+        nullable=True,
+    )
     proposed_area_ha = db.Column(db.Float, nullable=True)
     contact_number = db.Column(db.String(30), nullable=True)
     # Required on the form since October 2026. Older requests have none,
@@ -693,6 +701,11 @@ class Request(db.Model):
         'User',
         foreign_keys=[user_id],
         backref=db.backref('submitted_requests', foreign_keys=[user_id])
+    )
+
+    organization = db.relationship(
+        'Organization',
+        backref=db.backref('site_requests', lazy=True),
     )
 
     reviewer = db.relationship(

@@ -8,6 +8,7 @@ from app.models import (
     User, TreeSpecie, AuditLog, SpeciesCategory, SyntheticSiteArea,
 )
 from app.utils.audit import log_action
+from app.utils.organization import request_block
 from sqlalchemy import func
 from collections import defaultdict
 import math
@@ -140,6 +141,10 @@ def gis_map():
     """
     request_mode = (request.args.get('request') == '1'
                     and bool(session.get('user_id')))
+    if request_mode and request_block(
+            db.session.get(User, session['user_id'])):
+        # The requests page explains why the button is off.
+        return redirect(url_for('dashboard.requests_page'))
     district_files, barangay_urls, map_areas = _map_files()
     return render_template(
         'GIS_map.html',
@@ -1290,6 +1295,14 @@ def requests_page():
     user_id = session.get('user_id')
 
     if request.method == 'POST':
+        # Checked first, on the server. The form's page hides the button,
+        # but a direct POST must fail too. Nothing is saved on refusal.
+        member = db.session.get(User, user_id)
+        block = request_block(member)
+        if block:
+            flash(block[1], "danger")
+            return redirect(url_for('dashboard.requests_page'))
+
         municipality = (request.form.get('municipality') or '').strip()
         barangay = (request.form.get('barangay') or '').strip()
         request_type = (request.form.get('request_type') or '').strip()
@@ -1483,6 +1496,9 @@ def requests_page():
             planting_density_per_ha=density,
             estimated_seedlings=estimated_seedlings,
             adopted_site_id=adopted_site.site_id if adopted_site else None,
+            # From the account's membership only. Any organization_id in
+            # the posted form is ignored.
+            organization_id=member.organization_id,
             status='Submitted',
         )
         db.session.add(new_request)
@@ -1581,9 +1597,11 @@ def requests_page():
         'Rejected': base().filter(Request.status == 'Rejected').count(),
     }
 
+    member_block = request_block(db.session.get(User, user_id))
     return render_template(
         'Requests.html',
         active_page='requests',
+        request_block=member_block,
         municipalities=municipalities,
         my_requests=my_requests,
         counts=counts,

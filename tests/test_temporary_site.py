@@ -48,8 +48,8 @@ from PIL.ExifTags import Base as ExifBase, GPS          # noqa: E402
 from app import create_app                              # noqa: E402
 from app.extensions import db                           # noqa: E402
 from app.models import (                                # noqa: E402
-    MonitoringReport, Notification, ReforestationRecord, Request, Site,
-    VisitAssignment,
+    MonitoringReport, Notification, Organization, ReforestationRecord,
+    Request, Site, User, VisitAssignment,
 )
 from app.routes import dashboard as dashboard_routes    # noqa: E402
 from app.services.request_site import site_position     # noqa: E402
@@ -155,6 +155,15 @@ def visibility(client, site_id):
 # ----------------------------------------------------------------------
 
 def run(app, s):
+    # Since Module 2 only an active organization member may send a request.
+    # The test citizen joins the seed organization as an active member.
+    base.fresh()
+    _org = Organization.query.first()
+    _citizen = db.session.get(User, s.citizen_id)
+    _citizen.organization_id = _org.organization_id
+    _citizen.org_role = 'member'
+    _citizen.org_status = 'active'
+    db.session.commit()
     guest = app.test_client()
     citizen = app.test_client()
     as_citizen(citizen, s)
