@@ -44,6 +44,61 @@
   </div>
 </div>
 
+<!-- ============ SITE REQUESTS FROM MEMBERS ============ -->
+<div class="um-panel">
+  <div class="um-panel-head">
+    <h3>Site requests from members ({{ org_requests|length }})</h3>
+  </div>
+  <div style="padding: 1.25rem;">
+    {% if org_requests %}
+      {% for r in org_requests %}
+      <div style="padding: 0.75rem 0; border-bottom: 1px solid rgba(0,0,0,0.08);">
+        <strong>{{ r.request_type }}</strong>
+        {% if r.location %}for {{ r.location.barangay }}, {{ r.location.municipality }}{% endif %}
+        <div><small>Sent by {{ r.requester.username if r.requester else 'unknown' }} on {{ r.date_submitted|datetime_ph }} &middot; {{ r.status|request_label }}</small></div>
+        {% if r.description %}<p>{{ r.description }}</p>{% endif %}
+        {% if r.attachments %}
+        <div>
+          {% for a in r.attachments %}
+          <a href="{{ url_for('static', filename=a.file_url) }}" target="_blank">{{ a.original_name or 'document' }}</a>{% if not loop.last %} &middot; {% endif %}
+          {% endfor %}
+        </div>
+        {% endif %}
+        {% if r.org_review_note %}<p><em>Note: {{ r.org_review_note }}</em></p>{% endif %}
+        {% if r.status == 'Pending Org Approval' and can_approve %}
+        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: flex-start; margin-top: 0.5rem;">
+          <form method="POST" action="{{ url_for('organization.org_request_action', request_id=r.request_id) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="action" value="forward">
+            <button type="submit" class="um-btn-confirm">Forward to CENRO</button>
+          </form>
+          <form method="POST" action="{{ url_for('organization.org_request_action', request_id=r.request_id) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="action" value="return">
+            <input type="text" name="note" required placeholder="What should the member change?">
+            <button type="submit" class="um-btn-cancel">Return for changes</button>
+          </form>
+          <form method="POST" action="{{ url_for('organization.org_request_action', request_id=r.request_id) }}"
+                onsubmit="return confirm('Reject this request? This cannot be undone.');">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="action" value="reject">
+            <input type="text" name="note" required placeholder="Reason (the member sees it)">
+            <button type="submit" class="um-btn-cancel">Reject</button>
+          </form>
+        </div>
+        {% elif r.status == 'Pending Org Approval' %}
+        <p class="text-secondary small">Waiting for the organization's leader.</p>
+        {% else %}
+        <p class="text-secondary small">Returned. Waiting for the member to add the documents.</p>
+        {% endif %}
+      </div>
+      {% endfor %}
+    {% else %}
+    <p>No site requests are waiting for the organization.</p>
+    {% endif %}
+  </div>
+</div>
+
 <!-- ============ WAITING FOR APPROVAL ============ -->
 <div class="um-panel">
   <div class="um-panel-head">

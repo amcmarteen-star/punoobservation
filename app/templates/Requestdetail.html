@@ -40,6 +40,8 @@
   }
   .rd-status::before { content: ""; width: 0.45rem; height: 0.45rem; border-radius: 50%; background: currentColor; }
   .st-submitted    { background: var(--info-bg); color: var(--info-strong); }
+  .st-pending-org-approval { background: var(--info-bg); color: var(--info-strong); }
+  .st-returned { background: var(--warn-bg); color: var(--warn-strong); }
   .st-under-review { background: var(--warn-bg); color: var(--warn-strong); }
   .st-approved     { background: var(--ok-bg); color: var(--ok-text); }
   .st-rejected     { background: var(--danger-bg); color: var(--danger-strong); }
@@ -207,8 +209,11 @@
 <header class="rd-head">
   <div class="rd-title-row">
     <h2>Request #{{ req.request_id }}</h2>
-    <span class="rd-status {{ st_class }}">{{ req.status }}</span>
+    <span class="rd-status {{ st_class }}">{{ req.status|request_label }}</span>
   </div>
+  {% if req.org_review_note %}
+  <p class="rd-meta"><strong>Organization's note:</strong> {{ req.org_review_note }}</p>
+  {% endif %}
   <p class="rd-meta">
     Submitted by <strong>{{ req.requester.username if req.requester else 'unknown' }}</strong>
     on {{ req.date_submitted.strftime('%d %b %Y, %I:%M %p') }}
@@ -440,7 +445,7 @@
       <div class="rd-current">
         <div class="rd-current-row">
           <small>Current status</small>
-          <span class="rd-status {{ st_class }}">{{ req.status }}</span>
+          <span class="rd-status {{ st_class }}">{{ req.status|request_label }}</span>
         </div>
         <p>
           {% if req.reviewer %}Set by <strong>{{ req.reviewer.username }}</strong>{% endif %}
@@ -451,6 +456,19 @@
       </div>
       {% endif %}
 
+      {% if req.status in ['Pending Org Approval', 'Returned'] %}
+      <p class="rd-foot">This request is with the organization. You can read it here, but only the organization can act on it now.</p>
+      {% elif req.status == 'Approved' %}
+      <div class="rd-foot">
+        {% if req.created_site %}
+        <p>To close this site, assign a site visit and mark it Not Suitable. <a href="{{ url_for('visits.site_visits', site_id=req.created_site.site_id) }}">Assign a site visit</a></p>
+        {% else %}
+        <p>This request is approved.</p>
+        {% endif %}
+      </div>
+      {% elif req.status == 'Rejected' %}
+      <p class="rd-foot">This request was rejected and is final. The member can send a new request.</p>
+      {% else %}
       <form method="POST" id="rd-form"
             action="{{ url_for('admin.review_request', request_id=req.request_id) }}">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
@@ -487,6 +505,7 @@
 
         <button type="submit" class="rd-btn rd-submit" id="rd-submit" disabled>Choose a status</button>
       </form>
+      {% endif %}
 
       <p class="rd-foot">The requester is notified whenever the status changes.</p>
     </section>

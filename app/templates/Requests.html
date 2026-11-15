@@ -18,6 +18,14 @@ endblock %} {% set active_page = 'requests' %} {% block extra_head %}
     background: var(--warn-bg);
     color: var(--warn-strong);
   }
+  .status-pending-org-approval {
+    background: var(--info-bg);
+    color: var(--info-strong);
+  }
+  .status-returned {
+    background: var(--warn-bg);
+    color: var(--warn-strong);
+  }
   .status-approved {
     background: var(--ok-bg);
     color: #15803d;
@@ -439,8 +447,11 @@ endblock %} {% set active_page = 'requests' %} {% block extra_head %}
             <span
               class="status-pill status-{{ r.status|lower|replace(' ', '-') }}"
             >
-              {{ r.status }}
+              {{ r.status|request_label }}
             </span>
+            {% if r.org_review_note and r.status in ['Returned', 'Rejected'] %}
+            <div class="review-note">From your organization: {{ r.org_review_note }}</div>
+            {% endif %}
             {% if r.review_note %}
             <div class="review-note">{{ r.review_note }}</div>
             {% endif %}
@@ -467,6 +478,16 @@ endblock %} {% set active_page = 'requests' %} {% block extra_head %}
             {% endif %}
           </td>
           <td>
+            {% if r.status == 'Returned' and not r.created_site %}
+            <form method="POST" enctype="multipart/form-data" class="req-resubmit"
+                  action="{{ url_for('dashboard.resubmit_request', request_id=r.request_id) }}">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <label class="small">Add the document asked for
+                <input type="file" name="attachments" accept=".pdf,image/*" multiple required>
+              </label>
+              <button type="submit" class="um-btn-confirm">Send again</button>
+            </form>
+            {% endif %}
             {% if r.status in pending_statuses and not r.created_site %}
             <button type="button" class="req-cancel-btn"
                     data-action="{{ url_for('dashboard.cancel_request', request_id=r.request_id) }}"

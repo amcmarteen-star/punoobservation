@@ -39,6 +39,8 @@ def create_app():
     # The current user's area in words, for page subtitles:
     #   {{ area_label() }}  ->  Districts 5 and 6, Eastern Pangasinan
     from app.utils.jurisdiction import area_label
+    from app.services.request_stage import request_label
+    app.jinja_env.filters['request_label'] = request_label
     app.jinja_env.globals['area_label'] = area_label
 
     # Map tile sources, from app/config.py. Base.html hands them to every

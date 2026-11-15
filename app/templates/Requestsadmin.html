@@ -28,6 +28,14 @@ active_page = 'review_requests' %} {% block extra_head %}
     background: var(--warn-bg);
     color: var(--warn-strong);
   }
+  .status-pending-org-approval {
+    background: var(--info-bg);
+    color: var(--info-strong);
+  }
+  .status-returned {
+    background: var(--warn-bg);
+    color: var(--warn-strong);
+  }
   .status-approved {
     background: var(--ok-bg);
     color: var(--ok-text);
@@ -366,7 +374,7 @@ active_page = 'review_requests' %} {% block extra_head %}
             <span
               class="status-pill status-{{ r.status|lower|replace(' ', '-') }}"
             >
-              {{ r.status }}
+              {{ r.status|request_label }}
             </span>
           </td>
           <td>
@@ -401,11 +409,12 @@ active_page = 'review_requests' %} {% block extra_head %}
                 {% if r.reviewed_by and r.reviewer %}
                 <h6>Review</h6>
                 <p>
-                  {{ r.status }} by {{ r.reviewer.username }}{% if r.review_note %} &mdash; {{ r.review_note }}{% endif %}
+                  {{ r.status|request_label }} by {{ r.reviewer.username }}{% if r.review_note %} &mdash; {{ r.review_note }}{% endif %}
                 </p>
                 {% endif %}
               </div>
 
+              {% if r.status in ['Submitted', 'Under Review'] %}
               <form
                 method="POST"
                 action="{{ url_for('admin.review_request', request_id=r.request_id) }}"
@@ -427,6 +436,13 @@ active_page = 'review_requests' %} {% block extra_head %}
                 />
                 <button type="submit" class="um-btn-confirm">Save</button>
               </form>
+              {% elif r.status == 'Approved' %}
+              <p class="text-secondary">{% if r.created_site %}To close this site, assign a site visit and mark it Not Suitable. <a href="{{ url_for('visits.site_visits', site_id=r.created_site.site_id) }}">Assign a site visit</a>{% else %}This request is approved.{% endif %}</p>
+              {% elif r.status == 'Rejected' %}
+              <p class="text-secondary">Rejected. This request is final.</p>
+              {% else %}
+              <p class="text-secondary">With the organization. The CENRO can read it; only the organization can act on it now.</p>
+              {% endif %}
             </div>
           </td>
         </tr>

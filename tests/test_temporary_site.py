@@ -156,12 +156,14 @@ def visibility(client, site_id):
 
 def run(app, s):
     # Since Module 2 only an active organization member may send a request.
-    # The test citizen joins the seed organization as an active member.
+    # Since Module 3 a member's request waits for the organization first. This
+    # test is about the CENRO's steps, so the citizen is a leader: a leader's
+    # request goes straight to the CENRO.
     base.fresh()
     _org = Organization.query.first()
     _citizen = db.session.get(User, s.citizen_id)
     _citizen.organization_id = _org.organization_id
-    _citizen.org_role = 'member'
+    _citizen.org_role = 'leader'
     _citizen.org_status = 'active'
     db.session.commit()
     guest = app.test_client()

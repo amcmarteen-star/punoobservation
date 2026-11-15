@@ -4,6 +4,7 @@ from app.extensions import db
 from app.models import User, Location, Organization, Site, TreeSpecie, ReforestationRecord, Request, Notification, MonitoringReport, MonitoringPlot, MonitoringPhoto,ReforestationRecord,Site,AuditLog, SiteVisit, VisitAssignment
 from app.utils.decorators import admin_required, superadmin_required
 from app.utils.audit import log_action
+from app.services.request_stage import AT_ORGANIZATION, cenro_problem
 import pandas as pd
 from datetime import datetime as dt
 from datetime import datetime, timedelta
@@ -984,6 +985,9 @@ def review_requests():
         pass
     elif status_filter == 'Pending':
         query = query.filter(Request.status.in_(['Submitted', 'Under Review']))
+    elif status_filter == 'At organization':
+        # read-only for the CENRO: the organization is deciding
+        query = query.filter(Request.status.in_(AT_ORGANIZATION))
     elif status_filter:
         query = query.filter(Request.status == status_filter)
 
@@ -994,6 +998,8 @@ def review_requests():
             Request.status.in_(['Submitted', 'Under Review'])).count(),
         'Approved': base().filter(Request.status == 'Approved').count(),
         'Rejected': base().filter(Request.status == 'Rejected').count(),
+        'At organization': base().filter(
+            Request.status.in_(AT_ORGANIZATION)).count(),
     }
 
     return render_template(
@@ -1028,9 +1034,9 @@ def review_request(request_id):
     # ... rest of the function unchanged ...
     note = (request.form.get('review_note') or '').strip()
 
-    allowed = {'Submitted', 'Under Review', 'Approved', 'Rejected'}
-    if new_status not in allowed:
-        flash("Invalid status.", "danger")
+    problem = cenro_problem(req, new_status)
+    if problem:
+        flash(problem, "danger")
         return redirect(url_for('admin.review_requests'))
 
     if new_status == 'Rejected' and not note:
@@ -1061,6 +1067,7 @@ def review_request(request_id):
             close_site(site, f"request #{req.request_id} was rejected.",
                        session.get('user_id'))
 
+    old_status = req.status
     req.status = new_status
     req.review_note = note or None
     req.reviewed_by = session.get('user_id')
@@ -1082,7 +1089,7 @@ def review_request(request_id):
     ))
 
     log_action('review_request', 'request', req.request_id,
-               f"Marked {new_status}"
+               f"Marked {new_status} (was {old_status})"
                + (f": {note}" if note else ""))
 
     db.session.commit()

@@ -9,6 +9,12 @@ from app.models import (
 )
 from app.utils.audit import log_action
 from app.utils.organization import request_block
+from app.services.request_stage import (
+    ORG_PENDING, SUBMITTED, AT_ORGANIZATION, CENRO_ACTIONABLE,
+    apply_resubmit, initial_status, notify_cenro, notify_org_leaders,
+    org_has_active_leader, resubmit_problem,
+)
+from app.models import Organization
 from sqlalchemy import func
 from collections import defaultdict
 import math
@@ -61,7 +67,8 @@ MANILA = ZoneInfo("Asia/Manila")
 
 # A request is "pending" until a CENRO decides it. Same pair the admin
 # review queue counts as Pending (admin.review_requests).
-PENDING_REQUEST_STATUSES = ('Submitted', 'Under Review')
+PENDING_REQUEST_STATUSES = ('Submitted', 'Under Review',
+                            'Pending Org Approval', 'Returned')
 
 
 def _time_ago(dt):
@@ -1499,7 +1506,7 @@ def requests_page():
             # From the account's membership only. Any organization_id in
             # the posted form is ignored.
             organization_id=member.organization_id,
-            status='Submitted',
+            status=initial_status(member),
         )
         db.session.add(new_request)
         db.session.flush()          # assigns request_id before commit
@@ -1532,19 +1539,23 @@ def requests_page():
         what = (f"Adoption of {adopted_site.site_name}" if adopted_site
                 else request_type)
 
-        # Tell the CENRO that reviews this barangay, and nobody else.
-        # PENRO and superadmin cannot act on a request.
-        admins = reviewing_admins(cenro_for_municipality(municipality))
-        for admin in admins:
-            db.session.add(Notification(
-                user_id=admin.user_id,
-                notification_type='New Request',
-                message=(
-                    f"{session.get('username')} requested "
-                    f"{what} for {barangay}, {municipality}."
-                ),
-                is_read=False,
-            ))
+        # Who hears about it depends on where it starts. A request that
+        # starts with the organization goes to its leaders. The CENRO hears
+        # about it when it starts at the CENRO, or when the organization
+        # has no active leader to act on it.
+        org = (db.session.get(Organization, member.organization_id)
+               if member.organization_id else None)
+        if new_request.status == SUBMITTED or not org_has_active_leader(org):
+            notify_cenro(
+                new_request,
+                f"{session.get('username')} requested {what} for "
+                f"{barangay}, {municipality}.")
+        if new_request.status == ORG_PENDING:
+            notify_org_leaders(
+                org,
+                f"{session.get('username')} sent a site request for "
+                f"{barangay}, {municipality}. Review it under My "
+                "Organization.")
 
         log_action('submit_request', 'request', new_request.request_id,
                 f"{what} for {barangay}, {municipality}")
@@ -1552,8 +1563,11 @@ def requests_page():
         db.session.commit()
 
         flash(
-            f"Request submitted for {barangay}, {municipality}. "
-            "You will be notified when it is reviewed.",
+            (f"Request sent to your organization for {barangay}, "
+             f"{municipality}. Its leader reviews it first.")
+            if new_request.status == ORG_PENDING else
+            (f"Request submitted for {barangay}, {municipality}. "
+             "You will be notified when it is reviewed."),
             "success",
         )
         for warning in map_warnings:
@@ -1670,7 +1684,10 @@ def cancel_request(request_id):
 
     # the same admins submit_request notified: the reviewing CENRO
     municipality = req.location.municipality if req.location else None
-    for admin in reviewing_admins(cenro_for_municipality(municipality)):
+    # Only a request the CENRO already holds tells the CENRO it was withdrawn.
+    cenro_holds = req.status in CENRO_ACTIONABLE
+    for admin in (reviewing_admins(cenro_for_municipality(municipality))
+                  if cenro_holds else []):
         db.session.add(Notification(
             user_id=admin.user_id,
             notification_type='Request Update',
@@ -1696,6 +1713,84 @@ def cancel_request(request_id):
             pass
 
     flash(f"Request cancelled: {label}.", "success")
+    return redirect(back)
+
+
+@dashboard_bp.route('/requests/<int:request_id>/resubmit', methods=['POST'])
+@login_required
+def resubmit_request(request_id):
+    """
+    A returned request goes back to the organization with the documents the
+    leader asked for. Only documents are added; the request itself stays as
+    the member sent it.
+    """
+    back = url_for('dashboard.requests_page', status='Pending')
+    member = db.session.get(User, session.get('user_id'))
+    req = db.session.get(Request, request_id)
+    if req is None:
+        flash("That request no longer exists.", "warning")
+        return redirect(back)
+
+    problem = resubmit_problem(req, member)
+    if problem:
+        flash(problem, "danger")
+        return redirect(back)
+
+    files = [f for f in request.files.getlist('attachments')
+             if f and f.filename]
+    problem = upload_problem(
+        files, max_files=current_app.config['MAX_REQUEST_FILES'])
+    if problem:
+        flash(problem, "danger")
+        return redirect(back)
+    if not any(is_request_document(f) for f in files):
+        flash("Attach the document the leader asked for, as an image or PDF.",
+              "danger")
+        return redirect(back)
+
+    saved = 0
+    rejected = []
+    first = len(req.attachments) + 1
+    for offset, f in enumerate(files):
+        result = save_request_file(
+            f, current_app.static_folder, req.request_id, first + offset)
+        if result is None:
+            rejected.append(f.filename)
+            continue
+        rel, digest, mime = result
+        db.session.add(RequestAttachment(
+            request_id=req.request_id,
+            file_url=rel,
+            original_name=f.filename[:255],
+            file_hash=digest,
+            mime_type=mime,
+        ))
+        saved += 1
+
+    if not saved:
+        flash("Not attached (images and PDF only): " + ", ".join(rejected),
+              "warning")
+        return redirect(back)
+
+    apply_resubmit(req)
+    org = (db.session.get(Organization, req.organization_id)
+           if req.organization_id else None)
+    where = (f"{req.location.barangay}, {req.location.municipality}"
+             if req.location else "an unknown location")
+    notify_org_leaders(
+        org,
+        f"{member.username} sent back the request for {where} with "
+        f"{saved} document(s). Review it under My Organization.")
+    log_action('resubmit_request', 'request', req.request_id,
+               f"Resubmitted to "
+               f"{org.organization_name if org else 'the organization'} "
+               f"with {saved} document(s)")
+    db.session.commit()
+
+    flash("Sent back to your organization's leader.", "success")
+    if rejected:
+        flash("Not attached (images and PDF only): " + ", ".join(rejected),
+              "warning")
     return redirect(back)
 
 

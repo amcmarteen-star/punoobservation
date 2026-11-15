@@ -13,7 +13,11 @@ from flask import (
 )
 
 from app.extensions import db
-from app.models import Organization, User
+from app.models import Notification, Organization, Request, User
+from app.services.request_stage import (
+    AT_ORGANIZATION, apply_org_action, notify_cenro, org_action_problem,
+)
+from app.utils.timeutil import manila_now
 from app.routes.auth import _render_register
 from app.utils.audit import log_action
 from app.utils.decorators import login_required
@@ -174,6 +178,10 @@ def _members_view(org, user):
         invite_url=invite_url,
         can_approve=can_approve(user, org),
         can_appoint=can_appoint_leaders(user, org),
+        org_requests=(Request.query
+                      .filter(Request.organization_id == org.organization_id,
+                              Request.status.in_(AT_ORGANIZATION))
+                      .order_by(Request.date_submitted).all()),
     )
 
 
@@ -335,6 +343,68 @@ def regenerate_token(org_id):
 # ----------------------------------------------------------------------
 # CENRO and provincial list
 # ----------------------------------------------------------------------
+
+@org_bp.route('/requests/<int:request_id>/org-action', methods=['POST'])
+@login_required
+def org_request_action(request_id):
+    """
+    A leader forwards, returns or rejects a member's request.
+
+    The organization comes from the request itself, never from the URL or
+    the form. Any leader of that organization may act. So may the CENRO
+    when the organization has no active leader (can_approve decides).
+    """
+    actor = _current_user()
+    req = db.session.get(Request, request_id)
+    if req is None:
+        abort(404)
+    org = (db.session.get(Organization, req.organization_id)
+           if req.organization_id else None)
+    if org is None or not can_approve(actor, org):
+        abort(403)
+
+    action = (request.form.get('action') or '').strip()
+    note = (request.form.get('note') or '').strip()
+    problem = org_action_problem(req, action, note)
+    if problem:
+        flash(problem, "danger")
+        return redirect(_members_url(org))
+
+    old = req.status
+    new = apply_org_action(req, action, note, actor.user_id, manila_now())
+    where = (f"{req.location.barangay}, {req.location.municipality}"
+             if req.location else "an unknown location")
+
+    if action == 'forward':
+        notify_cenro(req,
+                     f"{org.organization_name} forwarded a site request for "
+                     f"{where} to the CENRO for review.")
+        told = f"Your organization forwarded your request for {where} to the CENRO."
+        flash_text = "Forwarded to the CENRO."
+    elif action == 'return':
+        told = (f"Your organization asked for changes to your request for "
+                f"{where}. Note: {note}")
+        flash_text = "Returned to the member for changes."
+    else:
+        told = (f"Your organization rejected your request for {where}. "
+                f"Reason: {note}")
+        flash_text = "Request rejected."
+
+    db.session.add(Notification(
+        user_id=req.user_id,
+        notification_type='Request Update',
+        message=told,
+        is_read=False,
+    ))
+    log_action(f'org_{action}', 'request', req.request_id,
+               f"{old} -> {new} by {actor.username}: "
+               f"{req.request_type} for {where}"
+               + (f". Note: {note}" if note else ""))
+    db.session.commit()
+
+    flash(flash_text, "success")
+    return redirect(_members_url(org))
+
 
 @org_bp.route('/org/organizations')
 @login_required
