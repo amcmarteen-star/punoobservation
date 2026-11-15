@@ -15,6 +15,8 @@ from app.services.request_stage import (
     org_has_active_leader, resubmit_problem,
 )
 from app.models import Organization
+from app.services.request_timeline import build_timeline, can_see_request
+from app.services.notification_links import notification_url
 from sqlalchemy import func
 from collections import defaultdict
 import math
@@ -447,6 +449,8 @@ def api_notifications():
                 "report_id": n.report_id,
                 "visit_id": n.visit_id,
                 "site_id": n.site_id,
+                "request_id": n.request_id,
+                "link": notification_url(n),
                 "created_at": (
                     n.created_at.strftime('%b %d, %I:%M %p')
                     if n.created_at else ""
@@ -1555,7 +1559,8 @@ def requests_page():
                 org,
                 f"{session.get('username')} sent a site request for "
                 f"{barangay}, {municipality}. Review it under My "
-                "Organization.")
+                "Organization.",
+                request_id=new_request.request_id)
 
         log_action('submit_request', 'request', new_request.request_id,
                 f"{what} for {barangay}, {municipality}")
@@ -1780,7 +1785,8 @@ def resubmit_request(request_id):
     notify_org_leaders(
         org,
         f"{member.username} sent back the request for {where} with "
-        f"{saved} document(s). Review it under My Organization.")
+        f"{saved} document(s). Review it under My Organization.",
+        request_id=req.request_id)
     log_action('resubmit_request', 'request', req.request_id,
                f"Resubmitted to "
                f"{org.organization_name if org else 'the organization'} "
@@ -1792,6 +1798,26 @@ def resubmit_request(request_id):
         flash("Not attached (images and PDF only): " + ", ".join(rejected),
               "warning")
     return redirect(back)
+
+
+@dashboard_bp.route('/requests/<int:request_id>')
+@login_required
+def request_detail(request_id):
+    """Where one request is, step by step. Open to the submitter, to the
+    organization's active leaders, and to the CENRO that covers it."""
+    user = db.session.get(User, session.get('user_id'))
+    req = db.session.get(Request, request_id)
+    if req is None:
+        abort(404)
+    if not can_see_request(user, req):
+        abort(403)
+    return render_template(
+        'Requestmember.html',
+        active_page='requests',
+        req=req,
+        timeline=build_timeline(req),
+        staff=user.role in ('admin', 'superadmin'),
+    )
 
 
 @dashboard_bp.route('/api/barangays/<municipality>')

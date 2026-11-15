@@ -62,11 +62,12 @@ def notify_cenro(req, message):
             user_id=admin.user_id,
             notification_type='New Request',
             message=message,
+            request_id=req.request_id,
             is_read=False,
         ))
 
 
-def notify_org_leaders(org, message):
+def notify_org_leaders(org, message, request_id=None):
     """Tell every active leader of the organization."""
     from app.models import Notification, User
     from app.extensions import db
@@ -82,6 +83,7 @@ def notify_org_leaders(org, message):
             user_id=leader.user_id,
             notification_type='Request Update',
             message=message,
+            request_id=request_id,
             is_read=False,
         ))
 

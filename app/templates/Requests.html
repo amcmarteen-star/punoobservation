@@ -478,6 +478,7 @@ endblock %} {% set active_page = 'requests' %} {% block extra_head %}
             {% endif %}
           </td>
           <td>
+            <a href="{{ url_for('dashboard.request_detail', request_id=r.request_id) }}" class="small">Details</a>
             {% if r.status == 'Returned' and not r.created_site %}
             <form method="POST" enctype="multipart/form-data" class="req-resubmit"
                   action="{{ url_for('dashboard.resubmit_request', request_id=r.request_id) }}">

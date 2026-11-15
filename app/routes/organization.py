@@ -33,6 +33,30 @@ org_bp = Blueprint('organization', __name__)
 INVALID_LINK = "This link no longer works. Ask your leader for the new one."
 
 
+def _notify_leaders(org, message):
+    """One Membership notice for each active leader of the organization."""
+    for leader in User.query.filter(
+            User.organization_id == org.organization_id,
+            User.org_role == 'leader',
+            User.org_status == 'active').all():
+        db.session.add(Notification(
+            user_id=leader.user_id,
+            notification_type='Membership',
+            message=message,
+            is_read=False,
+        ))
+
+
+def _notify_member(user_id, message):
+    """One Membership notice for one person."""
+    db.session.add(Notification(
+        user_id=user_id,
+        notification_type='Membership',
+        message=message,
+        is_read=False,
+    ))
+
+
 def _current_user():
     user = db.session.get(User, session['user_id'])
     if user is None:
@@ -96,6 +120,9 @@ def join_request(token):
     user.organization_id = org.organization_id
     user.org_role = 'member'
     user.org_status = 'pending'
+    _notify_leaders(org,
+                    f"{user.username} asked to join {org.organization_name}. "
+                    "Review the request under My Organization.")
     log_action('join_request', 'users', user.user_id,
                f"Asked to join {org.organization_name}")
     db.session.commit()
@@ -203,6 +230,8 @@ def approve_member(org_id, user_id):
         return redirect(_members_url(org))
 
     target.org_status = 'active'
+    _notify_member(target.user_id,
+                   f"You are now a member of {org.organization_name}.")
     log_action('approve_member', 'users', target.user_id,
                f"Approved {target.username} into {org.organization_name}")
     db.session.commit()
@@ -225,6 +254,8 @@ def reject_member(org_id, user_id):
 
     name = target.username
     clear_membership(target)
+    _notify_member(target.user_id,
+                   f"Your request to join {org.organization_name} was not approved.")
     log_action('reject_member', 'users', target.user_id,
                f"Rejected {name} from {org.organization_name}")
     db.session.commit()
@@ -254,6 +285,8 @@ def remove_member(org_id, user_id):
 
     name = target.username
     clear_membership(target)
+    _notify_member(target.user_id,
+                   f"You were removed from {org.organization_name}.")
     log_action('remove_member', 'users', target.user_id,
                f"Removed {name} from {org.organization_name}")
     db.session.commit()
@@ -393,6 +426,7 @@ def org_request_action(request_id):
     db.session.add(Notification(
         user_id=req.user_id,
         notification_type='Request Update',
+        request_id=req.request_id,
         message=told,
         is_read=False,
     ))

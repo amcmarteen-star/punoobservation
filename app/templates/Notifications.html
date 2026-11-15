@@ -267,7 +267,7 @@
 {# Type and date filters run in the browser over the rows the route
    already sends; they ride along in the URL so tab links and reloads keep
    them. Read count = all minus unread, both of which the route provides. #}
-{% set type_filter = request.args.get('type', '') if request.args.get('type') in ['reports', 'requests'] else '' %}
+{% set type_filter = request.args.get('type', '') if request.args.get('type') in ['reports', 'requests', 'membership'] else '' %}
 {% set period = request.args.get('period', '') if request.args.get('period') in ['today', '7d', '30d'] else '' %}
 {% set filter_args = {} %}
 {% if type_filter %}{% set _ = filter_args.update({'type': type_filter}) %}{% endif %}
@@ -334,6 +334,7 @@
             <option value="" {% if not type_filter %}selected{% endif %}>All types</option>
             <option value="reports" {% if type_filter == 'reports' %}selected{% endif %}>Reports</option>
             <option value="requests" {% if type_filter == 'requests' %}selected{% endif %}>Requests</option>
+            <option value="membership" {% if type_filter == 'membership' %}selected{% endif %}>Membership</option>
         </select>
         <select id="notif-filter-period" class="notif-filter-select"
                 aria-label="Filter by date" onchange="notifApplyFilters()">
@@ -358,29 +359,10 @@
         <div class="notif-day-group">
             <p class="notif-day-heading">{{ group.label }}</p>
             {% for n in group.notifications %}
-                {% set details_url = none %}
-                {% if n.report_id %}
-                    {# a report notification: admins review it, officers open
-                       their own copy read-only. The officer route rejects a
-                       report they did not submit, so a stale notification
-                       bounces to their list rather than exposing anything. #}
-                    {% if session.role in ['admin', 'superadmin'] %}
-                        {% set details_url = url_for('admin.review_report_detail', report_id=n.report_id) %}
-                    {% else %}
-                        {% set details_url = url_for('dashboard.my_report_detail', report_id=n.report_id) %}
-                    {% endif %}
-                {% elif n.visit_id %}
-                    {% set details_url = url_for('visits.visit_detail', visit_id=n.visit_id) %}
-                {% elif n.site_id %}
-                    {% set details_url = url_for('visits.site_visits', site_id=n.site_id) %}
-                {% elif n.notification_type == 'New Request' %}
-                    {% set details_url = url_for('admin.review_requests') %}
-                {% elif n.notification_type == 'Request Update' %}
-                    {% set details_url = url_for('dashboard.requests_page') %}
-                {% endif %}
+                {% set details_url = notification_url(n) %}
                 <div class="notif-row {% if not n.is_read %}unread{% endif %}"
                      data-id="{{ n.notification_id }}"
-                     data-type="{{ 'reports' if n.notification_type in ['Report', 'Site Visit'] else ('requests' if n.notification_type in ['New Request', 'Request Update'] else 'other') }}"
+                     data-type="{{ 'reports' if n.notification_type in ['Report', 'Site Visit'] else ('requests' if n.notification_type in ['New Request', 'Request Update'] else ('membership' if n.notification_type == 'Membership' else 'other')) }}"
                      data-date="{{ n.created_at.strftime('%Y-%m-%d') if n.created_at else '' }}">
                     <input type="checkbox" class="notif-row-checkbox"
                            data-id="{{ n.notification_id }}"

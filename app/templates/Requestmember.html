@@ -1,0 +1,48 @@
+{% extends "Base.html" %}
+{% block title %}Request #{{ req.request_id }} - PuNoObservation{% endblock %}
+{% block content %}
+
+<div class="um-header">
+  <div>
+    <div class="um-title-row">
+      <h2>Request #{{ req.request_id }}</h2>
+    </div>
+    <p class="um-subtitle">
+      {{ req.request_type }}{% if req.location %} for {{ req.location.barangay }}, {{ req.location.municipality }}{% endif %}
+      &middot; {{ req.status|request_label }}
+    </p>
+  </div>
+</div>
+
+<div class="um-panel">
+  <div class="um-panel-head">
+    <h3>Where it is now</h3>
+  </div>
+  <div style="padding: 1.25rem;">
+    {% include 'partials/_request_stepper.html' %}
+  </div>
+</div>
+
+<div class="um-panel">
+  <div class="um-panel-head">
+    <h3>The request</h3>
+  </div>
+  <div style="padding: 1.25rem;">
+    <p><strong>Sent</strong> {{ req.date_submitted|datetime_ph }}</p>
+    {% if req.description %}<p><strong>Description</strong><br>{{ req.description }}</p>{% endif %}
+    {% if req.contact_name %}<p><strong>Contact</strong> {{ req.contact_name }}{% if req.contact_number %} &middot; {{ req.contact_number }}{% endif %}</p>{% endif %}
+    <p><strong>Documents</strong>
+      {% if req.attachments %}
+        {% for a in req.attachments %}
+        <a href="{{ url_for('static', filename=a.file_url) }}" target="_blank">{{ a.original_name or 'document' }}</a>{% if not loop.last %} &middot; {% endif %}
+        {% endfor %}
+      {% else %}
+        none
+      {% endif %}
+    </p>
+    <p><a href="{% if staff %}{{ url_for('admin.review_request_detail', request_id=req.request_id) }}{% else %}{{ url_for('dashboard.requests_page') }}{% endif %}">
+      {% if staff %}Open in Review Requests{% else %}Back to my requests{% endif %}</a></p>
+  </div>
+</div>
+
+{% endblock %}

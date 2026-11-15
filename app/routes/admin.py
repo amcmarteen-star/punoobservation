@@ -5,6 +5,7 @@ from app.models import User, Location, Organization, Site, TreeSpecie, Reforesta
 from app.utils.decorators import admin_required, superadmin_required
 from app.utils.audit import log_action
 from app.services.request_stage import AT_ORGANIZATION, cenro_problem
+from app.services.request_timeline import build_timeline
 import pandas as pd
 from datetime import datetime as dt
 from datetime import datetime, timedelta
@@ -1085,6 +1086,7 @@ def review_request(request_id):
         user_id=req.user_id,
         notification_type='Request Update',
         message=message,
+        request_id=req.request_id,
         is_read=False,
     ))
 
@@ -1808,6 +1810,7 @@ def review_request_detail(request_id):
         'Requestdetail.html',
         active_page='review_requests',
         req=req,
+        timeline=build_timeline(req),
         related=related,
         existing_sites=existing_sites,
         site_boundary=site_boundary,
@@ -2089,6 +2092,7 @@ def create_site_from_request(request_id):
         db.session.add(Notification(
             user_id=req.user_id,
             notification_type='Request Update',
+            request_id=req.request_id,
             message=(f"A field officer has been assigned to visit the site "
                      f"for your reforestation request in {where}."),
             is_read=False,

@@ -573,6 +573,7 @@ def review_visit(visit_id):
                      if req.location else "your requested site")
             db.session.add(Notification(
                 user_id=req.user_id, notification_type='Request Update',
+                request_id=req.request_id,
                 is_read=False,
                 message=(f"Your reforestation request for {where} is now "
                          "Approved, after a field visit."),
@@ -646,7 +647,8 @@ def _tell_requester_not_suitable(visit, site, suggested, suggestion):
     if req is None:
         return
     db.session.add(Notification(
-        user_id=req.user_id, notification_type='Request Update', is_read=False,
+        user_id=req.user_id, notification_type='Request Update',
+        request_id=req.request_id, is_read=False,
         message=(f"A field visit found the site for your request #"
                  f"{req.request_id} not suitable for planting. The CENRO "
                  f"suggests: {_suggestion_words(suggested, suggestion)}"),

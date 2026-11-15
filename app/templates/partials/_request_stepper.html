@@ -1,0 +1,47 @@
+{# Where a site request is, step by step. Needs `timeline` from
+   app/services/request_timeline.py build_timeline(). #}
+<style>
+  .req-stepper { margin: 1rem 0; }
+  .req-steps { list-style: none; padding: 0; margin: 0; display: grid; gap: 0.75rem; }
+  .req-step { display: flex; gap: 0.75rem; align-items: flex-start; }
+  .req-step-dot { width: 0.9rem; height: 0.9rem; border-radius: 50%; margin-top: 0.3rem;
+                  flex-shrink: 0; border: 2px solid currentColor; opacity: 0.5; }
+  .req-step.is-done .req-step-dot,
+  .req-step.is-approved .req-step-dot { background: currentColor; opacity: 1; }
+  .req-step.is-current .req-step-dot { opacity: 1; box-shadow: 0 0 0 4px rgba(0,0,0,0.08); }
+  .req-step.is-rejected .req-step-dot { background: #b91c1c; border-color: #b91c1c; opacity: 1; }
+  .req-step.is-skipped, .req-step.is-pending { opacity: 0.55; }
+  .req-step-note { margin: 0.25rem 0 0; font-size: 0.9rem; }
+  .req-step-wait { margin-top: 0.25rem; font-weight: 600; }
+</style>
+<section class="req-stepper" aria-label="Where this request is">
+  <ol class="req-steps">
+    {% for s in timeline.steps %}
+    <li class="req-step is-{{ s.state }}"
+        {% if s.key == timeline.current %}aria-current="step"{% endif %}>
+      <span class="req-step-dot" aria-hidden="true"></span>
+      <div class="req-step-body">
+        <strong>{{ s.label }}</strong>
+        {% if s.state == 'skipped' %}
+        <div><small>Skipped. This request did not go through the organization.</small></div>
+        {% elif s.state == 'pending' %}
+        <div><small>Not reached yet</small></div>
+        {% else %}
+        <div>
+          <small>
+            {% if s.date %}{{ s.date|datetime_ph }}{% else %}Date not recorded{% endif %}
+            {% if s.who %} &middot; {{ s.who }}{% endif %}
+          </small>
+        </div>
+        {% endif %}
+        {% if s.note %}<p class="req-step-note">{{ s.note }}</p>{% endif %}
+        {% if s.key == timeline.current and timeline.waiting_days is not none %}
+        <div class="req-step-wait">
+          Waiting {{ timeline.waiting_days }} day{% if timeline.waiting_days != 1 %}s{% endif %}
+        </div>
+        {% endif %}
+      </div>
+    </li>
+    {% endfor %}
+  </ol>
+</section>
