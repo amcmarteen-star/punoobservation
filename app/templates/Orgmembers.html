@@ -1,191 +1,563 @@
 {% extends "Base.html" %}
 {% block title %}Members - PuNoObservation{% endblock %}
+{% block content_class %}page-content-wide{% endblock %}
+
+{% block extra_head %}
+<style>
+  .om-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    margin-bottom: 0.75rem;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--text-2);
+    text-decoration: none;
+  }
+
+  .om-back:hover { color: var(--brand-text); }
+  .om-back svg { width: 1rem; height: 1rem; }
+
+  .om-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.4rem;
+    margin-top: 0.4rem;
+  }
+
+  .om-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.2rem 0.6rem;
+    border-radius: 999px;
+    border: 1px solid var(--line);
+    background: var(--surface-2);
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-body);
+    white-space: nowrap;
+  }
+
+  .om-chip svg { width: 0.85rem; height: 0.85rem; flex: none; }
+
+  .om-count {
+    margin-left: auto;
+    padding: 0.1rem 0.55rem;
+    border-radius: 999px;
+    background: var(--surface-3);
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--text-body);
+  }
+
+  .om-count.is-alert {
+    background: var(--warn-bg);
+    color: var(--warn-text);
+  }
+
+  .om-help {
+    margin: 0 0 0.85rem;
+    font-size: 0.875rem;
+    line-height: 1.55;
+    color: var(--text-2);
+  }
+
+  /* --- invite link --- */
+  .om-link-row {
+    display: flex;
+    gap: 0.5rem;
+  }
+
+  .om-input {
+    flex: 1;
+    min-width: 0;
+    min-height: 2.6rem;
+    padding: 0.55rem 0.8rem;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--surface-1);
+    color: var(--text-strong);
+    font: inherit;
+    font-size: 0.875rem;
+    outline: none;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  }
+
+  .om-input:focus {
+    border-color: var(--brand-text);
+    box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.12);
+  }
+
+  .om-input[readonly] {
+    background: var(--surface-2);
+    color: var(--text-body);
+    text-overflow: ellipsis;
+  }
+
+  .om-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    white-space: nowrap;
+  }
+
+  .om-btn svg { width: 1rem; height: 1rem; flex: none; }
+
+  .om-link-foot {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem 1rem;
+    margin-top: 0.9rem;
+  }
+
+  .om-link-foot p {
+    margin: 0;
+    font-size: 0.8rem;
+    color: var(--text-2);
+  }
+
+  /* --- people lists --- */
+  .om-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .om-person {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .om-person:first-child { padding-top: 0; }
+  .om-person:last-child { border-bottom: none; padding-bottom: 0; }
+
+  .om-who {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    flex: 1;
+    min-width: 0;
+  }
+
+  .om-who .um-name {
+    white-space: nowrap;
+  }
+
+  .om-role {
+    flex: none;
+    margin-left: 0.25rem;
+  }
+
+  .om-header {
+    margin-bottom: 1.25rem;
+  }
+
+  .om-role .um-role.is-leader {
+    background-color: var(--ok-bg);
+    color: var(--brand-text);
+  }
+
+  .om-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 0.4rem;
+    flex: none;
+  }
+
+  .om-actions form { margin: 0; }
+
+  .om-actions .um-btn-confirm,
+  .om-actions .um-btn-cancel {
+    padding: 0.45rem 0.8rem;
+    font-size: 0.8rem;
+  }
+
+  .om-empty {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    padding: 0.9rem 1rem;
+    border: 1px dashed var(--line);
+    border-radius: 10px;
+    font-size: 0.875rem;
+    color: var(--text-2);
+  }
+
+  .om-empty svg {
+    width: 1.15rem;
+    height: 1.15rem;
+    color: var(--text-3);
+    flex: none;
+  }
+
+  /* --- site requests --- */
+  .om-request {
+    padding: 1rem;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+  }
+
+  .om-request + .om-request { margin-top: 0.75rem; }
+
+  .om-request-top {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.4rem 1rem;
+  }
+
+  .om-request-title {
+    margin: 0;
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--text-heading);
+  }
+
+  .om-request-sub {
+    margin: 0.2rem 0 0;
+    font-size: 0.8rem;
+    color: var(--text-2);
+  }
+
+  .om-status {
+    display: inline-block;
+    padding: 0.2rem 0.6rem;
+    border-radius: 999px;
+    border: 1px solid var(--warn-line);
+    background: var(--warn-bg);
+    color: var(--warn-text);
+    font-size: 0.75rem;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  .om-request-body {
+    margin: 0.7rem 0 0;
+    font-size: 0.875rem;
+    line-height: 1.55;
+    color: var(--text-body);
+  }
+
+  .om-files {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin-top: 0.7rem;
+  }
+
+  .om-files a {
+    text-decoration: none;
+  }
+
+  .om-files a:hover { border-color: var(--brand-text); color: var(--brand-text); }
+
+  .om-note {
+    margin: 0.7rem 0 0;
+    padding: 0.55rem 0.75rem;
+    border-left: 3px solid var(--warn-text);
+    border-radius: 0 8px 8px 0;
+    background: var(--warn-bg);
+    font-size: 0.82rem;
+    color: var(--text-strong);
+  }
+
+  .om-wait {
+    margin: 0.7rem 0 0;
+    font-size: 0.82rem;
+    color: var(--text-2);
+  }
+
+  .om-decide {
+    display: grid;
+    grid-template-columns: auto 1fr 1fr;
+    gap: 0.6rem;
+    margin-top: 0.9rem;
+    padding-top: 0.9rem;
+    border-top: 1px solid var(--line);
+  }
+
+  .om-decide form {
+    display: flex;
+    gap: 0.4rem;
+    margin: 0;
+    min-width: 0;
+  }
+
+  @media (max-width: 900px) {
+    .om-decide { grid-template-columns: 1fr; }
+  }
+
+  @media (max-width: 640px) {
+    .om-link-row { flex-direction: column; }
+    .om-link-row .um-btn-confirm { min-height: 44px; }
+
+    .om-link-foot { flex-direction: column; align-items: stretch; }
+    .om-link-foot .um-btn-cancel { min-height: 44px; }
+
+    /* name and role share a line; the buttons drop under them */
+    .om-person { flex-wrap: wrap; }
+    .om-actions {
+      flex-basis: 100%;
+      justify-content: stretch;
+    }
+    .om-actions form { flex: 1; }
+    .om-actions .um-btn-confirm,
+    .om-actions .um-btn-cancel {
+      width: 100%;
+      min-height: 40px;
+    }
+
+    .om-decide form { flex-direction: column; }
+    .om-decide button { min-height: 44px; }
+  }
+</style>
+{% endblock %}
+
 {% block content %}
 
-<div class="um-header">
+{% if session.role in ('admin', 'superadmin') %}
+<a href="{{ url_for('organization.organizations_list') }}" class="om-back">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
+  All organizations
+</a>
+{% endif %}
+
+<div class="um-header om-header">
   <div>
     <div class="um-title-row">
       <h2>{{ org.organization_name }}</h2>
     </div>
-    <p class="um-subtitle">
-      {{ org.organization_type }} &middot;
-      {% if org.cenro %}{{ org.cenro }}{% else %}Provincial office{% endif %}
-    </p>
+    <div class="om-meta">
+      <span class="om-chip">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/><path d="M10 6h4"/><path d="M10 10h4"/><path d="M10 14h4"/><path d="M10 18h4"/></svg>
+        {{ org.organization_type }}
+      </span>
+      <span class="om-chip">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/></svg>
+        {% if org.cenro %}CENRO {{ org.cenro }}{% else %}Provincial office{% endif %}
+      </span>
+    </div>
   </div>
 </div>
 
 <!-- ============ INVITE LINK ============ -->
 <div class="um-panel">
   <div class="um-panel-head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
     <h3>Invite link</h3>
   </div>
-  <div style="padding: 1.25rem;">
-    {% if invite_url %}
-    <p>Share this link with people who want to join. Anyone who opens it
-      can ask to join, and you approve each request below.</p>
-    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-      <input type="text" readonly id="invite-link" value="{{ invite_url }}"
-             style="flex: 1; min-width: 16rem;" onclick="this.select()"
-             aria-label="Invite link">
-      <button type="button" class="um-btn-confirm" id="copy-invite">Copy link</button>
-    </div>
-    {% if can_approve %}
+  {% if invite_url %}
+  <p class="om-help">Share this link with people who want to join. Anyone who
+    opens it can ask to join, and you approve each request below.</p>
+  <div class="om-link-row">
+    <input type="text" readonly id="invite-link" class="om-input" value="{{ invite_url }}"
+           onclick="this.select()" aria-label="Invite link">
+    <button type="button" class="um-btn-confirm om-btn" id="copy-invite">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+      <span>Copy link</span>
+    </button>
+  </div>
+  {% if can_approve %}
+  <div class="om-link-foot">
+    <p>Making a new link stops the old one from working.</p>
     <form method="POST"
           action="{{ url_for('organization.regenerate_token', org_id=org.organization_id) }}"
-          style="margin-top: 1rem;"
           onsubmit="return confirm('Make a new link? The old link will stop working.');">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-      <button type="submit" class="um-btn-cancel">Make a new link</button>
+      <button type="submit" class="um-btn-cancel om-btn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>
+        Make a new link
+      </button>
     </form>
-    {% endif %}
-    {% else %}
-    <p>No invite link yet. It appears here once a leader is appointed.</p>
-    {% endif %}
   </div>
+  {% endif %}
+  {% else %}
+  <div class="om-empty">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 17H7A5 5 0 0 1 7 7"/><path d="M15 7h2a5 5 0 0 1 4 8"/><line x1="8" x2="12" y1="12" y2="12"/><line x1="2" x2="22" y1="2" y2="22"/></svg>
+    No invite link yet. It appears here once a leader is appointed.
+  </div>
+  {% endif %}
 </div>
 
 <!-- ============ SITE REQUESTS FROM MEMBERS ============ -->
 <div class="um-panel">
   <div class="um-panel-head">
-    <h3>Site requests from members ({{ org_requests|length }})</h3>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="m9 14 2 2 4-4"/></svg>
+    <h3>Site requests from members</h3>
+    <span class="om-count {% if org_requests %}is-alert{% endif %}">{{ org_requests|length }}</span>
   </div>
-  <div style="padding: 1.25rem;">
-    {% if org_requests %}
-      {% for r in org_requests %}
-      <div style="padding: 0.75rem 0; border-bottom: 1px solid rgba(0,0,0,0.08);">
-        <strong>{{ r.request_type }}</strong>
-        {% if r.location %}for {{ r.location.barangay }}, {{ r.location.municipality }}{% endif %}
-        <div><small>Sent by {{ r.requester.username if r.requester else 'unknown' }} on {{ r.date_submitted|datetime_ph }} &middot; {{ r.status|request_label }}</small></div>
-        {% if r.description %}<p>{{ r.description }}</p>{% endif %}
-        {% if r.attachments %}
+  {% if org_requests %}
+    {% for r in org_requests %}
+    <article class="om-request">
+      <div class="om-request-top">
         <div>
-          {% for a in r.attachments %}
-          <a href="{{ url_for('static', filename=a.file_url) }}" target="_blank">{{ a.original_name or 'document' }}</a>{% if not loop.last %} &middot; {% endif %}
-          {% endfor %}
+          <h4 class="om-request-title">
+            {{ r.request_type }}{% if r.location %} for {{ r.location.barangay }}, {{ r.location.municipality }}{% endif %}
+          </h4>
+          <p class="om-request-sub">Sent by {{ r.requester.username if r.requester else 'unknown' }} on {{ r.date_submitted|datetime_ph }}</p>
         </div>
-        {% endif %}
-        {% if r.org_review_note %}<p><em>Note: {{ r.org_review_note }}</em></p>{% endif %}
-        {% if r.status == 'Pending Org Approval' and can_approve %}
-        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: flex-start; margin-top: 0.5rem;">
-          <form method="POST" action="{{ url_for('organization.org_request_action', request_id=r.request_id) }}">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <input type="hidden" name="action" value="forward">
-            <button type="submit" class="um-btn-confirm">Forward to CENRO</button>
-          </form>
-          <form method="POST" action="{{ url_for('organization.org_request_action', request_id=r.request_id) }}">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <input type="hidden" name="action" value="return">
-            <input type="text" name="note" required placeholder="What should the member change?">
-            <button type="submit" class="um-btn-cancel">Return for changes</button>
-          </form>
-          <form method="POST" action="{{ url_for('organization.org_request_action', request_id=r.request_id) }}"
-                onsubmit="return confirm('Reject this request? This cannot be undone.');">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <input type="hidden" name="action" value="reject">
-            <input type="text" name="note" required placeholder="Reason (the member sees it)">
-            <button type="submit" class="um-btn-cancel">Reject</button>
-          </form>
-        </div>
-        {% elif r.status == 'Pending Org Approval' %}
-        <p class="text-secondary small">Waiting for the organization's leader.</p>
-        {% else %}
-        <p class="text-secondary small">Returned. Waiting for the member to add the documents.</p>
-        {% endif %}
+        <span class="om-status">{{ r.status|request_label }}</span>
       </div>
-      {% endfor %}
-    {% else %}
-    <p>No site requests are waiting for the organization.</p>
-    {% endif %}
+      {% if r.description %}<p class="om-request-body">{{ r.description }}</p>{% endif %}
+      {% if r.attachments %}
+      <div class="om-files">
+        {% for a in r.attachments %}
+        <a class="om-chip" href="{{ url_for('static', filename=a.file_url) }}" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/></svg>
+          {{ a.original_name or 'document' }}
+        </a>
+        {% endfor %}
+      </div>
+      {% endif %}
+      {% if r.org_review_note %}<p class="om-note"><strong>Note:</strong> {{ r.org_review_note }}</p>{% endif %}
+      {% if r.status == 'Pending Org Approval' and can_approve %}
+      <div class="om-decide">
+        <form method="POST" action="{{ url_for('organization.org_request_action', request_id=r.request_id) }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input type="hidden" name="action" value="forward">
+          <button type="submit" class="um-btn-confirm om-btn">Forward to CENRO</button>
+        </form>
+        <form method="POST" action="{{ url_for('organization.org_request_action', request_id=r.request_id) }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input type="hidden" name="action" value="return">
+          <input type="text" name="note" class="om-input" required
+                 placeholder="What should the member change?" aria-label="What should the member change?">
+          <button type="submit" class="um-btn-cancel om-btn">Return for changes</button>
+        </form>
+        <form method="POST" action="{{ url_for('organization.org_request_action', request_id=r.request_id) }}"
+              onsubmit="return confirm('Reject this request? This cannot be undone.');">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input type="hidden" name="action" value="reject">
+          <input type="text" name="note" class="om-input" required
+                 placeholder="Reason (the member sees it)" aria-label="Reason for rejecting">
+          <button type="submit" class="um-btn-cancel om-btn">Reject</button>
+        </form>
+      </div>
+      {% elif r.status == 'Pending Org Approval' %}
+      <p class="om-wait">Waiting for the organization's leader.</p>
+      {% else %}
+      <p class="om-wait">Returned. Waiting for the member to add the documents.</p>
+      {% endif %}
+    </article>
+    {% endfor %}
+  {% else %}
+  <div class="om-empty">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg>
+    No site requests are waiting for the organization.
   </div>
+  {% endif %}
 </div>
 
 <!-- ============ WAITING FOR APPROVAL ============ -->
 <div class="um-panel">
   <div class="um-panel-head">
-    <h3>Waiting for approval ({{ waiting|length }})</h3>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 21a8 8 0 0 1 13.292-6"/><circle cx="10" cy="8" r="5"/><path d="M19 16v6"/><path d="M22 19h-6"/></svg>
+    <h3>Waiting for approval</h3>
+    <span class="om-count {% if waiting %}is-alert{% endif %}">{{ waiting|length }}</span>
   </div>
-  <div style="padding: 1.25rem;">
-    {% if waiting %}
-    <table class="um-table">
-      <thead>
-        <tr><th>Username</th><th>Actions</th></tr>
-      </thead>
-      <tbody>
-        {% for u in waiting %}
-        <tr>
-          <td>{{ u.username }}</td>
-          <td>
-            {% if can_approve %}
-            <form method="POST" style="display: inline;"
-                  action="{{ url_for('organization.approve_member', org_id=org.organization_id, user_id=u.user_id) }}">
-              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-              <button type="submit" class="um-btn-confirm">Approve</button>
-            </form>
-            <form method="POST" style="display: inline;"
-                  action="{{ url_for('organization.reject_member', org_id=org.organization_id, user_id=u.user_id) }}"
-                  onsubmit="return confirm('Reject this request?');">
-              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-              <button type="submit" class="um-btn-cancel">Reject</button>
-            </form>
-            {% endif %}
-          </td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-    {% else %}
-    <p>No one is waiting for approval.</p>
-    {% endif %}
+  {% if waiting %}
+  <ul class="om-list">
+    {% for u in waiting %}
+    <li class="om-person">
+      <div class="om-who">
+        <span class="um-avatar" aria-hidden="true">{{ u.username[:1]|upper }}</span>
+        <span class="um-name">{{ u.username }}</span>
+      </div>
+      {% if can_approve %}
+      <div class="om-actions">
+        <form method="POST"
+              action="{{ url_for('organization.approve_member', org_id=org.organization_id, user_id=u.user_id) }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button type="submit" class="um-btn-confirm">Approve</button>
+        </form>
+        <form method="POST"
+              action="{{ url_for('organization.reject_member', org_id=org.organization_id, user_id=u.user_id) }}"
+              onsubmit="return confirm('Reject this request?');">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button type="submit" class="um-btn-cancel">Reject</button>
+        </form>
+      </div>
+      {% endif %}
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <div class="om-empty">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 21a8 8 0 0 1 13.292-6"/><circle cx="10" cy="8" r="5"/><path d="m16 19 2 2 4-4"/></svg>
+    No one is waiting for approval.
   </div>
+  {% endif %}
 </div>
 
 <!-- ============ MEMBERS ============ -->
 <div class="um-panel">
   <div class="um-panel-head">
-    <h3>Members ({{ members|length }})</h3>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+    <h3>Members</h3>
+    <span class="om-count">{{ members|length }}</span>
   </div>
-  <div style="padding: 1.25rem;">
-    <table class="um-table">
-      <thead>
-        <tr><th>Username</th><th>Role</th><th>Actions</th></tr>
-      </thead>
-      <tbody>
-        {% for u in members %}
-        <tr>
-          <td>{{ u.username }}{% if u.user_id == me.user_id %} (you){% endif %}</td>
-          <td>{% if u.org_role == 'leader' %}Leader{% else %}Member{% endif %}</td>
-          <td>
-            {% if u.user_id != me.user_id %}
-              {% if can_appoint and u.org_role != 'leader' %}
-              <form method="POST" style="display: inline;"
-                    action="{{ url_for('organization.appoint_leader', org_id=org.organization_id, user_id=u.user_id) }}">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                <button type="submit" class="um-btn-confirm">Make leader</button>
-              </form>
-              {% endif %}
-              {% if can_appoint and u.org_role == 'leader' %}
-              <form method="POST" style="display: inline;"
-                    action="{{ url_for('organization.remove_leader', org_id=org.organization_id, user_id=u.user_id) }}"
-                    onsubmit="return confirm('Remove this person as leader?');">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                <button type="submit" class="um-btn-cancel">Remove as leader</button>
-              </form>
-              {% endif %}
-              {% if can_approve and (u.org_role != 'leader' or can_appoint) %}
-              <form method="POST" style="display: inline;"
-                    action="{{ url_for('organization.remove_member', org_id=org.organization_id, user_id=u.user_id) }}"
-                    onsubmit="return confirm('Remove this member from the organization?');">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                <button type="submit" class="um-btn-cancel">Remove</button>
-              </form>
-              {% endif %}
-            {% endif %}
-          </td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+  {% if members %}
+  <ul class="om-list">
+    {% for u in members %}
+    <li class="om-person">
+      <div class="om-who">
+        <span class="um-avatar" aria-hidden="true">{{ u.username[:1]|upper }}</span>
+        <span class="um-name">{{ u.username }}</span>
+        {% if u.user_id == me.user_id %}<span class="um-you">You</span>{% endif %}
+        <span class="om-role">
+          {% if u.org_role == 'leader' %}
+          <span class="um-role is-leader">Leader</span>
+          {% else %}
+          <span class="um-role">Member</span>
+          {% endif %}
+        </span>
+      </div>
+      {% if u.user_id != me.user_id and (can_appoint or can_approve) %}
+      <div class="om-actions">
+        {% if can_appoint and u.org_role != 'leader' %}
+        <form method="POST"
+              action="{{ url_for('organization.appoint_leader', org_id=org.organization_id, user_id=u.user_id) }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button type="submit" class="um-btn-confirm">Make leader</button>
+        </form>
+        {% endif %}
+        {% if can_appoint and u.org_role == 'leader' %}
+        <form method="POST"
+              action="{{ url_for('organization.remove_leader', org_id=org.organization_id, user_id=u.user_id) }}"
+              onsubmit="return confirm('Remove this person as leader?');">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button type="submit" class="um-btn-cancel">Remove as leader</button>
+        </form>
+        {% endif %}
+        {% if can_approve and (u.org_role != 'leader' or can_appoint) %}
+        <form method="POST"
+              action="{{ url_for('organization.remove_member', org_id=org.organization_id, user_id=u.user_id) }}"
+              onsubmit="return confirm('Remove this member from the organization?');">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button type="submit" class="um-btn-cancel">Remove</button>
+        </form>
+        {% endif %}
+      </div>
+      {% endif %}
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <div class="om-empty">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+    No members yet.
   </div>
+  {% endif %}
 </div>
 
 <script>
@@ -193,9 +565,15 @@
     var btn = document.getElementById("copy-invite");
     var box = document.getElementById("invite-link");
     if (!btn || !box) return;
+    var label = btn.querySelector("span");
+    var timer;
     btn.addEventListener("click", function () {
       box.select();
-      var done = function () { btn.textContent = "Copied"; };
+      var done = function () {
+        label.textContent = "Copied";
+        clearTimeout(timer);
+        timer = setTimeout(function () { label.textContent = "Copy link"; }, 2000);
+      };
       if (navigator.clipboard && navigator.clipboard.writeText) {
         navigator.clipboard.writeText(box.value).then(done, function () {
           document.execCommand("copy");

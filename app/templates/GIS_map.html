@@ -1181,52 +1181,80 @@
     line-height: 1.4;
   }
 
-  /* --- tree markers --- */
+  /* --- tree markers ---
+     A round pin with a white tree icon and the site count on a badge.
+     Proposed sites (from a request, boundary not published yet) are
+     blue; staff only, since guests and normal users never get them. */
   .tree-marker {
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
+    padding-top: 8px;
     line-height: 1;
-    filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.4));
     cursor: pointer;
   }
 
-  .tree-marker .tree-glyph {
-    line-height: 1;
+  .tree-pin {
+    position: relative;
+    display: grid;
+    place-items: center;
+    width: var(--pin);
+    height: var(--pin);
+    border-radius: 50%;
+    background: #15803d;
+    color: #ffffff;
+    border: 2px solid #ffffff;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+    box-sizing: border-box;
+    transition: transform 150ms ease, box-shadow 150ms ease;
+  }
+
+  .tree-pin svg {
+    width: 58%;
+    height: 58%;
+  }
+
+  .tree-marker:hover .tree-pin {
+    transform: scale(1.12);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
   }
 
   .tree-marker .tree-count {
+    position: absolute;
+    top: -7px;
+    right: -9px;
+    display: grid;
+    place-items: center;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    box-sizing: border-box;
+    border-radius: 9px;
     background: #14532d;
     color: #ffffff;
-    border-radius: 10px;
-    padding: 0 6px;
-    font-size: 0.7rem;
+    border: 1.5px solid #ffffff;
+    font-size: 0.65rem;
     font-weight: 700;
-    margin-top: -4px;
-    border: 1px solid #ffffff;
   }
 
   .tree-marker .tree-label {
-    background: rgba(255, 255, 255, 0.92);
+    background: rgba(255, 255, 255, 0.94);
     color: #14532d;
     font-size: 0.62rem;
     font-weight: 600;
-    padding: 0 4px;
-    border-radius: 3px;
-    margin-top: 2px;
+    padding: 1px 5px;
+    border-radius: 4px;
+    margin-top: 4px;
     white-space: nowrap;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
   }
-  /* Proposed site: made from a request, boundary not published yet.
-     An emoji cannot be recoloured, so a hue filter turns its green blue,
-     and the count badge and label turn blue to match. Staff only:
-     guests and normal users are never sent proposed sites. */
-  .tree-marker.is-proposed .tree-glyph {
-    filter: hue-rotate(95deg) saturate(1.4);
+
+  .tree-marker.is-proposed .tree-pin {
+    background: #0369a1;
   }
 
   .tree-marker.is-proposed .tree-count {
-    background: #0369a1;
+    background: #075985;
   }
 
   .tree-marker.is-proposed .tree-label {
@@ -3136,11 +3164,16 @@
       function buildTreeIcon(b, zoom) {
         const detailed = zoom >= 12;
 
-        // glyph grows with site count, capped so it stays readable
-        const glyphSize = Math.min(34, 18 + b.site_count * 1.6);
+        // The pin grows a little with site count, capped so a busy
+        // barangay does not swallow its neighbours.
+        const pinSize = Math.round(Math.min(40, 28 + b.site_count * 1.2));
 
-        const trees =
-          b.site_count >= 10 ? "🌳🌳🌳" : b.site_count >= 4 ? "🌳🌳" : "🌳";
+        // Lucide icons, drawn the same on every device (an emoji was
+        // drawn differently by Windows, Android and iOS): one tree for a
+        // few sites, a cluster of trees for a barangay with many.
+        const treeSvg = b.site_count >= 4
+          ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 10v.2A3 3 0 0 1 8.9 16H5a3 3 0 0 1-1-5.8V10a3 3 0 0 1 6 0Z"/><path d="M7 16v6"/><path d="M13 19v3"/><path d="M12 19h8.3a1 1 0 0 0 .7-1.7L18 14h.3a1 1 0 0 0 .7-1.7L16 9h.2a1 1 0 0 0 .8-1.7L13 3l-1.4 1.5"/></svg>'
+          : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 19a4 4 0 0 1-2.24-7.32A3.5 3.5 0 0 1 9 6.03V6a3 3 0 1 1 6 0v.04a3.5 3.5 0 0 1 3.24 5.65A4 4 0 0 1 16 19Z"/><path d="M12 19v3"/></svg>';
 
         const proposed = b.kind === "proposed";
         // A site at its own position is labelled with its name; a
@@ -3149,16 +3182,19 @@
 
         const html = `
           <div class="tree-marker${proposed ? " is-proposed" : ""}">
-            <span class="tree-glyph" style="font-size:${glyphSize}px;">
-              ${trees}
+            <span class="tree-pin" style="--pin:${pinSize}px;">
+              ${treeSvg}
+              <span class="tree-count">${b.site_count}</span>
             </span>
-            <span class="tree-count">${b.site_count}</span>
             ${detailed ? `<span class="tree-label">${escBoundary(label)}</span>` : ""}
           </div>
         `;
 
-        const w = detailed ? 110 : 70;
-        const h = detailed ? 64 : 48;
+        // Room around the pin for the count badge (top right) and the
+        // label (below, when zoomed in). The anchor is the pin's centre.
+        const PAD_TOP = 8;
+        const w = detailed ? 120 : pinSize + 20;
+        const h = PAD_TOP + pinSize + (detailed ? 22 : 4);
 
         // Official and proposed groups at the same barangay centroid are
         // two markers on one point. Shift the proposed one aside so both
@@ -3169,7 +3205,7 @@
           className: treeGivesWayToBoundary(b, zoom) ? "tree-hidden" : "",
           html: html,
           iconSize: [w, h],
-          iconAnchor: [w / 2 + nudge, h / 2],
+          iconAnchor: [w / 2 + nudge, PAD_TOP + pinSize / 2],
         });
       }
 

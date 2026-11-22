@@ -1,6 +1,203 @@
 {% extends "Base.html" %}
 {% block title %}Organizations - PuNoObservation{% endblock %}
 {% block content_class %}page-content-wide{% endblock %}
+
+{% block extra_head %}
+<style>
+  .ol-head {
+    flex-wrap: wrap;
+  }
+
+  .ol-count {
+    padding: 0.1rem 0.55rem;
+    border-radius: 999px;
+    background: var(--surface-3);
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--text-body);
+  }
+
+  .ol-search {
+    position: relative;
+    margin-left: auto;
+    width: min(18rem, 100%);
+  }
+
+  .ol-search svg {
+    position: absolute;
+    left: 0.7rem;
+    top: 50%;
+    width: 1rem;
+    height: 1rem;
+    color: var(--text-2);
+    transform: translateY(-50%);
+    pointer-events: none;
+  }
+
+  .ol-search input {
+    width: 100%;
+    min-height: 2.4rem;
+    padding: 0.5rem 0.8rem 0.5rem 2.2rem;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--surface-1);
+    color: var(--text-strong);
+    font: inherit;
+    font-size: 0.875rem;
+    outline: none;
+  }
+
+  .ol-search input:focus {
+    border-color: var(--brand-text);
+    box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.12);
+  }
+
+  .ol-table {
+    width: 100%;
+    table-layout: auto;
+  }
+
+  .ol-table th.num,
+  .ol-table td.num {
+    width: 6.5rem;
+    text-align: center;
+  }
+
+  .ol-table td.go {
+    width: 1%;
+    text-align: right;
+    white-space: nowrap;
+  }
+
+  .ol-name {
+    display: block;
+    font-weight: 600;
+    color: var(--text-heading);
+    line-height: 1.35;
+  }
+
+  .ol-type {
+    display: block;
+    margin-top: 0.15rem;
+    font-size: 0.78rem;
+    color: var(--text-2);
+  }
+
+  .ol-zero {
+    color: var(--text-3);
+  }
+
+  .ol-waiting {
+    display: inline-block;
+    min-width: 1.6rem;
+    padding: 0.1rem 0.5rem;
+    border-radius: 999px;
+    background: var(--warn-bg);
+    color: var(--warn-text);
+    font-weight: 700;
+  }
+
+  .ol-open {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.4rem 0.75rem;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--surface-1);
+    color: var(--brand-text);
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-decoration: none;
+    transition: border-color 150ms ease, background-color 150ms ease;
+  }
+
+  .ol-open:hover {
+    border-color: var(--ok-solid);
+    background: var(--ok-bg);
+  }
+
+  .ol-open svg { width: 0.95rem; height: 0.95rem; }
+
+  /* the phone layout sets display: grid on rows, which would beat [hidden] */
+  .ol-table tr[hidden] {
+    display: none !important;
+  }
+
+  .ol-none {
+    padding: 1.5rem 0.5rem;
+    text-align: center;
+    font-size: 0.875rem;
+    color: var(--text-2);
+  }
+
+  /* Phones: each organization becomes a card. The three counts sit in a
+     row under the name, labelled from the column heading. */
+  @media (max-width: 720px) {
+    .ol-search { width: 100%; margin-left: 0; }
+    .ol-search input { min-height: 44px; }
+
+    .ol-table thead { display: none; }
+    /* style.css gives 5+ column tables a 720px minimum on phones so they
+       scroll; this one becomes cards instead, so it must fit the screen */
+    .ol-table,
+    .ol-table tbody { display: block; min-width: 0 !important; }
+
+    .ol-table tr {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.6rem 0.5rem;
+      padding: 0.9rem 0;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .ol-table tbody tr:last-child { border-bottom: none; }
+    .ol-table tbody tr:hover { background: none; }
+
+    .ol-table td {
+      display: block;
+      padding: 0;
+      border: none;
+      /* long names wrap instead of being cut off */
+      white-space: normal;
+      overflow: visible;
+      text-overflow: clip;
+      overflow-wrap: anywhere;
+    }
+
+    .ol-table td.org { grid-column: 1 / -1; }
+    .ol-table td.cenro { grid-column: 1 / -1; font-size: 0.8rem; color: var(--text-2); }
+
+    .ol-table td.num {
+      width: auto;
+      text-align: left;
+    }
+
+    .ol-table td.num::before {
+      content: attr(data-label);
+      display: block;
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--text-2);
+    }
+
+    .ol-table td.go {
+      grid-column: 1 / -1;
+      width: auto;
+      text-align: left;
+    }
+
+    .ol-open {
+      width: 100%;
+      justify-content: center;
+      min-height: 42px;
+    }
+  }
+</style>
+{% endblock %}
+
 {% block content %}
 
 <div class="um-header">
@@ -15,41 +212,78 @@
 </div>
 
 <div class="um-panel">
-  <div class="um-panel-head">
-    <h3>{{ rows|length }} organization{% if rows|length != 1 %}s{% endif %}</h3>
-  </div>
-  <div style="padding: 1.25rem;">
+  <div class="um-panel-head ol-head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/><path d="M10 6h4"/><path d="M10 10h4"/><path d="M10 14h4"/><path d="M10 18h4"/></svg>
+    <h3>Organization{% if rows|length != 1 %}s{% endif %}</h3>
+    <span class="ol-count" id="ol-count">{{ rows|length }}</span>
     {% if rows %}
-    <table class="um-table">
-      <thead>
-        <tr>
-          <th>Organization</th>
-          <th>CENRO</th>
-          <th>Members</th>
-          <th>Leaders</th>
-          <th>Waiting</th>
-          <th></th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for r in rows %}
-        <tr>
-          <td>{{ r.org.organization_name }}<br><small>{{ r.org.organization_type }}</small></td>
-          <td>{% if r.org.cenro %}{{ r.org.cenro }}{% else %}Provincial office{% endif %}</td>
-          <td>{{ r.members }}</td>
-          <td>{{ r.leaders }}</td>
-          <td>{{ r.waiting }}</td>
-          <td>
-            <a href="{{ url_for('organization.org_members_page', org_id=r.org.organization_id) }}">Members</a>
-          </td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-    {% else %}
-    <p>No organizations yet.</p>
+    <label class="ol-search">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+      <input type="search" id="ol-filter" placeholder="Search organizations" aria-label="Search organizations" autocomplete="off">
+    </label>
     {% endif %}
   </div>
+
+  {% if rows %}
+  <table class="um-table ol-table">
+    <thead>
+      <tr>
+        <th>Organization</th>
+        <th>CENRO</th>
+        <th class="num">Members</th>
+        <th class="num">Leaders</th>
+        <th class="num">Waiting</th>
+        <th><span class="visually-hidden">Open</span></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for r in rows %}
+      <tr data-search="{{ (r.org.organization_name ~ ' ' ~ r.org.organization_type ~ ' ' ~ (r.org.cenro or ''))|lower }}">
+        <td class="org">
+          <span class="ol-name">{{ r.org.organization_name }}</span>
+          <span class="ol-type">{{ r.org.organization_type }}</span>
+        </td>
+        <td class="cenro">{% if r.org.cenro %}CENRO {{ r.org.cenro }}{% else %}Provincial office{% endif %}</td>
+        <td class="num" data-label="Members"><span class="{% if not r.members %}ol-zero{% endif %}">{{ r.members }}</span></td>
+        <td class="num" data-label="Leaders"><span class="{% if not r.leaders %}ol-zero{% endif %}">{{ r.leaders }}</span></td>
+        <td class="num" data-label="Waiting">
+          {% if r.waiting %}<span class="ol-waiting">{{ r.waiting }}</span>{% else %}<span class="ol-zero">0</span>{% endif %}
+        </td>
+        <td class="go">
+          <a class="ol-open" href="{{ url_for('organization.org_members_page', org_id=r.org.organization_id) }}">
+            Members
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+          </a>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  <p class="ol-none" id="ol-none" hidden>No organization matches your search.</p>
+  {% else %}
+  <p class="ol-none">No organizations yet.</p>
+  {% endif %}
 </div>
+
+<script>
+  (function () {
+    var box = document.getElementById("ol-filter");
+    if (!box) return;
+    var rows = document.querySelectorAll(".ol-table tbody tr");
+    var count = document.getElementById("ol-count");
+    var none = document.getElementById("ol-none");
+    box.addEventListener("input", function () {
+      var q = box.value.trim().toLowerCase();
+      var shown = 0;
+      rows.forEach(function (tr) {
+        var hit = !q || tr.getAttribute("data-search").indexOf(q) !== -1;
+        tr.hidden = !hit;
+        if (hit) shown++;
+      });
+      count.textContent = shown;
+      none.hidden = shown !== 0;
+    });
+  }());
+</script>
 
 {% endblock %}

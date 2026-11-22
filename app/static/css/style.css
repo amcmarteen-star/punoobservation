@@ -645,6 +645,11 @@ html:has(> body.app-body) {
     color: var(--side-text-dim);
 }
 
+/* The first group sits right under the divider, so it needs no gap above */
+.sidebar-nav > .nav-section-title:first-child {
+    margin-top: 0.35rem;
+}
+
 /* No room for the label on the narrow rail, so it becomes the divider it was
    already acting as. Height and margins are kept so the icons above and below
    stay grouped instead of running together. */
@@ -2553,7 +2558,29 @@ body.login-page :focus-visible {
 .text-danger { color: var(--danger-text); }
 .fw-semibold { font-weight: 600; }
 .fw-bold { font-weight: 700; }
+.fw-normal { font-weight: 400; }
+.text-dark { color: var(--text-heading); }
 .fst-italic { font-style: italic; }
+/* Empty cells ("—", "No coordinates") read as quieter than real values. */
+.um-muted { color: var(--text-3); }
+/* Why a disabled header button is disabled, under the button. */
+.um-hint {
+    flex-basis: 100%;
+    margin: -0.5rem 0 0.75rem;
+    text-align: right;
+    font-size: 0.8rem;
+    color: var(--text-2);
+}
+.um-hint a { color: var(--brand-text); font-weight: 600; }
+@media (max-width: 720px) {
+    .um-hint { margin: 0 0 0.75rem; text-align: left; }
+}
+/* On phones, table rows turn into cards with each cell's label written
+   before it. A number cell uses the mono font, and the label inherited it,
+   so some cards had typewriter labels and others did not. */
+td[data-label]::before {
+    font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+}
 .small { font-size: 0.875rem; }
 .text-uppercase { text-transform: uppercase; }
 .w-100 { width: 100%; }
@@ -3214,11 +3241,6 @@ a.um-btn-row:hover {
     white-space: nowrap;
 }
 
-#um-table th {
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-}
-
 /* --- Status --- */
 .um-status {
     display: inline-flex;
@@ -3870,14 +3892,6 @@ a.um-btn-confirm {
     white-space: nowrap;
 }
 .dt-count strong { color: var(--n-800); font-weight: 600; }
-
-/* Headers are labels, not controls: small caps, tracked out, quiet. They
-   carry no hover state and no chevron, so nothing in the header row reads
-   as a button. */
-#sites-table th {
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-}
 
 /* The header row stays at the top of the scrollport, so the reader never
    has to scroll back up to remember which column they are reading.

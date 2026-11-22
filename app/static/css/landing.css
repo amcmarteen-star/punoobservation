@@ -291,6 +291,20 @@
     }
 }
 
+/* Big screens: a desktop monitor, or a laptop on a TV. At a fixed 80% the
+   page kept its laptop size and sat small in the middle of the screen.
+   From 1537px up the root size grows with the screen instead, so the page
+   fills a 1920px monitor the way it fills a 1536px laptop (16px there,
+   up to 32px on a 4K screen). Below 1537px nothing changes.
+
+   The features section's pixel sizes grow with it too: see the matching
+   block at the end of this file. */
+@media (min-width: 1537px) {
+    html {
+        font-size: min(0.8333vw, 32px);
+    }
+}
+
 .landing-nav-wrap {
     position: sticky;
     top: 0;
@@ -1806,4 +1820,34 @@ html:has(> body.landing-page)::-webkit-scrollbar {
    who ask their system for reduced motion. */
 @media (prefers-reduced-motion: no-preference) {
     html { scroll-behavior: smooth; }
+}
+
+/* Big screens, continued (see the root size rule near the top). The
+   features section is sized in pixels, so here those sizes are restated in
+   rem (the pixel value / 12.8, the laptop's rem) and grow with the type.
+   Last in the file so it wins over the rules it restates. */
+@media (min-width: 1537px) {
+    .landing-mini { flex-basis: 2.66rem; width: 2.66rem; height: 2.66rem; }
+    .landing-mini svg { width: 1.33rem; height: 1.33rem; }
+
+    .lf-head { min-height: 40.6rem; padding: 8.6rem 1.875rem 9.4rem; }
+    .lf-head::before { top: 3.125rem; width: 53.1rem; height: 26.6rem; }
+    .lf-head h2 { max-width: 64rem; }
+    .lf-cue { gap: 0.78rem; }
+
+    .lf-timeline { width: min(96.9rem, calc(100% - 3.75rem)); }
+    .lf-row { min-height: 53.9rem; }
+    .lf-copy { max-width: 39rem; }
+    .lf-copy h3 { margin: 1.17rem 0 1.4rem; }
+    .lf-cta { margin-top: 1.95rem; }
+
+    .lf-more { padding: 9.77rem 1.875rem 11.7rem; }
+    .lf-more h2 { max-width: 54.7rem; margin: 1.25rem auto 1.1rem; }
+    .lf-more-intro { max-width: 46.9rem; }
+    .lf-pills { max-width: 100rem; margin-top: 3.75rem; gap: 0.94rem; }
+    .lf-pill { min-height: 4.53rem; padding: 0.625rem 1.33rem 0.625rem 0.7rem; }
+    .lf-pill-icon { width: 3.125rem; height: 3.125rem; }
+    .lf-pill-icon svg { width: 1.56rem; height: 1.56rem; }
+
+    .landing-viewer-frame { max-width: min(86rem, 100%); }
 }

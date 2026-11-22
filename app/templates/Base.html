@@ -137,13 +137,14 @@
           </span>
           <div class="role-pill-text">
             <span class="role-pill-username">{{ session.username }}</span>
-            <span class="role-pill-role">{{ session.role|capitalize }}</span>
+            <span class="role-pill-role">{{ session.role|replace('_', ' ')|title }}</span>
           </div>
           {% else %}
           <span class="role-dot"></span> Guest {% endif %}
         </div>
 
         <nav class="sidebar-nav">
+          <p class="nav-section-title">Main</p>
           <a
             href="{{ url_for('dashboard.index') }}"
             class="nav-link {% if active_page == 'dashboard' %}active{% endif %}"
@@ -254,30 +255,8 @@
             <span class="nav-link-text">Notifications</span>
           </a>
 
-          {% if org_role == 'leader' and org_status == 'active' %}
-          <a
-            href="{{ url_for('organization.members_page') }}"
-            class="nav-link {% if active_page == 'my_org' %}active{% endif %}"
-          >
-            <svg
-              class="nav-icon"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            >
-              <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
-              <circle cx="9" cy="7" r="4" />
-              <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
-              <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-            </svg>
-            <span class="nav-link-text">My Organization</span>
-          </a>
-          {% endif %}
-
           {% if session.role == 'field_officer' %}
+          <p class="nav-section-title">Field Work</p>
           <a
             href="{{ url_for('dashboard.reports_page') }}"
             class="nav-link {% if active_page == 'reports' %}active{% endif %}"
@@ -343,6 +322,30 @@
             <span class="nav-link-text">Site Visits</span>
           </a>
           {% elif session.role == 'normal_user' %}
+          <p class="nav-section-title">Community</p>
+          {# Only a normal user can lead an organization. #}
+          {% if org_role == 'leader' and org_status == 'active' %}
+          <a
+            href="{{ url_for('organization.members_page') }}"
+            class="nav-link {% if active_page == 'my_org' %}active{% endif %}"
+          >
+            <svg
+              class="nav-icon"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+              <circle cx="9" cy="7" r="4" />
+              <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+              <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+            </svg>
+            <span class="nav-link-text">My Organization</span>
+          </a>
+          {% endif %}
           <a
             href="{{ url_for('dashboard.requests_page') }}"
             class="nav-link {% if active_page == 'requests' %}active{% endif %}"

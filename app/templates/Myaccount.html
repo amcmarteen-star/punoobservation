@@ -1,6 +1,6 @@
 {% extends "Base.html" %}
 {% block title %}My Account - PuNoObservation{% endblock %}
-{% block content_class %}acct-page{% endblock %}
+{% block content_class %}page-content-wide acct-page{% endblock %}
 {% set active_page = 'account' %}
 
 {#
@@ -16,14 +16,6 @@
 
 {% block extra_head %}
 <style>
-  /* .page-content caps every page at 1200px, which on a wide screen left this
-     one with a large empty margin and a password form sitting alone in a
-     panel the width of the page. Raised here rather than globally, since the
-     cap is right for the narrower text pages that share the class. */
-  .page-content.acct-page {
-    max-width: 1560px;
-  }
-
   .acct-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(min(15rem, 100%), 1fr));
@@ -62,6 +54,33 @@
     text-transform: uppercase;
     letter-spacing: 0.6px;
     color: var(--text-2);
+  }
+
+  .acct-org-status {
+    display: inline-block;
+    margin-top: 4px;
+    padding: 0.2rem 0.6rem;
+    border-radius: 999px;
+    background: var(--surface-3);
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-body);
+  }
+
+  .acct-org-status.is-leader { background: var(--ok-bg); color: var(--brand-text); }
+  .acct-org-status.is-pending { background: var(--warn-bg); color: var(--warn-text); }
+
+  /* Leave sits at the end of the facts row, lined up with them */
+  .acct-org-leave {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    margin: 0;
+  }
+
+  @media (max-width: 640px) {
+    .acct-org-leave { justify-content: stretch; }
+    .acct-org-leave .um-btn-cancel { width: 100%; min-height: 44px; }
   }
 
   .acct-fact .val {
@@ -219,12 +238,11 @@
     vertical-align: top;
   }
 
+  /* Same header style as every other table: normal capitalization. */
   .acct-activity th {
-    font-size: 0.72rem;
-    text-transform: uppercase;
-    letter-spacing: 0.4px;
-    color: var(--text-body);
-    font-weight: 600;
+    font-size: 0.75rem;
+    color: var(--text-2);
+    font-weight: 700;
   }
 
   .acct-activity tbody tr:last-child td {
@@ -337,24 +355,27 @@
 {% if my_org %}
 <div class="um-panel">
   <div class="um-panel-head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/><path d="M10 6h4"/><path d="M10 10h4"/><path d="M10 14h4"/><path d="M10 18h4"/></svg>
     <h3>Organization</h3>
   </div>
   <div class="acct-grid">
     <div class="acct-fact">
       <span class="lbl">Organization</span>
-      <span>{{ my_org.organization_name }}</span>
+      <span class="val">{{ my_org.organization_name }}</span>
     </div>
     <div class="acct-fact">
       <span class="lbl">Your status</span>
-      <span>{% if org_role == 'leader' %}Leader{% else %}Member{% endif %}{% if org_status == 'pending' %}, waiting for approval{% endif %}</span>
+      <span class="acct-org-status {% if org_status == 'pending' %}is-pending{% elif org_role == 'leader' %}is-leader{% endif %}">
+        {% if org_role == 'leader' %}Leader{% else %}Member{% endif %}{% if org_status == 'pending' %}, waiting for approval{% endif %}
+      </span>
     </div>
+    <form method="POST" action="{{ url_for('organization.leave_org') }}"
+          class="acct-org-leave"
+          onsubmit="return confirm('Leave this organization?');">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button type="submit" class="um-btn-cancel">Leave organization</button>
+    </form>
   </div>
-  <form method="POST" action="{{ url_for('organization.leave_org') }}"
-        style="padding: 0 1.25rem 1.25rem;"
-        onsubmit="return confirm('Leave this organization?');">
-    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-    <button type="submit" class="um-btn-cancel">Leave organization</button>
-  </form>
 </div>
 {% endif %}
 
