@@ -203,6 +203,22 @@ active_page = 'review_requests' %} {% block extra_head %}
   .req-summary-block a {
     color: var(--brand-text);
   }
+  /* groups */
+  .req-groups { display: flex; flex-direction: column; gap: 1rem; }
+  .req-group > summary { list-style: none; }
+  .req-group > summary::-webkit-details-marker { display: none; }
+  .req-group-head { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap;
+                    padding: 0.85rem 1rem; cursor: pointer; font-weight: 600; }
+  .req-group-head::before { content: "\25B8"; transition: transform 0.15s; color: var(--text-2); }
+  .req-group[open] > .req-group-head::before { transform: rotate(90deg); }
+  .req-group-head:focus-visible { outline: 3px solid #4f7a5c; outline-offset: -3px; }
+  .req-group-note { font-weight: 400; font-size: 0.8rem; color: var(--text-2); }
+  .req-group-empty, .req-group-nomatch { margin: 0; padding: 0 1rem 1rem; color: var(--text-2); }
+  .req-month th { text-align: left; font-size: 0.75rem; text-transform: uppercase;
+                  letter-spacing: 0.04em; color: var(--text-2); background: var(--surface-3); }
+  /* # column: muted and narrow */
+  .req-table .req-id { width: 3.5rem; color: var(--text-2); font-size: 0.8rem; font-weight: 400; }
+  @media (prefers-reduced-motion: reduce) { .req-group-head::before { transition: none; } }
 </style>
 {% endblock %} {% block content %}
 
@@ -260,7 +276,7 @@ active_page = 'review_requests' %} {% block extra_head %}
   </div>
 
   {# 'all' is the only value the route treats as unfiltered; an absent
-     status defaults to Pending. Both are folded into is_all so the
+     status defaults to all (every group). Both are folded into is_all so the
      button, the menu highlight and the empty state agree. #}
   {% set is_all = not status_filter or status_filter == 'all' %}
 
@@ -287,7 +303,7 @@ active_page = 'review_requests' %} {% block extra_head %}
           <path d="M7 12h10" />
           <path d="M10 18h4" />
         </svg>
-        <span>{{ 'All requests' if is_all else status_filter }}</span>
+        <span>{{ 'All requests' if is_all else filter_labels.get(status_filter, status_filter) }}</span>
         <span class="um-filter-count"
           >{{ total_count if is_all else counts.get(status_filter, 0) }}</span
         >
@@ -305,43 +321,56 @@ active_page = 'review_requests' %} {% block extra_head %}
       </svg>
     </button>
     <div id="req-filter-menu" class="um-filter-menu um-filter-menu-end">
+      {% for value, n in counts.items() %}
+      <a
+        href="{{ url_for('admin.review_requests', status=value) }}"
+        class="{% if status_filter == value %}active{% endif %}"
+      >
+        {{ filter_labels[value] }} <span class="um-filter-count">{{ n }}</span>
+      </a>
+      {% endfor %}
       <a
         href="{{ url_for('admin.review_requests', status='all') }}"
         class="{% if is_all %}active{% endif %}"
       >
         All requests <span class="um-filter-count">{{ total_count }}</span>
       </a>
-      {% for label, n in counts.items() %}
-      <a
-        href="{{ url_for('admin.review_requests', status=label) }}"
-        class="{% if status_filter == label %}active{% endif %}"
-      >
-        {{ label }} <span class="um-filter-count">{{ n }}</span>
-      </a>
-      {% endfor %}
     </div>
   </div>
 </div>
 
-<!-- ============ TABLE ============ -->
-<div class="um-table-card">
-  {% if all_requests %}
-  <div class="sites-scroll-wrap table-freeze-wrap" id="req-scroll">
-    <table class="um-table sites-table" id="req-table" data-freeze="2">
-      <thead>
-        <tr>
-          <th>#</th>
-          <th>Requested By</th>
-          <th>Location</th>
-          <th>Type</th>
-          <th>Submitted</th>
-          <th>Status</th>
-          <th><span class="visually-hidden">Review</span></th>
-          <th><span class="visually-hidden">Details</span></th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for r in all_requests %}
+<!-- ============ GROUPS ============ -->
+{# One collapsible group per stage, each with its own table and the same
+   columns. Search runs over every group and opens the ones with a match. #}
+<div class="req-groups" id="req-groups">
+  {% for g in groups %}
+  <details class="req-group um-table-card" data-group="{{ g.key }}" {% if g.open %}open{% endif %}>
+    <summary class="req-group-head">
+      <span class="req-group-title">{{ g.title }}</span>
+      <span class="um-count-pill req-group-count">{{ g.count }}</span>
+      {% if g.note %}<span class="req-group-note">{{ g.note }}</span>{% endif %}
+    </summary>
+    {% if g.count %}
+    <div class="sites-scroll-wrap table-freeze-wrap">
+      <table class="um-table sites-table req-table" data-freeze="2">
+        <thead>
+          <tr>
+            <th class="req-id">#</th>
+            <th>Requested By</th>
+            <th>Location</th>
+            <th>Type</th>
+            <th>Submitted</th>
+            <th>Status</th>
+            <th><span class="visually-hidden">Open</span></th>
+            <th><span class="visually-hidden">Details</span></th>
+          </tr>
+        </thead>
+        {% for m in g.months %}
+        <tbody>
+          {% if m.label %}
+          <tr class="req-month"><th colspan="8" scope="rowgroup">{{ m.label }}</th></tr>
+          {% endif %}
+          {% for r in m.rows %}
         {# The list stays one line per request. Everything long -- the full
            description, the reviewer's note, and the status form -- moves
            into the summary row below, which opens on click. #}
@@ -350,13 +379,13 @@ active_page = 'review_requests' %} {% block extra_head %}
           data-request="{{ r.request_id }}"
           aria-expanded="false"
           tabindex="0"
-          data-search="{{ ((r.requester.username if r.requester else '') ~ ' ' ~ (r.location.barangay if r.location else '') ~ ' ' ~ (r.location.municipality if r.location else '') ~ ' ' ~ (r.description or '') ~ ' ' ~ (r.request_type or ''))|lower|e }}"
+          data-search="{{ ((r.requester.username if r.requester else '') ~ ' ' ~ (r.location.barangay if r.location else '') ~ ' ' ~ (r.location.municipality if r.location else '') ~ ' ' ~ (r.description or '') ~ ' ' ~ (r.request_type or '') ~ ' ' ~ (r.organization.organization_name if r.organization else 'individual') ~ ' ' ~ r.request_id)|lower|e }}"
         >
-          <td class="num-cell">{{ r.request_id }}</td>
+          <td class="num-cell req-id">{{ r.request_id }}</td>
           <td>
             {% if r.requester %}
             <div class="fw-semibold">{{ r.requester.username }}</div>
-            <div class="req-cell-secondary">{{ user_role_label(r.requester) }}</div>
+            <div class="req-cell-secondary">{{ r.organization.organization_name if r.organization else 'Individual' }}</div>
             {% else %} &mdash; {% endif %}
           </td>
           <td>
@@ -381,7 +410,7 @@ active_page = 'review_requests' %} {% block extra_head %}
             <a
               href="{{ url_for('admin.review_request_detail', request_id=r.request_id) }}"
               class="req-open"
-              >Review
+              >{{ 'Review' if r.status in ['Submitted', 'Under Review'] else 'View' }}
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></a
             >
           </td>
@@ -446,12 +475,19 @@ active_page = 'review_requests' %} {% block extra_head %}
             </div>
           </td>
         </tr>
+          {% endfor %}
+        </tbody>
         {% endfor %}
-      </tbody>
-    </table>
-  </div>
+      </table>
+    </div>
+    <p class="req-group-nomatch" hidden>No matches in this group.</p>
+    {% else %}
+    <p class="req-group-empty">Nothing here.</p>
+    {% endif %}
+  </details>
+  {% endfor %}
 
-  <div class="um-empty" id="req-empty" style="display: none">
+  <div class="um-empty um-table-card" id="req-empty" style="display: none">
     <svg
       viewBox="0 0 24 24"
       fill="none"
@@ -468,28 +504,6 @@ active_page = 'review_requests' %} {% block extra_head %}
     <strong>No requests match your search</strong>
     <p>Try a different requester, location, or description.</p>
   </div>
-  {% else %}
-  <div class="um-empty">
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      stroke-width="2"
-      stroke-linecap="round"
-      stroke-linejoin="round"
-    >
-      <path
-        d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"
-      />
-      <circle cx="12" cy="10" r="3" />
-    </svg>
-    <strong>
-      {% if is_all %} No requests submitted yet {% else %} No requests with
-      status "{{ status_filter }}" {% endif %}
-    </strong>
-    <p>Requests submitted by users will appear here for review.</p>
-  </div>
-  {% endif %}
 </div>
 
 <script>
@@ -519,7 +533,7 @@ active_page = 'review_requests' %} {% block extra_head %}
 
   function summaryFor(row) {
     return document.querySelector(
-      '#req-table tr.req-summary[data-summary="' + row.dataset.request + '"]'
+      '.req-table tr.req-summary[data-summary="' + row.dataset.request + '"]'
     );
   }
 
@@ -535,7 +549,7 @@ active_page = 'review_requests' %} {% block extra_head %}
   }
 
   document.addEventListener("click", function (e) {
-    const row = e.target.closest("#req-table tr.req-row");
+    const row = e.target.closest(".req-table tr.req-row");
     if (!row) return;
     if (e.target.closest("a, button, input, select, label, form")) return;
     reqToggleRow(row);
@@ -543,7 +557,7 @@ active_page = 'review_requests' %} {% block extra_head %}
 
   document.addEventListener("keydown", function (e) {
     if (e.key !== "Enter" && e.key !== " ") return;
-    const row = e.target.closest("#req-table tr.req-row");
+    const row = e.target.closest(".req-table tr.req-row");
     if (!row || row !== e.target) return;
     e.preventDefault();
     reqToggleRow(row);
@@ -555,7 +569,7 @@ active_page = 'review_requests' %} {% block extra_head %}
       .toLowerCase();
     /* Only the request rows are searched; each one drags its own summary
        row with it so the two can never be shown apart. */
-    var rows = document.querySelectorAll("#req-table tbody tr.req-row");
+    var rows = document.querySelectorAll(".req-table tbody tr.req-row");
     var visible = 0;
 
     rows.forEach(function (row) {
@@ -579,12 +593,36 @@ active_page = 'review_requests' %} {% block extra_head %}
       ? "inline-block"
       : "none";
 
+    /* Per group: open it while a search has a match inside, hide month
+       headers with nothing left, and say when a group has no match. */
+    document.querySelectorAll(".req-group").forEach(function (g) {
+      var groupRows = g.querySelectorAll("tr.req-row");
+      var shown = 0;
+      g.querySelectorAll("tbody").forEach(function (tb) {
+        var n = 0;
+        tb.querySelectorAll("tr.req-row").forEach(function (r) {
+          if (r.style.display !== "none") n++;
+        });
+        var month = tb.querySelector("tr.req-month");
+        if (month) month.style.display = n ? "" : "none";
+        shown += n;
+      });
+      if (q) {
+        if (g.dataset.wasOpen === undefined) g.dataset.wasOpen = g.open ? "1" : "0";
+        if (shown) g.open = true;
+      } else if (g.dataset.wasOpen !== undefined) {
+        g.open = g.dataset.wasOpen === "1";
+        delete g.dataset.wasOpen;
+      }
+      var nomatch = g.querySelector(".req-group-nomatch");
+      if (nomatch) nomatch.hidden = !(q && groupRows.length && !shown);
+      var wrap = g.querySelector(".table-freeze-wrap");
+      if (wrap) wrap.style.display = q && !shown ? "none" : "";
+    });
+
     var empty = document.getElementById("req-empty");
-    var scrollWrap = document.getElementById("req-scroll");
     if (empty) {
-      var noResults = visible === 0 && rows.length > 0;
-      empty.style.display = noResults ? "block" : "none";
-      if (scrollWrap) scrollWrap.style.display = noResults ? "none" : "";
+      empty.style.display = q && visible === 0 && rows.length > 0 ? "block" : "none";
     }
   }
 

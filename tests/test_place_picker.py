@@ -102,6 +102,55 @@ def run(app):
     check('3 the old register.js is gone',
           not os.path.exists(os.path.join(ROOT, 'app', 'static', 'javascript', 'register.js')))
 
+    # 4 GIS map: toolbar search reuses the shared picker; request panel
+    gis = guest.get('/gis-map').get_data(as_text=True)
+    check('4 GIS toolbar has the shared place picker',
+          'id="map-place-picker"' in gis and 'data-place-picker' in gis
+          and 'id="map-municipality"' in gis and 'id="map-barangay"' in gis)
+    check('4 GIS site search uses PlacePicker.makeCombo, no own combo',
+          'id="map-site"' in gis and 'PlacePicker.makeCombo(' in gis
+          and 'function makeCombo' not in gis)
+    check('4 search comes after "Show as"',
+          0 < gis.find('Show as') < gis.find('id="map-place-picker"'))
+    check('4 picking zooms and flashes, no fade with reduced motion',
+          'function flashShape' in gis and 'map-search-flash' in gis
+          and 'prefers-reduced-motion: reduce) { .map-search-flash { animation: none; }' in gis)
+    check('4 "None" is renamed "No borders" in Area and District',
+          gis.count('No borders') >= 2
+          and not re.search(r'value="none"[^>]*>\s*None\s*<', gis))
+
+    with open(os.path.join(ROOT, 'app', 'static', 'js', 'place-picker.js'),
+              encoding='utf-8') as fh:
+        pp = fh.read()
+    check('5 shared combo gained render, empty and allowEmpty (one implementation)',
+          'opts.render' in pp and 'opts.empty' in pp and 'opts.allowEmpty' in pp
+          and 'data-clearable' in pp)
+    check('5 GIS place picker can be cleared, so the site list widens again',
+          'data-clearable' in gis)
+    check('5 site list cascades from municipality and barangay',
+          'h.muni === muni' in gis and 'h.brgyKey === brgy' in gis
+          and 'combo.reset(labels' in gis)
+    check('5 site option: name line, code/place line, (Simulated)',
+          'map-site-name' in gis and 'map-site-sub' in gis and '(Simulated)' in gis)
+    check('5 empty barangay says "No sites in <barangay>."',
+          '"No sites in " + brgyName' in gis)
+    check('5 site list wraps instead of scrolling sideways',
+          '#map-site-list li { white-space: normal' in gis and 'overflow-x: hidden' in gis)
+    geo = guest.get('/api/sites-geo').get_json()
+    sites = [x for b in geo['barangays'] for x in b['sites']]
+    check('5 the map feed marks simulated sites',
+          sites and all('simulated' in x for x in sites), len(sites))
+
+    req = mem.get('/gis-map?request=1').get_data(as_text=True)
+    check('4 request panel has its collapse button and header',
+          'id="rq-collapse"' in req and 'class="rq-head"' in req)
+    with open(os.path.join(ROOT, 'app', 'static', 'js', 'request-mode.js'),
+              encoding='utf-8') as fh:
+        js = fh.read()
+    check('4 request panel: session memory, off-screen reset, drag, keys',
+          'sessionStorage' in js and 'function keepOnScreen' in js
+          and 'pointerdown' in js and 'ArrowLeft' in js and 'head.tabIndex = 0' in js)
+
 
 def main():
     app = base.create_app()

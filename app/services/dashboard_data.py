@@ -120,18 +120,32 @@ def _barangay(user):
 
 
 def _points(site_ids, home_location_id=None):
-    """Map markers for sites: (lat, lon, name) where the position is known.
-    `home` marks sites in the viewer's own barangay, drawn highlighted."""
+    """Map markers for sites.
+
+    A site with real coordinates gets its own solid dot. Sites without
+    (every DENR-imported site) are grouped: one hollow marker per barangay
+    centre, `approx` True, with `count` sites. `home` marks the viewer's
+    own barangay, drawn with a dark ring.
+    """
     if not site_ids:
         return []
-    out = []
+    out, groups = [], {}
     for site in Site.query.filter(Site.site_id.in_(site_ids)).all():
+        home = bool(home_location_id) and site.location_id == home_location_id
         pos = site_position(site)
         if pos:
             out.append({'lat': pos[0], 'lon': pos[1], 'name': site.site_name,
-                        'home': bool(home_location_id)
-                        and site.location_id == home_location_id})
-    return out
+                        'home': home, 'approx': False, 'count': 1})
+            continue
+        loc = site.location
+        if loc is None or loc.latitude is None or loc.longitude is None:
+            continue                      # nowhere to draw it; counted apart
+        g = groups.setdefault(loc.location_id, {
+            'lat': loc.latitude, 'lon': loc.longitude,
+            'name': f"{loc.barangay}, {loc.municipality}",
+            'home': home, 'approx': True, 'count': 0})
+        g['count'] += 1
+    return out + list(groups.values())
 
 
 def _timeline_for(user):
@@ -178,7 +192,7 @@ def member_context(user):
         'title': ("Your organization's sites" if org is not None
                   else "Sites in your barangay"),
         'figures': site_figures(ids),
-        'unmapped': len(ids) - len(map_points),
+        'unmapped': len(ids) - sum(p['count'] for p in map_points),
         'shown': org is not None or barangay is not None,
     }
 

@@ -24,7 +24,8 @@
                       id_name=none, selected_muni='', selected_brgy='',
                       selected_id='', required=false, municipality_only=false,
                       muni_label='Municipality', brgy_label='Barangay',
-                      field_class='um-field', star='', input_wrap='') %}
+                      field_class='um-field', star='', input_wrap='',
+                      clearable=false) %}
 {% if places is not none and selected_id %}
   {% set found = places | selectattr('id', 'equalto', selected_id | int) | list %}
   {% if found %}{% set selected_muni = found[0].municipality %}{% set selected_brgy = found[0].barangay %}{% endif %}
@@ -52,7 +53,8 @@
 </style>
 {% set joined = places is not none %}
 <div class="place-picker" {% if joined %}data-place-picker{% endif %}
-     {% if required %}data-required{% endif %} id="{{ prefix }}place-picker">
+     {% if required %}data-required{% endif %} {% if clearable %}data-clearable{% endif %}
+     id="{{ prefix }}place-picker">
   {% if joined %}
   <script type="application/json" data-role="places">{{ places | tojson }}</script>
   {% if id_name %}<input type="hidden" name="{{ id_name }}" value="{{ selected_id }}" data-role="location-id">{% endif %}

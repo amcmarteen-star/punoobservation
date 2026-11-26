@@ -69,6 +69,11 @@ class User(db.Model):
     role = db.Column(db.String(20), nullable=False, default='normal_user')  # 'normal_user', 'field_officer', 'admin'
     cenro = db.Column(db.String(100), nullable=True)
 
+    # Optional profile details. They prefill the request form's contact
+    # fields. contact_number is a PH mobile number, 09XXXXXXXXX.
+    full_name = db.Column(db.String(120), nullable=True)
+    contact_number = db.Column(db.String(11), nullable=True)
+
     # The barangay picked at sign-up. It is the default for the species
     # recommendation page, and the holder can still pick another there.
     # Nullable: accounts made before this column have none.
@@ -459,6 +464,8 @@ class SiteVisit(db.Model):
     seedlings_planted = db.Column(db.Integer, nullable=True)
     date_planted = db.Column(db.Date, nullable=True)
     remarks = db.Column(db.Text, nullable=True)
+    # required with a "Not suitable" finding; kept apart from the remarks
+    unsuitable_reason = db.Column(db.Text, nullable=True)
 
     # boundary from GPS corner photos, as on a monitoring report
     boundary_geojson = db.Column(db.Text, nullable=True)

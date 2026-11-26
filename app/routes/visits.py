@@ -365,8 +365,11 @@ def new_visit(site_id):
         errors.append("Choose whether the site is suitable.")
 
     remarks = (form.get('remarks') or '').strip() or None
-    if finding == 'Not suitable' and not remarks:
-        errors.append("Say why the site is not suitable, in the remarks.")
+    unsuitable_reason = None
+    if finding == 'Not suitable':
+        unsuitable_reason = (form.get('unsuitable_reason') or '').strip() or None
+        if not unsuitable_reason:
+            errors.append("Give the reason the site is not suitable.")
 
     planted = date_planted = None
     if visit_type == 'Planting confirmed':
@@ -399,6 +402,7 @@ def new_visit(site_id):
         visit_type=visit_type,
         finding=finding,
         remarks=remarks,
+        unsuitable_reason=unsuitable_reason,
         seedlings_planted=planted,
         date_planted=date_planted,
         status='Pending',
@@ -458,7 +462,9 @@ def new_visit(site_id):
             user_id=admin.user_id, notification_type='Site Visit',
             visit_id=visit.visit_id, is_read=False,
             message=(f"{session.get('username')} recorded a site visit for "
-                     f"{site.site_name} ({where}): {finding.lower()}."),
+                     f"{site.site_name} ({where}): {finding.lower()}."
+                     + (f" Reason: {unsuitable_reason}"
+                        if unsuitable_reason else "")),
         ))
     log_action('submit_site_visit', 'site_visit', visit.visit_id,
                f"{visit_type} for {site.site_name}: {finding}")
@@ -617,6 +623,8 @@ def review_visit(visit_id):
         user_id=visit.user_id, notification_type='Site Visit',
         visit_id=visit.visit_id, is_read=False,
         message=(f"Your site visit for {site.site_name} was {status.lower()}."
+                 + (f" Site closed as not suitable: {visit.unsuitable_reason}"
+                    if not_suitable and visit.unsuitable_reason else "")
                  + (f" Note: {note}" if note else "")),
     ))
     log_action('review_site_visit', 'site_visit', visit.visit_id,
@@ -650,8 +658,11 @@ def _tell_requester_not_suitable(visit, site, suggested, suggestion):
         user_id=req.user_id, notification_type='Request Update',
         request_id=req.request_id, is_read=False,
         message=(f"A field visit found the site for your request #"
-                 f"{req.request_id} not suitable for planting. The CENRO "
-                 f"suggests: {_suggestion_words(suggested, suggestion)}"),
+                 f"{req.request_id} not suitable for planting"
+                 + (f": {visit.unsuitable_reason}" if visit.unsuitable_reason
+                    else "")
+                 + f". The CENRO suggests: "
+                 f"{_suggestion_words(suggested, suggestion)}"),
     ))
 
 
@@ -672,7 +683,7 @@ def _email_requester_not_suitable(visit, site, suggested, suggestion):
         request_id=req.request_id,
         where=(f"{req.location.barangay}, {req.location.municipality}"
                if req.location else site.site_name),
-        reason=visit.remarks,
+        reason=visit.unsuitable_reason,
         suggested=(f"{suggested.barangay}, {suggested.municipality}"
                    if suggested else None),
         suggestion=suggestion,

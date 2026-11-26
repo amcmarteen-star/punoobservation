@@ -6459,3 +6459,16 @@ body.help-open {
     outline: 2px solid var(--brand-solid);
     outline-offset: 1px;
 }
+
+/* Partner org line under the role: at most 2 lines, the full text is in
+   its title tooltip. */
+.role-pill-org {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    overflow: hidden;
+    overflow-wrap: anywhere;
+    font-size: 0.8rem;
+    line-height: 1.3;
+}

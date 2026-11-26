@@ -24,6 +24,7 @@ Exit code 0 when every check passes, 1 otherwise.
 """
 
 import os
+import re
 import sys
 from datetime import date, timedelta
 
@@ -285,6 +286,107 @@ def run(app):
     db.session.remove()
     check('9 finishing the tour records the current version',
           db.session.get(User, old).tour_version == 2)
+
+    run_profile(app, as_, indiv, leader)
+    run_user_management(app, as_, s, org_id)
+
+
+def run_user_management(app, as_, s, org_id):
+    """11 User Management labels; a User's CENRO grants nothing."""
+    sa = as_(s.superadmin_id, s.superadmin_name, 'superadmin')
+
+    # a User created with a CENRO is stored without one
+    sa.post('/admin/users/create', data={
+        'username': 'syn_um_user', 'email_address': 'syn_um_user@example.test',
+        'password': 'Synthetic-pass-1', 'role': 'normal_user',
+        'cenro': 'Urdaneta City'})
+    db.session.remove()
+    made = User.query.filter_by(username='syn_um_user').first()
+    check('11 creating a User never stores a CENRO',
+          made is not None and made.cenro is None, made and made.cenro)
+
+    # the data error: a leader with users.cenro set
+    bad = make_user('syn_um_bad_leader', cenro='Urdaneta City', org_id=org_id,
+                    org_role='leader', org_status='active')
+    pend = make_user('syn_um_pending', org_id=org_id, org_role='member',
+                     org_status='pending')
+    db.session.commit()
+    c = as_(bad, 'syn_um_bad_leader', 'normal_user', 'Urdaneta City')
+    plain = as_(pend, 'syn_um_pending', 'normal_user', None)
+    check('11 a User with a CENRO cannot open Review Requests',
+          c.get('/admin/requests').status_code != 200)
+    check('11 a User with a CENRO cannot open the Organizations list',
+          c.get('/org/organizations').status_code in (302, 403))
+    with app.test_request_context():
+        from flask import session as fs
+        from app.utils.jurisdiction import current_cenro
+        fs['role'], fs['cenro'] = 'normal_user', 'Urdaneta City'
+        check('11 current_cenro() ignores a User\'s CENRO', current_cenro() is None)
+    count = lambda cl: re.search(r'id="sites-count">(\d+)<',
+                                 cl.get('/sites').get_data(as_text=True))
+    a1, a2 = count(c), count(plain)
+    check('11 a User with a CENRO sees the same sites as one without',
+          a1 and a2 and a1.group(1) == a2.group(1),
+          f'{a1 and a1.group(1)} vs {a2 and a2.group(1)}')
+
+    page = sa.get('/admin/user-management').get_data(as_text=True)
+    rows = [r.split('</tr>')[0] for r in page.split('<tr data-role')[1:]]
+    def row(name):
+        return next((r for r in rows
+                     if re.search(r'um-name">\s*' + re.escape(name) + r'\s*<', r)), '')
+    r_bad = row('syn_um_bad_leader')
+    check('11 a User never shows a jurisdiction',
+          r_bad and 'CENRO Urdaneta City' not in r_bad, r_bad[:200])
+    check('11 a User with no org shows "Individual"', 'Individual' in row('syn_um_user'))
+    r_sa = row(s.superadmin_name)
+    check('11 staff show "—" for partner organization',
+          r_sa and 'Individual' not in r_sa and '&mdash;' in r_sa)
+    r_p = row('syn_um_pending')
+    check('11 Pending Member badge is neutral grey',
+          'role-pending' in r_p and 'Pending Member' in r_p)
+    check('11 org name has a full-text tooltip and a 2-line clamp',
+          re.search(r'class="um-role um-org[^"]*"[^>]*title="Partner Org Leader', r_bad)
+          is not None and '-webkit-line-clamp: 2' in page)
+
+
+def run_profile(app, as_, indiv, leader):
+    """10 profile details, request prefill, sidebar org line."""
+    from app.utils.profile import normalize_ph_mobile as n
+    check('10 PH mobile: spaces, dashes and +63 accepted',
+          n('0917 123 4567') == n('0917-123-4567') == n('+639171234567')
+          == '09171234567' and n('') == '')
+    check('10 PH mobile: wrong length or prefix refused',
+          n('0817123456') is None and n('12345') is None and n('091712345678') is None)
+
+    c = as_(indiv, 'syn_indiv_d')
+    page = c.get('/requests').get_data(as_text=True)
+    name_val = re.search(r'id="contact_name"[^>]*?value="([^"]*)"', page, re.S)
+    check('10 empty profile: contact name stays empty, never the username',
+          name_val is not None and name_val.group(1) == ''
+          and 'value="syn_indiv_d"' not in page)
+
+    c.post('/account/profile', data={'full_name': '  Maria   Santos ',
+                                     'contact_number': '0917-123-4567'})
+    db.session.remove()
+    u = db.session.get(User, indiv)
+    check('10 My Account saves full name and number',
+          u.full_name == 'Maria Santos' and u.contact_number == '09171234567',
+          f'{u.full_name} {u.contact_number}')
+    c.post('/account/profile', data={'full_name': 'X', 'contact_number': '12345'})
+    db.session.remove()
+    check('10 an invalid number is refused, nothing changes',
+          db.session.get(User, indiv).full_name == 'Maria Santos')
+
+    page = c.get('/requests').get_data(as_text=True)
+    check('10 request form is prefilled from the profile',
+          'value="Maria Santos"' in page and 'value="09171234567"' in page
+          and f'value="{u.email_address}"' in page)
+
+    lpage = as_(leader, 'syn_leader_d').get('/dashboard').get_data(as_text=True)
+    m = re.search(r'class="role-pill-role role-pill-org" title="([^"]+)">([^<]+)<', lpage)
+    check('10 sidebar org line carries the full text as a tooltip',
+          m is not None and m.group(1) == m.group(2)
+          and m.group(1).startswith('Partner Org Leader'))
 
 
 def main():

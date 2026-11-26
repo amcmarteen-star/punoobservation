@@ -775,6 +775,7 @@ endblock %} {% set active_page = 'requests' %} {% block extra_head %}
               id="contact_name"
               maxlength="120"
               autocomplete="name"
+              value="{{ me.full_name or '' if me else '' }}"
               placeholder="Full name of the contact person"
               required
             />
@@ -792,6 +793,7 @@ endblock %} {% set active_page = 'requests' %} {% block extra_head %}
                 pattern="\+?[0-9\s\-]{7,20}"
                 title="7 to 15 digits, e.g. 09171234567"
                 placeholder="09XXXXXXXXX"
+                value="{{ me.contact_number or '' if me else '' }}"
                 required
               />
             </div>
@@ -804,6 +806,7 @@ endblock %} {% set active_page = 'requests' %} {% block extra_head %}
                 id="contact_email"
                 maxlength="120"
                 autocomplete="email"
+                value="{{ me.email_address or '' if me else '' }}"
                 placeholder="name@gmail.com"
                 required
               />

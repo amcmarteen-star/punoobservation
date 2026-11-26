@@ -195,8 +195,10 @@ def run(app):
     check('2 CENRO cannot approve it while with the organization',
           status_of(r1) == 'Pending Org Approval')
     default = cenro.get('/admin/requests').get_data(as_text=True)
-    check('2 the default CENRO queue leaves it out',
-          'With the organization' not in default)
+    check('2 by default it sits in the collapsed "At organization" group',
+          'data-group="org" >' in default or 'data-group="org"  >' in default
+          or ('data-group="org"' in default
+              and 'data-group="org" open' not in default))
 
     # ------------------------------------------------------------------
     # 3. org actions: refused without a note, refused for a non-leader
@@ -480,7 +482,7 @@ def run(app):
         'visit_date': today.isoformat(), 'visit_type': 'Pre-planting check',
         'finding': 'Not suitable', 'land_matches': 'yes',
         'ownership_confirmed': 'yes', 'accessible': 'no',
-        'remarks': 'Riverbank, floods every year.'},
+        'unsuitable_reason': 'Riverbank, floods every year.'},
         content_type='multipart/form-data')
     db.session.remove()
     visit = (SiteVisit.query.filter_by(site_id=e2e_site_id)
@@ -495,6 +497,64 @@ def run(app):
           db.session.get(Site, e2e_site_id).site_status == 'Not Suitable')
     check('16 approving that visit rejects the request',
           status_of(e2e_req) == 'Rejected')
+
+    run_groups(cenro)
+
+
+def run_groups(cenro):
+    """17 Review Requests: groups, default filter, labels, buttons."""
+    import re
+    from app.models import Request
+    page = cenro.get('/admin/requests').get_data(as_text=True)
+    check('17 default shows all three groups, Needs your action open',
+          'data-group="needs" open' in page
+          and 'data-group="org"' in page and 'data-group="org" open' not in page
+          and 'data-group="finished"' in page
+          and 'data-group="finished" open' not in page)
+    needs_only = cenro.get('/admin/requests?status=Pending').get_data(as_text=True)
+    check('17 the "Needs action" filter shows only that group',
+          '<span>Needs action</span>' in needs_only
+          and 'data-group="org"' not in needs_only)
+
+    allp = cenro.get('/admin/requests?status=all').get_data(as_text=True)
+    order = [allp.find(f'data-group="{k}"') for k in ('needs', 'org', 'finished')]
+    check('17 all: three groups in order, only the first open',
+          all(i > 0 for i in order) and order == sorted(order)
+          and 'data-group="org" open' not in allp
+          and 'data-group="finished" open' not in allp)
+
+    def group_count(html, key):
+        m = re.search(rf'data-group="{key}".*?req-group-count">(\d+)<',
+                      html, re.S)
+        return int(m.group(1)) if m else None
+    statuses = [r.status for r in Request.query.all()]
+    want = {'needs': sum(s in ('Submitted', 'Under Review') for s in statuses),
+            'org': sum(s in ('Pending Org Approval', 'Returned') for s in statuses),
+            'finished': sum(s in ('Approved', 'Rejected') for s in statuses)}
+    got = {k: group_count(allp, k) for k in want}
+    check('17 each group shows its count', got == want, f'{got} vs {want}')
+    for k, n in want.items():
+        if n == 0:
+            check(f'17 empty group {k} says "Nothing here."',
+                  re.search(rf'data-group="{k}".*?Nothing here\.', allp, re.S)
+                  is not None)
+
+    fin = allp[allp.find('data-group="finished"'):]
+    check('17 finished group has month headers',
+          want['finished'] == 0 or 'class="req-month"' in fin)
+    check('17 finished rows say "View", never "Review"',
+          not re.search(r'class="req-open"\s*>Review', fin)
+          and (want['finished'] == 0
+               or re.search(r'class="req-open"\s*>View', fin)))
+    needs = allp[allp.find('data-group="needs"'):allp.find('data-group="org"')]
+    check('17 actionable rows say "Review"',
+          want['needs'] == 0 or re.search(r'class="req-open"\s*>Review', needs))
+    check('17 requested by shows the org name or "Individual"',
+          'Individual' in allp or 'Synthetic' in allp)
+    check('17 # column is marked narrow and muted',
+          '<th class="req-id">#</th>' in allp and 'num-cell req-id' in allp)
+    check('17 search covers every group (rows carry their org and id)',
+          allp.count('data-search=') == sum(want.values()))
 
 
 def main():

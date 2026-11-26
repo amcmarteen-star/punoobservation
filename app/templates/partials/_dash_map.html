@@ -4,6 +4,13 @@
 <script>
   window.DASH_MAP = {{ {"geometry": geometry, "points": d.points}|tojson }};
 </script>
+<style>
+  .dash-approx { display: inline-block; transform: translate(-50%, -50%); white-space: nowrap;
+                 padding: 2px 8px; border-radius: 999px; background: rgba(255,255,255,0.85);
+                 border: 2.5px solid #1b5e20; color: #14532d; font-size: 0.72rem; font-weight: 700; }
+  .dash-approx.is-home { border-color: #0b2e13; border-width: 3.5px; }
+  .dash-map-key [hidden] { display: none !important; }
+</style>
 <script>
   (function () {
     var el = document.getElementById("dash-map");
@@ -22,19 +29,38 @@
       }).addTo(map);
       extend(outline.getBounds());
     }
+    // Solid dot: the site's real position. Hollow ring with "N sites":
+    // sites with no coordinates, at their barangay centre. Own barangay:
+    // a dark outline ring. Never orange (orange means below target).
     (data.points || []).forEach(function (p) {
-      // p.home: in the viewer's own barangay. Same green, larger, with a
-      // dark ring. Never orange: orange means below target everywhere.
-      L.circleMarker([p.lat, p.lon], p.home
-        ? { radius: 9, color: "#0b2e13", weight: 3, fillColor: "#43a047", fillOpacity: 0.9 }
-        : { radius: 6, color: "#1b5e20", fillColor: "#43a047", fillOpacity: 0.9 }
-      ).bindTooltip(p.name + (p.home ? " (your barangay)" : "")).addTo(map);
+      var ring = p.home ? "#0b2e13" : "#1b5e20";
+      if (p.approx) {
+        var text = p.count + (p.count === 1 ? " site" : " sites");
+        L.marker([p.lat, p.lon], { icon: L.divIcon({
+          className: "",
+          html: '<span class="dash-approx' + (p.home ? ' is-home' : '') + '">' + text + '</span>',
+          iconSize: null
+        }) }).bindTooltip(p.name + ": " + text + ", approximate location (barangay centre)"
+                          + (p.home ? ", your barangay" : "")).addTo(map);
+      } else {
+        L.circleMarker([p.lat, p.lon], p.home
+          ? { radius: 9, color: ring, weight: 3, fillColor: "#43a047", fillOpacity: 0.9 }
+          : { radius: 6, color: ring, weight: 2, fillColor: "#43a047", fillOpacity: 0.9 }
+        ).bindTooltip(p.name + (p.home ? " (your barangay)" : "")).addTo(map);
+      }
       extend([[p.lat, p.lon]]);
     });
 
-    if ((data.points || []).some(function (p) { return p.home; })) {
-      var key = document.getElementById("dash-map-key");
-      if (key) key.style.display = "flex";
+    var key = document.getElementById("dash-map-key");
+    if (key) {
+      var pts = data.points || [];
+      [["exact", pts.some(function (p) { return !p.approx; })],
+       ["approx", pts.some(function (p) { return p.approx; })],
+       ["home", pts.some(function (p) { return p.home; })]].forEach(function (k) {
+        var item = key.querySelector('[data-key="' + k[0] + '"]');
+        if (item) item.hidden = !k[1];
+      });
+      if (pts.length) key.style.display = "flex";
     }
 
     if (bounds) {

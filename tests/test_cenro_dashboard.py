@@ -400,6 +400,17 @@ def run_drill(app, s, org_id, urdaneta, provincial):
     home = (Site.query.filter_by(organization_id=org_id, is_simulated=False)
             .first().location_id)
     citizen.location_id = home
+    # one real site WITH coordinates (a published boundary) in that
+    # barangay, so the own-barangay ring is checked on a real dot
+    ring = [[120.60, 15.97], [120.61, 15.97], [120.61, 15.98],
+            [120.60, 15.98], [120.60, 15.97]]
+    db.session.add(Site(location_id=home, organization_id=org_id,
+                        site_name='Pinned org site', site_code='CD-PIN-1',
+                        area_size_ha=2.0, site_status='Active',
+                        cenro='Urdaneta City', year_contracted=2024,
+                        boundary_published=True,
+                        boundary_geojson=json.dumps(
+                            {'type': 'Polygon', 'coordinates': [ring]})))
     db.session.commit()
     member = app.test_client()
     base.login(member, s.citizen_id, s.citizen_name, 'normal_user', None)
@@ -413,9 +424,22 @@ def run_drill(app, s, org_id, urdaneta, provincial):
     check_section_matches_tiles('org member', mhtml)
     dm = re.search(r'window.DASH_MAP = (\{.*?\});', mhtml, re.S)
     pts = json.loads(dm.group(1))['points'] if dm else []
-    check('5 org member: own-barangay sites are marked, with a legend',
-          any(p.get('home') for p in pts) and 'Your barangay' in mhtml
-          or not pts, len(pts))
+    home_dots = [p for p in pts if p.get('home') and not p.get('approx')]
+    check('5 org member: the pinned site is a solid dot with the home ring',
+          len(home_dots) == 1 and home_dots[0]['name'] == 'Pinned org site'
+          and 'Your barangay' in mhtml, pts)
+    check('5 org member: sites without coordinates are one hollow marker '
+          'per barangay, with a count',
+          all(p['count'] >= 1 for p in pts if p['approx'])
+          and len({p['name'] for p in pts if p['approx']})
+          == len([p for p in pts if p['approx']])
+          and 'Approximate location (barangay centre)' in mhtml,
+          [p for p in pts if p['approx']])
+    drawn = sum(p['count'] for p in pts)
+    m = re.search(r'(\d+) without a map position', mhtml)
+    check('5 org member: every site is drawn or counted as not drawn',
+          drawn + (int(m.group(1)) if m else 0)
+          == num(tile(mhtml, 'Sites')[1]), f'{drawn} {m and m.group(1)}')
     check('5 org member: the map never uses orange',
           '#f59e0b' not in mhtml and '#ea580c' not in mhtml)
     check('5 org member: the org has sites to show',

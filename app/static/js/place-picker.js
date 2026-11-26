@@ -8,7 +8,11 @@
  *
  *   PlacePicker.makeCombo(opts)   one search box over a list of names
  *       opts: input, list, items, noun ("municipality"), onPick(name),
- *             onType() (optional, after every keystroke)
+ *             onType() (optional, after every keystroke),
+ *             render(name, q) (optional) inner HTML of one option,
+ *             empty(q) (optional) the text when nothing matches,
+ *             allowEmpty (optional) emptying the box clears the choice
+ *             and calls onPick("")
  *       Typing filters the names: names that start with the text come first,
  *       then names that contain it. Spaces, dots and dashes are ignored, so
  *       "sanman" finds "San Manuel". Arrow keys move, Enter picks, Escape
@@ -72,9 +76,12 @@
       list.innerHTML = shown.length
         ? shown.map(function (t, i) {
             return '<li role="option" id="' + list.id + '-opt-' + i + '" data-i="' + i + '">'
-              + highlight(t, all ? "" : q) + "</li>";
+              + (opts.render ? opts.render(t, all ? "" : q) : highlight(t, all ? "" : q))
+              + "</li>";
           }).join("")
-        : '<li class="place-combo-empty">No ' + opts.noun + ' matches “' + esc(q) + '”.</li>';
+        : '<li class="place-combo-empty">'
+          + esc(opts.empty ? opts.empty(q) : "No " + opts.noun + " matches “" + q + "”.")
+          + "</li>";
       list.hidden = false;
       input.setAttribute("aria-expanded", "true");
       syncActive();
@@ -147,6 +154,7 @@
       close();
       const q = input.value.trim();
       if (q === chosen) return;
+      if (!q && opts.allowEmpty) { pick(""); return; }
       const exact = items.find(function (t) { return fold(t) === fold(q); });
       const only = matches(q);
       if (exact) pick(exact);
@@ -177,6 +185,8 @@
     const brgyInput = root.querySelector('[data-role="barangay"]');
     const idInput = root.querySelector('[data-role="location-id"]');
     const muniOnly = !brgyInput;
+    // data-clearable: emptying a box clears it (and fires its event with "")
+    const clearable = root.hasAttribute("data-clearable");
 
     const municipalities = [];
     places.forEach(function (p) {
@@ -206,9 +216,10 @@
       list: root.querySelector('[data-role="municipality-list"]'),
       items: municipalities,
       noun: "municipality",
+      allowEmpty: clearable,
       onPick: function (m) {
         if (brgyCombo) brgyCombo.reset(barangaysOf(m), "");
-        setBrgyEnabled(true);
+        setBrgyEnabled(!!m);
         if (idInput) idInput.value = "";
         fire("place:municipality", { municipality: m });
       },
@@ -219,6 +230,7 @@
         list: root.querySelector('[data-role="barangay-list"]'),
         items: barangaysOf(muniInput.value),
         noun: "barangay",
+        allowEmpty: clearable,
         onPick: function (b) {
           const p = placeOf(muniCombo.chosen(), b);
           if (idInput) idInput.value = p ? p.id : "";

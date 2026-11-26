@@ -224,7 +224,8 @@ def run(app, s):
     step = '2 validation'
     bad = [
         ('a future date', visit_form(today + timedelta(days=2))),
-        ('Not suitable with no reason', visit_form(today, finding='Not suitable', remarks='')),
+        ('Not suitable with no reason (a remark is not enough)',
+         visit_form(today, finding='Not suitable', unsuitable_reason='')),
         ('a planting confirmation with no number',
          visit_form(today, visit_type='Planting confirmed', date_planted=today.isoformat())),
         ('a planting confirmation that finds the site not suitable',
@@ -396,10 +397,15 @@ def run(app, s):
           db.session.get(SiteVisit, early).publication_status == 'Pending Publication')
     assign(cenro, s, bad_id)
     officer.post('/sites/%d/visits/new' % bad_id, data=visit_form(
-        today, finding='Not suitable', remarks='Riverbank, floods every year.'),
+        today, finding='Not suitable', unsuitable_reason='Riverbank, floods every year.'),
         content_type='multipart/form-data')
     v3 = latest_visit(bad_id)
     check(step, 'Not suitable visit saved', v3 and v3.finding == 'Not suitable')
+    check(step, 'reason kept in its own field, not the remark',
+          v3.unsuitable_reason == 'Riverbank, floods every year.'
+          and v3.remarks != v3.unsuitable_reason)
+    check(step, 'CENRO review shows the reason',
+          'Riverbank, floods every year.' in cenro.get('/visits/%d' % v3.visit_id).get_data(as_text=True))
     assign(cenro, s, bad_id)   # still open when the site is closed
     page = cenro.get('/visits/%d' % v3.visit_id).get_data(as_text=True)
     check(step, 'review form asks for a suggested new site',
@@ -475,6 +481,10 @@ def run(app, s):
           .get_data(as_text=True))
     check(step, 'visits page shows the Not suitable notice',
           'Not suitable.' in officer.get('/sites/%d/visits' % bad_id).get_data(as_text=True))
+    check(step, 'site page shows the reason',
+          'Riverbank, floods every year.' in officer.get('/sites/%d/visits' % bad_id).get_data(as_text=True))
+    check(step, 'notification carries the reason',
+          Notification.query.filter(Notification.message.contains('Riverbank, floods every year.')).count() > 0)
     assign(cenro, s, site_id, 'Planting confirmed')
     page = officer.get('/site-visits').get_data(as_text=True)
     check(step, 'Site Visits list: not suitable, with no Record button',

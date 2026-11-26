@@ -61,13 +61,12 @@
         {% if d.org and d.barangay %}<br><span class="text-secondary small">Sites in {{ d.barangay.barangay }}, your barangay, have a dark ring.</span>{% endif %}
       </p>
       <div id="dash-map" style="height: 280px; border-radius: 0.5rem;"></div>
-      {% if d.org and d.barangay %}
       <div id="dash-map-key" class="dash-map-key"
-           style="display: none; gap: 1rem; margin-top: 0.5rem; font-size: 0.8rem;">
-        <span><svg width="14" height="14" aria-hidden="true"><circle cx="7" cy="7" r="5" fill="#43a047" stroke="#1b5e20" stroke-width="1"/></svg> Organization site</span>
-        <span><svg width="18" height="18" aria-hidden="true"><circle cx="9" cy="9" r="6.5" fill="#43a047" stroke="#0b2e13" stroke-width="2.5"/></svg> Your barangay</span>
+           style="display: none; flex-wrap: wrap; gap: 1rem; margin-top: 0.5rem; font-size: 0.8rem;">
+        <span data-key="exact"><svg width="14" height="14" aria-hidden="true"><circle cx="7" cy="7" r="5" fill="#43a047" stroke="#1b5e20" stroke-width="1.5"/></svg> Site location</span>
+        <span data-key="approx"><svg width="16" height="16" aria-hidden="true"><circle cx="8" cy="8" r="6" fill="none" stroke="#1b5e20" stroke-width="2.5"/></svg> Approximate location (barangay centre)</span>
+        <span data-key="home"><svg width="18" height="18" aria-hidden="true"><circle cx="9" cy="9" r="6.5" fill="#43a047" stroke="#0b2e13" stroke-width="2.5"/></svg> Your barangay</span>
       </div>
-      {% endif %}
       <p style="margin-top: 0.75rem;"><a href="{{ url_for('dashboard.gis_map') }}">Open the full map</a></p>
     {% else %}
       <p>Set your barangay in <a href="{{ url_for('dashboard.my_account') }}#barangay">My Account</a> to see its sites on a map.</p>

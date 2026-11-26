@@ -348,9 +348,130 @@
     else render();
   });
 
+  // ---- panel: collapse to a header bar, drag by the header (desktop) ------
+  // Position and collapsed state last for the session (sessionStorage).
+  // A saved position that would put the panel off screen is dropped.
+  const STORE = "rqPanel";
+  const head = panel.querySelector(".rq-head");
+  const desktop = window.matchMedia("(min-width: 861px) and (pointer: fine)");
+
+  function saved() {
+    try { return JSON.parse(sessionStorage.getItem(STORE)) || {}; } catch (e) { return {}; }
+  }
+  function save(patch) {
+    try {
+      sessionStorage.setItem(STORE, JSON.stringify(Object.assign(saved(), patch)));
+    } catch (e) { /* private mode: the panel still works, it just forgets */ }
+  }
+  function setCollapsed(on) {
+    panel.classList.toggle("is-collapsed", on);
+    collapseBtn.setAttribute("aria-expanded", String(!on));
+    save({ collapsed: on });
+    keepOnScreen();
+  }
+  function bounds() { return panel.offsetParent || document.body; }
+  function place(left, top) {
+    panel.style.left = left + "px";
+    panel.style.top = top + "px";
+    panel.style.right = "auto";
+    panel.style.bottom = "auto";
+  }
+  function clearPlace() {
+    panel.style.left = panel.style.top = panel.style.right = panel.style.bottom = "";
+  }
+  // Clamp inside the map; used after a drag, a resize and on load.
+  function keepOnScreen() {
+    if (!desktop.matches || !panel.style.left) return;
+    const box = bounds().getBoundingClientRect();
+    const r = panel.getBoundingClientRect();
+    const left = r.left - box.left, top = r.top - box.top;
+    if (left < 0 || top < 0 || left + 40 > box.width || top + 30 > box.height) {
+      clearPlace();
+      save({ left: null, top: null });
+    }
+  }
+
   collapseBtn.addEventListener("click", function () {
-    const collapsed = panel.classList.toggle("is-collapsed");
-    collapseBtn.setAttribute("aria-expanded", String(!collapsed));
+    setCollapsed(!panel.classList.contains("is-collapsed"));
+  });
+
+  // Desktop drag by the header. Touch and narrow screens keep the docked
+  // bottom sheet, so the header there only collapses.
+  let drag = null;
+  head.addEventListener("pointerdown", function (e) {
+    if (!desktop.matches || e.button !== 0 || e.target.closest("button")) return;
+    const box = bounds().getBoundingClientRect();
+    const r = panel.getBoundingClientRect();
+    drag = { dx: e.clientX - r.left, dy: e.clientY - r.top, box: box,
+             w: r.width, h: r.height };
+    head.setPointerCapture(e.pointerId);
+    panel.classList.add("is-dragging");
+    e.preventDefault();
+  });
+  head.addEventListener("pointermove", function (e) {
+    if (!drag) return;
+    const maxL = drag.box.width - drag.w, maxT = drag.box.height - 40;
+    place(Math.max(0, Math.min(maxL, e.clientX - drag.box.left - drag.dx)),
+          Math.max(0, Math.min(maxT, e.clientY - drag.box.top - drag.dy)));
+  });
+  function endDrag() {
+    if (!drag) return;
+    drag = null;
+    panel.classList.remove("is-dragging");
+    save({ left: parseFloat(panel.style.left), top: parseFloat(panel.style.top) });
+  }
+  head.addEventListener("pointerup", endDrag);
+  head.addEventListener("pointercancel", endDrag);
+
+  // Keyboard: the header is focusable; arrows move it (Shift: further),
+  // Home puts it back, Enter or Space collapses.
+  head.tabIndex = 0;
+  head.setAttribute("aria-label",
+    "New request panel. Arrow keys move it, Home resets, Enter shows or hides.");
+  head.addEventListener("keydown", function (e) {
+    if (e.target !== head) return;
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      setCollapsed(!panel.classList.contains("is-collapsed"));
+      return;
+    }
+    if (e.key === "Home") {
+      e.preventDefault();
+      clearPlace();
+      save({ left: null, top: null });
+      return;
+    }
+    const step = e.shiftKey ? 50 : 10;
+    const d = { ArrowLeft: [-step, 0], ArrowRight: [step, 0],
+                ArrowUp: [0, -step], ArrowDown: [0, step] }[e.key];
+    if (!d || !desktop.matches) return;
+    e.preventDefault();
+    const box = bounds().getBoundingClientRect();
+    const r = panel.getBoundingClientRect();
+    place(Math.max(0, Math.min(box.width - r.width, r.left - box.left + d[0])),
+          Math.max(0, Math.min(box.height - 40, r.top - box.top + d[1])));
+    save({ left: parseFloat(panel.style.left), top: parseFloat(panel.style.top) });
+  });
+
+  // restore
+  (function () {
+    const s = saved();
+    if (s.collapsed) {
+      panel.classList.add("is-collapsed");
+      collapseBtn.setAttribute("aria-expanded", "false");
+    }
+    if (desktop.matches && typeof s.left === "number" && typeof s.top === "number") {
+      place(s.left, s.top);
+      keepOnScreen();
+    }
+  })();
+  window.addEventListener("resize", function () {
+    if (!desktop.matches) clearPlace();
+    else {
+      const s = saved();
+      if (typeof s.left === "number" && !panel.style.left) place(s.left, s.top);
+      keepOnScreen();
+    }
   });
 
   // ---- adoption: buttons inside the GIS site cards --------------------------

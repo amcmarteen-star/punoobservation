@@ -156,10 +156,16 @@
         <label class="sv-option">
           <input type="radio" name="finding" value="Not suitable" {% if form.get('finding') == 'Not suitable' %}checked{% endif %}>
           <span><strong>Not suitable</strong>
-            <small>Say why in the remarks. Your CENRO will suggest a new planting site to the requester.</small></span>
+            <small>Give the reason below. Your CENRO will suggest a new planting site to the requester.</small></span>
         </label>
       </div>
     </fieldset>
+    <div class="um-field mt-3" id="unsuitableBox" {% if form.get('finding') != 'Not suitable' %}hidden{% endif %}>
+      <label for="unsuitable_reason">Reason the site is not suitable *</label>
+      <textarea id="unsuitable_reason" name="unsuitable_reason" rows="3"
+                placeholder="For example: riverbank, floods every year.">{{ form.get('unsuitable_reason', '') }}</textarea>
+      <p class="um-field-hint">The CENRO and the requester will see this.</p>
+    </div>
   </div>
 
   <!-- 3. photos -->
@@ -238,6 +244,35 @@
       r.addEventListener("change", sync);
     });
     sync();
+  })();
+
+  // "Not suitable": a required reason, and a confirmation before saving.
+  (function () {
+    var form = document.getElementById("visitForm");
+    var box = document.getElementById("unsuitableBox");
+    var reason = document.getElementById("unsuitable_reason");
+    function unsuitable() {
+      var on = document.querySelector('input[name="finding"]:checked');
+      return !!on && on.value === "Not suitable";
+    }
+    function sync() {
+      var on = unsuitable();
+      box.hidden = !on;
+      reason.required = on;
+      reason.disabled = !on;
+    }
+    document.querySelectorAll('input[name="finding"]').forEach(function (r) {
+      r.addEventListener("change", sync);
+    });
+    sync();
+    // on the document, capture phase: runs before the upload overlay starts
+    document.addEventListener("submit", function (e) {
+      if (e.target !== form || !unsuitable()) return;
+      if (!window.confirm("If your CENRO approves this visit, the site will be closed. This cannot be undone.")) {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+      }
+    }, true);
   })();
 </script>
 <script type="application/json" id="corner-preview-config">{{ corner_preview | tojson }}</script>

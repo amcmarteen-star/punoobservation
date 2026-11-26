@@ -212,6 +212,11 @@ def gis_map():
         # drawn dashed and labelled "Simulated", as on the dashboard map
         simulated_munis=simulated_municipalities(),
         mixed_munis=simulated_municipalities(mixed=True),
+        # toolbar search: the shared place picker, over the user's area
+        map_places=[{'id': l.location_id, 'municipality': l.municipality,
+                     'barangay': l.barangay}
+                    for l in scope_locations(Location.query)
+                    .order_by(Location.municipality, Location.barangay)],
         request_mode=request_mode,
         request_config={
             "requestTypes": list(REQUEST_TYPES),
@@ -1025,6 +1030,7 @@ def api_sites_geo():
             "actual_trees": actual,
             # made from a request: the map offers Site visits to staff
             "from_request": site.source_request_id is not None,
+            "simulated": bool(site.is_simulated),
         })
 
     out = list(grouped.values())
@@ -1676,6 +1682,9 @@ def requests_page():
     return render_template(
         'Requests.html',
         active_page='requests',
+        # Contact prefill from the profile; empty stays empty (never the
+        # username as a name).
+        me=db.session.get(User, session.get('user_id')),
         request_places=_request_places(),
         request_block=member_block,
         municipalities=municipalities,
@@ -1875,6 +1884,30 @@ def request_detail(request_id):
         timeline=build_timeline(req),
         staff=user.role in ('admin', 'superadmin'),
     )
+
+
+@dashboard_bp.route('/account/profile', methods=['POST'])
+@login_required
+def set_profile():
+    """Optional full name and contact number, from My Account."""
+    from app.utils.profile import FULL_NAME_MAX, normalize_ph_mobile
+    user = db.session.get(User, session.get('user_id'))
+    name = ' '.join((request.form.get('full_name') or '').split())
+    number = normalize_ph_mobile(request.form.get('contact_number'))
+    back = url_for('dashboard.my_account') + '#profile'
+    if len(name) > FULL_NAME_MAX:
+        flash(f"Keep the full name under {FULL_NAME_MAX} characters.", "danger")
+        return redirect(back)
+    if number is None:
+        flash("Enter a mobile number like 09171234567, or leave it empty.",
+              "danger")
+        return redirect(back)
+    user.full_name = name or None
+    user.contact_number = number or None
+    log_action('set_profile', 'users', user.user_id, "Profile details updated")
+    db.session.commit()
+    flash("Your details are saved.", "success")
+    return redirect(back)
 
 
 @dashboard_bp.route('/account/barangay', methods=['POST'])

@@ -8,6 +8,13 @@ active_page = 'users' %} {% block extra_head %}
   .um-table col.col-org { width: 22%; }
   .um-table col.col-cenro { width: 14%; }
   .um-table col.col-status { width: 12%; }
+  /* Pending Member: neutral grey, not the green of an active position */
+  .um-role.role-pending { background-color: var(--surface-3); color: var(--text-2); }
+  /* org names: at most 2 lines; the full text is in the title tooltip */
+  .um-role.um-org { display: -webkit-box; -webkit-box-orient: vertical;
+                    -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden;
+                    white-space: normal; overflow-wrap: anywhere; max-width: 100%;
+                    line-height: 1.3; text-decoration: none; }
   .um-org-note { display: block; margin-top: 0.2rem; font-size: 0.72rem; color: var(--text-2); }
   .um-table col.col-actions { width: 8%; }
 
@@ -314,7 +321,7 @@ active_page = 'users' %} {% block extra_head %}
       {% for u in users %}
       <tr data-role="{{ u.role }}"
           data-status="{{ 'active' if u.is_active else 'inactive' }}"
-          data-jur="{% if u.cenro %}cenro:{{ u.cenro }}{% elif u.role == 'admin' %}penro{% else %}none{% endif %}">
+          data-jur="{% if u.cenro and u.role in ['admin', 'field_officer'] %}cenro:{{ u.cenro }}{% elif u.role == 'admin' %}penro{% else %}none{% endif %}">
         <td data-label="User">
           <div class="um-name-cell">
             <span class="um-avatar {% if u.role in ['admin', 'superadmin'] %}av-admin{% elif u.role == 'field_officer' %}av-officer{% endif %}">
@@ -335,7 +342,9 @@ active_page = 'users' %} {% block extra_head %}
         <td data-label="Partner organization">
           {% set _org_lbl = user_org_label(u) %}
           {% if _org_lbl and u.organization_id %}
-          <a class="um-role role-user" href="{{ url_for('organization.org_members_page', org_id=u.organization_id) }}">{{ _org_lbl }}</a>
+          <a class="um-role um-org {{ 'role-pending' if u.org_status == 'pending' else 'role-user' }}"
+             href="{{ url_for('organization.org_members_page', org_id=u.organization_id) }}"
+             title="{{ _org_lbl }}">{{ _org_lbl }}</a>
           {% elif _org_lbl %}
           <span class="text-secondary small">{{ _org_lbl }}</span>
           {% else %}
@@ -343,7 +352,8 @@ active_page = 'users' %} {% block extra_head %}
           {% endif %}
         </td>
         <td data-label="Jurisdiction">
-          {% if u.cenro %}
+          {# staff only: a User's stored CENRO (a data error) is never shown #}
+          {% if u.cenro and u.role in ['admin', 'field_officer'] %}
           <span class="um-role role-user">CENRO {{ u.cenro }}</span>
           {% elif u.role == 'admin' %}
           <span class="um-role role-admin">PENRO &mdash; Province-wide</span>
@@ -751,10 +761,13 @@ active_page = 'users' %} {% block extra_head %}
 
         <div class="um-field" id="um-cenro-na" hidden>
           <label>Jurisdiction</label>
-          <p class="form-text mb-0">
+          <p class="form-text mb-0" id="um-cenro-na-admin">
             A system administrator has no jurisdiction. The role covers user
             accounts, the reference dataset and the audit log across the whole
             system, and never reviews or publishes anything for one office.
+          </p>
+          <p class="form-text mb-0" id="um-cenro-na-user" hidden>
+            A User has no jurisdiction. Only staff are held to a CENRO.
           </p>
         </div>
         {% endif %}
@@ -782,13 +795,11 @@ active_page = 'users' %} {% block extra_head %}
     document.getElementById(id).classList.remove("open");
   }
 
-  // Jurisdiction applies to every role except superadmin.
+  // Jurisdiction applies to staff only: field officers and administrators.
   //
-  // create_field_officer() already forces cenro = None when the role is
-  // superadmin, so this only stops the form asking for something it will
-  // throw away. Field officers and normal users keep the field: their
-  // cenro is what scope_sites() and scope_locations() read to decide
-  // which sites and barangays they can see.
+  // create_field_officer() already forces cenro = None for a System
+  // Administrator and a User, so this only stops the form asking for
+  // something it will throw away.
   (function () {
     const role = document.getElementById("um-role");
     const field = document.getElementById("um-cenro-field");
@@ -798,11 +809,14 @@ active_page = 'users' %} {% block extra_head %}
 
     function sync() {
       const isSystemAdmin = role.value === "superadmin";
-      field.hidden = isSystemAdmin;
-      note.hidden = !isSystemAdmin;
+      const none = isSystemAdmin || role.value === "normal_user";
+      field.hidden = none;
+      note.hidden = !none;
+      document.getElementById("um-cenro-na-admin").hidden = !isSystemAdmin;
+      document.getElementById("um-cenro-na-user").hidden = isSystemAdmin;
       // disabled fields are not submitted, so nothing stale is posted
-      select.disabled = isSystemAdmin;
-      if (isSystemAdmin) select.value = "";
+      select.disabled = none;
+      if (none) select.value = "";
     }
 
     role.addEventListener("change", sync);

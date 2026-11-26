@@ -94,8 +94,10 @@ def create_field_officer():
     else:
         cenro = current_cenro()
 
-    # a superadmin has no CENRO by definition - they oversee all of them
-    if role == 'superadmin':
+    # A superadmin has no CENRO by definition - they oversee all of them.
+    # A User (normal_user) has no jurisdiction either: only staff are held
+    # to a CENRO, so a CENRO on a User is never stored.
+    if role in ('superadmin', 'normal_user'):
         cenro = None
 
     # The jurisdiction must be a real CENRO.
@@ -952,6 +954,52 @@ def import_denr_data():
     return redirect(url_for('admin.reference_dataset'))
 
 
+NEEDS_ACTION = ('Submitted', 'Under Review')
+FINISHED = ('Approved', 'Rejected')
+
+
+def _request_groups(requests, status_filter):
+    """The Review Requests groups, in page order.
+
+    Needs your action (open), At organization (read-only, collapsed),
+    Finished (collapsed, newest decision first, by month). A group is
+    left out when the filter cannot contain it; a group the filter does
+    contain is shown even when empty ("Nothing here.").
+    """
+    def when(r):
+        return r.date_reviewed or r.date_submitted
+
+    needs = [r for r in requests if r.status in NEEDS_ACTION]
+    at_org = [r for r in requests if r.status in AT_ORGANIZATION]
+    finished = sorted((r for r in requests if r.status in FINISHED),
+                      key=lambda r: when(r) or datetime.min, reverse=True)
+    months = []
+    for r in finished:
+        label = when(r).strftime('%B %Y') if when(r) else 'No date'
+        if not months or months[-1]['label'] != label:
+            months.append({'label': label, 'rows': []})
+        months[-1]['rows'].append(r)
+
+    show_all = not status_filter or status_filter == 'all'
+    groups = []
+    if show_all or status_filter == 'Pending':
+        groups.append({'key': 'needs', 'title': 'Needs your action',
+                       'open': True, 'count': len(needs),
+                       'months': [{'label': None, 'rows': needs}]})
+    if show_all or status_filter == 'At organization':
+        groups.append({'key': 'org', 'title': 'At organization',
+                       'note': 'Read-only: the organization is deciding.',
+                       'open': status_filter == 'At organization',
+                       'count': len(at_org),
+                       'months': [{'label': None, 'rows': at_org}]})
+    if show_all or status_filter in ('Finished', 'Approved', 'Rejected'):
+        groups.append({'key': 'finished', 'title': 'Finished',
+                       'open': status_filter in ('Finished', 'Approved',
+                                                 'Rejected'),
+                       'count': len(finished), 'months': months})
+    return groups
+
+
 @admin_bp.route('/requests')
 @admin_required
 def review_requests():
@@ -966,7 +1014,7 @@ def review_requests():
     if current_cenro() is None:
         flash("Request and report review is a CENRO function.", "warning")
         return redirect(url_for('admin.provincial_overview'))
-    status_filter = request.args.get('status', 'Pending')
+    status_filter = request.args.get('status', 'all')
     munis = allowed_municipalities()
 
     def base():
@@ -985,7 +1033,9 @@ def review_requests():
     if status_filter == 'all':
         pass
     elif status_filter == 'Pending':
-        query = query.filter(Request.status.in_(['Submitted', 'Under Review']))
+        query = query.filter(Request.status.in_(NEEDS_ACTION))
+    elif status_filter == 'Finished':
+        query = query.filter(Request.status.in_(FINISHED))
     elif status_filter == 'At organization':
         # read-only for the CENRO: the organization is deciding
         query = query.filter(Request.status.in_(AT_ORGANIZATION))
@@ -994,19 +1044,25 @@ def review_requests():
 
     all_requests = query.order_by(Request.date_submitted.desc()).all()
 
+    # Filter menu: (value, label, count). 'Pending' stays the stored value
+    # of "Needs action" so old links keep working.
     counts = {
-        'Pending': base().filter(
-            Request.status.in_(['Submitted', 'Under Review'])).count(),
-        'Approved': base().filter(Request.status == 'Approved').count(),
-        'Rejected': base().filter(Request.status == 'Rejected').count(),
+        'Pending': base().filter(Request.status.in_(NEEDS_ACTION)).count(),
         'At organization': base().filter(
             Request.status.in_(AT_ORGANIZATION)).count(),
+        'Finished': base().filter(Request.status.in_(FINISHED)).count(),
     }
+    filter_labels = {'Pending': 'Needs action',
+                     'At organization': 'At organization',
+                     'Finished': 'Finished',
+                     'Approved': 'Approved', 'Rejected': 'Rejected'}
 
     return render_template(
         'Requestsadmin.html',
         active_page='review_requests',
         all_requests=all_requests,
+        groups=_request_groups(all_requests, status_filter),
+        filter_labels=filter_labels,
         counts=counts,
         total_count=base().count(),
         status_filter=status_filter,

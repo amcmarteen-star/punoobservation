@@ -58,6 +58,9 @@
 <div class="um-alert um-alert-danger mb-3" role="status">
   <strong>Not suitable.</strong>
   This site is closed and archived, and its request was rejected. The requester was told. It no longer appears in the site lists.
+  {% for v in visits if v.finding == 'Not suitable' and v.status == 'Approved' and v.unsuitable_reason %}
+  {% if loop.first %}<p class="mb-0 mt-2" style="white-space: pre-line;"><strong>Reason:</strong> {{ v.unsuitable_reason }}</p>{% endif %}
+  {% endfor %}
 </div>
 {% endif %}
 
