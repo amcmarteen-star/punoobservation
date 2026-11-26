@@ -1920,7 +1920,7 @@
 
   {# District and barangay files for this user's CENRO (CENRO_GEOJSON in
      app/utils/jurisdiction.py), read by loadMapData(). #}
-  <script type="application/json" id="map-files">{{ {"districts": district_files, "barangays": barangay_urls, "areas": map_areas} | tojson }}</script>
+  <script type="application/json" id="map-files">{{ {"districts": district_files, "barangays": barangay_urls, "areas": map_areas, "simulated": simulated_munis, "mixed": mixed_munis} | tojson }}</script>
 
   <div id="muni-panel" class="muni-panel">
     <div
@@ -3077,6 +3077,7 @@
             weight: outline ? 2 : 0,
             opacity: outline ? 1 : 0,
           });
+          markSimulated(lyr);
         });
       }
 
@@ -3087,8 +3088,28 @@
       // fade out from this zoom up, where they would cover the barangays.
       const MUNI_LABEL_MAX_ZOOM = 12;
 
+      // Municipalities whose sites are all simulated: dashed, blue-grey,
+      // labelled "Simulated" (the same style as the dashboard map).
+      const SIMULATED_COLOR = "#9fb3c8";
+      const SIMULATED_MUNIS = new Set((MAP_FILES.simulated || []).map(normalizeName));
+      const MIXED_MUNIS = new Set((MAP_FILES.mixed || []).map(normalizeName));
+      function isSimulatedMuni(feature) {
+        return SIMULATED_MUNIS.has(normalizeName(feature.properties.NAME_2));
+      }
+      function markSimulated(lyr) {
+        lyr.eachLayer(function (f) {
+          if (f.feature && isSimulatedMuni(f.feature)) {
+            f.setStyle({ color: "#555", dashArray: "4 3",
+                         fillColor: SIMULATED_COLOR, fillOpacity: 0.6 });
+          }
+        });
+      }
+
       function addMuniLabel(feature, layer) {
-        layer.bindTooltip(feature.properties.NAME_2, {
+        const name = feature.properties.NAME_2;
+        const mixedMuni = MIXED_MUNIS.has(normalizeName(name));
+        layer.bindTooltip(isSimulatedMuni(feature) ? name + " (Simulated)"
+                          : mixedMuni ? name + " (includes simulated)" : name, {
           permanent: true,
           direction: "center",
           className: "muni-label",
@@ -3137,6 +3158,7 @@
             layer.on("mouseout", () => layer.setStyle({ fillOpacity: districtFillOpacity() }));
           },
         }).addTo(map);
+        markSimulated(districtLayers[key]);
       });
 
       focusGroup = L.featureGroup(Object.values(districtLayers));

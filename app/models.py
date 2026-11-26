@@ -39,6 +39,10 @@ class Organization(db.Model):
     organization_id = db.Column(db.Integer, primary_key=True)
     organization_name = db.Column(db.String(150), nullable=False)
     organization_type = db.Column(db.String(100), nullable=False)
+    # Simulated rows stand in for districts without real records, to show
+    # a province-wide rollout. Never used in a stated finding.
+    is_simulated = db.Column(db.Boolean, nullable=False, default=False,
+                             server_default=db.false())
 
     # The invite link is /join/<join_token>. A leader regenerates it, and
     # the old one then stops working. NULL until first needed.
@@ -162,6 +166,9 @@ class Site(db.Model):
     # land_map_boundary = db.Column(Geometry('POLYGON', srid=4326), nullable=True)
     date_established = db.Column(db.Date, nullable=False, default=datetime.utcnow)
     site_status = db.Column(db.String(50), nullable=False, default='Active')
+    # Simulated: see Organization.is_simulated.
+    is_simulated = db.Column(db.Boolean, nullable=False, default=False,
+                             server_default=db.false())
     climate_zone = db.Column(db.String(100), nullable=True)
     soil_type = db.Column(db.String(100), nullable=True)
     site_code = db.Column(db.String(50), unique=True, nullable=True)

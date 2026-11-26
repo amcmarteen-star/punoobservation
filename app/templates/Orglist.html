@@ -238,7 +238,10 @@
     </thead>
     <tbody>
       {% for r in rows %}
-      <tr data-search="{{ (r.org.organization_name ~ ' ' ~ r.org.organization_type ~ ' ' ~ (r.org.cenro or ''))|lower }}">
+      <tr data-search="{{ (r.org.organization_name ~ ' ' ~ r.org.organization_type ~ ' ' ~ (r.org.cenro or ''))|lower }}"
+          data-org="{{ r.org.organization_name }}" data-members="{{ r.members }}"
+          data-leaders="{{ r.leaders }}" data-waiting="{{ r.waiting }}"
+          data-simulated="{{ 'true' if r.org.is_simulated else 'false' }}">
         <td class="org">
           <span class="ol-name">{{ r.org.organization_name }}</span>
           <span class="ol-type">{{ r.org.organization_type }}</span>

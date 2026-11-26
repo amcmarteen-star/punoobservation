@@ -2,1098 +2,386 @@
 {% block title %}Dashboard - PuNoObservation{% endblock %}
 {% block content_class %}page-content-wide{% endblock %}
 {% set active_page = 'dashboard' %}
+{# The CENRO and provincial dashboard (Module 6). Built on the server by
+   app/services/cenro_dashboard.py from the analytics endpoint's figures.
+   Header: story, what is waiting, KPI tiles. Then at most six charts. Each
+   chart's title states its finding. Problems are orange, normal is muted;
+   every value also has a text label, so colour is never the only signal. #}
+{% block extra_head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='vendor/leaflet/leaflet.css') }}">
+<style>
+  .cd-story { font-size: 1.1rem; line-height: 1.6; margin: 0.25rem 0 1rem; max-width: 70rem; }
+  .cd-actions { display: flex; flex-wrap: wrap; gap: 0.75rem; margin: 0 0 0.5rem; }
+  .cd-action { display: inline-flex; align-items: baseline; gap: 0.4rem;
+               padding: 0.6rem 0.9rem; border-radius: 0.6rem; background: rgba(0,0,0,0.035);
+               text-decoration: none; color: inherit; }
+  .cd-action strong { font-size: 1.25rem; }
+  .cd-action.has-work strong { color: #c2410c; }
+  .cd-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; margin-top: 1rem; }
+  .cd-chart { padding: 1.1rem 1.2rem; border: 1px solid rgba(0,0,0,0.08); border-radius: 0.8rem;
+              background: var(--surface-1, #fff); min-width: 0; }
+  .cd-chart.cd-wide { grid-column: 1 / -1; }
+  .cd-chart h3 { font-size: 1rem; font-weight: 700; margin: 0 0 0.75rem; }
+  .cd-empty { opacity: 0.75; margin: 0; }
+  .cd-box { position: relative; height: 260px; }
+  .cd-gauge-label { text-align: center; margin-top: -2.5rem; font-size: 1.6rem; font-weight: 700; }
+  .cd-gauge-sub { text-align: center; opacity: 0.75; }
+  .cd-key { display: flex; flex-wrap: wrap; gap: 0.5rem 1rem; font-size: 0.82rem; margin-top: 0.5rem; }
+  .cd-key span::before { content: ""; display: inline-block; width: 0.75rem; height: 0.75rem;
+                         border-radius: 0.2rem; margin-right: 0.35rem; vertical-align: -0.1rem;
+                         background: var(--swatch); }
+  .cd-toggle { display: inline-flex; gap: 0.25rem; margin-bottom: 0.5rem; }
+  .cd-toggle button { border: 1px solid rgba(0,0,0,0.15); background: none; border-radius: 0.4rem;
+                      padding: 0.3rem 0.7rem; cursor: pointer; }
+  .cd-toggle button[aria-pressed="true"] { background: rgba(0,0,0,0.08); font-weight: 600; }
+  #cd-map { height: 320px; border-radius: 0.5rem; }
+  .cd-next li { margin-bottom: 0.4rem; }
+  @media (max-width: 900px) { .cd-grid { grid-template-columns: 1fr; } }
+</style>
+{% endblock %}
 {% block content %}
 
 <div class="page-header page-header-row">
   <div>
     <h2>Welcome, {{ session.username }}!</h2>
-    <p class="text-secondary mb-0">
-      Reforestation activity across {{ area_label() }}.
-    </p>
-  </div>
-  <div id="dashboard-clock" class="dashboard-clock" role="timer" aria-live="off">
-    {# Analog face: twelve ticks, the quarters longer. Hands are rotated
-       from the script; the second hand carries the brand colour. #}
-    <svg class="clock-face" viewBox="0 0 48 48" aria-hidden="true">
-      <circle class="clock-face-ring" cx="24" cy="24" r="22.5" />
-      {% for i in range(12) %}
-      <line class="clock-tick {% if i % 3 == 0 %}is-major{% endif %}"
-            x1="24" y1="{{ 4 if i % 3 == 0 else 4.5 }}" x2="24" y2="{{ 8 if i % 3 == 0 else 6.5 }}"
-            transform="rotate({{ i * 30 }} 24 24)" />
-      {% endfor %}
-      <line id="clock-hand-h" class="clock-hand-h" x1="24" y1="25.5" x2="24" y2="14" />
-      <line id="clock-hand-m" class="clock-hand-m" x1="24" y1="26.5" x2="24" y2="9" />
-      <line id="clock-hand-s" class="clock-hand-s" x1="24" y1="28" x2="24" y2="7" />
-      <circle class="clock-pin" cx="24" cy="24" r="1.6" />
-    </svg>
-
-    <div class="clock-text">
-      <span class="clock-time">
-        <span id="clock-hm">--:--</span><span
-          id="clock-sec" class="clock-sec">:--</span><span
-          id="clock-meridiem" class="clock-meridiem">--</span>
-      </span>
-      <span class="clock-date">
-        <span id="clock-date">Loading date&hellip;</span>
-        <span class="clock-zone" title="Philippine Standard Time (UTC+8)">
-          <span class="clock-live" aria-hidden="true"></span>PHT
-        </span>
-      </span>
-    </div>
+    <p class="text-secondary mb-0">Reforestation in {{ scope_name }}.</p>
   </div>
 </div>
 
-<div id="loading" class="dash-skeleton" role="status" aria-live="polite">
-  <span class="visually-hidden">Loading analytics&hellip;</span>
-  <div class="sk-strip">
-    <div class="sk-box"></div><div class="sk-box"></div><div class="sk-box"></div>
-    <div class="sk-box"></div><div class="sk-box"></div><div class="sk-box"></div>
-  </div>
-  <div class="sk-row"><div class="sk-chart"></div><div class="sk-chart"></div></div>
+{# ---------------- header: story, what is waiting, tiles ---------------- #}
+<p class="cd-story">{{ c.story }}</p>
+
+{% set is_cenro = session.role == 'admin' and session.cenro %}
+{% set is_provincial = session.role == 'admin' and not session.cenro %}
+<div class="cd-actions" aria-label="Waiting for action">
+  <a class="cd-action {{ 'has-work' if waiting.requests else '' }}"
+     {% if is_cenro %}href="{{ url_for('admin.review_requests') }}"{% endif %}>
+    <strong>{{ waiting.requests }}</strong> {{ 'request' if waiting.requests == 1 else 'requests' }} waiting
+  </a>
+  <a class="cd-action {{ 'has-work' if waiting.reports else '' }}"
+     {% if is_cenro %}href="{{ url_for('admin.review_reports') }}"{% endif %}>
+    <strong>{{ waiting.reports }}</strong> {{ 'report' if waiting.reports == 1 else 'reports' }} waiting
+  </a>
+  <a class="cd-action {{ 'has-work' if waiting.boundaries else '' }}"
+     {% if is_provincial %}href="{{ url_for('admin.publications') }}"{% endif %}>
+    <strong>{{ waiting.boundaries }}</strong> {{ 'boundary' if waiting.boundaries == 1 else 'boundaries' }} waiting to publish
+  </a>
 </div>
 
-<div id="dash" hidden>
-  <!-- ================= SECTION 1 ================= -->
-  <div class="section-head">
-    <span class="eyebrow">Section 1 &mdash; Descriptive</span>
-    <h4>What has been done</h4>
-    <p>The scale and distribution of recorded reforestation activity.</p>
-  </div>
+{% set tiles = c.tiles %}
+{% include 'partials/_dash_tiles.html' %}
 
-  <div class="kpi-strip" id="kpiStrip"></div>
+{# ---------------- at most six charts ---------------- #}
+<div class="cd-grid">
 
-  <div class="chart-row">
-    <div class="chart-card">
-      <h5>Sites contracted per year</h5>
-      <p class="takeaway" id="yearTakeaway"></p>
-      <div class="chart-box">
-        <canvas id="chartYear" role="img"
-                aria-label="Bar chart of reforestation sites contracted in each year."></canvas>
+  {# 1. over time: hectares per year #}
+  <section class="cd-chart" aria-labelledby="cd-years-title">
+    <h3 id="cd-years-title">{{ c.years_title }}</h3>
+    {% if c.years %}
+      <div class="cd-box"><canvas id="cd-years" role="img" aria-label="Hectares contracted per year"></canvas></div>
+    {% else %}
+      <p class="cd-empty">No contract years recorded yet.</p>
+    {% endif %}
+  </section>
+
+  {# 2. against target: survival gauge #}
+  <section class="cd-chart" aria-labelledby="cd-gauge-title">
+    <h3 id="cd-gauge-title">{{ c.gauge_title }}</h3>
+    {% if c.survival is not none %}
+      <div class="cd-box" style="height: 200px;"><canvas id="cd-gauge" role="img"
+           aria-label="Survival {{ c.survival_text }} percent against a target of {{ '%.0f'|format(c.target) }}"></canvas></div>
+      <div class="cd-gauge-label">{{ c.survival_text }}%</div>
+      <div class="cd-gauge-sub">
+        {% if c.survival < c.target %}Below{% else %}Meets{% endif %} the {{ '%.0f'|format(c.target) }}% target
       </div>
-    </div>
+    {% else %}
+      <p class="cd-empty">No monitoring reports yet, so there is no survival figure.</p>
+    {% endif %}
+  </section>
 
-    <div class="chart-card">
-      <h5>Area contracted per year</h5>
-      <p class="takeaway">
-        Hectares placed under contract each year. Shown separately from the
-        site count so neither scale distorts the other.
-      </p>
-      <div class="chart-box">
-        <canvas id="chartYearArea" role="img"
-                aria-label="Line chart of hectares placed under contract in each year."></canvas>
+  {# 3. ranking: survival by municipality, with the 85% line #}
+  <section class="cd-chart cd-wide" aria-labelledby="cd-bar-title">
+    <h3 id="cd-bar-title">{{ c.bar_title }}</h3>
+    {% if c.ranked %}
+      <div class="cd-box" style="height: {{ [c.ranked|length * 30 + 60, 220]|max }}px;">
+        <canvas id="cd-bar" role="img" aria-label="Survival by municipality"></canvas>
       </div>
-    </div>
-  </div>
-
-  <div class="chart-card">
-    <h5>Area under contract by municipality</h5>
-    <p class="takeaway" id="areaTakeaway"></p>
-    <div class="chart-box tall">
-      <canvas id="chartArea" role="img"
-              aria-label="Horizontal bar chart of contracted area by municipality."></canvas>
-    </div>
-    <ul class="chart-key" id="areaKey"></ul>
-  </div>
-
-  <!-- ================= SECTION 2 ================= -->
-  <div class="section-head">
-    <span class="eyebrow">Section 2 &mdash; Diagnostic</span>
-    <h4>How well was it done</h4>
-    <p>
-      Delivery against contract, and survival against the DENR 85% reference
-      threshold.
-    </p>
-  </div>
-
-  <div class="chart-card">
-    <h5>Delivery rate by municipality</h5>
-    <p class="takeaway">
-      Seedlings actually planted as a percentage of the contracted target.
-      Normalising by contract size means a small municipality delivering in full
-      ranks above a large one falling short.
-    </p>
-    <div class="chart-box">
-      <canvas id="chartAchievement" role="img"
-              aria-label="Bar chart of seedling delivery rate against contract, by municipality."></canvas>
-    </div>
-    <ul class="chart-key">
-      <li><span class="dot dot-ok"></span>Met or exceeded target</li>
-      <li><span class="dot dot-warn"></span>90&ndash;99% of target</li>
-      <li><span class="dot dot-bad"></span>Below 90% of target</li>
-    </ul>
-    <div class="finding" id="achievementFinding"></div>
-  </div>
-
-  <div class="chart-row">
-    <div class="chart-card">
-      <h5>Survival rate by municipality</h5>
-      <p class="takeaway">
-        Mean recorded survival. The dashed line marks the DENR 85% threshold,
-        below which contractors are not recommended for payment.
-      </p>
-      <div class="chart-box">
-        <canvas id="chartSurvival" role="img"
-                aria-label="Bar chart of mean recorded seedling survival by municipality, against the 85 percent DENR threshold."></canvas>
+      <div class="cd-key">
+        <span style="--swatch: #ea580c;">Below {{ '%.0f'|format(c.target) }}% target</span>
+        <span style="--swatch: #7fa88a;">Meets the target</span>
+        <span style="--swatch: #c4c4c4;">Too few sites (under {{ c.min_monitored }} monitored)</span>
       </div>
-      <ul class="chart-key">
-        <li><span class="dot dot-ok"></span>At or above 85%</li>
-        <li><span class="dot dot-bad"></span>Below 85%</li>
-      </ul>
-    </div>
+    {% else %}
+      <p class="cd-empty">No municipalities with sites yet.</p>
+    {% endif %}
+  </section>
 
-    <div class="chart-card">
-      <h5>Cost per hectare</h5>
-      <p class="takeaway">
-        Three-year project cost divided by contracted area. Wide variation may
-        reflect terrain, species, or accessibility.
-      </p>
-      <div class="chart-box"><canvas id="chartCost" role="img"
-                aria-label="Bar chart of three-year project cost per hectare by municipality."></canvas></div>
-      <ul class="chart-key" id="costKey"></ul>
-    </div>
-  </div>
-
-  <!-- ================= SECTION 3 ================= -->
-  <div class="section-head">
-    <span class="eyebrow">Section 3 &mdash; Prescriptive</span>
-    <h4>What should be done next</h4>
-    <p>
-      Site suitability from the recommendation engine, compared against where
-      planting has actually taken place.
-    </p>
-  </div>
-
-  <style>
-    /* Where to plant next: one headline number above the bars. */
-    .plant-next-hero {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: baseline;
-      gap: 0.75rem;
-      margin: 0.25rem 0;
-    }
-
-    .plant-next-count {
-      font-size: 2.6rem;
-      font-weight: 800;
-      line-height: 1;
-      font-variant-numeric: tabular-nums;
-      color: var(--brand-text);
-    }
-
-    .plant-next-text {
-      display: flex;
-      flex-direction: column;
-      font-size: 0.95rem;
-      color: var(--text-body);
-    }
-
-    .plant-next-text strong {
-      font-weight: 600;
-      color: var(--text-heading);
-    }
-
-    .plant-next-text span {
-      font-size: 0.8rem;
-      color: var(--text-2);
-    }
-
-    .plant-next-note {
-      margin: 0.35rem 0 1rem;
-      font-size: 0.78rem;
-      color: var(--text-2);
-    }
-
-    .plant-next-table {
-      margin-top: 0.75rem;
-      font-size: 0.85rem;
-    }
-
-    .plant-next-table summary {
-      cursor: pointer;
-      font-weight: 600;
-      color: var(--brand-text);
-    }
-  </style>
-
-  <div class="chart-card">
-    <h5>Where to plant next</h5>
-    <p class="takeaway">
-      Highly suitable barangays that have no reforestation site yet, by
-      municipality.
-    </p>
-
-    <div class="plant-next-hero">
-      <span class="plant-next-count" id="plantNextCount">0</span>
-      <span class="plant-next-text">
-        <strong>highly suitable barangays have no reforestation site yet</strong>
-        <span id="plantNextOf"></span>
-      </span>
-    </div>
-    <p class="plant-next-note" id="plantNextCutoff"></p>
-
-    <div class="chart-box" id="plantNextBox"><canvas id="chartPlantNext" role="img"
-                aria-label="Bar chart of highly suitable barangays with no reforestation site, by municipality."></canvas></div>
-    <ul class="chart-key" id="plantNextKey"></ul>
-
-    {# The same counts as a table, for anyone who cannot use the chart. #}
-    <details class="plant-next-table">
-      <summary>Show as a table</summary>
-      <div class="um-table-card mt-2">
-        <table class="um-table">
-          <thead>
-            <tr>
-              <th>Municipality</th>
-              <th class="text-end">Highly suitable, no site</th>
-            </tr>
-          </thead>
-          <tbody id="plantNextBody"></tbody>
-        </table>
+  {# 4. location: choropleth by municipality outline #}
+  <section class="cd-chart cd-wide" aria-labelledby="cd-map-title">
+    <h3 id="cd-map-title">{{ c.map_titles.survival }}</h3>
+    {% if c.munis %}
+      <div class="cd-toggle" role="group" aria-label="Map metric">
+        <button type="button" data-metric="survival" aria-pressed="true">Survival</button>
+        <button type="button" data-metric="area" aria-pressed="false">Area</button>
+        <button type="button" data-metric="delivery" aria-pressed="false">Delivery</button>
       </div>
-    </details>
+      <div id="cd-map" role="img" aria-label="Map of municipalities"></div>
+      <div class="cd-key" id="cd-map-key"></div>
+      <p style="margin: 0.5rem 0 0;"><a href="{{ url_for('dashboard.gis_map') }}">Open the full GIS map</a></p>
+    {% else %}
+      <p class="cd-empty">No municipalities with sites yet.</p>
+    {% endif %}
+  </section>
 
-    <div class="finding" id="plantNextFinding"></div>
-  </div>
+  {# 5. relationship: cost per hectare against survival #}
+  <section class="cd-chart" aria-labelledby="cd-scatter-title">
+    <h3 id="cd-scatter-title">{{ c.scatter.title }}</h3>
+    {% if c.scatter.show %}
+      <div class="cd-box"><canvas id="cd-scatter" role="img" aria-label="Cost per hectare against survival, by municipality"></canvas></div>
+      <p class="cd-empty" style="margin-top: 0.5rem;">One dot per municipality with at least {{ c.min_monitored }} monitored sites.</p>
+    {% else %}
+      <p class="cd-empty">Not shown. A comparison needs at least {{ c.scatter.needed }} municipalities with
+        {{ c.min_monitored }} or more monitored sites and cost data.</p>
+    {% endif %}
+  </section>
 
-  <div class="chart-row">
-    <div class="chart-card chart-card-fill">
-      <h5>Most recommended species</h5>
-      <p class="takeaway">
-        How often each species appears in a barangay's top five across all
-        <span id="speciesBarangays">the</span> barangays.
-      </p>
-      <div class="chart-box"><canvas id="chartSpecies" role="img"
-                aria-label="Horizontal bar chart of how often each species appears in a barangay's top five."></canvas></div>
-      <ul class="chart-key" id="speciesKey"></ul>
-    </div>
+  {# 6. what next: suitable barangays with no site #}
+  <section class="cd-chart" aria-labelledby="cd-next-title">
+    <h3 id="cd-next-title">{{ c.next_title }}</h3>
+    {% if c.next_list %}
+      <ol class="cd-next">
+        {% for b in c.next_list %}
+        <li><strong>{{ b.barangay }}</strong>, {{ b.municipality }}
+          <span class="text-secondary">&middot; best species: {{ b.top_species }}</span></li>
+        {% endfor %}
+      </ol>
+      <p style="margin: 0;"><a href="{{ url_for('dashboard.recommendations') }}">Open Species Recommendation</a></p>
+    {% else %}
+      <p class="cd-empty">No suitable barangays without a site were found.</p>
+    {% endif %}
+  </section>
 
-    <div class="chart-card">
-      <h5>Highest-suitability barangays with no recorded planting</h5>
-      <p class="takeaway">
-        Sorted by suitability. These are candidate sites where no DENR
-        reforestation record exists.
-      </p>
-      <div class="um-table-card">
-        {# all rows shown: the list is short (15), and the chart beside it
-           grows to the same height, so neither needs its own scroll #}
-        <div class="um-scroll-wrap table-freeze-wrap" style="max-height: none">
-          <table class="um-table um-scroll-table" data-freeze="1">
-            <thead>
-              <tr>
-                <th>Barangay</th>
-                <th>Municipality</th>
-                <th class="text-end">Score</th>
-                <th>Top species</th>
-              </tr>
-            </thead>
-            <tbody id="unplantedBody"></tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-  </div>
 </div>
 
+{% endblock %}
+{% block extra_scripts %}
+<script src="{{ url_for('static', filename='vendor/leaflet/leaflet.js') }}"></script>
 <script src="{{ url_for('static', filename='vendor/chartjs/chart.umd.min.js') }}"></script>
 <script>
-  // Only the chrome follows the theme. Gridlines and axis labels read from
-  // the page tokens, so a rule that is a hairline on paper stays a hairline
-  // on a dark ground instead of turning into a white bar. The data colours
-  // themselves are fixed in both themes -- see applyChartTheme.
-  //
-  // The series pair is validated for colour-vision deficiency: deutan dE
-  // 31.7, tritan 14.4, normal 37.8 -- all clear of the floor.
-  let GREEN, INDIGO, OK, AMBER, RED, ABSENT, INK, GRID;
-  let GREEN_MUTED, INDIGO_MUTED;
+  (function () {
+    var CD = {{ {
+      "target": c.target,
+      "years": c.years,
+      "survival": c.survival,
+      "ranked": c.ranked,
+      "munis": c.munis,
+      "mapTitles": c.map_titles,
+      "scatter": c.scatter,
+      "districts": districts
+    }|tojson }};
 
-  function isDarkTheme() {
-    return document.documentElement.getAttribute("data-theme") === "dark";
-  }
+    var ORANGE = "#ea580c", GREEN = "#7fa88a", GREY = "#c4c4c4", PALE = "#eef0ee";
 
-  function applyChartTheme() {
-    const cs = getComputedStyle(document.body);
-    const token = (name, fallback) =>
-      cs.getPropertyValue(name).trim() || fallback;
-    const dark = isDarkTheme();
-
-    /* --line is a 9% hairline, which is right for a 1px border but too
-       faint for a gridline read across a whole plot; 14% is the same idea
-       one step up. */
-    GRID = dark ? "rgba(255, 255, 255, 0.14)" : token("--line", "#e2eae5");
-    INK = token("--text-2", "#5f6f66");
-    ABSENT = "#8d9c94";
-
-    /* Data colours do NOT follow the theme. Two of these charts carry a
-       written key -- "Met or exceeded target" is the green, "Below 90% of
-       target" is the red -- and a swatch that means one thing in light and
-       a different shade in dark is a reading someone has to re-learn. The
-       series stay put; only the chrome around them moves. */
-    GREEN = "#16a34a";
-    INDIGO = "#4f46e5";
-    OK = "#16a34a";
-    AMBER = "#b45309";
-    RED = "#dc2626";
-
-    /* Muted partners for the highlight charts: the same hue as a 40% tint
-       over the card. Unlike the series colours these must follow the theme,
-       because a tint is only a tint relative to the surface under it.
-       Checked against each surface: the tint sits 0.17-0.29 below or above
-       the full colour in OKLab lightness, so the pair stays apart for
-       colour-blind readers. */
-    GREEN_MUTED = dark ? "#16542e" : "#a2dab7";
-    INDIGO_MUTED = dark ? "#2d2f6c" : "#b9b5f5";
-
-    Chart.defaults.color = INK;
-    Chart.defaults.borderColor = GRID;
-    Chart.defaults.plugins.tooltip.backgroundColor = dark
-      ? "#24312c"
-      : "#12211a";
-  }
-
-  const fmt = (n) => (n || 0).toLocaleString();
-
-  /* --- highlight: emphasis, not identity ----------------------------------
-     A bar chart already names every bar on its axis, so a colour per bar
-     adds nothing and runs out of distinct colours past eight. Instead each
-     chart keeps one hue: the bars its text talks about keep the full colour,
-     the rest take the pale tint of the same hue. A thin full-colour edge
-     keeps a tinted bar visible against the card. The key under the chart
-     says what the highlight means, so meaning never rests on colour alone. */
-  function emphasis(flags, full, muted) {
-    return {
-      backgroundColor: flags.map((on) => (on ? full : muted)),
-      borderColor: full,
-      borderWidth: flags.map((on) => (on ? 0 : 1)),
-    };
-  }
-
-  function renderKey(id, full, muted, onLabel, offLabel) {
-    const el = document.getElementById(id);
-    if (!el) return;
-    el.innerHTML = `
-      <li><span class="dot" style="background:${full}"></span>${onLabel}</li>
-      <li><span class="dot" style="background:${muted}; box-shadow: inset 0 0 0 1px ${full}"></span>${offLabel}</li>`;
-  }
-
-  Chart.defaults.font.family =
-    "'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif";
-  Chart.defaults.font.size = 11;
-  Chart.defaults.plugins.tooltip.padding = 10;
-  Chart.defaults.plugins.tooltip.cornerRadius = 8;
-  Chart.defaults.plugins.tooltip.titleFont = { weight: "600" };
-
-  applyChartTheme();
-
-  /* Chart.js refuses a canvas that already carries a chart, and switching
-     theme rebuilds all of them, so every canvas is cleared first.
-
-     It also lightens whatever you hover by default. Here the fill is not
-     decoration -- green means the target was met, amber means 90-99%, red
-     means below -- so a hover that restyles the bar is showing a colour
-     the key does not list. Every hover colour is pinned to the resting
-     colour instead; the tooltip is the hover feedback. */
-  function pinHoverColours(config) {
-    const datasets = (config.data && config.data.datasets) || [];
-    datasets.forEach((ds) => {
-      if (ds.backgroundColor !== undefined) {
-        ds.hoverBackgroundColor = ds.backgroundColor;
-      }
-      if (ds.borderColor !== undefined) {
-        ds.hoverBorderColor = ds.borderColor;
-      }
-      ds.hoverBorderWidth = ds.borderWidth === undefined ? 0 : ds.borderWidth;
-
-      /* Line and scatter points carry their own hover slots. */
-      const pointFill =
-        ds.pointBackgroundColor !== undefined
-          ? ds.pointBackgroundColor
-          : ds.backgroundColor;
-      if (pointFill !== undefined) ds.pointHoverBackgroundColor = pointFill;
-
-      const pointLine =
-        ds.pointBorderColor !== undefined
-          ? ds.pointBorderColor
-          : ds.borderColor;
-      if (pointLine !== undefined) ds.pointHoverBorderColor = pointLine;
-
-    });
-    return config;
-  }
-
-  /* --- play the entry animation once, when the chart comes into view ---
-     The bars grow and the line draws itself the first time a chart is
-     scrolled onto the screen, and never again: replaying it on every
-     hover kept the page moving under the pointer. A chart is only built
-     once it is visible, so ones further down still get their entrance
-     instead of having played it unseen at page load.
-
-     Charts are rebuilt when the theme changes. One that has already been
-     seen is redrawn without the animation, so a theme switch does not
-     replay anything either. */
-  const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
-  const chartSeen = new Set();      // canvas ids that have played their entry
-  const chartPending = new Map();   // canvas -> config waiting to be visible
-
-  function buildChart(canvas, config) {
-    const existing = Chart.getChart(canvas);
-    if (existing) existing.destroy();
-    if (chartSeen.has(canvas.id) || reducedMotion.matches) {
-      config.options = Object.assign({}, config.options, { animation: false });
+    function rowColour(m) {
+      if (!m.judged) return GREY;
+      return m.below ? ORANGE : GREEN;
     }
-    chartSeen.add(canvas.id);
-    new Chart(canvas, pinHoverColours(config));
-  }
-
-  const chartObserver =
-    "IntersectionObserver" in window
-      ? new IntersectionObserver(
-          function (entries) {
-            entries.forEach(function (entry) {
-              if (!entry.isIntersecting) return;
-              const canvas = entry.target;
-              chartObserver.unobserve(canvas);
-              const config = chartPending.get(canvas);
-              chartPending.delete(canvas);
-              if (config) buildChart(canvas, config);
-            });
-          },
-          // a little of the chart on screen is enough to start it
-          { threshold: 0.25 },
-        )
-      : null;
-
-  function mkChart(canvas, config) {
-    if (!canvas) return;
-    if (!chartObserver || chartSeen.has(canvas.id)) {
-      buildChart(canvas, config);
-      return;
+    function rowStatus(m) {
+      if (!m.judged) return "too few sites";
+      return m.below ? "below target" : "meets target";
     }
-    // the latest config wins if data reloads before the chart is reached
-    chartPending.set(canvas, config);
-    chartObserver.observe(canvas);
-  }
+    function sites(n) { return n + (n === 1 ? " site" : " sites"); }
 
-  async function loadDashboard() {
-    const res = await fetch("/api/dashboard-analytics");
-    const d = await res.json();
+    if (!window.Chart) return;
 
-    if (d.empty) {
-      document.getElementById('loading').innerHTML =
-        '<h5>No reforestation data in your jurisdiction</h5>' +
-        '<p>' + d.scope + ' has no imported sites yet.</p>';
-      return;
+    // 1. hectares per year
+    var yearsEl = document.getElementById("cd-years");
+    if (yearsEl && CD.years.length) {
+      new Chart(yearsEl, {
+        type: "line",
+        data: {
+          labels: CD.years.map(function (y) { return String(y.year); }),
+          datasets: [{ label: "Hectares", data: CD.years.map(function (y) { return y.area; }),
+                       fill: true, tension: 0.3, borderColor: "#4f7a5c",
+                       backgroundColor: "rgba(127,168,138,0.25)" }]
+        },
+        options: { responsive: true, maintainAspectRatio: false,
+                   plugins: { legend: { display: false } },
+                   scales: { y: { beginAtZero: true, title: { display: true, text: "ha" } } } }
+      });
     }
 
-    document.getElementById("loading").hidden = true;
-    document.getElementById("dash").hidden = false;
-
-    document.querySelector('.page-header p').textContent =
-      d.scope + ' \u2014 ' + {{ area_label()|tojson }};
-
-
-    buildKpis(d.headline);
-    buildYear(d.by_year);
-    buildArea(d.by_municipality);
-    buildAchievement(d.by_municipality);
-    buildSurvival(d.by_municipality);
-    buildCost(d.by_municipality);
-    buildPlantNext(d);
-    buildSpecies(d.species_rank);
-    document.getElementById("speciesBarangays").textContent =
-      d.barangays_scored.toLocaleString();
-    buildUnplanted(d.unplanted_top);
-  }
-
-  // ---------------- KPIs ----------------
-  /* Lucide, drawn at 24 and scaled down by the tile. Each one names the
-     thing being counted rather than decorating it. */
-  const KPI_ICONS = {
-    trees:
-      '<path d="M10 10v.2A3 3 0 0 1 8.9 16H5a3 3 0 0 1-1-5.8V10a3 3 0 0 1 6 0Z"/><path d="M7 16v6"/><path d="M13 19v3"/><path d="M12 19h8.3a1 1 0 0 0 .7-1.7L18 14h.3a1 1 0 0 0 .7-1.7L16 9h.2a1 1 0 0 0 .8-1.7L13 3l-1.4 1.5"/>',
-    land:
-      '<path d="m12 8 6-3-6-3v10"/><path d="m8 11.99-5.5 3.14a1 1 0 0 0 0 1.74l8.5 4.86a2 2 0 0 0 2 0l8.5-4.86a1 1 0 0 0 0-1.74L16 12"/><path d="m6.49 12.85 11.02 6.3"/><path d="M17.51 12.85 6.5 19.15"/>',
-    sprout:
-      '<path d="M7 20h10"/><path d="M10 20c5.5-2.5.8-6.4 3-10"/><path d="M9.5 9.4c1.1.8 1.8 2.2 2.3 3.7-2 .4-3.5.4-4.8-.3-1.2-.6-2.3-1.9-3-4.2 2.8-.5 4.4 0 5.5.8z"/><path d="M14.1 6a7 7 0 0 0-1.1 4c1.9-.1 3.3-.6 4.3-1.4 1-1 1.6-2.3 1.7-4.6-2.7.1-4 1-4.9 2z"/>',
-    target:
-      '<circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/>',
-    pin:
-      '<path d="M18 8c0 3.613-3.869 7.429-5.393 8.795a1 1 0 0 1-1.214 0C9.87 15.429 6 11.613 6 8a6 6 0 0 1 12 0"/><circle cx="12" cy="8" r="2"/><path d="M8.714 14h-3.71a1 1 0 0 0-.948.683l-2.004 6A1 1 0 0 0 3 22h18a1 1 0 0 0 .948-1.316l-2-6a1 1 0 0 0-.949-.684h-3.712"/>',
-    coins:
-      '<circle cx="8" cy="8" r="6"/><path d="M18.09 10.37A6 6 0 1 1 10.34 18"/><path d="M7 6h1v4"/><path d="m16.71 13.88.7.71-2.82 2.82"/>',
-  };
-
-  function kpiIcon(name) {
-    return (
-      '<span class="kpi-icon" aria-hidden="true"><svg viewBox="0 0 24 24" ' +
-      'fill="none" stroke="currentColor" stroke-width="2" ' +
-      'stroke-linecap="round" stroke-linejoin="round">' +
-      KPI_ICONS[name] +
-      "</svg></span>"
-    );
-  }
-
-  function buildKpis(h) {
-    const cards = [
-      { num: fmt(h.sites), lbl: "Reforestation sites", icon: "trees" },
-      {
-        num: fmt(h.area_ha) + " ha",
-        lbl: "Area under contract",
-        icon: "land",
-      },
-      {
-        num: fmt(h.actual),
-        lbl: "Seedlings planted",
-        sub: "of " + fmt(h.target) + " targeted",
-        icon: "sprout",
-      },
-      {
-        num: (h.achievement || 0) + "%",
-        lbl: "Delivery rate",
-        alert: h.achievement !== null && h.achievement < 90,
-        icon: "target",
-      },
-      {
-        num: h.barangays_covered + " / " + h.barangays_total,
-        lbl: "Barangays covered",
-        sub: h.coverage_pct + "% of the study area",
-        alert: h.coverage_pct < 20,
-        icon: "pin",
-      },
-      {
-        num: h.avg_cost_per_ha ? "\u20B1" + fmt(h.avg_cost_per_ha) : "\u2014",
-        lbl: "Average cost per ha",
-        sub: h.cost_sites + " sites with cost data",
-        icon: "coins",
-      },
-    ];
-
-    document.getElementById("kpiStrip").innerHTML = cards
-      .map(
-        (c) => `
-      <div class="kpi ${c.alert ? "alert" : ""}">
-        <span class="kpi-text">
-          <span class="num">${c.num}</span>
-          <span class="lbl">${c.lbl}</span>
-          ${c.sub ? `<span class="sub">${c.sub}</span>` : ""}
-        </span>
-        ${kpiIcon(c.icon)}
-      </div>`,
-      )
-      .join("");
-  }
-
-  // ---------------- year ----------------
-  function buildYear(rows) {
-    const years = rows.map((r) => r.year);
-    const gaps = [];
-    for (let y = Math.min(...years); y <= Math.max(...years); y++) {
-      if (!years.includes(y)) gaps.push(y);
+    // 2. gauge: a half doughnut
+    var gaugeEl = document.getElementById("cd-gauge");
+    if (gaugeEl && CD.survival !== null) {
+      var s = Math.max(0, Math.min(100, CD.survival));
+      new Chart(gaugeEl, {
+        type: "doughnut",
+        data: { labels: ["Survival", "Gap"],
+                datasets: [{ data: [s, 100 - s], borderWidth: 0,
+                             backgroundColor: [s < CD.target ? ORANGE : GREEN, PALE] }] },
+        options: { responsive: true, maintainAspectRatio: false, rotation: -90,
+                   circumference: 180, cutout: "72%",
+                   plugins: { legend: { display: false }, tooltip: { enabled: false } } }
+      });
     }
 
-    document.getElementById("yearTakeaway").textContent = gaps.length
-      ? `Sites contracted per year. No sites recorded in ${gaps.join(", ")}.`
-      : "Sites contracted per year.";
-
-    mkChart(document.getElementById("chartYear"), {
-      type: "bar",
-      data: {
-        labels: years,
-        datasets: [
-          {
-            label: "Sites",
-            data: rows.map((r) => r.sites),
-            backgroundColor: GREEN,
-            borderRadius: 4,
-            borderSkipped: "bottom",
-          },
-        ],
-      },
-      options: {
-        maintainAspectRatio: false,
-        plugins: { legend: { display: false } },
-        scales: {
-          y: { beginAtZero: true, title: { display: true, text: "Sites" } },
-          x: { grid: { display: false } },
-        },
-      },
-    });
-
-    mkChart(document.getElementById("chartYearArea"), {
-      type: "line",
-      data: {
-        labels: years,
-        datasets: [
-          {
-            label: "Hectares",
-            data: rows.map((r) => Math.round(r.area)),
-            borderColor: INDIGO,
-            backgroundColor: INDIGO,
-            borderWidth: 2,
-            pointRadius: 4,
-            pointHoverRadius: 6,
-            tension: 0.3,
-          },
-        ],
-      },
-      options: {
-        maintainAspectRatio: false,
-        plugins: { legend: { display: false } },
-        scales: {
-          y: { beginAtZero: true, title: { display: true, text: "Hectares" } },
-          x: { grid: { display: false } },
-        },
-      },
-    });
-  }
-
-  // ---------------- area ----------------
-  function buildArea(rows) {
-    const top = rows.slice(0, 12);
-    const share = rows.length
-      ? Math.round(
-          (top.slice(0, 3).reduce((a, r) => a + r.area, 0) /
-            rows.reduce((a, r) => a + r.area, 0)) *
-            100,
-        )
-      : 0;
-
-    document.getElementById("areaTakeaway").textContent =
-      `The three largest municipalities account for ${share}% of all contracted area.`;
-
-    // highlight the three the takeaway sentence is about
-    renderKey("areaKey", GREEN, GREEN_MUTED,
-      `Three largest (${share}% of all contracted area)`, "Other municipalities");
-
-    mkChart(document.getElementById("chartArea"), {
-      type: "bar",
-      data: {
-        labels: top.map((r) => r.municipality),
-        datasets: [
-          {
-            label: "Hectares",
-            data: top.map((r) => r.area),
-            ...emphasis(top.map((r, i) => i < 3), GREEN, GREEN_MUTED),
-            borderRadius: 4,
-            borderSkipped: "start",
-            // a very small area (1 ha against 1,500) still shows as a sliver;
-            // the exact figure is in the tooltip
-            minBarLength: 3,
-          },
-        ],
-      },
-      options: {
-        indexAxis: "y",
-        maintainAspectRatio: false,
-        plugins: {
-          legend: { display: false },
-          tooltip: {
-            callbacks: { label: (c) => `${fmt(c.parsed.x)} ha under contract` },
-          },
-        },
-        scales: { x: { beginAtZero: true } },
-      },
-    });
-  }
-
-  // ---------------- achievement ----------------
-  function buildAchievement(rows) {
-    const d = rows
-      .filter((r) => r.achievement !== null)
-      .sort((a, b) => b.achievement - a.achievement);
-
-    const under = d.filter((r) => r.achievement < 100).length;
-
-    document.getElementById("achievementFinding").innerHTML =
-      `<strong>Finding.</strong> ${under} of ${d.length} municipalities
-       delivered fewer seedlings than contracted. Contract size does not
-       predict delivery &mdash; compare the ranking here against the area
-       chart above.`;
-
-    mkChart(document.getElementById("chartAchievement"), {
-      type: "bar",
-      data: {
-        labels: d.map((r) => r.municipality),
-        datasets: [
-          {
-            label: "Delivery %",
-            data: d.map((r) => r.achievement),
-            backgroundColor: d.map((r) =>
-              r.achievement >= 100 ? OK : r.achievement >= 90 ? AMBER : RED,
-            ),
-            borderRadius: 4,
-            borderSkipped: "bottom",
-          },
-        ],
-      },
-      options: {
-        maintainAspectRatio: false,
-        plugins: { legend: { display: false } },
-        scales: {
-          y: {
-            beginAtZero: true,
-            title: { display: true, text: "% of target planted" },
-          },
-          x: { ticks: { maxRotation: 60, minRotation: 45 } },
-        },
-      },
-    });
-  }
-
-  // ---------------- survival ----------------
-  function buildSurvival(rows) {
-    const d = rows
-      .filter((r) => r.survival !== null)
-      .sort((a, b) => b.survival - a.survival);
-
-    // 85% reference line, drawn as a plugin so it sits above the bars
-    const line85 = {
-      id: "line85",
-      afterDraw(chart) {
-        const { ctx, chartArea, scales } = chart;
-        const y = scales.y.getPixelForValue(85);
+    // a vertical line at the target, for the ranking bar
+    var targetLine = {
+      id: "targetLine",
+      afterDatasetsDraw: function (chart) {
+        var x = chart.scales.x.getPixelForValue(CD.target);
+        var area = chart.chartArea, ctx = chart.ctx;
         ctx.save();
-        ctx.strokeStyle = "#b91c1c";
-        ctx.setLineDash([5, 4]);
-        ctx.lineWidth = 1.5;
-        ctx.beginPath();
-        ctx.moveTo(chartArea.left, y);
-        ctx.lineTo(chartArea.right, y);
-        ctx.stroke();
-        ctx.setLineDash([]);
-        ctx.fillStyle = "#b91c1c";
-        ctx.font = "600 10px sans-serif";
-        ctx.fillText("DENR 85% threshold", chartArea.left + 6, y - 5);
+        ctx.strokeStyle = "#111"; ctx.setLineDash([5, 4]); ctx.lineWidth = 1.5;
+        ctx.beginPath(); ctx.moveTo(x, area.top); ctx.lineTo(x, area.bottom); ctx.stroke();
+        ctx.setLineDash([]); ctx.fillStyle = "#111"; ctx.font = "12px sans-serif";
+        ctx.fillText(CD.target + "% target", x + 4, area.top + 12);
         ctx.restore();
-      },
+      }
     };
 
-    mkChart(document.getElementById("chartSurvival"), {
-      type: "bar",
-      data: {
-        labels: d.map((r) => r.municipality),
-        datasets: [
-          {
-            label: "Survival %",
-            data: d.map((r) => r.survival),
-            backgroundColor: d.map((r) => (r.survival >= 85 ? OK : RED)),
-            borderRadius: 4,
-            borderSkipped: "bottom",
-          },
-        ],
-      },
-      options: {
-        maintainAspectRatio: false,
-        plugins: { legend: { display: false } },
-        scales: {
-          y: { beginAtZero: true, suggestedMax: 100 },
-          x: { ticks: { maxRotation: 60, minRotation: 45 } },
+    // 3. survival by municipality, sorted; labels carry the site count
+    var barEl = document.getElementById("cd-bar");
+    if (barEl && CD.ranked.length) {
+      new Chart(barEl, {
+        type: "bar",
+        data: {
+          labels: CD.ranked.map(function (m) {
+            var tag = !m.judged ? " · Too few sites" : (m.below ? " · below target" : "");
+            return m.municipality + " (" + sites(m.sites) + ")" + tag;
+          }),
+          datasets: [{ data: CD.ranked.map(function (m) { return m.survival || 0; }),
+                       backgroundColor: CD.ranked.map(rowColour) }]
         },
-      },
-      plugins: [line85],
-    });
-  }
-
-  // ---------------- cost ----------------
-  function buildCost(rows) {
-    const d = rows
-      .filter((r) => r.cost_per_ha)
-      .sort((a, b) => b.cost_per_ha - a.cost_per_ha);
-
-    // Average of the municipalities shown, so the line and the bars use
-    // the same figures. Above it is highlighted.
-    const average = d.length
-      ? d.reduce((a, r) => a + r.cost_per_ha, 0) / d.length
-      : 0;
-    const averageLabel = "₱" + fmt(Math.round(average)) + " per ha";
-
-    renderKey("costKey", INDIGO, INDIGO_MUTED,
-      "Above the average", `At or below the average (${averageLabel})`);
-
-    const averageLine = {
-      id: "averageLine",
-      afterDraw(chart) {
-        if (!d.length) return;
-        const { ctx, chartArea, scales } = chart;
-        const y = scales.y.getPixelForValue(average);
-        ctx.save();
-        ctx.strokeStyle = INK;
-        ctx.setLineDash([5, 4]);
-        ctx.lineWidth = 1.5;
-        ctx.beginPath();
-        ctx.moveTo(chartArea.left, y);
-        ctx.lineTo(chartArea.right, y);
-        ctx.stroke();
-        ctx.setLineDash([]);
-        ctx.fillStyle = INK;
-        ctx.font = "600 10px sans-serif";
-        ctx.fillText("Average " + averageLabel, chartArea.left + 6, y - 5);
-        ctx.restore();
-      },
-    };
-
-    mkChart(document.getElementById("chartCost"), {
-      type: "bar",
-      plugins: [averageLine],
-      data: {
-        labels: d.map((r) => r.municipality),
-        datasets: [
-          {
-            label: "Cost per ha",
-            data: d.map((r) => r.cost_per_ha),
-            ...emphasis(d.map((r) => r.cost_per_ha > average), INDIGO, INDIGO_MUTED),
-            borderRadius: 4,
-            borderSkipped: "bottom",
-          },
-        ],
-      },
-      options: {
-        maintainAspectRatio: false,
-        plugins: {
-          legend: { display: false },
-          tooltip: {
-            callbacks: {
-              label: (c) => "\u20B1" + fmt(Math.round(c.parsed.y)) + " per ha",
-            },
-          },
+        options: {
+          indexAxis: "y", responsive: true, maintainAspectRatio: false,
+          plugins: { legend: { display: false },
+                     tooltip: { callbacks: { label: function (ctx) {
+                       var m = CD.ranked[ctx.dataIndex];
+                       if (!m.judged) return "Too few sites: " + m.monitored + " monitored of " + sites(m.sites);
+                       return m.survival + "% survival, " + rowStatus(m);
+                     } } } },
+          scales: { x: { min: 0, max: 100, title: { display: true, text: "Survival %" } } }
         },
-        scales: {
-          y: {
-            beginAtZero: true,
-            ticks: { callback: (v) => "\u20B1" + v / 1000 + "k" },
-          },
-          x: { ticks: { maxRotation: 60, minRotation: 45 } },
-        },
-      },
-    });
-  }
-
-  // ---------------- where to plant next ----------------
-  /* Answers the section's question directly: how many of the most suitable
-     barangays have no site yet, and in which municipalities. It replaced
-     two charts that asked readers to interpret a relationship between
-     suitability and planting (see _plant_next in dashboard.py). */
-  function buildPlantNext(d) {
-    const p = d.plant_next || {};
-    const rows = p.by_municipality || [];
-
-    document.getElementById("plantNextCount").textContent = fmt(p.without_site);
-    document.getElementById("plantNextOf").textContent =
-      `out of ${fmt(p.highly_suitable)} highly suitable barangays`;
-    document.getElementById("plantNextCutoff").textContent =
-      p.cutoff === null || p.cutoff === undefined
-        ? ""
-        : `Highly suitable means a suitability score in the top ` +
-          `${p.top_share_pct}% of all barangays (${p.cutoff.toFixed(3)} or higher).`;
-
-    document.getElementById("plantNextFinding").innerHTML = rows.length
-      ? `<strong>Finding.</strong> ${rows[0].municipality} has the most
-         highly suitable barangays with no site (${fmt(rows[0].barangays)}).
-         The table below lists the most suitable barangays with no site,
-         and the species that suit each one best.`
-      : `<strong>Finding.</strong> Every highly suitable barangay already
-         has a reforestation site.`;
-
-    document.getElementById("plantNextBody").innerHTML = rows
-      .map(
-        (r) => `
-      <tr>
-        <td>${r.municipality}</td>
-        <td class="num-cell">${fmt(r.barangays)}</td>
-      </tr>`,
-      )
-      .join("");
-
-    // One bar per municipality, so the box grows with the list and no
-    // bar is squeezed. Hidden when there is nothing to draw.
-    const box = document.getElementById("plantNextBox");
-    box.style.display = rows.length ? "" : "none";
-    box.style.height = Math.max(160, rows.length * 28 + 50) + "px";
-
-    // Highlight the municipality the Finding names, and any tied with it.
-    const most = rows.length ? rows[0].barangays : 0;
-    const leaders = rows.filter((r) => r.barangays === most);
-    const keyEl = document.getElementById("plantNextKey");
-    if (rows.length) {
-      renderKey("plantNextKey", GREEN, GREEN_MUTED,
-        leaders.length === 1 ? `Most (${leaders[0].municipality})` : "Tied for most",
-        "Other municipalities");
-    } else if (keyEl) {
-      keyEl.innerHTML = "";
+        plugins: [targetLine]
+      });
     }
 
-    mkChart(document.getElementById("chartPlantNext"), {
-      type: "bar",
-      data: {
-        labels: rows.map((r) => r.municipality),
-        datasets: [
-          {
-            label: "Highly suitable barangays with no site",
-            data: rows.map((r) => r.barangays),
-            ...emphasis(rows.map((r) => r.barangays === most), GREEN, GREEN_MUTED),
-            minBarLength: 3,
-            borderRadius: 4,
-            borderSkipped: "start",
-            maxBarThickness: 22,
-          },
-        ],
-      },
-      options: {
-        indexAxis: "y",
-        maintainAspectRatio: false,
-        plugins: {
-          legend: { display: false },
-          tooltip: {
-            callbacks: {
-              label: (c) =>
-                `${fmt(c.parsed.x)} highly suitable barangay` +
-                `${c.parsed.x === 1 ? "" : "s"} with no site`,
-            },
-          },
-        },
-        scales: {
-          x: {
-            beginAtZero: true,
-            ticks: { precision: 0 },
-            title: { display: true, text: "Highly suitable barangays with no site" },
-          },
-        },
-      },
-    });
-  }
+    // 5. cost per hectare against survival
+    var scatterEl = document.getElementById("cd-scatter");
+    if (scatterEl && CD.scatter.show) {
+      new Chart(scatterEl, {
+        type: "scatter",
+        data: { datasets: [{ data: CD.scatter.points,
+                             backgroundColor: CD.scatter.points.map(function (p) {
+                               return p.y < CD.target ? ORANGE : GREEN; }),
+                             pointRadius: 6 }] },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: { legend: { display: false },
+                     tooltip: { callbacks: { label: function (ctx) {
+                       var p = CD.scatter.points[ctx.dataIndex];
+                       return p.label + " (" + sites(p.sites) + "): PHP " +
+                              Math.round(p.x).toLocaleString() + "/ha, " + p.y + "% survival";
+                     } } } },
+          scales: { x: { title: { display: true, text: "Cost per hectare (PHP)" } },
+                    y: { min: 0, max: 100, title: { display: true, text: "Survival %" } } }
+        }
+      });
+    }
+  })();
 
-  // ---------------- species ----------------
-  function buildSpecies(rows) {
-    renderKey("speciesKey", GREEN, GREEN_MUTED,
-      "Five most often recommended", "Other species");
+  // 4. choropleth: municipality outlines (districtN.geojson, NAME_2)
+  (function () {
+    var el = document.getElementById("cd-map");
+    if (!el || !window.L) return;
+    var CD = {{ {"munis": c.munis, "titles": c.map_titles, "districts": districts, "target": c.target}|tojson }};
+    var ORANGE = "#ea580c", GREEN = "#7fa88a", GREY = "#c4c4c4", PALE = "#f3f4f3";
+    var SIMULATED = "#9fb3c8";
 
-    mkChart(document.getElementById("chartSpecies"), {
-      type: "bar",
-      data: {
-        labels: rows.map((r) => r.species),
-        datasets: [
-          {
-            label: "Barangays in top 5",
-            data: rows.map((r) => r.count),
-            ...emphasis(rows.map((r, i) => i < 5), GREEN, GREEN_MUTED),
-            borderRadius: 4,
-            borderSkipped: "start",
-          },
-        ],
-      },
-      options: {
-        indexAxis: "y",
-        maintainAspectRatio: false,
-        plugins: {
-          legend: { display: false },
-          tooltip: {
-            callbacks: {
-              label: (c) => `In the top five of ${fmt(c.parsed.x)} barangays`,
-            },
-          },
-        },
-        scales: { x: { beginAtZero: true } },
-      },
-    });
-  }
+    function key(name) {
+      var k = String(name || "").toLowerCase().replace(/[^a-z]/g, "");
+      return k === "pozzorubio" ? "pozorrubio" : k;
+    }
+    var byName = {};
+    CD.munis.forEach(function (m) { byName[key(m.municipality)] = m; });
+    var maxArea = Math.max.apply(null, CD.munis.map(function (m) { return m.area || 0; }).concat([1]));
 
-  // ---------------- unplanted table ----------------
-  function buildUnplanted(rows) {
-    document.getElementById("unplantedBody").innerHTML = rows
-      .map(
-        (r) => `
-      <tr>
-        <td class="fw-semibold">${r.barangay}</td>
-        <td class="text-secondary small">${r.municipality}</td>
-        <td class="num-cell fw-semibold">${r.suitability}</td>
-        <td>
-          <div>${r.top_species}</div>
-          ${
-            r.second_species
-              ? `<div class="text-secondary small">${r.second_species}</div>`
-              : ""
-          }
-        </td>
-      </tr>`,
-      )
-      .join("");
-  }
+    var metric = "survival";
+    function shade(t) { // 0..1 -> light to dark muted green
+      var a = 0.15 + 0.75 * Math.max(0, Math.min(1, t));
+      return "rgba(79,122,92," + a.toFixed(2) + ")";
+    }
+    function style(feature) {
+      var m = byName[key(feature.properties.NAME_2)];
+      var fill = PALE;
+      if (m && m.simulated) {
+        // simulated: drawn, never judged, always labelled
+        return { color: "#555", weight: 1, dashArray: "4 3", fillColor: SIMULATED, fillOpacity: 0.6 };
+      }
+      if (m) {
+        if (metric === "survival") fill = !m.judged ? GREY : (m.below ? ORANGE : GREEN);
+        else if (metric === "area") fill = shade((m.area || 0) / maxArea);
+        else fill = m.achievement === null ? GREY : shade(m.achievement / 100);
+      }
+      return { color: "#555", weight: 1, fillColor: fill, fillOpacity: 0.85 };
+    }
+    function label(feature) {
+      var name = feature.properties.NAME_2;
+      var m = byName[key(name)];
+      if (!m) return name + ": no sites";
+      var n = m.sites + (m.sites === 1 ? " site" : " sites");
+      if (m.simulated) return name + ": Simulated (" + n + "), demonstration only";
+      if (m.mixed) name = name + " (includes simulated)";
+      if (metric === "survival") {
+        if (!m.judged) return name + ": too few sites (" + m.monitored + " monitored of " + n + ")";
+        return name + ": " + m.survival + "% survival, " + (m.below ? "below" : "meets") + " target, " + n;
+      }
+      if (metric === "area") return name + ": " + (m.area || 0).toLocaleString() + " ha, " + n;
+      return name + ": " + (m.achievement === null ? "no delivery figure" : m.achievement + "% delivered") + ", " + n;
+    }
+    function legend() {
+      var html = metric === "survival"
+        ? '<span style="--swatch:' + ORANGE + '">Below ' + CD.target + '% target</span>' +
+          '<span style="--swatch:' + GREEN + '">Meets the target</span>' +
+          '<span style="--swatch:' + GREY + '">Too few sites</span>'
+        : '<span style="--swatch:' + shade(0.1) + '">Less</span><span style="--swatch:' + shade(1) + '">More</span>';
+      html += '<span style="--swatch:' + SIMULATED + '">Simulated</span>';
+      html += '<span style="--swatch:' + PALE + '">No sites</span>';
+      document.getElementById("cd-map-key").innerHTML = html;
+    }
 
-  loadDashboard();
-
-  /* Base.html fires this when the theme toggle is used. The datasets carry
-     their own colours, so the charts are rebuilt rather than nudged. */
-  window.addEventListener("pno-theme-change", function () {
-    applyChartTheme();
-    loadDashboard();
-  });
-</script>
-{% block extra_scripts %}
-<script>
-  /* The clock is always Manila time, whatever the machine is set to, so
-     the parts are read out of a formatter pinned to that zone rather than
-     off the local Date. Splitting them lets the hour and minute carry the
-     reading while the seconds tick quietly underneath. */
-  const CLOCK_PARTS = new Intl.DateTimeFormat("en-PH", {
-    timeZone: "Asia/Manila",
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-    hour12: true,
-  });
-
-  const CLOCK_DATE = new Intl.DateTimeFormat("en-PH", {
-    timeZone: "Asia/Manila",
-    weekday: "long",
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
-
-  const CLOCK_HANDS = {
-    h: document.getElementById("clock-hand-h"),
-    m: document.getElementById("clock-hand-m"),
-    s: document.getElementById("clock-hand-s"),
-  };
-
-  function setHand(el, deg) {
-    if (el) el.setAttribute("transform", "rotate(" + deg + " 24 24)");
-  }
-
-  function updateDashboardClock() {
-    const now = new Date();
-    const part = {};
-    CLOCK_PARTS.formatToParts(now).forEach(function (p) {
-      part[p.type] = p.value;
+    var map = L.map(el, { scrollWheelZoom: false, attributionControl: false });
+    var group = L.featureGroup().addTo(map);
+    var layers = [];
+    Promise.all(CD.districts.map(function (d) {
+      return fetch(d.url).then(function (r) { return r.json(); }).catch(function () { return null; });
+    })).then(function (files) {
+      files.forEach(function (gj) {
+        if (!gj) return;
+        var layer = L.geoJSON(gj, { style: style, onEachFeature: function (f, lyr) {
+          lyr.bindTooltip(function () { return label(f); });
+        } });
+        layer.addTo(group);
+        layers.push(layer);
+      });
+      if (group.getLayers().length) map.fitBounds(group.getBounds(), { padding: [8, 8] });
+      else map.setView([15.95, 120.4], 9);
+      legend();
     });
 
-    /* "09:05" reads as a timestamp; a wall clock drops the leading zero. */
-    document.getElementById("clock-hm").textContent =
-      String(parseInt(part.hour, 10)) + ":" + part.minute;
-    document.getElementById("clock-sec").textContent = ":" + part.second;
-    document.getElementById("clock-meridiem").textContent =
-      (part.dayPeriod || "").toUpperCase();
-
-    /* Hands tick like a quartz movement: one step a second, no sweep, so
-       the second hand never spins backwards when it wraps past twelve. */
-    const h = parseInt(part.hour, 10) % 12;
-    const m = parseInt(part.minute, 10);
-    const s = parseInt(part.second, 10);
-    setHand(CLOCK_HANDS.h, h * 30 + m * 0.5);
-    setHand(CLOCK_HANDS.m, m * 6 + s * 0.1);
-    setHand(CLOCK_HANDS.s, s * 6);
-
-    const dateEl = document.getElementById("clock-date");
-    const dateStr = CLOCK_DATE.format(now);
-    /* Only touch the DOM when the day actually turns over. */
-    if (dateEl.textContent !== dateStr) dateEl.textContent = dateStr;
-  }
-
-  /* Scheduled against the top of each real second rather than a free-running
-     interval, so the display never lags the system clock by most of a
-     second, and never drifts. */
-  (function tickDashboardClock() {
-    updateDashboardClock();
-    setTimeout(tickDashboardClock, 1000 - (Date.now() % 1000) + 5);
+    document.querySelectorAll(".cd-toggle button").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        metric = btn.dataset.metric;
+        document.querySelectorAll(".cd-toggle button").forEach(function (b) {
+          b.setAttribute("aria-pressed", String(b === btn));
+        });
+        layers.forEach(function (l) { l.setStyle(style); });
+        document.getElementById("cd-map-title").textContent = CD.titles[metric];
+        legend();
+      });
+    });
   })();
 </script>
-{% endblock %} {% endblock %}
+{% endblock %}

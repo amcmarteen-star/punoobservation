@@ -144,11 +144,11 @@ def run(app):
     page = leader_c.get('/dashboard').get_data(as_text=True)
     check("1 a leader gets the action queue", 'Needs your action' in page)
     page = cenro_c.get('/dashboard').get_data(as_text=True)
-    check('1 CENRO staff keep the analytics page',
-          'api/dashboard-analytics' in page)
-    check('1 a member page does not load the admin chart script',
-          'api/dashboard-analytics' not in indiv_c.get('/dashboard').get_data(
-              as_text=True))
+    check('1 CENRO staff get the CENRO dashboard',
+          'class="cd-story"' in page)
+    member_page = indiv_c.get('/dashboard').get_data(as_text=True)
+    check('1 a member page does not load the admin charts',
+          'cd-gauge' not in member_page and 'chart.umd' not in member_page)
 
     check('2 normal user: analytics endpoint 403',
           indiv_c.get('/api/dashboard-analytics').status_code == 403)

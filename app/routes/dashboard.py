@@ -20,6 +20,8 @@ from app.services.request_timeline import build_timeline, can_see_request
 from app.services.dashboard_data import (
     leader_context, member_context, officer_context,
 )
+from app.services.cenro_dashboard import build_context, waiting_counts
+from app.utils.simulated import simulated_municipalities
 from app.services.notification_links import notification_url
 from sqlalchemy import func
 from collections import defaultdict
@@ -162,15 +164,20 @@ def _home_dashboard():
 def index():
     if session.get('role') not in ('admin', 'superadmin'):
         return _home_dashboard()
-    total_sites = db.session.query(func.count(Site.site_id)).scalar() or 0
-    total_trees = db.session.query(func.sum(ReforestationRecord.target_quantity)).scalar() or 0
-    total_reports = db.session.query(func.count(MonitoringReport.report_id)).scalar() or 0
-
+    # CENRO and provincial staff. The figures come from the analytics
+    # endpoint, already limited to the user's CENRO (the province for
+    # provincial staff and superadmins).
+    analytics = api_dashboard_analytics().get_json()
+    cenro = current_cenro()
+    scope_name = f"CENRO {cenro}" if cenro else "the province"
+    districts, _barangays, _areas = _map_files()
     return render_template(
         'Dashboard.html',
-        total_sites=total_sites,
-        total_trees=total_trees,
-        total_reports=total_reports
+        active_page='dashboard',
+        c=build_context(analytics, scope_name),
+        waiting=waiting_counts(),
+        districts=districts,
+        scope_name=scope_name,
     )
 
 @dashboard_bp.route('/gis-map')
@@ -202,6 +209,9 @@ def gis_map():
         barangay_urls=barangay_urls,
         # The area filter's choices, west to east.
         map_areas=map_areas,
+        # drawn dashed and labelled "Simulated", as on the dashboard map
+        simulated_munis=simulated_municipalities(),
+        mixed_munis=simulated_municipalities(mixed=True),
         request_mode=request_mode,
         request_config={
             "requestTypes": list(REQUEST_TYPES),

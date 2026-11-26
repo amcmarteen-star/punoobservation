@@ -794,6 +794,11 @@
           {# The one place flashes are rendered. Pages must not repeat this:
              get_flashed_messages returns the same list every time it is
              called within a request, so a second call prints them twice. #}
+          {% if shows_simulated %}
+          <div class="um-alert um-alert-info" role="note">
+            <span class="um-alert-text">Includes simulated data for districts without real records. Simulated figures are for demonstration only.</span>
+          </div>
+          {% endif %}
           {% if org_status == 'pending' %}
           <div class="um-alert um-alert-warning" role="status">
             <span class="um-alert-text">Waiting for your leader to approve you.</span>

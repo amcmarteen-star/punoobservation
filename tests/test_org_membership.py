@@ -305,8 +305,11 @@ def run(app):
     import re as _re
     login(client, s['cenro_admin'])
     html = client.get('/org/organizations').get_data(as_text=True)
-    row = _re.search(r'Synthetic Org A.*?</tr>', html, _re.S).group(0)
-    nums = [int(n) for n in _re.findall(r'<td>(\d+)</td>', row)]
+    # read the row's data attributes, not the cell layout
+    tag = _re.search(r'<tr[^>]*data-org="Synthetic Org A"[^>]*>', html, _re.S)
+    attrs = dict(_re.findall(r'data-(members|leaders|waiting)="(\d+)"',
+                             tag.group(0))) if tag else {}
+    nums = [int(attrs.get(k, -1)) for k in ('members', 'leaders', 'waiting')]
     check('13 waiting count counts verified pending people only',
           nums == [3, 1, 0], f'members, leaders, waiting = {nums}')
     login(client, s['provincial'])

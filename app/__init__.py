@@ -142,6 +142,13 @@ def create_app():
             new_only = mode == 'new'
         return {"tour_due": due, "tour_new_only": new_only}
 
+    # The simulated-data banner, on the pages that list sites or
+    # organizations, when what the user can see includes simulated rows.
+    @app.context_processor
+    def _simulated_banner():
+        from app.utils.simulated import page_shows_simulated
+        return {"shows_simulated": page_shows_simulated(request.endpoint)}
+
     # Organization membership for the sidebar and the pending banner.
     @app.context_processor
     def _org_context():
