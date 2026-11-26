@@ -97,8 +97,8 @@ def tiles_for(fig):
     return [
         {'label': 'Sites', 'value': f"{fig['sites']:,}",
          'sub': 'official sites', 'tone': 'neutral'},
-        {'label': 'Seedlings planted', 'value': f"{fig['actual']:,}",
-         'sub': f"of {fig['target']:,} targeted", 'tone': 'neutral'},
+        {'label': 'Seedlings (contracted)', 'value': f"{fig['target']:,}",
+         'sub': 'in the contracts', 'tone': 'neutral'},
         survival,
     ]
 

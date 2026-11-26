@@ -45,6 +45,12 @@ def create_app():
     app.jinja_env.globals['notification_url'] = notification_url
     app.jinja_env.globals['area_label'] = area_label
 
+    # Role words, one source: app/utils/roles.py.
+    from app.utils import roles
+    for _name in ('system_role_label', 'org_position_label',
+                  'user_role_label', 'user_org_label'):
+        app.jinja_env.globals[_name] = getattr(roles, _name)
+
     # Map tile sources, from app/config.py. Base.html hands them to every
     # page's JavaScript as MAP_TILES, so no template hard-codes a server.
     # sampling_rule / sampling_plan: the DENR survey rule (whole-site count

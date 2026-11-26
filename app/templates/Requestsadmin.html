@@ -356,7 +356,7 @@ active_page = 'review_requests' %} {% block extra_head %}
           <td>
             {% if r.requester %}
             <div class="fw-semibold">{{ r.requester.username }}</div>
-            <div class="req-cell-secondary">{{ r.requester.role }}</div>
+            <div class="req-cell-secondary">{{ user_role_label(r.requester) }}</div>
             {% else %} &mdash; {% endif %}
           </td>
           <td>

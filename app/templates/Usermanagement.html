@@ -3,10 +3,12 @@ endblock %} {% block content_class %}page-content-wide{% endblock %} {% set
 active_page = 'users' %} {% block extra_head %}
 <style>
   /* Five columns now: name and email share the first one. */
-  .um-table col.col-user { width: 34%; }
-  .um-table col.col-role { width: 20%; }
-  .um-table col.col-cenro { width: 22%; }
-  .um-table col.col-status { width: 16%; }
+  .um-table col.col-user { width: 26%; }
+  .um-table col.col-role { width: 18%; }
+  .um-table col.col-org { width: 22%; }
+  .um-table col.col-cenro { width: 14%; }
+  .um-table col.col-status { width: 12%; }
+  .um-org-note { display: block; margin-top: 0.2rem; font-size: 0.72rem; color: var(--text-2); }
   .um-table col.col-actions { width: 8%; }
 
   /* Status, Jurisdiction and Role sit together on the right. */
@@ -226,7 +228,7 @@ active_page = 'users' %} {% block extra_head %}
         name="q"
         class="um-search-input"
         aria-label="Search users"
-        placeholder="Search username, email, or role..."
+        placeholder="Search username, email, role, or organization..."
         value="{{ search }}"
       />
     </form>
@@ -280,9 +282,9 @@ active_page = 'users' %} {% block extra_head %}
       <div class="um-filter-menu um-filter-menu-end" role="menu">
         <button type="button" role="menuitem" data-value="all" class="active"><span>All roles</span><span class="um-filter-count"></span></button>
         <button type="button" role="menuitem" data-value="superadmin"><span>System Administrator</span><span class="um-filter-count"></span></button>
-        <button type="button" role="menuitem" data-value="admin"><span>Administrator</span><span class="um-filter-count"></span></button>
+        <button type="button" role="menuitem" data-value="admin"><span>CENRO / Provincial Administrator</span><span class="um-filter-count"></span></button>
         <button type="button" role="menuitem" data-value="field_officer"><span>Field Officer</span><span class="um-filter-count"></span></button>
-        <button type="button" role="menuitem" data-value="normal_user"><span>Normal User</span><span class="um-filter-count"></span></button>
+        <button type="button" role="menuitem" data-value="normal_user"><span>User</span><span class="um-filter-count"></span></button>
       </div>
     </div>
   </div>
@@ -293,6 +295,7 @@ active_page = 'users' %} {% block extra_head %}
     <colgroup>
       <col class="col-user" />
       <col class="col-role" />
+      <col class="col-org" />
       <col class="col-cenro" />
       <col class="col-status" />
       <col class="col-actions" />
@@ -300,7 +303,8 @@ active_page = 'users' %} {% block extra_head %}
     <thead>
       <tr>
         <th>User</th>
-        <th>Role</th>
+        <th>System role</th>
+        <th>Partner organization<span class="um-org-note">Leaders are appointed by CENRO on the organization page.</span></th>
         <th>Jurisdiction</th>
         <th>Status</th>
         <th class="um-actions-cell"><span class="um-sr-only">Actions</span></th>
@@ -325,17 +329,17 @@ active_page = 'users' %} {% block extra_head %}
             </span>
           </div>
         </td>
-        <td data-label="Role">
-          {% if u.role == 'superadmin' %}
-          <span class="um-role role-admin">System Administrator</span>
-          {% elif u.role == 'admin' and u.cenro %}
-          <span class="um-role role-admin">CENRO Administrator</span>
-          {% elif u.role == 'admin' %}
-          <span class="um-role role-admin">Provincial Administrator</span>
-          {% elif u.role == 'field_officer' %}
-          <span class="um-role role-officer">Field Officer</span>
+        <td data-label="System role">
+          <span class="um-role {% if u.role in ['admin', 'superadmin'] %}role-admin{% elif u.role == 'field_officer' %}role-officer{% else %}role-user{% endif %}">{{ user_role_label(u) }}</span>
+        </td>
+        <td data-label="Partner organization">
+          {% set _org_lbl = user_org_label(u) %}
+          {% if _org_lbl and u.organization_id %}
+          <a class="um-role role-user" href="{{ url_for('organization.org_members_page', org_id=u.organization_id) }}">{{ _org_lbl }}</a>
+          {% elif _org_lbl %}
+          <span class="text-secondary small">{{ _org_lbl }}</span>
           {% else %}
-          <span class="um-role role-user">Normal User</span>
+          <span class="text-secondary small">&mdash;</span>
           {% endif %}
         </td>
         <td data-label="Jurisdiction">
@@ -389,7 +393,7 @@ active_page = 'users' %} {% block extra_head %}
                 type="button"
                 role="menuitem"
                 class="is-danger"
-                onclick="umCloseRowMenu(); umConfirmToggle('{{ u.username|e }}', '{{ u.role|replace('_', ' ')|title }}', '{{ url_for('admin.deactivate_user', user_id=u.user_id) }}', false)"
+                onclick="umCloseRowMenu(); umConfirmToggle('{{ u.username|e }}', '{{ user_role_label(u)|e }}', '{{ url_for('admin.deactivate_user', user_id=u.user_id) }}', false)"
               >
                 Deactivate account&hellip;
               </button>
@@ -397,7 +401,7 @@ active_page = 'users' %} {% block extra_head %}
               <button
                 type="button"
                 role="menuitem"
-                onclick="umCloseRowMenu(); umConfirmToggle('{{ u.username|e }}', '{{ u.role|replace('_', ' ')|title }}', '{{ url_for('admin.reactivate_user', user_id=u.user_id) }}', true)"
+                onclick="umCloseRowMenu(); umConfirmToggle('{{ u.username|e }}', '{{ user_role_label(u)|e }}', '{{ url_for('admin.reactivate_user', user_id=u.user_id) }}', true)"
               >
                 Reactivate account
               </button>
@@ -406,7 +410,7 @@ active_page = 'users' %} {% block extra_head %}
                 type="button"
                 role="menuitem"
                 class="is-danger"
-                onclick="umCloseRowMenu(); umOpenDeleteAccount('{{ u.username|e }}', '{{ u.role|replace('_', ' ')|title }}', '{{ url_for('admin.delete_user', user_id=u.user_id) }}')"
+                onclick="umCloseRowMenu(); umOpenDeleteAccount('{{ u.username|e }}', '{{ user_role_label(u)|e }}', '{{ url_for('admin.delete_user', user_id=u.user_id) }}')"
               >
                 Delete account&hellip;
               </button>
@@ -417,7 +421,7 @@ active_page = 'users' %} {% block extra_head %}
       </tr>
       {% endfor %}
       <tr class="um-nomatch" id="um-nomatch" hidden>
-        <td colspan="5">
+        <td colspan="6">
           <span class="um-nomatch-icon" aria-hidden="true">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="7" r="4" /><path d="M10.3 15H7a4 4 0 0 0-4 4v2" /><circle cx="17" cy="17" r="3" /><path d="m21 21-1.9-1.9" /></svg>
           </span>
@@ -721,9 +725,9 @@ active_page = 'users' %} {% block extra_head %}
           <label for="um-role">Role</label>
           <select id="um-role" name="role">
             <option value="field_officer">Field Officer</option>
-            <option value="normal_user">Normal User</option>
+            <option value="normal_user">User</option>
             {% if is_super %}
-            <option value="admin">Administrator</option>
+            <option value="admin">Administrator (CENRO or Provincial, by jurisdiction)</option>
             <option value="superadmin">System Administrator</option>
             {% endif %}
           </select>

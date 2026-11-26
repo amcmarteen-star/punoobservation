@@ -61,10 +61,10 @@
 </div>
 
 <div class="um-panel">
-  <div class="um-panel-head"><h3>Seedlings planted per year</h3></div>
+  <div class="um-panel-head"><h3>Seedlings contracted per year</h3></div>
   <div style="padding: 1.25rem;">
     {% if d.years %}
-      <div style="position: relative; height: 260px;"><canvas id="years-chart" aria-label="Seedlings planted per year"></canvas></div>
+      <div style="position: relative; height: 260px;"><canvas id="years-chart" aria-label="Seedlings contracted per year"></canvas></div>
     {% else %}
       <p>No sites with a planting year yet.</p>
     {% endif %}
@@ -80,7 +80,7 @@
     {% if d.rows %}
     <table class="um-table">
       <thead>
-        <tr><th>Site</th><th>Barangay</th><th>Target</th><th>Planted</th><th>Survival</th><th>Status</th></tr>
+        <tr><th>Site</th><th>Barangay</th><th>Contracted seedlings</th><th>Survival</th><th>Status</th></tr>
       </thead>
       <tbody>
         {% for r in d.rows %}
@@ -88,7 +88,6 @@
           <td>{{ r.name }}</td>
           <td>{{ r.barangay }}</td>
           <td>{{ '{:,}'.format(r.target) }}</td>
-          <td>{{ '{:,}'.format(r.actual) }}</td>
           <td>{{ r.survival }}</td>
           <td>{% if r.under_review %}Under review{% else %}Official{% endif %}</td>
         </tr>
@@ -129,8 +128,7 @@
       data: {
         labels: years.map(function (y) { return String(y.year); }),
         datasets: [
-          { label: "Planted", data: years.map(function (y) { return y.actual; }), tension: 0.3 },
-          { label: "Targeted", data: years.map(function (y) { return y.target; }), borderDash: [6, 4], tension: 0.3 }
+          { label: "Contracted", data: years.map(function (y) { return y.target; }), tension: 0.3 }
         ]
       },
       options: { responsive: true, maintainAspectRatio: false }

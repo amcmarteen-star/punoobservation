@@ -1,4 +1,4 @@
-{% from 'partials/_assets.html' import asset_v %}<!DOCTYPE html>
+{% from 'partials/_assets.html' import asset_v %}{% from 'partials/_place_picker.html' import place_picker %}<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -12,6 +12,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css', v=asset_v) }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/auth.css', v=asset_v) }}">
+    <script src="{{ url_for('static', filename='js/place-picker.js', v=asset_v) }}"></script>
 </head>
 <body class="lg-body">
     <span class="lg-orb o1" aria-hidden="true"></span>
@@ -156,33 +157,13 @@
 
                     <fieldset class="lg-step" data-step="2" hidden>
                         <legend class="visually-hidden">Location</legend>
-                        {# register.js fills each list from the one before it. #}
-                        <div class="lg-field">
-                            <label for="reg_province">Province</label>
-                            <div class="lg-input">
-                                <select id="reg_province" required>
-                                    <option value="">Choose a province</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        <div class="lg-field">
-                            <label for="reg_municipality">Municipality / City</label>
-                            <div class="lg-input">
-                                <select id="reg_municipality" required disabled>
-                                    <option value="">Choose a province first</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        <div class="lg-field">
-                            <label for="location_id">Barangay</label>
-                            <div class="lg-input">
-                                <select name="location_id" id="location_id" required disabled>
-                                    <option value="">Choose a municipality first</option>
-                                </select>
-                            </div>
-                        </div>
+                        {# The shared place picker. Pangasinan is the only province,
+                           so there is no province box. #}
+                        {{ place_picker(places=locations, id_name='location_id',
+                                        selected_id=form.get('location_id', ''),
+                                        required=true, field_class='lg-field',
+                                        input_wrap='lg-input',
+                                        muni_label='Municipality / City') }}
 
                         <div class="lg-step-actions">
                             <button type="button" class="lg-step-back" id="regBack">Back</button>
@@ -196,12 +177,7 @@
         </main>
     </div>
 
-    <script id="register-data" type="application/json">
-        {{ {"locations": locations,
-            "location_id": form.get("location_id", "")} | tojson }}
-    </script>
     <script src="{{ url_for('static', filename='javascript/script.js') }}"></script>
-    <script src="{{ url_for('static', filename='javascript/register.js', v=asset_v) }}"></script>
     <script>
       /* Step 1 must be valid, and the passwords must match, before step 2
          opens. Back returns to step 1 with everything kept. */

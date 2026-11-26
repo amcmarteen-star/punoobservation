@@ -85,7 +85,7 @@
           <td>
             {% if r.officer %}
               <div class="sites-name-cell">{{ r.officer.username }}</div>
-              <div class="text-secondary small">{{ r.officer.role }}</div>
+              <div class="text-secondary small">{{ user_role_label(r.officer) }}</div>
             {% else %}
               <span class="text-secondary">&mdash;</span>
             {% endif %}

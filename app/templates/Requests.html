@@ -1,3 +1,4 @@
+{% from 'partials/_place_picker.html' import place_picker %}
 {% extends "Base.html" %} {% block title %}Request Reforestation Site -
 PuNoObservation{% endblock %} {% block content_class %}page-content-wide{%
 endblock %} {% set active_page = 'requests' %} {% block extra_head %}
@@ -631,22 +632,8 @@ endblock %} {% set active_page = 'requests' %} {% block extra_head %}
           <h4 class="req-section-title">Where is the site?</h4>
 
           <div class="req-grid-2">
-            <div class="um-field">
-              <label for="municipality">Municipality <span class="req-required">*</span></label>
-              <select name="municipality" id="municipality" required>
-                <option value="">Choose a municipality</option>
-                {% for m in municipalities %}
-                <option value="{{ m }}">{{ m }}</option>
-                {% endfor %}
-              </select>
-            </div>
-
-            <div class="um-field">
-              <label for="barangay">Barangay <span class="req-required">*</span></label>
-              <select name="barangay" id="barangay" required disabled>
-                <option value="">Pick a municipality first</option>
-              </select>
-            </div>
+            {{ place_picker(places=request_places, required=true,
+                            star=' <span class="req-required">*</span>') }}
           </div>
 
           {# What was marked on the GIS map. Everything here comes from
@@ -937,8 +924,9 @@ endblock %} {% set active_page = 'requests' %} {% block extra_head %}
     const RECOMMEND_PAGE_URL = "{{ url_for('dashboard.recommendations') }}";
 
     const form = document.getElementById("req-add-form");
-    const muniSelect = document.getElementById("municipality");
-    const brgySelect = document.getElementById("barangay");
+    // the shared place picker (static/js/place-picker.js)
+    const placeRoot = document.getElementById("place-picker");
+    const place = window.PlacePicker.get(placeRoot);
     const typeSelect = document.getElementById("request_type");
     const areaInput = document.getElementById("proposed_area_ha");
     const areaHelp = document.getElementById("req-area-help");
@@ -1008,8 +996,8 @@ endblock %} {% set active_page = 'requests' %} {% block extra_head %}
       if (siteInput.value) {
         q.set("site", siteInput.value);
         q.set("site_name", siteName);
-        q.set("muni", muniSelect.value);
-        q.set("brgy", brgySelect.value);
+        q.set("muni", place.municipality());
+        q.set("brgy", place.barangay());
         if (siteArea) q.set("area", siteArea);
       }
       return GIS_URL + "?" + q.toString();
@@ -1060,57 +1048,16 @@ endblock %} {% set active_page = 'requests' %} {% block extra_head %}
       updateEstimate();
     }
 
-    // ---- dropdowns --------------------------------------------------------
-
-    // Municipality picked -> load that municipality's barangays.
-    async function loadBarangays(municipality) {
-      if (!municipality) {
-        brgySelect.innerHTML = '<option value="">Pick a municipality first</option>';
-        brgySelect.disabled = true;
-        return;
-      }
-
-      brgySelect.innerHTML = '<option value="">Loading...</option>';
-      brgySelect.disabled = true;
-
-      try {
-        const res = await fetch("/api/barangays/" + encodeURIComponent(municipality));
-        const names = await res.json();
-        brgySelect.innerHTML =
-          '<option value="">Choose a barangay</option>' +
-          names.map(function (n) {
-            return '<option value="' + esc(n) + '">' + esc(n) + "</option>";
-          }).join("");
-        brgySelect.disabled = false;
-      } catch (err) {
-        console.error(err);
-        brgySelect.innerHTML = '<option value="">Could not load barangays</option>';
-      }
-    }
-
-    // Choose an option by name, ignoring spacing and case: the map spells
-    // "SanManuel" where the database has "San Manuel".
-    function selectByName(select, name) {
-      const option = Array.from(select.options).find(function (o) {
-        return o.value && norm(o.value) === norm(name);
-      });
-      select.value = option ? option.value : "";
-      return !!option;
-    }
-
-    muniSelect.addEventListener("change", function () {
+    // ---- place picker ------------------------------------------------------
+    // A new municipality or barangay clears whatever was marked on the map.
+    placeRoot.addEventListener("place:municipality", function () {
       if (hasMark() || siteInput.value) clearMark();
       hideSpecies();
-      loadBarangays(this.value);
     });
 
-    brgySelect.addEventListener("change", function () {
+    placeRoot.addEventListener("place:barangay", function (e) {
       if (hasMark() || siteInput.value) clearMark();
-      if (!brgySelect.value) {
-        hideSpecies();
-        return;
-      }
-      loadSpecies(muniSelect.value, brgySelect.value);
+      loadSpecies(e.detail.municipality, e.detail.barangay);
     });
 
     typeSelect.addEventListener("change", function () {
@@ -1297,10 +1244,10 @@ endblock %} {% set active_page = 'requests' %} {% block extra_head %}
       renderPlace();
       updateEstimate();
 
-      if (q.get("muni") && selectByName(muniSelect, q.get("muni"))) {
-        await loadBarangays(muniSelect.value);
-        if (q.get("brgy") && selectByName(brgySelect, q.get("brgy"))) {
-          loadSpecies(muniSelect.value, brgySelect.value);
+      const found = q.get("muni") ? place.setByName(q.get("muni"), q.get("brgy")) : null;
+      if (found && found.municipality) {
+        if (found.barangay) {
+          loadSpecies(place.municipality(), place.barangay());
         } else if (q.get("brgy")) {
           placeHelp.textContent = 'Choose the barangay from the list. "' + q.get("brgy") + '" is not in it.';
         }

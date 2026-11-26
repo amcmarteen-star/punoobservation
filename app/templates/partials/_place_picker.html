@@ -1,0 +1,100 @@
+{# The shared place picker: type-to-search municipality and barangay boxes.
+   The script is static/js/place-picker.js; load it in the page's head.
+
+   Two modes:
+
+   1. places given (Register, My Account, New Request): the boxes are joined
+      on the page. places is a list of {id, municipality, barangay}.
+        id_name    a hidden input with the picked location id (Register,
+                   My Account); the text boxes are then not submitted
+        muni_name / brgy_name   the submitted names when there is no id_name
+        municipality_only       just the municipality box
+
+   2. no places (Species Recommendation): the page fills the lists itself,
+      from municipalities and barangays, and wires the boxes to its own
+      loading. The element ids stay municipality / barangay so the page's
+      partial reload keeps working.
+
+   Usage:
+     {% from 'partials/_place_picker.html' import place_picker %}
+     {{ place_picker(places=places, id_name='location_id', selected_id=...) }}
+#}
+{% macro place_picker(places=none, municipalities=none, barangays=none,
+                      prefix='', muni_name='municipality', brgy_name='barangay',
+                      id_name=none, selected_muni='', selected_brgy='',
+                      selected_id='', required=false, municipality_only=false,
+                      muni_label='Municipality', brgy_label='Barangay',
+                      field_class='um-field', star='', input_wrap='') %}
+{% if places is not none and selected_id %}
+  {% set found = places | selectattr('id', 'equalto', selected_id | int) | list %}
+  {% if found %}{% set selected_muni = found[0].municipality %}{% set selected_brgy = found[0].barangay %}{% endif %}
+{% endif %}
+<style>
+  .place-picker { display: contents; }
+  .place-combo { position: relative; }
+  .place-combo input:disabled {
+    background-color: var(--surface-2, #f3f4f6); color: var(--text-2, #6b7280); cursor: not-allowed;
+  }
+  .place-combo-list {
+    position: absolute; z-index: 30; top: 100%; left: 0; right: 0;
+    margin: 4px 0 0; padding: 4px; list-style: none; max-height: 260px; overflow-y: auto;
+    background: var(--surface-1, #fff); border: 1px solid var(--line, #d1d5db);
+    border-radius: 8px; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  }
+  .place-combo-list li {
+    padding: 0.5rem 0.65rem; border-radius: 6px; font-size: 0.875rem;
+    color: var(--text-strong, #111827); cursor: pointer;
+  }
+  .place-combo-list li.is-active, .place-combo-list li:hover { background: var(--surface-2, #f3f4f6); }
+  .place-combo-list li mark { background: none; color: inherit; font-weight: 700; padding: 0; }
+  .place-combo-list li.place-combo-empty { cursor: default; color: var(--text-2, #6b7280); }
+  .place-combo-list li.place-combo-empty:hover { background: none; }
+</style>
+{% set joined = places is not none %}
+<div class="place-picker" {% if joined %}data-place-picker{% endif %}
+     {% if required %}data-required{% endif %} id="{{ prefix }}place-picker">
+  {% if joined %}
+  <script type="application/json" data-role="places">{{ places | tojson }}</script>
+  {% if id_name %}<input type="hidden" name="{{ id_name }}" value="{{ selected_id }}" data-role="location-id">{% endif %}
+  {% endif %}
+
+  <div class="{{ field_class }} place-combo">
+    <label for="{{ prefix }}municipality">{{ muni_label }}{{ star | safe }}</label>
+    {% if input_wrap %}<div class="{{ input_wrap }} place-combo">{% endif %}
+    <input type="text" id="{{ prefix }}municipality"
+           {% if not id_name %}name="{{ muni_name }}"{% endif %}
+           value="{{ selected_muni }}" placeholder="Search a municipality…"
+           autocomplete="off" spellcheck="false" data-role="municipality"
+           role="combobox" aria-autocomplete="list" aria-expanded="false"
+           aria-controls="{{ prefix }}municipality-list">
+    <ul class="place-combo-list" id="{{ prefix }}municipality-list" role="listbox"
+        data-role="municipality-list" hidden></ul>
+    {% if input_wrap %}</div>{% endif %}
+    {% if not joined %}
+    <script type="application/json" id="{{ prefix }}municipality-data">{{ municipalities | tojson }}</script>
+    {% endif %}
+  </div>
+
+  {% if not municipality_only %}
+  {% set has_brgy = (barangays if not joined else selected_muni) %}
+  <div class="{{ field_class }} place-combo">
+    <label for="{{ prefix }}barangay">{{ brgy_label }}{{ star | safe }}</label>
+    {% if input_wrap %}<div class="{{ input_wrap }} place-combo">{% endif %}
+    <input type="text" id="{{ prefix }}barangay"
+           {% if not id_name %}name="{{ brgy_name }}"{% endif %}
+           value="{{ selected_brgy if has_brgy else '' }}"
+           placeholder="{% if has_brgy %}Search a barangay…{% else %}Pick a municipality first{% endif %}"
+           {% if not has_brgy %}disabled{% endif %}
+           autocomplete="off" spellcheck="false" data-role="barangay"
+           role="combobox" aria-autocomplete="list" aria-expanded="false"
+           aria-controls="{{ prefix }}barangay-list">
+    <ul class="place-combo-list" id="{{ prefix }}barangay-list" role="listbox"
+        data-role="barangay-list" hidden></ul>
+    {% if input_wrap %}</div>{% endif %}
+    {% if not joined %}
+    <script type="application/json" id="{{ prefix }}barangay-data">{{ (barangays or []) | map(attribute='barangay') | list | tojson }}</script>
+    {% endif %}
+  </div>
+  {% endif %}
+</div>
+{% endmacro %}

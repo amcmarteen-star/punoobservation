@@ -71,6 +71,31 @@ def _planting(site_ids):
     return int(target), int(actual)
 
 
+def field_delivery(site_ids):
+    """Delivery from field counts only: seedlings planted, as recorded on
+    approved site visits, against the contracted seedlings of the same
+    sites. None until approved visits carry a count.
+
+    The spreadsheet's planted column repeats the contracted quantity, so it
+    is never used for delivery."""
+    if not site_ids:
+        return None
+    from sqlalchemy import func
+    rows = (db.session.query(SiteVisit.site_id, func.sum(SiteVisit.seedlings_planted))
+            .filter(SiteVisit.site_id.in_(site_ids),
+                    SiteVisit.status == 'Approved',
+                    SiteVisit.seedlings_planted.isnot(None))
+            .group_by(SiteVisit.site_id).all())
+    if not rows:
+        return None
+    planted = sum(int(n or 0) for _, n in rows)
+    target, _ = _planting([sid for sid, _ in rows])
+    if not target:
+        return None
+    return {'pct': planted / target * 100, 'planted': planted,
+            'target': target, 'sites': len(rows)}
+
+
 def _achievement(site_ids):
     """Seedlings planted against target, in percent, or None."""
     target, actual = _planting(site_ids)
@@ -154,6 +179,52 @@ def _pearson(points):
 # ----------------------------------------------------------------------
 # the page
 # ----------------------------------------------------------------------
+
+FLAT_BAND = 0.10   # full years within 10% of the peak read as steady
+
+
+def hectares_per_year(by_year, current_year=None):
+    """Every year from the first contract year to now, 0 where empty, and
+    a title that states the trend.
+
+    by_year: {year: hectares}, real sites only. The current year is
+    labelled "<year> (to date)" and left out of the trend, since it is
+    not over. Trend: the peak full year against the latest full year.
+    """
+    if current_year is None:
+        from datetime import date
+        current_year = date.today().year
+    if not by_year:
+        return [], "No contract years recorded yet"
+    first = min(by_year)
+    last = max(current_year, max(by_year))
+    years = []
+    for y in range(first, last + 1):
+        years.append({
+            'year': y,
+            'label': f"{y} (to date)" if y == current_year else str(y),
+            'area': round(by_year.get(y, 0.0), 1),
+        })
+    full = [y for y in years if y['year'] < current_year]
+    if len(full) < 2:
+        return years, "Too few full years to show a trend"
+    peak = max(full, key=lambda y: y['area'])
+    latest = full[-1]
+    if peak['area'] == 0:
+        return years, "No hectares contracted in any full year"
+    low = min(y['area'] for y in full)
+    if peak['area'] - low <= FLAT_BAND * peak['area']:
+        return years, (f"Contracting held steady at about "
+                       f"{peak['area']:,.0f} ha a year")
+    if peak is latest:
+        start = full[0]
+        return years, (f"Contracting rose from {start['area']:,.0f} ha in "
+                       f"{start['year']} to {latest['area']:,.0f} ha in "
+                       f"{latest['year']}")
+    return years, (f"Contracting fell from {peak['area']:,.0f} ha in "
+                   f"{peak['year']} to {latest['area']:,.0f} ha in "
+                   f"{latest['year']}")
+
 
 def build_context(analytics, scope_name):
     """Everything the CENRO and provincial dashboard shows.
@@ -263,12 +334,16 @@ def build_context(analytics, scope_name):
          'sub': f"{active_sites:,} active", 'tone': 'neutral'},
         {'label': 'Area', 'value': f"{real_area:,.0f} ha",
          'sub': 'under contract', 'tone': 'neutral'},
-        {'label': 'Seedlings planted', 'value': f"{actual:,}",
-         'sub': f"of {target:,} targeted", 'tone': 'neutral'},
-        {'label': 'Delivery',
-         'value': f"{actual / target * 100:.0f}%" if target else "No data",
-         'sub': 'planted against target', 'tone': 'neutral'},
+        # The spreadsheet's planted column repeats the contracted quantity,
+        # so the tile shows contracted seedlings, with no percentage.
+        {'label': 'Seedlings (contracted)', 'value': f"{target:,}",
+         'sub': 'in the contracts', 'tone': 'neutral'},
     ]
+    delivery = field_delivery(real_ids)
+    if delivery is not None:
+        tiles.append({'label': 'Delivery', 'value': f"{delivery['pct']:.0f}%",
+                      'sub': (f"field counts, {_plural(delivery['sites'], 'site')}"),
+                      'tone': 'neutral'})
     if simulated_sites:
         tiles.append({'label': 'Simulated sites',
                       'value': f"{simulated_sites:,}",
@@ -281,13 +356,7 @@ def build_context(analytics, scope_name):
         if site.year_contracted:
             y = int(site.year_contracted)
             by_year[y] = by_year.get(y, 0.0) + float(site.area_size_ha or 0)
-    years = [{'year': y, 'area': round(a, 1)} for y, a in sorted(by_year.items())]
-    if years:
-        peak = max(years, key=lambda y: y['area'])
-        years_title = (f"Most hectares were contracted in {peak['year']}: "
-                       f"{peak['area']:,.0f} ha")
-    else:
-        years_title = "No contract years recorded yet"
+    years, years_title = hectares_per_year(by_year)
 
     # ---- 2. gauge, real sites ------------------------------------------------
     survival = _mean(survival_by_site.values())
@@ -314,15 +383,11 @@ def build_context(analytics, scope_name):
 
     # ---- 4. map: every municipality drawn; titles from real ones -------------
     with_area = [m for m in real_rows if m['area']]
-    with_delivery = [m for m in real_rows if m['achievement'] is not None]
     map_titles = {
         'survival': bar_title,
         'area': (f"{max(with_area, key=lambda m: m['area'])['municipality']} has "
                  f"the most area under contract"
                  if with_area else "No contracted area yet"),
-        'delivery': (f"{min(with_delivery, key=lambda m: m['achievement'])['municipality']} "
-                     f"delivered the lowest share of its target"
-                     if with_delivery else "No delivery figures yet"),
     }
 
     # ---- 5. scatter, judged real municipalities -------------------------------

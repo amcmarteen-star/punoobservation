@@ -17,6 +17,8 @@
       rel="stylesheet"
       href="{{ url_for('static', filename='css/style.css', v=asset_v) }}"
     />
+    {# the shared place picker (partials/_place_picker.html) #}
+    <script src="{{ url_for('static', filename='js/place-picker.js', v=asset_v) }}"></script>
     <script>
       /* CSRF token for fetch() POSTs. Sent as the X-CSRFToken header. */
       function csrfToken() {
@@ -137,7 +139,9 @@
           </span>
           <div class="role-pill-text">
             <span class="role-pill-username">{{ session.username }}</span>
-            <span class="role-pill-role">{{ session.role|replace('_', ' ')|title }}</span>
+            <span class="role-pill-role">{{ system_role_label(session.role, session.cenro) }}</span>
+            {% set _org_lbl = org_position_label(session.role, org_role, org_status, my_org.organization_name if my_org else None) %}
+            {% if _org_lbl %}<span class="role-pill-role role-pill-org">{{ _org_lbl }}</span>{% endif %}
           </div>
           {% else %}
           <span class="role-dot"></span> Guest {% endif %}

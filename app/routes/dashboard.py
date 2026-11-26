@@ -276,6 +276,16 @@ def _request_municipalities():
     return [m[0] for m in q.distinct().order_by(Location.municipality).all()]
 
 
+def _request_places():
+    """Every barangay the current user may submit a request in, for the
+    shared place picker. The same rule as _request_municipalities()."""
+    q = Location.query.filter(Location.elevation_m.isnot(None))
+    q = scope_locations(q)
+    return [{'id': l.location_id, 'municipality': l.municipality,
+             'barangay': l.barangay}
+            for l in q.order_by(Location.municipality, Location.barangay)]
+
+
 @dashboard_bp.route('/api/municipality/<name>')
 def municipality_info(name):
     if not can_see_municipality(name):
@@ -1666,6 +1676,7 @@ def requests_page():
     return render_template(
         'Requests.html',
         active_page='requests',
+        request_places=_request_places(),
         request_block=member_block,
         municipalities=municipalities,
         my_requests=my_requests,
@@ -3122,8 +3133,10 @@ def my_account():
         'Myaccount.html',
         active_page='account',
         user=user,
-        barangays=Location.query.order_by(Location.municipality,
-                                          Location.barangay).all(),
+        places=[{'id': l.location_id, 'municipality': l.municipality,
+                 'barangay': l.barangay}
+                for l in Location.query.order_by(Location.municipality,
+                                                 Location.barangay)],
         current_barangay=(db.session.get(Location, user.location_id)
                           if user.location_id else None),
         recent_activity=recent_activity,

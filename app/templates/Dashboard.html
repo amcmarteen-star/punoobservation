@@ -123,7 +123,6 @@
       <div class="cd-toggle" role="group" aria-label="Map metric">
         <button type="button" data-metric="survival" aria-pressed="true">Survival</button>
         <button type="button" data-metric="area" aria-pressed="false">Area</button>
-        <button type="button" data-metric="delivery" aria-pressed="false">Delivery</button>
       </div>
       <div id="cd-map" role="img" aria-label="Map of municipalities"></div>
       <div class="cd-key" id="cd-map-key"></div>
@@ -200,9 +199,9 @@
       new Chart(yearsEl, {
         type: "line",
         data: {
-          labels: CD.years.map(function (y) { return String(y.year); }),
+          labels: CD.years.map(function (y) { return y.label; }),
           datasets: [{ label: "Hectares", data: CD.years.map(function (y) { return y.area; }),
-                       fill: true, tension: 0.3, borderColor: "#4f7a5c",
+                       fill: true, tension: 0, borderColor: "#4f7a5c",
                        backgroundColor: "rgba(127,168,138,0.25)" }]
         },
         options: { responsive: true, maintainAspectRatio: false,
@@ -322,8 +321,7 @@
       }
       if (m) {
         if (metric === "survival") fill = !m.judged ? GREY : (m.below ? ORANGE : GREEN);
-        else if (metric === "area") fill = shade((m.area || 0) / maxArea);
-        else fill = m.achievement === null ? GREY : shade(m.achievement / 100);
+        else fill = shade((m.area || 0) / maxArea);
       }
       return { color: "#555", weight: 1, fillColor: fill, fillOpacity: 0.85 };
     }
@@ -338,8 +336,7 @@
         if (!m.judged) return name + ": too few sites (" + m.monitored + " monitored of " + n + ")";
         return name + ": " + m.survival + "% survival, " + (m.below ? "below" : "meets") + " target, " + n;
       }
-      if (metric === "area") return name + ": " + (m.area || 0).toLocaleString() + " ha, " + n;
-      return name + ": " + (m.achievement === null ? "no delivery figure" : m.achievement + "% delivered") + ", " + n;
+      return name + ": " + (m.area || 0).toLocaleString() + " ha, " + n;
     }
     function legend() {
       var html = metric === "survival"

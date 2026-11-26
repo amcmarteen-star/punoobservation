@@ -37,8 +37,8 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import test_publish_boundary as base                    # noqa: E402
 from app.extensions import db                            # noqa: E402
 from app.models import (                                 # noqa: E402
-    Location, Organization, ReforestationRecord, Request, Site, TreeSpecie,
-    User,
+    Location, Organization, ReforestationRecord, Request, Site, SiteVisit,
+    TreeSpecie, User,
 )
 from app.utils.jurisdiction import CENRO_MUNICIPALITIES  # noqa: E402
 
@@ -291,8 +291,12 @@ def run(app):
           cal_row.get('survival') == 90.0, cal_row.get('survival'))
     check('10 its area uses real sites only (30 ha, not 1,030)',
           cal_row.get('area') == 30.0, cal_row.get('area'))
-    check('10 its delivery uses real sites only (90%)',
-          cal_row.get('achievement') == 90.0, cal_row.get('achievement'))
+    check('11 the seedlings tile says contracted, with no percentage',
+          'Seedlings (contracted)' in phtml and 'planted against target' not in phtml)
+    check('11 no Delivery tile while no site visit has a field count',
+          '>Delivery<' not in phtml)
+    check('11 Delivery is no longer a map metric',
+          'data-metric="delivery"' not in phtml and 'delivery' not in pcd2.get('mapTitles', {}))
     check('10 the dashboard map labels it "(includes simulated)"',
           '(includes simulated)' in phtml)
     g = provincial.get('/gis-map').get_data(as_text=True)
@@ -302,9 +306,59 @@ def run(app):
     check('10 the GIS map labels it "(includes simulated)"',
           '(includes simulated)' in g)
 
+    # an approved visit with a field count turns the Delivery tile on
+    alcala = Site.query.filter_by(site_name='Alcala site 0').first()
+    db.session.add(SiteVisit(site_id=alcala.site_id, user_id=s.officer_id,
+                             visit_date=date(2025, 1, 10),
+                             visit_type='Planting confirmation', finding='Suitable',
+                             status='Approved', seedlings_planted=450))
+    db.session.commit()
+    uhtml = urdaneta.get('/dashboard').get_data(as_text=True)
+    check('11 Delivery appears once a field count exists, from field counts only',
+          '>Delivery<' in uhtml and '>45%<' in uhtml and 'field counts, 1 site' in uhtml)
+
     # what the real scatter says, for the report
     print()
     print('NOTE scatter on the test data:', sc['title'], '| r =', sc['r'])
+
+
+def run_years():
+    """Step 4: hectares per year, every year, trend title."""
+    from app.services.cenro_dashboard import hectares_per_year
+    years, _ = hectares_per_year({2017: 940.0, 2020: 50.0}, current_year=2026)
+    check('years: every year from first to current',
+          [y['year'] for y in years] == list(range(2017, 2027)))
+    check('years: empty year is 0', years[1]['area'] == 0)
+    check('years: current year says (to date)',
+          years[-1]['label'] == '2026 (to date)' and years[0]['label'] == '2017')
+    _, t = hectares_per_year({2017: 940.0, 2025: 120.0, 2026: 999.0}, 2026)
+    check('years: fell title uses peak and latest full year',
+          t == 'Contracting fell from 940 ha in 2017 to 120 ha in 2025', t)
+    _, t = hectares_per_year({2023: 10.0, 2025: 300.0}, 2026)
+    check('years: rose title', t.startswith('Contracting rose from 10 ha in 2023'), t)
+    _, t = hectares_per_year({2023: 100.0, 2024: 95.0, 2025: 100.0}, 2026)
+    check('years: flat title', 'held steady' in t, t)
+    _, t = hectares_per_year({2026: 50.0}, 2026)
+    check('years: too short title', t == 'Too few full years to show a trend', t)
+
+
+def run_roles():
+    """Step 6: role labels."""
+    from app.utils.roles import org_position_label as o, system_role_label as r
+    check('roles: system labels',
+          [r(None), r('normal_user'), r('field_officer'), r('admin', 'X'),
+           r('admin'), r('superadmin')] ==
+          ['Guest', 'User', 'Field Officer', 'CENRO Administrator',
+           'Provincial Administrator', 'System Administrator'])
+    org = 'San Vicente Farmers Assoc.'
+    check('roles: positions carry the org name',
+          [o('normal_user', 'leader', 'active', org),
+           o('normal_user', 'member', 'active', org),
+           o('normal_user', 'member', 'pending', org)] ==
+          [f'Partner Org Leader · {org}', f'Partner Org Member · {org}',
+           f'Pending Member · {org}'])
+    check('roles: no org is Individual', o('normal_user', None, None) == 'Individual')
+    check('roles: staff have no org position', o('admin', 'leader', 'active', 'X') is None)
 
 
 def main():
@@ -317,6 +371,8 @@ def main():
         with app.app_context():
             db.create_all()
             run(app)
+            run_years()
+            run_roles()
     finally:
         base.shutil.rmtree(base.TMPDIR, ignore_errors=True)
 
@@ -328,3 +384,4 @@ def main():
 
 if __name__ == '__main__':
     sys.exit(main())
+
