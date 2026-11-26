@@ -2096,11 +2096,7 @@ def create_site_from_request(request_id):
 
     # the field officer sent to the site, checked against a site of this
     # CENRO (it does not exist yet, so a stand-in carries the two fields read)
-    target_date = None
-    if form['target_date']:
-        target_date = _parse_iso_date(form['target_date'])
-        if target_date is None:
-            errors.append("Enter a valid target date for the visit.")
+    target_date = _parse_iso_date(form['target_date'])
     problem = assignment_problem(
         Site(cenro=current_cenro(), site_status='Active'),
         int(form['officer_id']) if form['officer_id'].isdigit() else None,

@@ -32,9 +32,9 @@
         <tr style="{{ 'background: rgba(185,28,28,0.08);' if t.overdue else '' }}">
           <td>{{ t.site_name }}</td>
           <td>{{ t.visit_type }}</td>
-          <td>{{ t.target_date.strftime('%d %b %Y') if t.target_date else 'Not set' }}</td>
+          <td>{{ t.target_date.strftime('%d %b %Y') if t.target_date else 'No target date' }}</td>
           <td>{{ 'Overdue' if t.overdue else 'Open' }}</td>
-          <td><a href="{{ url_for('visits.site_visits', site_id=t.site.site_id) }}">Open</a></td>
+          <td><a class="um-btn-ghost" href="{{ url_for('visits.site_visits', site_id=t.site.site_id) }}" aria-label="Open {{ t.site_name }}">Open</a></td>
         </tr>
         {% endfor %}
       </tbody>

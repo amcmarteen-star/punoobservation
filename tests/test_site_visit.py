@@ -99,7 +99,7 @@ def assign(cenro, s, site_id, visit_type='Pre-planting check'):
     """The CENRO sends the field officer, through the site's page."""
     return cenro.post('/sites/%d/assignments' % site_id, data={
         'officer_id': str(s.officer_id), 'visit_type': visit_type,
-        'target_date': '', 'note': ''})
+        'target_date': '2099-12-31', 'note': ''})
 
 
 def corner_photos(day):
@@ -194,10 +194,30 @@ def run(app, s):
         'officer_id': str(s.officer_id), 'visit_type': 'Pre-planting check'})
     check(step, 'another CENRO cannot assign',
           VisitAssignment.query.filter_by(site_id=site_id).count() == 0)
+    cenro.post('/sites/%d/assignments' % site_id, data={
+        'officer_id': str(s.officer_id), 'visit_type': 'Pre-planting check',
+        'target_date': '', 'note': ''})
+    check(step, 'an assignment without a target date is refused',
+          VisitAssignment.query.filter_by(site_id=site_id).count() == 0)
     assign(cenro, s, site_id)
     base.fresh()
     check(step, 'the CENRO assigns the officer',
           VisitAssignment.query.filter_by(site_id=site_id, status='Open').count() == 1)
+    # an assignment made before the date was required
+    old = VisitAssignment.query.filter_by(site_id=site_id, status='Open').first()
+    old.target_date = None
+    old_id = old.assignment_id
+    db.session.commit()
+    check(step, 'an old assignment shows No target date',
+          'No target date' in cenro.get(page_url).get_data(as_text=True))
+    listing = cenro.get('/site-visits').get_data(as_text=True)
+    check(step, 'the CENRO list flags it',
+          'No target date' in listing)
+    cenro.post('/assignments/%d/target-date' % old_id,
+               data={'target_date': '2099-12-31'})
+    base.fresh()
+    check(step, 'the CENRO sets the target date',
+          db.session.get(VisitAssignment, old_id).target_date == date(2099, 12, 31))
     check(step, 'the officer is emailed the assignment',
           box and box[-1].get('to') == [s.officer_name + '@synthetic.test']
           and 'Visit Test Site - Bacag' in box[-1].get('subject', ''),

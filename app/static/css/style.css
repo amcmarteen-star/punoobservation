@@ -4187,6 +4187,18 @@ table[data-freeze="2"].is-scrolled-x th:nth-child(2) {
     color: var(--info-strong);
 }
 
+/* Simulated-data banner (Base.html): the same gap on every page, including
+   full-bleed pages such as the GIS map that have no page padding. */
+.sim-banner {
+    margin: 0 0 1.25rem;
+    padding: 0.75rem 1rem;
+    line-height: 1.45;
+}
+.page-content.map-page > .sim-banner {
+    flex: 0 0 auto;
+    margin: 0.75rem 1rem;
+}
+
 /* --- approval status pill --- */
 .um-status {
     display: inline-block;

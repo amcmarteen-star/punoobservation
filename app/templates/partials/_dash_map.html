@@ -16,7 +16,12 @@
     var el = document.getElementById("dash-map");
     if (!el || !window.L) return;
     var data = window.DASH_MAP || {};
-    var map = L.map(el, { scrollWheelZoom: false, attributionControl: false });
+    var map = L.map(el, { scrollWheelZoom: false });
+    if (window.MAP_TILES) {
+      L.tileLayer(MAP_TILES.street.url, {
+        maxZoom: 19, attribution: MAP_TILES.street.attribution
+      }).addTo(map);
+    }
     var bounds = null;
 
     function extend(b) {

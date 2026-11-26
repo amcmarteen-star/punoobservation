@@ -43,7 +43,7 @@
     <div>
       <strong>{{ a.site.site_name }}</strong> &middot; {{ a.visit_type }}
       <div class="text-secondary small">
-        {{ a.site.location.barangay }}, {{ a.site.location.municipality }}{% if a.target_date %}. Visit by {{ a.target_date.strftime('%d %b %Y') }}{% endif %}
+        {{ a.site.location.barangay }}, {{ a.site.location.municipality }}{% if a.target_date %}. Visit by {{ a.target_date.strftime('%d %b %Y') }}{% else %}. No target date{% endif %}
       </div>
     </div>
     <div class="sv-actions">
@@ -80,6 +80,7 @@
             {% if r.open %}
             <div class="text-secondary small">{{ r.open|map(attribute='officer.username')|join(', ') }}</div>
             {% endif %}
+            {% if r.undated %}<div class="small fw-semibold">No target date</div>{% endif %}
           </td>
           <td data-label="Visits" class="num-cell">{{ r.count }}</td>
           <td data-label="Latest visit">

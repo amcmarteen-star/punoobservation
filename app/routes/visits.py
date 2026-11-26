@@ -60,6 +60,7 @@ from app.services.request_site import proposed_area_for_site
 from app.services.visit_assignment import (
     VISIT_TYPES, assign_officer, assignment_problem, close_site,
     email_assignment, officers_for, open_assignment_for,
+    target_date_problem, undated_first,
 )
 from app.utils.audit import log_action
 from app.utils.decorators import admin_required, login_required
@@ -195,10 +196,12 @@ def index():
             stage, order = 'Needs an officer', 0
         else:
             stage, order = 'Visited', 3
+        undated = any(a.target_date is None for a in open_ones)
         rows.append({'site': site, 'count': len(visits), 'latest': latest,
                      'stage': stage, 'order': order, 'open': open_ones,
-                     'mine': bool(my_open)})
-    rows.sort(key=lambda r: r['order'])
+                     'mine': bool(my_open), 'undated': undated})
+    # open assignments with no target date first, for the CENRO to set
+    rows.sort(key=lambda r: (not r['undated'], r['order']))
 
     return render_template(
         'Sitevisitsindex.html',
@@ -227,7 +230,7 @@ def site_visits(site_id):
         proposed=proposed_area_for_site(site),
         visits=site.site_visits,
         my_assignment=_my_assignment(site),
-        assignments=site.visit_assignments,
+        assignments=undated_first(site.visit_assignments),
         can_assign=can_assign,
         officers=officers_for(site.cenro) if can_assign else [],
         visit_types=VISIT_TYPES,
@@ -249,11 +252,7 @@ def assign_visit(site_id):
         flash("Visits are assigned by the CENRO of the site.", "danger")
         return back
 
-    raw_date = request.form.get('target_date')
-    target = _parse_date(raw_date)
-    if raw_date and target is None:
-        flash("Enter a valid target date.", "danger")
-        return back
+    target = _parse_date(request.form.get('target_date'))
     officer_id = request.form.get('officer_id', type=int)
     visit_type = request.form.get('visit_type')
     problem = assignment_problem(site, officer_id, visit_type, target, _today())
@@ -269,6 +268,40 @@ def assign_visit(site_id):
     db.session.commit()
     email_assignment(assignment)
     flash(f"{assignment.officer.username} was assigned and told.", "success")
+    return back
+
+
+@visits_bp.route('/assignments/<int:assignment_id>/target-date',
+                 methods=['POST'])
+@admin_required
+def set_target_date(assignment_id):
+    """Set the target date on an open assignment made before it was
+    required."""
+    assignment = db.session.get(VisitAssignment, assignment_id)
+    if assignment is None or not _can_review(assignment.site):
+        flash("Visits are assigned by the CENRO of the site.", "danger")
+        return redirect(url_for('visits.index'))
+    back = redirect(url_for('visits.site_visits', site_id=assignment.site_id))
+    if assignment.status != 'Open':
+        flash("That assignment is no longer open.", "warning")
+        return back
+    target = _parse_date(request.form.get('target_date'))
+    problem = target_date_problem(target, _today())
+    if problem:
+        flash(problem, "danger")
+        return back
+    assignment.target_date = target
+    db.session.add(Notification(
+        user_id=assignment.officer_id, notification_type='Site Visit',
+        site_id=assignment.site_id, is_read=False,
+        message=(f"Your site visit to {assignment.site.site_name} now has a "
+                 f"target date: {target.strftime('%d %b %Y')}."),
+    ))
+    log_action('set_visit_target_date', 'site', assignment.site_id,
+               f"{assignment.visit_type} for {assignment.site.site_name}: "
+               f"{target.isoformat()}")
+    db.session.commit()
+    flash("Target date set. The officer was told.", "success")
     return back
 
 

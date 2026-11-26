@@ -98,7 +98,7 @@ def site_form(s, name, **over):
         'area_size_ha': '5', 'date_established': today, 'zone_type': '',
         'target_seedlings': '1000', 'date_planted': today,
         'contact_person': 'Maria Santos', 'officer_id': str(s.officer_id),
-        'visit_type': 'Pre-planting check', 'target_date': '',
+        'visit_type': 'Pre-planting check', 'target_date': '2099-12-31',
         'assignment_note': 'Meet the barangay captain.',
     }
     data.update(over)
@@ -293,7 +293,7 @@ def run(app, s):
           VisitAssignment.query.filter_by(site_id=good_id, status='Open').count() == 0)
     cenro.post('/sites/%d/assignments' % good_id, data={
         'officer_id': str(s.officer_id), 'visit_type': 'Pre-planting check',
-        'target_date': '', 'note': 'Second try.'})
+        'target_date': '2099-12-31', 'note': 'Second try.'})
     base.fresh()
     check(step, 'the CENRO can assign again',
           VisitAssignment.query.filter_by(site_id=good_id, status='Open').count() == 1)

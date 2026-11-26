@@ -476,7 +476,7 @@ def run(app):
         site_name='E2E Member Site').scalar()
     cenro.post(f'/sites/{e2e_site_id}/assignments', data={
         'officer_id': str(s.officer_id), 'visit_type': 'Pre-planting check',
-        'target_date': '', 'note': ''})
+        'target_date': '2099-12-31', 'note': ''})
     today = datetime.now(ZoneInfo('Asia/Manila')).date()
     field.post(f'/sites/{e2e_site_id}/visits/new', data={
         'visit_date': today.isoformat(), 'visit_type': 'Pre-planting check',

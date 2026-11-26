@@ -234,7 +234,7 @@ def run(app, s):
         'zone_type': 'Production', 'target_seedlings': '30000',
         'date_planted': today.isoformat(), 'contact_person': 'Juan dela Cruz',
         'officer_id': str(s.officer_id), 'visit_type': 'Pre-planting check',
-        'target_date': '', 'assignment_note': '',
+        'target_date': '2099-12-31', 'assignment_note': '',
     }
     page = cenro.get('/admin/requests/%d/create-site' % req_id)
     check(step, 'create-site form opens for the CENRO', page.status_code == 200)

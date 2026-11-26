@@ -47,9 +47,31 @@ def assignment_problem(site, officer_id, visit_type, target_date, today):
         return "Choose a field officer from this site's CENRO."
     if visit_type not in VISIT_TYPES:
         return "Choose the type of visit."
-    if target_date is not None and target_date < today:
+    if target_date is None:
+        return "Choose a target date for the visit."
+    if target_date < today:
         return "The target date cannot be in the past."
     return None
+
+
+def target_date_problem(target_date, today):
+    """For setting the date on an existing assignment, or None."""
+    if target_date is None:
+        return "Choose a target date for the visit."
+    if target_date < today:
+        return "The target date cannot be in the past."
+    return None
+
+
+def undated_first(assignments):
+    """Open assignments with no target date first (for the CENRO to set),
+    then other open ones by target date, then the rest, oldest first."""
+    from datetime import date
+    return sorted(assignments, key=lambda a: (
+        not (a.status == 'Open' and a.target_date is None),
+        a.status != 'Open',
+        a.target_date or date.max,
+        a.created_at))
 
 
 def assign_officer(site, officer_id, visit_type, target_date, note, assigned_by):

@@ -31,7 +31,8 @@
   .sv-assign small { display: block; color: var(--text-2); }
   .sv-tag { padding: 0.1rem 0.55rem; border-radius: 999px; font-size: 0.78rem; font-weight: 600; background: var(--surface-3); color: var(--text-strong); }
   .sv-tag.is-open { background: var(--warn-bg); color: var(--warn-strong); }
-  .sv-assign-actions { display: flex; align-items: center; gap: 0.5rem; }
+  .sv-assign-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; }
+  .sv-set-date { display: flex; align-items: center; gap: 0.4rem; }
   .sv-form-foot { display: flex; justify-content: flex-end; margin-top: 1rem; }
   .sv-form-foot .um-btn-confirm { width: auto; flex: none; min-width: 9rem; }
   .sv-link-danger { background: none; border: none; padding: 0.25rem; color: var(--danger-strong); font: inherit; font-size: 0.85rem; font-weight: 600; cursor: pointer; }
@@ -139,13 +140,21 @@
     <div>
       <strong>{{ a.officer.username if a.officer else '—' }}</strong> &middot; {{ a.visit_type }}
       <small>
-        Assigned {{ a.created_at|datetime_ph }}{% if a.assigner %} by {{ a.assigner.username }}{% endif %}{% if a.target_date %}. Visit by {{ a.target_date.strftime('%d %b %Y') }}{% endif %}
+        Assigned {{ a.created_at|datetime_ph }}{% if a.assigner %} by {{ a.assigner.username }}{% endif %}{% if a.target_date %}. Visit by {{ a.target_date.strftime('%d %b %Y') }}{% elif a.status == 'Open' %}. <strong>No target date</strong>{% endif %}
       </small>
       {% if a.note %}<small>{{ a.note }}</small>{% endif %}
     </div>
     <div class="sv-assign-actions">
       <span class="sv-tag {% if a.status == 'Open' %}is-open{% endif %}">{{ a.status }}</span>
       {% if a.visit_id %}<a href="{{ url_for('visits.visit_detail', visit_id=a.visit_id) }}" class="um-btn-ghost">View visit</a>{% endif %}
+      {% if can_assign and a.status == 'Open' and not a.target_date %}
+      <form method="POST" action="{{ url_for('visits.set_target_date', assignment_id=a.assignment_id) }}" class="sv-set-date">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <label class="visually-hidden" for="td-{{ a.assignment_id }}">Target date</label>
+        <input type="date" name="target_date" id="td-{{ a.assignment_id }}" min="{{ today }}" required>
+        <button type="submit" class="um-btn-ghost">Set date</button>
+      </form>
+      {% endif %}
       {% if can_assign and a.status == 'Open' %}
       <form method="POST" action="{{ url_for('visits.cancel_assignment', assignment_id=a.assignment_id) }}">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
@@ -178,8 +187,8 @@
         </select>
       </div>
       <div class="um-field">
-        <label for="target_date">Visit by</label>
-        <input type="date" name="target_date" id="target_date" min="{{ today }}">
+        <label for="target_date">Visit by *</label>
+        <input type="date" name="target_date" id="target_date" min="{{ today }}" required>
       </div>
     </div>
     <div class="um-field">

@@ -356,7 +356,12 @@
       document.getElementById("cd-map-key").innerHTML = html;
     }
 
-    var map = L.map(el, { scrollWheelZoom: false, attributionControl: false });
+    var map = L.map(el, { scrollWheelZoom: false });
+    if (window.MAP_TILES) {
+      L.tileLayer(MAP_TILES.street.url, {
+        maxZoom: 19, attribution: MAP_TILES.street.attribution
+      }).addTo(map);
+    }
     var group = L.featureGroup().addTo(map);
     var layers = [];
     Promise.all(CD.districts.map(function (d) {
