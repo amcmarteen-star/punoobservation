@@ -167,8 +167,40 @@
   }
 
   .pub-form {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: end;
+    gap: 0.75rem 1rem;
+    margin-top: 1rem;
+    padding-top: 1rem;
     border-top: 1px solid var(--line);
   }
+  .pub-note label {
+    display: block; margin-bottom: 0.35rem;
+    font-size: 0.82rem; font-weight: 700; color: var(--text-strong);
+  }
+  .pub-note label span { font-weight: 500; color: var(--text-2); }
+  .pub-note input {
+    width: 100%; min-height: 2.5rem; padding: 0.5rem 0.75rem;
+    border: 1px solid var(--line); border-radius: 9px; background: var(--surface-1);
+    font: inherit; font-size: 0.86rem; color: var(--text-strong); outline: none;
+    transition: border-color 150ms ease, box-shadow 150ms ease;
+  }
+  .pub-note input:focus { border-color: var(--brand-text); box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.12); }
+  .pub-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+  .pub-btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 0.45rem;
+    min-height: 2.5rem; padding: 0.5rem 1rem; border-radius: 9px;
+    border: 1px solid var(--line-strong); background: var(--surface-1); color: var(--text-body);
+    font: inherit; font-size: 0.86rem; font-weight: 600; cursor: pointer;
+    transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease;
+  }
+  .pub-btn:hover { border-color: var(--text-2); }
+  .pub-btn svg { width: 1rem; height: 1rem; }
+  .pub-btn.is-primary { border-color: transparent; background: var(--brand-solid); color: #fff; }
+  .pub-btn.is-primary:hover { background: var(--ok-solid); }
+  .pub-btn.is-danger { border-color: var(--danger-solid); color: var(--danger-strong); }
+  .pub-btn.is-danger:hover { background: var(--danger-bg); }
 
   .diff-ok {
     color: #15803d;
@@ -210,10 +242,6 @@
      Phone-only. Nothing here applies on larger screens. */
   @media (max-width: 720px) {
 
-    /* Page heading */
-    .page-header h2 { font-size: 1.25rem; }
-    .page-header p { font-size: 0.88rem; }
-
     /* Counter chips: two per row, no fixed minimum width */
     .pub-strip {
       display: grid;
@@ -251,15 +279,12 @@
     .pub-line .val { flex: 1 1 auto; }
 
     /* Decision form */
-    .pub-form { margin-top: 0.9rem !important; padding-top: 0.9rem !important; }
+    .pub-form { grid-template-columns: 1fr; margin-top: 0.9rem; padding-top: 0.9rem; }
     .pub-form input[type="text"] {
       min-height: 44px;
       font-size: 16px; /* stops iOS zooming in on focus */
     }
-    .pub-form .d-flex {
-      flex-wrap: wrap;
-    }
-    .pub-form .btn {
+    .pub-btn {
       flex: 1 1 8rem;
       min-height: 44px;
       font-size: 0.9rem;
@@ -275,13 +300,18 @@
 
 {% block content %}
 
-<div class="page-header mb-3">
-  <h2 class="fw-bold text-dark">Boundary Publications</h2>
-  <p class="text-secondary mb-0">
-    Site boundaries validated by a CENRO, awaiting provincial approval before
-    they appear on the map.
-    <strong>{{ published_sites }}</strong> site(s) currently published.
-  </p>
+{# Same header structure as the other pages (um-header / um-title-row). #}
+<div class="um-header">
+  <div>
+    <div class="um-title-row">
+      <h2>Boundary Publications</h2>
+    </div>
+    <p class="um-subtitle">
+      Site boundaries validated by a CENRO, awaiting provincial approval before
+      they appear on the map.
+      <strong>{{ published_sites }}</strong> site(s) currently published.
+    </p>
+  </div>
 </div>
 
 {# Icon and state class per counter, keyed by the label the route supplies.
@@ -405,36 +435,32 @@
     </div>
   </div>
 
-  <form
-    method="POST"
-    action="{{ r.action_url }}"
-    class="pub-form row g-2 align-items-end mt-3 pt-3"
-  >
+  <form method="POST" action="{{ r.action_url }}" class="pub-form">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-    <div class="col-md-6">
-      <label class="form-label fw-semibold small">
-        Note <span class="text-secondary">(required to decline)</span>
+    <div class="pub-note">
+      <label for="pub-note-{{ r.key }}">
+        Note <span>(required to decline)</span>
       </label>
       <input
         type="text"
+        id="pub-note-{{ r.key }}"
         name="publication_note"
-        class="form-control form-control-sm"
         value="{{ r.publication_note or '' }}"
       />
     </div>
-    <div class="col-md-6 d-flex gap-2">
+    <div class="pub-actions">
       {% if r.publication_status == 'Published' %}
-      <button type="submit" name="action" value="unpublish"
-              class="btn btn-outline-danger btn-sm">
+      <button type="submit" name="action" value="unpublish" class="pub-btn is-danger">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
         Withdraw from map
       </button>
       {% else %}
-      <button type="submit" name="action" value="publish"
-              class="btn btn-success btn-sm">
+      <button type="submit" name="action" value="publish" class="pub-btn is-primary">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
         Publish to map
       </button>
-      <button type="submit" name="action" value="decline"
-              class="btn btn-outline-secondary btn-sm">
+      <button type="submit" name="action" value="decline" class="pub-btn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
         Decline
       </button>
       {% endif %}

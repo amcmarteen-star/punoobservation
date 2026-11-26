@@ -1,5 +1,42 @@
 {% extends "Base.html" %}
 {% block title %}Join an organization - PuNoObservation{% endblock %}
+{% block content_class %}page-content-wide{% endblock %}
+
+{% block extra_head %}
+<style>
+  .oj-card {
+    display: flex; gap: 1rem; align-items: flex-start;
+    padding: 1.35rem 1.4rem; border: 1px solid var(--line); border-radius: 14px;
+    background: var(--surface-1); box-shadow: var(--sh-sm);
+  }
+  .oj-icon {
+    flex: none; display: grid; place-items: center; width: 2.75rem; height: 2.75rem;
+    border-radius: 12px; background: var(--ok-bg); color: var(--brand-text);
+  }
+  .oj-icon.is-warn { background: var(--warn-bg); color: var(--warn-strong); }
+  .oj-icon svg { width: 1.3rem; height: 1.3rem; }
+  .oj-body { min-width: 0; }
+  .oj-body h3 { margin: 0.2rem 0 0.35rem; font-size: 1.05rem; font-weight: 700; color: var(--text-heading); }
+  .oj-body p { margin: 0; font-size: 0.9rem; line-height: 1.6; color: var(--text-body); }
+  .oj-actions { display: flex; flex-wrap: wrap; gap: 0.6rem; margin-top: 1rem; }
+  .oj-link {
+    display: inline-flex; align-items: center; gap: 0.45rem;
+    padding: 0.6rem 1rem; border: 1px solid var(--line-strong); border-radius: 9px;
+    background: var(--surface-1); color: var(--brand-text);
+    font-size: 0.86rem; font-weight: 600; text-decoration: none;
+  }
+  .oj-link:hover { border-color: var(--ok-solid); background: var(--ok-bg); }
+  .oj-link svg, .oj-actions .um-btn-confirm svg { width: 1rem; height: 1rem; }
+  .oj-actions .um-btn-confirm { display: inline-flex; align-items: center; gap: 0.45rem; }
+
+  @media (max-width: 640px) {
+    .oj-card { flex-direction: column; padding: 1.1rem; }
+    .oj-actions, .oj-actions form { width: 100%; }
+    .oj-link, .oj-actions .um-btn-confirm { width: 100%; justify-content: center; min-height: 44px; }
+  }
+</style>
+{% endblock %}
+
 {% block content %}
 
 <div class="um-header">
@@ -7,32 +44,59 @@
     <div class="um-title-row">
       <h2>Join an organization</h2>
     </div>
+    <p class="um-subtitle">
+      {% if invalid %}This invite link cannot be used.
+      {% elif blocked %}You are already in an organization.
+      {% else %}You were invited to join {{ org.organization_name }}.{% endif %}
+    </p>
   </div>
 </div>
 
-<div class="um-panel">
-  <div class="um-panel-head">
+<section class="oj-card">
+  {% if invalid or blocked %}
+  <span class="oj-icon is-warn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg></span>
+  {% else %}
+  <span class="oj-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" x2="19" y1="8" y2="14"/><line x1="22" x2="16" y1="11" y2="11"/></svg></span>
+  {% endif %}
+
+  <div class="oj-body">
     <h3>{% if org %}Request to join {{ org.organization_name }}?{% else %}Invite link{% endif %}</h3>
-  </div>
-  <div style="padding: 1.25rem;">
     {% if invalid %}
       <p>{{ invalid }}</p>
-      {% if session.user_id %}
-        <p><a href="{{ url_for('dashboard.index') }}">Back to the dashboard</a></p>
-      {% else %}
-        <p><a href="{{ url_for('auth.register') }}">Sign up as an individual</a></p>
-      {% endif %}
+      <div class="oj-actions">
+        {% if session.user_id %}
+        <a class="oj-link" href="{{ url_for('dashboard.index') }}">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
+          Back to the dashboard
+        </a>
+        {% else %}
+        <a class="oj-link" href="{{ url_for('auth.register') }}">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          Sign up as an individual
+        </a>
+        {% endif %}
+      </div>
     {% elif blocked %}
       <p>{{ blocked }}</p>
-      <p><a href="{{ url_for('dashboard.my_account') }}">Go to My Account to leave it</a></p>
+      <div class="oj-actions">
+        <a class="oj-link" href="{{ url_for('dashboard.my_account') }}">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          Go to My Account to leave it
+        </a>
+      </div>
     {% else %}
       <p>Your leader will review your request. You can use the system while you wait.</p>
-      <form method="POST" action="{{ url_for('organization.join_request', token=org.join_token) }}">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-        <button type="submit" class="um-btn-confirm">Request to join</button>
-      </form>
+      <div class="oj-actions">
+        <form method="POST" action="{{ url_for('organization.join_request', token=org.join_token) }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button type="submit" class="um-btn-confirm">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
+            Request to join
+          </button>
+        </form>
+      </div>
     {% endif %}
   </div>
-</div>
+</section>
 
 {% endblock %}

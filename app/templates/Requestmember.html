@@ -1,48 +1,187 @@
 {% extends "Base.html" %}
 {% block title %}Request #{{ req.request_id }} - PuNoObservation{% endblock %}
+{# Same width and look as the CENRO's Request detail page, so a request
+   reads the same to the person who sent it and to the person reviewing it. #}
+{% block content_class %}page-content-wide{% endblock %}
+
+{% block extra_head %}
+<style>
+  .rm-back {
+    display: inline-flex; align-items: center; gap: 0.35rem;
+    font-size: 0.82rem; font-weight: 600; color: var(--text-2); text-decoration: none;
+  }
+  .rm-back:hover { color: var(--brand-text); }
+  .rm-back svg { width: 1rem; height: 1rem; }
+
+  .rm-head { margin: 0.75rem 0 1.5rem; }
+  .rm-title-row { display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem; }
+  .rm-title-row h2 { margin: 0; font-size: 1.75rem; font-weight: 800; letter-spacing: -0.02em; color: var(--text-heading); }
+  .rm-meta { margin: 0.35rem 0 0; font-size: 0.88rem; color: var(--text-2); }
+  .rm-meta strong { color: var(--text-heading); font-weight: 600; }
+  .rm-chips { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.9rem; }
+  .rm-chip {
+    display: inline-flex; align-items: center; gap: 0.4rem;
+    padding: 0.35rem 0.75rem; border: 1px solid var(--line); border-radius: 999px;
+    background: var(--surface-1); font-size: 0.8rem; font-weight: 600; color: var(--text-body);
+  }
+  .rm-chip svg { width: 0.95rem; height: 0.95rem; color: var(--brand-text); }
+
+  .rm-status {
+    display: inline-flex; align-items: center; gap: 0.4rem;
+    padding: 0.25rem 0.7rem; border-radius: 999px;
+    font-size: 0.75rem; font-weight: 700; white-space: nowrap;
+    background: var(--info-bg); color: var(--info-strong);
+  }
+  .rm-status::before { content: ""; width: 0.45rem; height: 0.45rem; border-radius: 50%; background: currentColor; }
+  .rm-status.st-returned, .rm-status.st-under-review { background: var(--warn-bg); color: var(--warn-strong); }
+  .rm-status.st-approved { background: var(--ok-bg); color: var(--ok-text); }
+  .rm-status.st-rejected { background: var(--danger-bg); color: var(--danger-strong); }
+
+  .rm-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(19rem, 24rem); gap: 1.25rem; align-items: start; }
+  .rm-card {
+    padding: 1.25rem 1.35rem; border: 1px solid var(--line); border-radius: 14px;
+    background: var(--surface-1); box-shadow: var(--sh-sm); min-width: 0;
+  }
+  .rm-card-head { display: flex; align-items: center; gap: 0.65rem; margin-bottom: 1rem; }
+  .rm-card-icon {
+    flex: none; display: grid; place-items: center; width: 2.1rem; height: 2.1rem;
+    border-radius: 10px; background: var(--ok-bg); color: var(--brand-text);
+  }
+  .rm-card-icon svg { width: 1.05rem; height: 1.05rem; }
+  .rm-card-head h3 { margin: 0; font-size: 1rem; font-weight: 700; color: var(--text-heading); }
+  .rm-card .req-stepper { margin: 0; }
+
+  .rm-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.65rem; margin: 0; }
+  .rm-field { padding: 0.75rem 0.9rem; border: 1px solid var(--line); border-radius: 10px; background: var(--surface-2); }
+  .rm-field.is-wide { grid-column: 1 / -1; }
+  .rm-field dt { margin: 0 0 0.2rem; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-2); }
+  .rm-field dd { margin: 0; font-size: 0.92rem; font-weight: 600; color: var(--text-heading); overflow-wrap: anywhere; }
+  .rm-field dd.is-empty { font-weight: 500; color: var(--text-3); font-style: italic; }
+  .rm-field dd.is-text { font-weight: 500; line-height: 1.6; color: var(--text-body); white-space: pre-line; }
+
+  .rm-docs { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+  .rm-doc {
+    display: inline-flex; align-items: center; gap: 0.4rem; max-width: 100%;
+    padding: 0.4rem 0.7rem; border: 1px solid var(--line); border-radius: 8px;
+    background: var(--surface-1); font-size: 0.82rem; font-weight: 600;
+    color: var(--brand-text); text-decoration: none; overflow-wrap: anywhere;
+  }
+  .rm-doc:hover { border-color: var(--ok-solid); background: var(--ok-bg); }
+  .rm-doc svg { flex: none; width: 0.95rem; height: 0.95rem; }
+
+  .rm-actions { margin-top: 1rem; }
+  .rm-btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 0.45rem;
+    padding: 0.6rem 1rem; border: 1px solid var(--line-strong); border-radius: 9px;
+    background: var(--surface-1); color: var(--brand-text);
+    font-size: 0.86rem; font-weight: 600; text-decoration: none;
+    transition: background-color 150ms ease, border-color 150ms ease;
+  }
+  .rm-btn:hover { border-color: var(--ok-solid); background: var(--ok-bg); color: var(--brand-text); }
+  .rm-btn svg { width: 1rem; height: 1rem; }
+
+  @media (max-width: 1100px) {
+    .rm-grid { grid-template-columns: 1fr; }
+    /* One column: where the request is now matters most, so it goes first. */
+    .rm-grid > .rm-steps-card { order: -1; }
+  }
+  @media (max-width: 640px) {
+    .rm-fields { grid-template-columns: 1fr; }
+    .rm-card { padding: 1.05rem; }
+    .rm-title-row h2 { font-size: 1.45rem; }
+    .rm-btn { width: 100%; min-height: 44px; }
+  }
+</style>
+{% endblock %}
+
 {% block content %}
+{% set st_class = 'st-' ~ (req.status|lower|replace(' ','-')) %}
+{% set back_url = url_for('admin.review_request_detail', request_id=req.request_id) if staff else url_for('dashboard.requests_page') %}
 
-<div class="um-header">
-  <div>
-    <div class="um-title-row">
-      <h2>Request #{{ req.request_id }}</h2>
+<a href="{{ url_for('dashboard.requests_page') if not staff else url_for('admin.review_requests') }}" class="rm-back">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
+  {% if staff %}All requests{% else %}My requests{% endif %}
+</a>
+
+<header class="rm-head">
+  <div class="rm-title-row">
+    <h2>Request #{{ req.request_id }}</h2>
+    <span class="rm-status {{ st_class }}">{{ req.status|request_label }}</span>
+  </div>
+  <p class="rm-meta">Sent {{ req.date_submitted|datetime_ph }}</p>
+  <div class="rm-chips">
+    <span class="rm-chip">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></svg>
+      {{ req.request_type }}
+    </span>
+    {% if req.location %}
+    <span class="rm-chip">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/></svg>
+      {{ req.location.barangay }}, {{ req.location.municipality }}
+    </span>
+    {% endif %}
+  </div>
+</header>
+
+<div class="rm-grid">
+  <section class="rm-card" aria-labelledby="rm-request-title">
+    <div class="rm-card-head">
+      <span class="rm-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M12 11h4"/><path d="M12 16h4"/><path d="M8 11h.01"/><path d="M8 16h.01"/></svg></span>
+      <h3 id="rm-request-title">The request</h3>
     </div>
-    <p class="um-subtitle">
-      {{ req.request_type }}{% if req.location %} for {{ req.location.barangay }}, {{ req.location.municipality }}{% endif %}
-      &middot; {{ req.status|request_label }}
-    </p>
-  </div>
-</div>
 
-<div class="um-panel">
-  <div class="um-panel-head">
-    <h3>Where it is now</h3>
-  </div>
-  <div style="padding: 1.25rem;">
-    {% include 'partials/_request_stepper.html' %}
-  </div>
-</div>
-
-<div class="um-panel">
-  <div class="um-panel-head">
-    <h3>The request</h3>
-  </div>
-  <div style="padding: 1.25rem;">
-    <p><strong>Sent</strong> {{ req.date_submitted|datetime_ph }}</p>
-    {% if req.description %}<p><strong>Description</strong><br>{{ req.description }}</p>{% endif %}
-    {% if req.contact_name %}<p><strong>Contact</strong> {{ req.contact_name }}{% if req.contact_number %} &middot; {{ req.contact_number }}{% endif %}</p>{% endif %}
-    <p><strong>Documents</strong>
-      {% if req.attachments %}
-        {% for a in req.attachments %}
-        <a href="{{ url_for('static', filename=a.file_url) }}" target="_blank">{{ a.original_name or 'document' }}</a>{% if not loop.last %} &middot; {% endif %}
-        {% endfor %}
-      {% else %}
-        none
+    <dl class="rm-fields">
+      <div class="rm-field">
+        <dt>Sent</dt>
+        <dd>{{ req.date_submitted|datetime_ph }}</dd>
+      </div>
+      <div class="rm-field">
+        <dt>Contact</dt>
+        {% if req.contact_name %}
+        <dd>{{ req.contact_name }}{% if req.contact_number %} &middot; {{ req.contact_number }}{% endif %}</dd>
+        {% else %}<dd class="is-empty">not stated</dd>{% endif %}
+      </div>
+      {% if req.description %}
+      <div class="rm-field is-wide">
+        <dt>Description</dt>
+        <dd class="is-text">{{ req.description }}</dd>
+      </div>
       {% endif %}
-    </p>
-    <p><a href="{% if staff %}{{ url_for('admin.review_request_detail', request_id=req.request_id) }}{% else %}{{ url_for('dashboard.requests_page') }}{% endif %}">
-      {% if staff %}Open in Review Requests{% else %}Back to my requests{% endif %}</a></p>
-  </div>
+      <div class="rm-field is-wide">
+        <dt>Documents</dt>
+        {% if req.attachments %}
+        <dd class="rm-docs">
+          {% for a in req.attachments %}
+          <a class="rm-doc" href="{{ url_for('static', filename=a.file_url) }}" target="_blank" rel="noopener">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13.234 20.252 21 12.3"/><path d="m16 6-8.414 8.586a2 2 0 0 0 0 2.828 2 2 0 0 0 2.828 0l8.414-8.586a4 4 0 0 0 0-5.656 4 4 0 0 0-5.656 0l-8.415 8.585a6 6 0 1 0 8.486 8.486"/></svg>
+            {{ a.original_name or 'document' }}
+          </a>
+          {% endfor %}
+        </dd>
+        {% else %}<dd class="is-empty">none</dd>{% endif %}
+      </div>
+    </dl>
+
+    <div class="rm-actions">
+      <a class="rm-btn" href="{{ back_url }}">
+        {% if staff %}
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg>
+        Open in Review Requests
+        {% else %}
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
+        Back to my requests
+        {% endif %}
+      </a>
+    </div>
+  </section>
+
+  <section class="rm-card rm-steps-card" aria-labelledby="rm-steps-title">
+    <div class="rm-card-head">
+      <span class="rm-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><path d="M12 6v6l4 2"/></svg></span>
+      <h3 id="rm-steps-title">Where it is now</h3>
+    </div>
+    {% include 'partials/_request_stepper.html' %}
+  </section>
 </div>
 
 {% endblock %}

@@ -67,7 +67,7 @@ html:has(> body.lg-body) { height: 100%; scrollbar-gutter: auto; }
     display: inline-flex;
     align-items: center;
     gap: 0.6rem;
-    font-size: 1.2rem;
+    font-size: 1.3rem;
     font-weight: 800;
     letter-spacing: -0.01em;
     color: #10302a;
@@ -115,13 +115,13 @@ html:has(> body.lg-body) { height: 100%; scrollbar-gutter: auto; }
 
 .lg-tag {
     margin: 0 0 0.35rem;
-    font-size: 0.95rem;
+    font-size: 1.05rem;
     font-weight: 700;
     color: #10302a;
 }
 .lg-foot {
     margin: 0;
-    font-size: 0.78rem;
+    font-size: 0.85rem;
     line-height: 1.5;
     color: #5a7268;
 }
@@ -141,7 +141,7 @@ html:has(> body.lg-body) { height: 100%; scrollbar-gutter: auto; }
     letter-spacing: -0.03em;
     color: #ffffff;
 }
-.lg-sub { margin: 0 0 1.75rem; font-size: 0.95rem; color: rgba(238, 247, 241, 0.7); }
+.lg-sub { margin: 0 0 1.75rem; font-size: 1.05rem; color: rgba(238, 247, 241, 0.7); }
 
 /* Back to the landing page, above the heading. justify-self keeps it from
    stretching across the grid; the negative margin lines the arrow up with
@@ -155,7 +155,7 @@ html:has(> body.lg-body) { height: 100%; scrollbar-gutter: auto; }
     padding: 0.4rem 0.7rem 0.4rem 0.55rem;
     border-radius: 999px;
     color: rgba(238, 247, 241, 0.7);
-    font-size: 0.88rem;
+    font-size: 0.95rem;
     font-weight: 600;
     text-decoration: none;
     transition: color 0.15s ease, background-color 0.15s ease;
@@ -168,7 +168,7 @@ html:has(> body.lg-body) { height: 100%; scrollbar-gutter: auto; }
 .lg-field label {
     display: block;
     margin-bottom: 0.45rem;
-    font-size: 0.9rem;
+    font-size: 1rem;
     font-weight: 700;
     color: #ffffff;
 }
@@ -185,7 +185,7 @@ html:has(> body.lg-body) { height: 100%; scrollbar-gutter: auto; }
     background: rgba(255, 255, 255, 0.06);
     color: #ffffff;
     font: inherit;
-    font-size: 1rem;
+    font-size: 1.075rem;
     outline: none;
     transition: border-color 150ms ease, background-color 150ms ease, box-shadow 150ms ease;
 }
@@ -224,7 +224,7 @@ html:has(> body.lg-body) { height: 100%; scrollbar-gutter: auto; }
     background: #1d8a4e;
     color: #ffffff;
     font: inherit;
-    font-size: 1.05rem;
+    font-size: 1.15rem;
     font-weight: 700;
     cursor: pointer;
     box-shadow: 0 10px 24px rgba(10, 60, 35, 0.45);
@@ -237,7 +237,7 @@ html:has(> body.lg-body) { height: 100%; scrollbar-gutter: auto; }
 .lg-register {
     margin: 1.4rem 0 0;
     text-align: center;
-    font-size: 0.95rem;
+    font-size: 1.05rem;
     color: rgba(238, 247, 241, 0.85);
 }
 .lg-register a { color: #7fd0a2; font-weight: 700; text-decoration: none; }
@@ -246,7 +246,7 @@ html:has(> body.lg-body) { height: 100%; scrollbar-gutter: auto; }
 .lg-forgot {
     margin: -0.4rem 0 1.1rem;
     text-align: right;
-    font-size: 0.88rem;
+    font-size: 0.95rem;
 }
 .lg-forgot a { color: #7fd0a2; font-weight: 600; text-decoration: none; }
 .lg-forgot a:hover,
@@ -254,7 +254,7 @@ html:has(> body.lg-body) { height: 100%; scrollbar-gutter: auto; }
 .lg-note {
     margin: 1.6rem 0 0;
     text-align: center;
-    font-size: 0.78rem;
+    font-size: 0.86rem;
     color: rgba(238, 247, 241, 0.5);
 }
 
@@ -267,7 +267,7 @@ html:has(> body.lg-body) { height: 100%; scrollbar-gutter: auto; }
     margin: 0 0 1.1rem;
     padding: 0.75rem 0.9rem;
     border-radius: 12px;
-    font-size: 0.88rem;
+    font-size: 0.95rem;
     line-height: 1.45;
     background: rgba(220, 70, 70, 0.14);
     border: 1px solid rgba(240, 120, 120, 0.35);
@@ -320,7 +320,7 @@ html:has(> body.lg-body) { height: 100%; scrollbar-gutter: auto; }
     background: rgba(255, 255, 255, 0.06) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23cfe9d7' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") no-repeat right 1rem center / 1.1rem;
     color: #ffffff;
     font: inherit;
-    font-size: 1rem;
+    font-size: 1.075rem;
     outline: none;
     appearance: none;
     cursor: pointer;
@@ -336,13 +336,13 @@ html:has(> body.lg-body) { height: 100%; scrollbar-gutter: auto; }
 
 .lg-hint {
     margin: 0.4rem 0 0;
-    font-size: 0.8rem;
+    font-size: 0.88rem;
     line-height: 1.45;
     color: rgba(238, 247, 241, 0.6);
 }
 .lg-error {
     margin: 0.4rem 0 0;
-    font-size: 0.82rem;
+    font-size: 0.9rem;
     font-weight: 600;
     color: #ffb4b4;
 }
@@ -368,7 +368,7 @@ html:has(> body.lg-body) { height: 100%; scrollbar-gutter: auto; }
 .lg-card.is-signup .lg-field { margin-bottom: 0.9rem; }
 .lg-card.is-signup .lg-input input,
 .lg-card.is-signup .lg-input select { height: 3.1rem; }
-.lg-card.is-signup .lg-hint { font-size: 0.76rem; }
+.lg-card.is-signup .lg-hint { font-size: 0.84rem; }
 .lg-card.is-signup .lg-register { margin-top: 1rem; }
 
 .lg-step { margin: 0; padding: 0; border: 0; min-width: 0; }
@@ -380,7 +380,7 @@ html:has(> body.lg-body) { height: 100%; scrollbar-gutter: auto; }
     margin: 0 0 1.2rem;
     padding: 0;
     list-style: none;
-    font-size: 0.82rem;
+    font-size: 0.9rem;
     font-weight: 600;
     color: rgba(238, 247, 241, 0.5);
 }
@@ -392,7 +392,7 @@ html:has(> body.lg-body) { height: 100%; scrollbar-gutter: auto; }
     height: 1.6rem;
     border-radius: 50%;
     border: 1px solid rgba(255, 255, 255, 0.25);
-    font-size: 0.75rem;
+    font-size: 0.8rem;
 }
 .lg-steps li.is-current { color: #ffffff; }
 .lg-steps li.is-current span { border-color: #4cb27a; background: #1d8a4e; color: #ffffff; }
