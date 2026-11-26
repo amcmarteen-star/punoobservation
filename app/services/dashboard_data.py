@@ -84,8 +84,15 @@ def story_for(fig, where):
             f"{DENR_THRESHOLD:.0f}% target.")
 
 
-def tiles_for(fig):
-    """The three KPI tiles every member and leader sees."""
+MEMBER_SECTIONS = {'sites': '#dash-sites', 'seedlings': '#dash-sites',
+                   'survival': '#dash-sites'}
+LEADER_SECTIONS = {'sites': '#dash-org-sites', 'seedlings': '#dash-years',
+                   'survival': '#dash-survival'}
+
+
+def tiles_for(fig, sections=MEMBER_SECTIONS):
+    """The three KPI tiles every member and leader sees. Each jumps to
+    its section on the same dashboard."""
     if fig['survival'] is None:
         survival = {'label': 'Survival', 'value': 'No reports yet',
                     'sub': f"Target {DENR_THRESHOLD:.0f}%", 'tone': 'neutral'}
@@ -94,11 +101,14 @@ def tiles_for(fig):
         survival = {'label': 'Survival', 'value': f"{fig['survival']:.0f}%",
                     'sub': f"Target {DENR_THRESHOLD:.0f}%",
                     'tone': 'below' if below else 'ok'}
+    survival['href'] = sections['survival']
     return [
         {'label': 'Sites', 'value': f"{fig['sites']:,}",
-         'sub': 'official sites', 'tone': 'neutral'},
+         'sub': 'official sites', 'tone': 'neutral',
+         'href': sections['sites'], 'go': 'See map'},
         {'label': 'Seedlings (contracted)', 'value': f"{fig['target']:,}",
-         'sub': 'in the contracts', 'tone': 'neutral'},
+         'sub': 'in the contracts', 'tone': 'neutral',
+         'href': sections['seedlings']},
         survival,
     ]
 
@@ -109,15 +119,18 @@ def _barangay(user):
     return db.session.get(Location, user.location_id)
 
 
-def _points(site_ids):
-    """Map markers for sites: (lat, lon, name) where the position is known."""
+def _points(site_ids, home_location_id=None):
+    """Map markers for sites: (lat, lon, name) where the position is known.
+    `home` marks sites in the viewer's own barangay, drawn highlighted."""
     if not site_ids:
         return []
     out = []
     for site in Site.query.filter(Site.site_id.in_(site_ids)).all():
         pos = site_position(site)
         if pos:
-            out.append({'lat': pos[0], 'lon': pos[1], 'name': site.site_name})
+            out.append({'lat': pos[0], 'lon': pos[1], 'name': site.site_name,
+                        'home': bool(home_location_id)
+                        and site.location_id == home_location_id})
     return out
 
 
@@ -154,11 +167,20 @@ def member_context(user):
         scope = 'barangay'
 
     species = None
-    map_points = []
     if barangay is not None:
         species = recommend_for_location(barangay, top_k=3)
-        map_points = _points(official_site_ids(
-            Site.location_id == barangay.location_id))
+
+    # The map section shows the same sites as the tiles: the organization's
+    # for an active member (own barangay highlighted), else the barangay's.
+    map_points = _points(ids, barangay.location_id
+                         if org is not None and barangay else None)
+    map_section = {
+        'title': ("Your organization's sites" if org is not None
+                  else "Sites in your barangay"),
+        'figures': site_figures(ids),
+        'unmapped': len(ids) - len(map_points),
+        'shown': org is not None or barangay is not None,
+    }
 
     req, timeline = _timeline_for(user)
     return {
@@ -172,6 +194,7 @@ def member_context(user):
         'timeline': timeline,
         'species': species,
         'points': map_points,
+        'map_section': map_section,
     }
 
 
@@ -182,6 +205,7 @@ def member_context(user):
 def leader_context(user, org):
     member = member_context(user)
     fig = member['figures']
+    member['kpis'] = tiles_for(fig, LEADER_SECTIONS)
 
     waiting_members = (User.query
                        .filter(User.organization_id == org.organization_id,
@@ -297,12 +321,15 @@ def officer_context(user):
 
     tiles = [
         {'label': 'Visits this week', 'value': f"{visits_this_week:,}",
-         'sub': 'recorded since Monday', 'tone': 'neutral'},
+         'sub': 'recorded since Monday', 'tone': 'neutral',
+         'href': '#dash-todo', 'go': 'See list'},
         {'label': 'Overdue', 'value': f"{overdue_count:,}",
          'sub': 'past the target date, no visit yet',
-         'tone': 'below' if overdue_count else 'ok'},
+         'tone': 'below' if overdue_count else 'ok',
+         'href': '#dash-todo', 'go': 'See list'},
         {'label': 'Awaiting approval', 'value': f"{awaiting:,}",
-         'sub': 'with your CENRO', 'tone': 'neutral'},
+         'sub': 'with your CENRO', 'tone': 'neutral',
+         'href': '#dash-todo', 'go': 'See list'},
     ]
     if not todo and not visits_this_week and not awaiting:
         story = "No visits are assigned to you yet."

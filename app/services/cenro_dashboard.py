@@ -226,6 +226,16 @@ def hectares_per_year(by_year, current_year=None):
                    f"{latest['year']}")
 
 
+def _seedlings_title(rows):
+    """Map title for contracted seedlings, real municipalities only."""
+    with_seedlings = [m for m in rows if m.get('seedlings')]
+    if not with_seedlings:
+        return "No contracted seedlings yet"
+    top = max(with_seedlings, key=lambda m: m['seedlings'])
+    return (f"{top['municipality']} has the most contracted seedlings: "
+            f"{top['seedlings']:,}")
+
+
 def build_context(analytics, scope_name):
     """Everything the CENRO and provincial dashboard shows.
 
@@ -281,6 +291,8 @@ def build_context(analytics, scope_name):
             'area': (round(r['area'], 2) if r else row.get('area')),
             'achievement': (_achievement(r['ids']) if r
                             else row.get('achievement')),
+            # contracted seedlings, real sites only (None when all simulated)
+            'seedlings': _planting(r['ids'])[0] if r else None,
             'survival': survival if not simulated else row.get('survival'),
             'cost_per_ha': (round(r['cost'] / r['cost_area'], 0)
                             if r and r['cost_area'] else None),
@@ -329,26 +341,30 @@ def build_context(analytics, scope_name):
         story = f"{status} {problem}{insight}"
 
     # ---- KPI tiles: real sites; simulated counted apart, labelled ----------
+    # Each tile jumps to the section on this page that explains it.
     tiles = [
         {'label': 'Official sites', 'value': f"{total_sites:,}",
-         'sub': f"{active_sites:,} active", 'tone': 'neutral'},
+         'sub': f"{active_sites:,} active", 'tone': 'neutral',
+         'href': '#cd-map-section'},
         {'label': 'Area', 'value': f"{real_area:,.0f} ha",
-         'sub': 'under contract', 'tone': 'neutral'},
+         'sub': 'under contract', 'tone': 'neutral', 'href': '#cd-years-chart'},
         # The spreadsheet's planted column repeats the contracted quantity,
         # so the tile shows contracted seedlings, with no percentage.
         {'label': 'Seedlings (contracted)', 'value': f"{target:,}",
-         'sub': 'in the contracts', 'tone': 'neutral'},
+         'sub': 'in the contracts', 'tone': 'neutral',
+         'href': '#cd-map-section', 'metric': 'seedlings'},
     ]
     delivery = field_delivery(real_ids)
     if delivery is not None:
         tiles.append({'label': 'Delivery', 'value': f"{delivery['pct']:.0f}%",
                       'sub': (f"field counts, {_plural(delivery['sites'], 'site')}"),
-                      'tone': 'neutral'})
-    if simulated_sites:
+                      'tone': 'neutral'})   # plain: no section explains it yet
+    # Simulated: provincial and system admins only.
+    if simulated_sites and current_cenro() is None:
         tiles.append({'label': 'Simulated sites',
                       'value': f"{simulated_sites:,}",
                       'sub': 'demonstration only, not in findings',
-                      'tone': 'neutral'})
+                      'tone': 'neutral', 'href': '#cd-map-section'})
 
     # ---- 1. hectares per year, real sites ----------------------------------
     by_year = {}
@@ -388,6 +404,7 @@ def build_context(analytics, scope_name):
         'area': (f"{max(with_area, key=lambda m: m['area'])['municipality']} has "
                  f"the most area under contract"
                  if with_area else "No contracted area yet"),
+        'seedlings': _seedlings_title(real_rows),
     }
 
     # ---- 5. scatter, judged real municipalities -------------------------------

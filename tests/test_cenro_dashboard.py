@@ -321,6 +321,139 @@ def run(app):
     print()
     print('NOTE scatter on the test data:', sc['title'], '| r =', sc['r'])
 
+    run_drill(app, s, org_id, urdaneta, provincial)
+
+
+TILE_RE = (r'<a class="dash-tile[^"]*" href="([^"]+)"[^>]*>\s*'
+           r'<span class="dash-tile-label">{}</span>\s*'
+           r'<span class="dash-tile-value">([^<]+)</span>')
+
+
+def tile(html, label):
+    """(href, value) of a KPI tile, or (None, None)."""
+    m = re.search(TILE_RE.format(re.escape(label)), html)
+    return (m.group(1).replace('&amp;', '&'), m.group(2)) if m else (None, None)
+
+
+def num(value):
+    return int(re.sub(r'[^0-9]', '', value or '') or -1)
+
+
+def jumps_to(html, href):
+    """The tile's target section is on this page."""
+    return bool(href and href.startswith('#')
+                and f'id="{href[1:]}"' in html)
+
+
+def section_fig(html, key):
+    m = re.search(rf'<strong data-fig="{key}">([^<]+)</strong>', html)
+    return m.group(1) if m else None
+
+
+def check_section_matches_tiles(who, html):
+    """Each tile's number equals what its map section shows."""
+    for label, key in (('Sites', 'sites'), ('Seedlings (contracted)', 'seedlings'),
+                       ('Survival', 'survival')):
+        value = tile(html, label)[1]
+        shown = section_fig(html, key)
+        check(f'5 {who}: {label} tile equals its section',
+              value is not None and value.strip() == (shown or '').strip(),
+              f'{value} vs {shown}')
+
+
+def run_drill(app, s, org_id, urdaneta, provincial):
+    """Step 5: tiles stay on the dashboard and jump to their section."""
+    want = {'Official sites': '#cd-map-section', 'Area': '#cd-years-chart',
+            'Seedlings (contracted)': '#cd-map-section'}
+    for name, client in (('CENRO', urdaneta), ('provincial', provincial)):
+        html = client.get('/dashboard').get_data(as_text=True)
+        for label, target in want.items():
+            href, _ = tile(html, label)
+            check(f'5 {name}: {label} jumps to {target}',
+                  href == target and jumps_to(html, href), href)
+        check(f'5 {name}: no tile leaves the page',
+              all(h.startswith('#') for h in
+                  re.findall(r'<a class="dash-tile[^"]*" href="([^"]+)"', html)))
+        check(f'5 {name}: Seedlings tile selects the Seedlings map metric',
+              'data-metric="seedlings"' in html
+              and '<button type="button" data-metric="seedlings"' in html)
+        cd = page_data(html)
+        real = sum(m['seedlings'] or 0 for m in cd['munis'] if not m['simulated'])
+        check(f'5 {name}: map seedlings add up to the Seedlings tile',
+              real == num(tile(html, 'Seedlings (contracted)')[1]),
+              f"{real} vs {tile(html, 'Seedlings (contracted)')[1]}")
+        check(f'5 {name}: Delivery tile, when shown, is plain (no link)',
+              tile(html, 'Delivery')[0] is None
+              and not re.search(r'href="#cd-gauge', html))
+        check(f'5 {name}: waiting chips still link to queues',
+              not re.search(r'<a class="cd-action[^"]*"\s*>', html))
+    phtml = provincial.get('/dashboard').get_data(as_text=True)
+    href, _ = tile(phtml, 'Simulated sites')
+    check('5 provincial: Simulated jumps to the map',
+          href == '#cd-map-section' and jumps_to(phtml, href), href)
+    uhtml = urdaneta.get('/dashboard').get_data(as_text=True)
+    check('5 CENRO: no Simulated tile', tile(uhtml, 'Simulated sites')[0] is None)
+
+    citizen = db.session.get(User, s.citizen_id)
+    citizen.organization_id, citizen.org_role, citizen.org_status = org_id, 'member', 'active'
+    # a barangay with real org sites, so every member check has numbers
+    home = (Site.query.filter_by(organization_id=org_id, is_simulated=False)
+            .first().location_id)
+    citizen.location_id = home
+    db.session.commit()
+    member = app.test_client()
+    base.login(member, s.citizen_id, s.citizen_name, 'normal_user', None)
+    mhtml = member.get('/dashboard').get_data(as_text=True)
+    check('5 member: every tile jumps to a section on the page',
+          all(jumps_to(mhtml, tile(mhtml, l)[0])
+              for l in ('Sites', 'Seedlings (contracted)', 'Survival')))
+    check('5 org member: map section is the organization sites',
+          "Your organization&#39;s sites" in mhtml
+          or "Your organization's sites" in mhtml)
+    check_section_matches_tiles('org member', mhtml)
+    dm = re.search(r'window.DASH_MAP = (\{.*?\});', mhtml, re.S)
+    pts = json.loads(dm.group(1))['points'] if dm else []
+    check('5 org member: own-barangay sites are marked, with a legend',
+          any(p.get('home') for p in pts) and 'Your barangay' in mhtml
+          or not pts, len(pts))
+    check('5 org member: the map never uses orange',
+          '#f59e0b' not in mhtml and '#ea580c' not in mhtml)
+    check('5 org member: the org has sites to show',
+          num(tile(mhtml, 'Sites')[1]) > 0, tile(mhtml, 'Sites')[1])
+
+    citizen.org_status = 'pending'
+    db.session.commit()
+    phtml = member.get('/dashboard').get_data(as_text=True)
+    check('5 pending member: map section is the barangay',
+          'Sites in your barangay' in phtml)
+    check_section_matches_tiles('pending member', phtml)
+    citizen.organization_id = citizen.org_role = citizen.org_status = None
+    db.session.commit()
+    ihtml = member.get('/dashboard').get_data(as_text=True)
+    check('5 individual: map section is the barangay',
+          'Sites in your barangay' in ihtml)
+    check_section_matches_tiles('individual', ihtml)
+    citizen.organization_id, citizen.org_role, citizen.org_status = org_id, 'member', 'active'
+    db.session.commit()
+
+    citizen.org_role = 'leader'
+    db.session.commit()
+    lhtml = member.get('/dashboard').get_data(as_text=True)
+    check('5 leader: tiles jump to org sites, years and survival',
+          [tile(lhtml, l)[0] for l in ('Sites', 'Seedlings (contracted)', 'Survival')]
+          == ['#dash-org-sites', '#dash-years', '#dash-survival']
+          and all(f'id="{x}"' in lhtml for x in ('dash-org-sites', 'dash-years', 'dash-survival')))
+    citizen.organization_id = citizen.org_role = citizen.org_status = None
+    db.session.commit()
+
+    officer = app.test_client()
+    base.login(officer, s.officer_id, s.officer_name, 'field_officer', 'Urdaneta City')
+    ohtml = officer.get('/dashboard').get_data(as_text=True)
+    check('5 officer: every tile jumps to the to-do list',
+          all(tile(ohtml, l)[0] == '#dash-todo' for l in
+              ('Visits this week', 'Overdue', 'Awaiting approval'))
+          and jumps_to(ohtml, '#dash-todo'))
+
 
 def run_years():
     """Step 4: hectares per year, every year, trend title."""

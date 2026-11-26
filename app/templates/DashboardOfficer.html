@@ -19,7 +19,7 @@
 {% set tiles = d.tiles %}
 {% include 'partials/_dash_tiles.html' %}
 
-<div class="um-panel">
+<div class="um-panel" id="dash-todo" tabindex="-1">
   <div class="um-panel-head"><h3>To do</h3></div>
   <div style="padding: 1.25rem;">
     {% if d.todo %}

@@ -47,11 +47,27 @@
   </div>
 </div>
 
-<div class="um-panel">
-  <div class="um-panel-head"><h3>Sites in your barangay</h3></div>
+<div class="um-panel" id="dash-sites" tabindex="-1">
+  {% set ms = d.map_section %}
+  <div class="um-panel-head"><h3>{{ ms.title }}</h3></div>
   <div style="padding: 1.25rem;">
-    {% if d.barangay %}
+    {% if ms.shown %}
+      {# The same figures as the tiles above, from the same sites. #}
+      <p class="dash-map-summary" style="margin: 0 0 0.75rem;">
+        <strong data-fig="sites">{{ "{:,}".format(ms.figures.sites) }}</strong> {{ 'site' if ms.figures.sites == 1 else 'sites' }}
+        · <strong data-fig="seedlings">{{ "{:,}".format(ms.figures.target) }}</strong> contracted seedlings
+        · survival <strong data-fig="survival">{{ "{:.0f}%".format(ms.figures.survival) if ms.figures.survival is not none else 'No reports yet' }}</strong>
+        {% if ms.unmapped %}<br><span class="text-secondary small">{{ ms.unmapped }} without a map position, not drawn.</span>{% endif %}
+        {% if d.org and d.barangay %}<br><span class="text-secondary small">Sites in {{ d.barangay.barangay }}, your barangay, have a dark ring.</span>{% endif %}
+      </p>
       <div id="dash-map" style="height: 280px; border-radius: 0.5rem;"></div>
+      {% if d.org and d.barangay %}
+      <div id="dash-map-key" class="dash-map-key"
+           style="display: none; gap: 1rem; margin-top: 0.5rem; font-size: 0.8rem;">
+        <span><svg width="14" height="14" aria-hidden="true"><circle cx="7" cy="7" r="5" fill="#43a047" stroke="#1b5e20" stroke-width="1"/></svg> Organization site</span>
+        <span><svg width="18" height="18" aria-hidden="true"><circle cx="9" cy="9" r="6.5" fill="#43a047" stroke="#0b2e13" stroke-width="2.5"/></svg> Your barangay</span>
+      </div>
+      {% endif %}
       <p style="margin-top: 0.75rem;"><a href="{{ url_for('dashboard.gis_map') }}">Open the full map</a></p>
     {% else %}
       <p>Set your barangay in <a href="{{ url_for('dashboard.my_account') }}#barangay">My Account</a> to see its sites on a map.</p>
