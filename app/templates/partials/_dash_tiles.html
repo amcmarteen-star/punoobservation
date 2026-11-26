@@ -1,0 +1,23 @@
+{# KPI tiles. Needs `tiles`: a list of {label, value, sub, tone}. A tone of
+   'below' is the alert colour; 'neutral' and 'ok' are not alerts. #}
+<style>
+  .dash-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+                gap: 0.75rem; margin: 1rem 0; }
+  .dash-tile { padding: 1rem; border-radius: 0.75rem; background: rgba(0,0,0,0.035);
+               display: flex; flex-direction: column; gap: 0.25rem; }
+  .dash-tile-label { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.04em; opacity: 0.75; }
+  .dash-tile-value { font-size: 1.6rem; font-weight: 700; }
+  .dash-tile.is-below .dash-tile-value { color: #b91c1c; }
+  .dash-tile.is-ok .dash-tile-value { color: #15803d; }
+  .dash-tile-sub { font-size: 0.8rem; opacity: 0.75; }
+  .dash-story { font-size: 1.05rem; margin: 0.5rem 0 0; }
+</style>
+<div class="dash-tiles">
+  {% for t in tiles %}
+  <div class="dash-tile is-{{ t.tone }}">
+    <span class="dash-tile-label">{{ t.label }}</span>
+    <span class="dash-tile-value">{{ t.value }}</span>
+    <span class="dash-tile-sub">{{ t.sub }}</span>
+  </div>
+  {% endfor %}
+</div>

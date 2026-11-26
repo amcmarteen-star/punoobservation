@@ -1,0 +1,23 @@
+{% extends "Base.html" %}
+{% block title %}Dashboard - PuNoObservation{% endblock %}
+{% block content_class %}page-content-wide{% endblock %}
+{% set active_page = 'dashboard' %}
+{% block extra_head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='vendor/leaflet/leaflet.css') }}">
+{% endblock %}
+{% block content %}
+
+<div class="page-header page-header-row">
+  <div>
+    <h2>Welcome, {{ session.username }}!</h2>
+    <p class="text-secondary mb-0">What you need to know today.</p>
+  </div>
+</div>
+
+{% include 'partials/_dash_member_body.html' %}
+
+{% endblock %}
+{% block extra_scripts %}
+<script src="{{ url_for('static', filename='vendor/leaflet/leaflet.js') }}"></script>
+{% include 'partials/_dash_map.html' %}
+{% endblock %}

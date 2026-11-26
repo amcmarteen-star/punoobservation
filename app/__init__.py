@@ -130,14 +130,17 @@ def create_app():
     # while a temporary password is still waiting to be changed.
     @app.context_processor
     def _tour_due():
-        due = False
+        due, new_only = False, False
         if (request.endpoint == 'dashboard.index'
                 and session.get('user_id')
                 and not session.get('must_change_password')):
             from app.models import User
+            from app.utils.tour import tour_mode
             user = db.session.get(User, session['user_id'])
-            due = user is not None and user.tour_completed_at is None
-        return {"tour_due": due}
+            mode = tour_mode(user)
+            due = mode is not None
+            new_only = mode == 'new'
+        return {"tour_due": due, "tour_new_only": new_only}
 
     # Organization membership for the sidebar and the pending banner.
     @app.context_processor

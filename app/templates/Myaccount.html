@@ -358,6 +358,36 @@
 </div>
 {% endif %}
 
+<!-- ============ BARANGAY ============ -->
+<div class="um-panel" id="barangay">
+  <div class="um-panel-head">
+    <h3>Your barangay</h3>
+  </div>
+  <div style="padding: 1.25rem;">
+    <p>Your barangay decides which species and sites your dashboard shows.
+      {% if current_barangay %}
+      Now: <strong>{{ current_barangay.barangay }}, {{ current_barangay.municipality }}</strong>.
+      {% else %}
+      You have not set one yet.
+      {% endif %}
+    </p>
+    <form method="POST" action="{{ url_for('dashboard.set_barangay') }}"
+          style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <select name="location_id" required aria-label="Barangay" style="min-width: 16rem;">
+        <option value="">Choose a barangay</option>
+        {% for b in barangays %}
+        <option value="{{ b.location_id }}"
+                {% if current_barangay and current_barangay.location_id == b.location_id %}selected{% endif %}>
+          {{ b.barangay }}, {{ b.municipality }}
+        </option>
+        {% endfor %}
+      </select>
+      <button type="submit" class="um-btn-confirm">Save barangay</button>
+    </form>
+  </div>
+</div>
+
 <!-- ============ ACCOUNT DETAILS ============ -->
 <div class="um-panel">
   <div class="um-panel-head">

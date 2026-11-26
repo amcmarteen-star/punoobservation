@@ -9,6 +9,7 @@ from app.models import (
 )
 from app.utils.audit import log_action
 from app.utils.organization import request_block
+from app.utils.tour import TOUR_VERSION
 from app.services.request_stage import (
     ORG_PENDING, SUBMITTED, AT_ORGANIZATION, CENRO_ACTIONABLE,
     apply_resubmit, initial_status, notify_cenro, notify_org_leaders,
@@ -16,6 +17,9 @@ from app.services.request_stage import (
 )
 from app.models import Organization
 from app.services.request_timeline import build_timeline, can_see_request
+from app.services.dashboard_data import (
+    leader_context, member_context, officer_context,
+)
 from app.services.notification_links import notification_url
 from sqlalchemy import func
 from collections import defaultdict
@@ -125,9 +129,39 @@ def home():
         return redirect(url_for('dashboard.index'))
     return render_template('Landing.html')
 
+def _geometry(barangay):
+    """The barangay's outline for the mini map, or None."""
+    if barangay is None:
+        return None
+    return _load_barangay_geometry(barangay.municipality, barangay.barangay)
+
+
+def _home_dashboard():
+    """Members, leaders and field officers each get their own page. The
+    admin analytics page is for CENRO and provincial staff only."""
+    user = db.session.get(User, session.get('user_id'))
+    if session.get('role') == 'field_officer':
+        return render_template('DashboardOfficer.html',
+                               active_page='dashboard',
+                               d=officer_context(user), geometry=None)
+    if (user.organization_id and user.org_role == 'leader'
+            and user.org_status == 'active'):
+        org = db.session.get(Organization, user.organization_id)
+        d = leader_context(user, org)
+        return render_template('DashboardLeader.html',
+                               active_page='dashboard', d=d,
+                               geometry=_geometry(d['barangay']))
+    d = member_context(user)
+    return render_template('DashboardMember.html',
+                           active_page='dashboard', d=d,
+                           geometry=_geometry(d['barangay']))
+
+
 @dashboard_bp.route('/dashboard')
 @login_required
 def index():
+    if session.get('role') not in ('admin', 'superadmin'):
+        return _home_dashboard()
     total_sites = db.session.query(func.count(Site.site_id)).scalar() or 0
     total_trees = db.session.query(func.sum(ReforestationRecord.target_quantity)).scalar() or 0
     total_reports = db.session.query(func.count(MonitoringReport.report_id)).scalar() or 0
@@ -535,8 +569,10 @@ def tour_done():
     the Dashboard stops starting it (partials/_tour.html). Replaying it
     from the help panel calls this again, which changes nothing."""
     user = db.session.get(User, session.get('user_id'))
-    if user is not None and user.tour_completed_at is None:
-        user.tour_completed_at = manila_now()
+    if user is not None:
+        if user.tour_completed_at is None:
+            user.tour_completed_at = manila_now()
+        user.tour_version = TOUR_VERSION
         db.session.commit()
     return jsonify({"success": True})
 
@@ -1820,6 +1856,25 @@ def request_detail(request_id):
     )
 
 
+@dashboard_bp.route('/account/barangay', methods=['POST'])
+@login_required
+def set_barangay():
+    """The barangay a person chose in My Account. It decides which species
+    and sites the dashboard shows. The id is checked against the database."""
+    user = db.session.get(User, session.get('user_id'))
+    raw = (request.form.get('location_id') or '').strip()
+    location = db.session.get(Location, int(raw)) if raw.isdigit() else None
+    if location is None:
+        flash("Choose a barangay from the list.", "danger")
+        return redirect(url_for('dashboard.my_account') + '#barangay')
+    user.location_id = location.location_id
+    log_action('set_barangay', 'users', user.user_id,
+               f"Barangay set to {location.barangay}, {location.municipality}")
+    db.session.commit()
+    flash("Your barangay is saved.", "success")
+    return redirect(url_for('dashboard.my_account') + '#barangay')
+
+
 @dashboard_bp.route('/api/barangays/<municipality>')
 def api_barangays(municipality):
     if not can_see_municipality(municipality):
@@ -2401,6 +2456,9 @@ def api_dashboard_analytics():
     barangay characteristics are reseeded.
     """
     # ------------------------------------------------------------------
+    # Admin figures only. Everyone else is refused here, not just hidden.
+    if session.get('role') not in ('admin', 'superadmin'):
+        abort(403)
     # base pull: every site with its location and planting figures
     # ------------------------------------------------------------------
     q = (
@@ -3054,6 +3112,10 @@ def my_account():
         'Myaccount.html',
         active_page='account',
         user=user,
+        barangays=Location.query.order_by(Location.municipality,
+                                          Location.barangay).all(),
+        current_barangay=(db.session.get(Location, user.location_id)
+                          if user.location_id else None),
         recent_activity=recent_activity,
         must_change=bool(session.get('must_change_password')),
     )

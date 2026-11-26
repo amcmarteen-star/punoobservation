@@ -1,0 +1,140 @@
+{% extends "Base.html" %}
+{% block title %}Dashboard - PuNoObservation{% endblock %}
+{% block content_class %}page-content-wide{% endblock %}
+{% set active_page = 'dashboard' %}
+{% block extra_head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='vendor/leaflet/leaflet.css') }}">
+{% endblock %}
+{% block content %}
+
+<div class="page-header page-header-row">
+  <div>
+    <h2>Welcome, {{ session.username }}!</h2>
+    <p class="text-secondary mb-0">{{ d.org.organization_name }}</p>
+  </div>
+</div>
+
+{# ---- action queue: what needs you today ---- #}
+<div class="um-panel">
+  <div class="um-panel-head"><h3>Needs your action</h3></div>
+  <div style="padding: 1.25rem;">
+    {% set waiting = d.queue.waiting_members %}
+    {% set reviews = d.queue.requests %}
+    {% if not waiting and not reviews %}
+      <p>Nothing is waiting for you.</p>
+    {% endif %}
+    {% if waiting %}
+      <p><strong>{{ waiting|length }}</strong> {{ 'person is' if waiting|length == 1 else 'people are' }} waiting to join.
+        <a href="{{ url_for('organization.members_page') }}">Review them</a></p>
+    {% endif %}
+    {% if reviews %}
+      <p><strong>{{ reviews|length }}</strong> site {{ 'request' if reviews|length == 1 else 'requests' }} to review.
+        <a href="{{ url_for('organization.members_page') }}">Review them</a></p>
+      <ul>
+        {% for r in reviews %}
+        <li>{{ r.request_type }}{% if r.location %} in {{ r.location.barangay }}{% endif %}
+          &middot; sent by {{ r.requester.username if r.requester else 'unknown' }}
+          &middot; <a href="{{ url_for('organization.members_page') }}">Review</a></li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+  </div>
+</div>
+
+{# ---- the organization's figures ---- #}
+<div class="um-panel">
+  <div class="um-panel-head"><h3>Organization survival against the target</h3></div>
+  <div style="padding: 1.25rem;">
+    {% if d.gauge is none %}
+      <p>No monitoring reports yet, so there is no survival figure to show.</p>
+    {% else %}
+      <div style="position: relative; height: 0.9rem; border-radius: 0.45rem; background: rgba(0,0,0,0.08);">
+        <div style="height: 100%; width: {{ [d.gauge, 100]|min }}%; border-radius: 0.45rem;
+                    background: {{ '#b91c1c' if d.gauge < 85 else '#15803d' }};"></div>
+        <div style="position: absolute; left: 85%; top: -0.25rem; bottom: -0.25rem; width: 2px; background: #111;"
+             title="Target 85%"></div>
+      </div>
+      <p style="margin-top: 0.5rem;">{{ '%.0f'|format(d.gauge) }}% survival. The line marks the 85% target.
+        Only official sites count here.</p>
+    {% endif %}
+  </div>
+</div>
+
+<div class="um-panel">
+  <div class="um-panel-head"><h3>Seedlings planted per year</h3></div>
+  <div style="padding: 1.25rem;">
+    {% if d.years %}
+      <div style="position: relative; height: 260px;"><canvas id="years-chart" aria-label="Seedlings planted per year"></canvas></div>
+    {% else %}
+      <p>No sites with a planting year yet.</p>
+    {% endif %}
+  </div>
+</div>
+
+{# ---- the member view below ---- #}
+{% include 'partials/_dash_member_body.html' %}
+
+<div class="um-panel">
+  <div class="um-panel-head"><h3>Your organization's sites</h3></div>
+  <div style="padding: 1.25rem;">
+    {% if d.rows %}
+    <table class="um-table">
+      <thead>
+        <tr><th>Site</th><th>Barangay</th><th>Target</th><th>Planted</th><th>Survival</th><th>Status</th></tr>
+      </thead>
+      <tbody>
+        {% for r in d.rows %}
+        <tr style="{{ 'background: rgba(185,28,28,0.08);' if r.below else '' }}{{ 'opacity: 0.7;' if r.under_review else '' }}">
+          <td>{{ r.name }}</td>
+          <td>{{ r.barangay }}</td>
+          <td>{{ '{:,}'.format(r.target) }}</td>
+          <td>{{ '{:,}'.format(r.actual) }}</td>
+          <td>{{ r.survival }}</td>
+          <td>{% if r.under_review %}Under review{% else %}Official{% endif %}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <p class="text-secondary small">Rows in red are below the 85% target. Sites under review are shown, but are not counted in the survival figure.</p>
+    {% else %}
+      <p>Your organization has no sites yet.</p>
+    {% endif %}
+  </div>
+</div>
+
+<div class="um-panel">
+  <div class="um-panel-head"><h3>Invite link</h3></div>
+  <div style="padding: 1.25rem;">
+    {% if d.invite_url %}
+      <input type="text" readonly value="{{ d.invite_url }}" style="width: 100%;" onclick="this.select()" aria-label="Invite link">
+      <p class="small"><a href="{{ url_for('organization.members_page') }}">Manage the link and members</a></p>
+    {% else %}
+      <p>No invite link yet. It appears once a leader is appointed.</p>
+    {% endif %}
+  </div>
+</div>
+
+{% endblock %}
+{% block extra_scripts %}
+<script src="{{ url_for('static', filename='vendor/leaflet/leaflet.js') }}"></script>
+{% include 'partials/_dash_map.html' %}
+<script src="{{ url_for('static', filename='vendor/chartjs/chart.umd.min.js') }}"></script>
+<script>
+  (function () {
+    var el = document.getElementById("years-chart");
+    if (!el || !window.Chart) return;
+    var years = {{ d.years|tojson }};
+    new Chart(el, {
+      type: "line",
+      data: {
+        labels: years.map(function (y) { return String(y.year); }),
+        datasets: [
+          { label: "Planted", data: years.map(function (y) { return y.actual; }), tension: 0.3 },
+          { label: "Targeted", data: years.map(function (y) { return y.target; }), borderDash: [6, 4], tension: 0.3 }
+        ]
+      },
+      options: { responsive: true, maintainAspectRatio: false }
+    });
+  })();
+</script>
+{% endblock %}

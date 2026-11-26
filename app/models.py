@@ -107,6 +107,9 @@ class User(db.Model):
     # Stored here, not in the browser, so it shows once per person
     # rather than once per device.
     tour_completed_at = db.Column(db.DateTime, nullable=True)
+    # The tour version the user last finished (app/utils/tour.py). NULL
+    # means version 1, the tour before versions existed.
+    tour_version = db.Column(db.Integer, nullable=True)
 
     # False only from signing up until the emailed link is opened; the
     # login refuses until then. True for every other account: an

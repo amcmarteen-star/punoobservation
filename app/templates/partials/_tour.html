@@ -89,6 +89,21 @@
 ] %}
 {% endif %}
 
+{% if role not in ['admin', 'field_officer'] %}
+{% set steps = steps + [
+  {"element": ".topbar-account", "v": 2,
+   "title": "Set your barangay",
+   "text": "My Account now holds your barangay. It decides which species and sites your dashboard shows."},
+] %}
+{% endif %}
+{% if org_role == 'leader' and org_status == 'active' %}
+{% set steps = steps + [
+  {"element": nav|format(url_for('organization.members_page')), "in_menu": true, "v": 2,
+   "title": "My Organization",
+   "text": "Approve members and review site requests from your organization. Share the invite link from here."},
+] %}
+{% endif %}
+
 {% set steps = steps + [
   {"element": "#helpOpenBtn",
    "title": "Help on every page",
@@ -102,12 +117,14 @@
   {"title": "You're all set",
    "text": "Press ? at the top of any page whenever you need help."},
 ] %}
+{% set new_steps = steps | selectattr('v', 'equalto', 2) | list %}
 
 <script>
   (function () {
     if (!window.driver || !window.driver.js) return;
 
     const STEPS = {{ steps|tojson }};
+    const NEW_STEPS = {{ new_steps|tojson }};
     const MOBILE = window.matchMedia("(max-width: 860px)");
     const body = document.body;
 
@@ -131,8 +148,10 @@
         .catch(function () { /* tried again next time */ });
     }
 
-    window.startTour = function () {
-      const steps = STEPS.filter(exists).map(function (s) {
+    // onlyNew: a user who finished an older tour version sees only the steps
+    // added since. The replay button calls this with no argument: every step.
+    window.startTour = function (onlyNew) {
+      const steps = (onlyNew ? NEW_STEPS : STEPS).filter(exists).map(function (s) {
         const step = { popover: { title: s.title, description: s.text } };
         if (s.element) step.element = s.element;
         step.inMenu = !!s.in_menu;
@@ -195,7 +214,7 @@
     function autoStart() {
       if (started) return;
       started = true;
-      window.startTour();
+      window.startTour({{ 'true' if tour_new_only else 'false' }});
     }
     window.addEventListener("load", function () { setTimeout(autoStart, 400); });
     setTimeout(autoStart, 2500);

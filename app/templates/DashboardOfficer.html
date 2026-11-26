@@ -1,0 +1,63 @@
+{% extends "Base.html" %}
+{% block title %}Dashboard - PuNoObservation{% endblock %}
+{% block content_class %}page-content-wide{% endblock %}
+{% set active_page = 'dashboard' %}
+{% block extra_head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='vendor/leaflet/leaflet.css') }}">
+{% endblock %}
+{% block content %}
+
+<div class="page-header page-header-row">
+  <div>
+    <h2>Welcome, {{ session.username }}!</h2>
+    <p class="text-secondary mb-0">Your visits and reports.</p>
+  </div>
+</div>
+
+<p class="dash-story">{{ d.story }}</p>
+
+{% set tiles = d.tiles %}
+{% include 'partials/_dash_tiles.html' %}
+
+<div class="um-panel">
+  <div class="um-panel-head"><h3>To do</h3></div>
+  <div style="padding: 1.25rem;">
+    {% if d.todo %}
+    <table class="um-table">
+      <thead>
+        <tr><th>Site</th><th>Visit</th><th>Target date</th><th>Status</th><th></th></tr>
+      </thead>
+      <tbody>
+        {% for t in d.todo %}
+        <tr style="{{ 'background: rgba(185,28,28,0.08);' if t.overdue else '' }}">
+          <td>{{ t.site_name }}</td>
+          <td>{{ t.visit_type }}</td>
+          <td>{{ t.target_date.strftime('%d %b %Y') if t.target_date else 'Not set' }}</td>
+          <td>{{ 'Overdue' if t.overdue else 'Open' }}</td>
+          <td><a href="{{ url_for('visits.site_visits', site_id=t.site.site_id) }}">Open</a></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+      <p>Nothing to do right now.</p>
+    {% endif %}
+  </div>
+</div>
+
+<div class="um-panel">
+  <div class="um-panel-head"><h3>Your assigned sites</h3></div>
+  <div style="padding: 1.25rem;">
+    {% if d.points %}
+      <div id="dash-map" style="height: 280px; border-radius: 0.5rem;"></div>
+    {% else %}
+      <p>No assigned sites have a map position yet.</p>
+    {% endif %}
+  </div>
+</div>
+
+{% endblock %}
+{% block extra_scripts %}
+<script src="{{ url_for('static', filename='vendor/leaflet/leaflet.js') }}"></script>
+{% include 'partials/_dash_map.html' %}
+{% endblock %}

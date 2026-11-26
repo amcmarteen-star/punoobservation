@@ -1,0 +1,38 @@
+{# Mini map: the barangay outline and its sites. Include it in a page's
+   extra_scripts block, after leaflet.js. Needs `geometry` (or None) and
+   `d.points` from the route. #}
+<script>
+  window.DASH_MAP = {{ {"geometry": geometry, "points": d.points}|tojson }};
+</script>
+<script>
+  (function () {
+    var el = document.getElementById("dash-map");
+    if (!el || !window.L) return;
+    var data = window.DASH_MAP || {};
+    var map = L.map(el, { scrollWheelZoom: false, attributionControl: false });
+    var bounds = null;
+
+    function extend(b) {
+      bounds = bounds ? bounds.extend(b) : L.latLngBounds(b);
+    }
+
+    if (data.geometry) {
+      var outline = L.geoJSON(data.geometry, {
+        style: { color: "#2e7d32", weight: 2, fillOpacity: 0.06 }
+      }).addTo(map);
+      extend(outline.getBounds());
+    }
+    (data.points || []).forEach(function (p) {
+      L.circleMarker([p.lat, p.lon], {
+        radius: 6, color: "#1b5e20", fillColor: "#43a047", fillOpacity: 0.9
+      }).bindTooltip(p.name).addTo(map);
+      extend([[p.lat, p.lon]]);
+    });
+
+    if (bounds) {
+      map.fitBounds(bounds, { padding: [12, 12] });
+    } else {
+      map.setView([15.9, 120.6], 10);
+    }
+  })();
+</script>

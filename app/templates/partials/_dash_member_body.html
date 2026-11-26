@@ -1,0 +1,60 @@
+{# The member's view. Used by the member page and, below the action queue, by
+   the leader page. Needs `d` from services/dashboard_data.py member_context(). #}
+{% if d.scope == 'barangay' and not d.barangay %}
+<div class="um-panel">
+  <div style="padding: 1.25rem;">
+    <p>Your barangay is not set yet.
+      <a href="{{ url_for('dashboard.my_account') }}#barangay">Set it in My Account</a>
+      to see your area here.</p>
+  </div>
+</div>
+{% elif d.story %}
+<p class="dash-story">{{ d.story }}</p>
+{% endif %}
+
+{% set tiles = d.kpis %}
+{% include 'partials/_dash_tiles.html' %}
+
+{% if d.timeline %}
+<div class="um-panel">
+  <div class="um-panel-head"><h3>Your latest request</h3></div>
+  <div style="padding: 1.25rem;">
+    {% set timeline = d.timeline %}
+    {% include 'partials/_request_stepper.html' %}
+    <p><a href="{{ url_for('dashboard.request_detail', request_id=d.request.request_id) }}">Open the request</a></p>
+  </div>
+</div>
+{% endif %}
+
+<div class="um-panel">
+  <div class="um-panel-head"><h3>Species that suit your barangay</h3></div>
+  <div style="padding: 1.25rem;">
+    {% if not d.barangay %}
+      <p>Set your barangay in <a href="{{ url_for('dashboard.my_account') }}#barangay">My Account</a> to see species for it.</p>
+    {% elif d.species and d.species.found %}
+      <ol>
+        {% for sp in d.species.recommendations %}
+        <li>
+          <strong>{{ sp.specie_name }}</strong>
+          <span class="text-secondary"><em>{{ sp.scientific_name }}</em> &middot; {{ sp.habitat }}</span>
+        </li>
+        {% endfor %}
+      </ol>
+      <p><a href="{{ url_for('dashboard.recommendations') }}">See the full list</a></p>
+    {% else %}
+      <p>No characteristic data for {{ d.barangay.barangay }} yet.</p>
+    {% endif %}
+  </div>
+</div>
+
+<div class="um-panel">
+  <div class="um-panel-head"><h3>Sites in your barangay</h3></div>
+  <div style="padding: 1.25rem;">
+    {% if d.barangay %}
+      <div id="dash-map" style="height: 280px; border-radius: 0.5rem;"></div>
+      <p style="margin-top: 0.75rem;"><a href="{{ url_for('dashboard.gis_map') }}">Open the full map</a></p>
+    {% else %}
+      <p>Set your barangay in <a href="{{ url_for('dashboard.my_account') }}#barangay">My Account</a> to see its sites on a map.</p>
+    {% endif %}
+  </div>
+</div>
