@@ -23,6 +23,7 @@ RUN
 Exit code 0 when every check passes, 1 otherwise.
 """
 
+import json
 import os
 import re
 import sys
@@ -41,6 +42,9 @@ from app.utils.organization import ensure_join_token    # noqa: E402
 from app.utils.timeutil import manila_now               # noqa: E402
 
 RESULTS = []
+
+
+from app.utils.tour import TOUR_VERSION  # noqa: E402
 
 
 def check(name, ok, detail=''):
@@ -265,7 +269,7 @@ def run(app):
     db.session.get(User, old).tour_completed_at = manila_now()
     db.session.get(User, old).tour_version = None
     db.session.get(User, current).tour_completed_at = manila_now()
-    db.session.get(User, current).tour_version = 2
+    db.session.get(User, current).tour_version = TOUR_VERSION
     db.session.commit()
 
     page = as_(fresh, 'syn_fresh_tour_d').get('/dashboard').get_data(as_text=True)
@@ -285,9 +289,11 @@ def run(app):
     client_old.post('/api/tour/done', headers={'X-CSRFToken': 'x'})
     db.session.remove()
     check('9 finishing the tour records the current version',
-          db.session.get(User, old).tour_version == 2)
+          db.session.get(User, old).tour_version == TOUR_VERSION == 3)
 
     run_profile(app, as_, indiv, leader)
+    run_tour_branches(app, as_, s, indiv, waiting, leader, org_id, bacag_id)
+    run_faq(app, as_, s, indiv, leader, org_id)
     run_user_management(app, as_, s, org_id)
 
 
@@ -347,6 +353,116 @@ def run_user_management(app, as_, s, org_id):
     check('11 org name has a full-text tooltip and a 2-line clamp',
           re.search(r'class="um-role um-org[^"]*"[^>]*title="Partner Org Leader', r_bad)
           is not None and '-webkit-line-clamp: 2' in page)
+
+
+def tour_steps(page, name='STEPS'):
+    m = re.search(r'const ' + name + r' = (\[.*?\]);\n', page, re.S)
+    return json.loads(m.group(1)) if m else None
+
+
+def run_tour_branches(app, as_, s, indiv, waiting, leader, org_id, bacag_id):
+    """12 one tour branch per role, at most 6 steps, role-specific words."""
+    member = make_user('syn_tour_member_d', org_id=org_id, org_role='member',
+                       org_status='active', location_id=bacag_id)
+    db.session.commit()
+    who = {
+        'Individual': (as_(indiv, 'syn_indiv_d'), 'You are an Individual'),
+        'Pending Member': (as_(waiting, 'syn_waiting_d'), 'Pending Member'),
+        'Partner Org Member': (as_(member, 'syn_tour_member_d'), 'Partner Org Member of'),
+        'Partner Org Leader': (as_(leader, 'syn_leader_d'), 'Partner Org Leader of'),
+        'Field Officer': (as_(s.officer_id, s.officer_name, 'field_officer',
+                              'Urdaneta City'), 'You are a Field Officer'),
+        'CENRO Administrator': (as_(s.cenro_admin_id, s.cenro_admin_name, 'admin',
+                                    'Urdaneta City'), 'CENRO Administrator'),
+        'Provincial Administrator': (as_(s.penro_id, s.penro_name, 'admin', None),
+                                     'Provincial Administrator'),
+        'System Administrator': (as_(s.superadmin_id, s.superadmin_name,
+                                     'superadmin', None), 'System Administrator'),
+    }
+    for label, (client, words) in who.items():
+        page = client.get('/dashboard').get_data(as_text=True)
+        steps = tour_steps(page)
+        new = tour_steps(page, 'NEW_STEPS')
+        check(f'12 {label}: own tour branch, at most 6 steps',
+              steps is not None and 1 <= len(steps) <= 6
+              and words in steps[0]['text'], steps and steps[0]['text'])
+        check(f'12 {label}: version-3 steps exist for returning users',
+              new is not None and len(new) >= 1
+              and all(x.get('v') == 3 for x in new))
+        check(f'12 {label}: no "Normal User" in the tour',
+              steps is not None and 'Normal User' not in json.dumps(steps))
+    lp = who['Partner Org Leader'][0].get('/dashboard').get_data(as_text=True)
+    check('12 leader tour points at the request queue on the dashboard',
+          '"#dash-queue"' in lp and 'id="dash-queue"' in lp)
+
+
+def run_faq(app, as_, s, indiv, leader, org_id):
+    """13 FAQ: required entries, role-specific dashboard, real behaviour."""
+    ic = as_(indiv, 'syn_indiv_d')
+    lc = as_(leader, 'syn_leader_d')
+    sa = as_(s.superadmin_id, s.superadmin_name, 'superadmin')
+    officer = as_(s.officer_id, s.officer_name, 'field_officer', 'Urdaneta City')
+    cenro = as_(s.cenro_admin_id, s.cenro_admin_name, 'admin', 'Urdaneta City')
+    # The Recommendations page itself fails on a barangay with no rainfall
+    # (a separate, older bug), so its FAQ partial is rendered on its own.
+    from flask import render_template
+    with app.test_request_context('/recommendations'):
+        recs = render_template('partials/faq/_recommendations.html')
+    pages = {
+        'recs': recs,
+        'requests': ic.get('/requests').get_data(as_text=True),
+        'org': lc.get('/org/members').get_data(as_text=True),
+        'gis': ic.get('/gis-map').get_data(as_text=True),
+        'dash_user': ic.get('/dashboard').get_data(as_text=True),
+        'dash_admin': cenro.get('/dashboard').get_data(as_text=True),
+        'dash_officer': officer.get('/dashboard').get_data(as_text=True),
+        'reports': officer.get('/reports').get_data(as_text=True),
+        'visits': officer.get('/site-visits').get_data(as_text=True),
+        'review': cenro.get('/admin/requests').get_data(as_text=True),
+    }
+    need = [
+        ('org', "I don&#39;t have an invite link", "I don't have an invite link"),
+        ('org', 'My approval is taking long', None),
+        ('requests', "Why can&#39;t I request a site?", "Why can't I request a site?"),
+        ('requests', 'What does Returned for revision mean?', None),
+        ('org', 'How do I invite members?', None),
+        ('gis', 'Why is a location approximate?', None),
+        ('gis', 'What is simulated data?', None),
+        ('dash_admin', 'What is simulated data?', None),
+        ('reports', 'Why was my photo marked No GPS?', None),
+        ('visits', 'What does Not suitable do?', None),
+        ('dash_user', 'What do the dashboard numbers mean?', None),
+    ]
+    for page, q, alt in need:
+        html = pages[page]
+        check(f'13 FAQ "{alt or q}" on {page}',
+              f'<summary>{q}</summary>' in html
+              or (alt and f'<summary>{alt}</summary>' in html))
+    check('13 dashboard FAQ: users do not get admin chart entries',
+          'What is cost per hectare?' not in pages['dash_user']
+          and 'What is cost per hectare?' in pages['dash_admin'])
+    check('13 dashboard FAQ: officers get their own numbers',
+          'Visits this week:' in pages['dash_officer']
+          and 'Official sites:' not in pages['dash_officer'])
+    from app.models import SpeciesCategory
+    tagged = SpeciesCategory.query.count() > 0
+    check('13 purpose filter FAQ matches whether species are classified',
+          ('Species purposes are not classified yet' in pages['recs']) != tagged)
+    with app.test_request_context('/recommendations'):
+        SpeciesCategory.query.delete()
+        none_page = render_template('partials/faq/_recommendations.html')
+        db.session.rollback()
+    check('13 with no category rows it says purposes are not classified yet',
+          'Species purposes are not classified yet' in none_page)
+    st = pages['requests']
+    check('13 request statuses FAQ has the organization and CENRO stages',
+          all(x in st for x in ('<strong>Pending Org Approval:</strong>',
+                                '<strong>Returned:</strong>',
+                                '<strong>Pending CENRO:</strong>')))
+    check('13 Review Requests FAQ explains the three groups',
+          'Needs your action' in pages['review'] and 'At organization' in pages['review'])
+    allhtml = ' '.join(pages.values()) + sa.get('/admin/user-management').get_data(as_text=True)
+    check('13 no "Normal User" on any page checked', 'Normal User' not in allhtml)
 
 
 def run_profile(app, as_, indiv, leader):

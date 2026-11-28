@@ -11,7 +11,7 @@ A NULL users.tour_version counts as version 1, which is what everyone who
 finished the tour before versions existed has.
 """
 
-TOUR_VERSION = 2
+TOUR_VERSION = 3
 
 
 def tour_mode(user):

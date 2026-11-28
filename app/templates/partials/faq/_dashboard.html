@@ -1,64 +1,110 @@
-{# FAQ for the Dashboard (dashboard.index). Behaviour described lives in
-   dashboard.api_dashboard_analytics and _plant_next. #}
+{# FAQ for the Dashboard (dashboard.index). Each role has its own dashboard,
+   so only the viewer's entries are shown. Behaviour described lives in
+   services/cenro_dashboard.py (admins) and services/dashboard_data.py
+   (members, leaders, field officers). #}
 {% set threshold = '%g'|format(sampling_rule.survivalThreshold) %}
+{% set is_admin = session.role in ['admin', 'superadmin'] %}
+{% set is_officer = session.role == 'field_officer' %}
 
-<h3 class="faq-group">The basics</h3>
+<h3 class="faq-group">Your dashboard</h3>
 
 <details class="faq-item">
-  <summary>What does the dashboard show?</summary>
+  <summary>What do the dashboard numbers mean?</summary>
   <div class="faq-answer">
-    <p>Three sections, top to bottom:</p>
+    {% if is_admin %}
+    <p>Each number is worked out from <strong>real sites only</strong>:</p>
     <ul>
-      <li><strong>What has been done:</strong> sites and hectares placed under contract, by year and municipality.</li>
-      <li><strong>How well was it done:</strong> how much was planted against the target, and how many seedlings survived.</li>
-      <li><strong>What should be done next:</strong> well-suited barangays that have no site yet.</li>
+      <li><strong>Official sites:</strong> sites that are real records. A site still under review is not counted.</li>
+      <li><strong>Area:</strong> hectares under contract.</li>
+      <li><strong>Seedlings (contracted):</strong> seedlings in the contracts.</li>
+      <li><strong>Delivery:</strong> seedlings counted in the field on approved site visits, against the contracted seedlings of the same sites. It appears only once such counts exist.</li>
+      {% if not session.cenro %}<li><strong>Simulated sites:</strong> demonstration data, counted apart.</li>{% endif %}
     </ul>
+    <p>Click a number to jump to the chart that explains it. Delivery has no chart yet, so it is not clickable.</p>
+    {% elif is_officer %}
+    <ul>
+      <li><strong>Visits this week:</strong> visits you recorded since Monday.</li>
+      <li><strong>Overdue:</strong> open assignments past their target date with no visit yet.</li>
+      <li><strong>Awaiting approval:</strong> your visits waiting for your CENRO.</li>
+    </ul>
+    <p>Click a number to jump to your to-do list.</p>
+    {% else %}
+    <ul>
+      <li><strong>Sites:</strong> official sites {% if org_status == 'active' %}of your organization{% else %}in your barangay{% endif %}.</li>
+      <li><strong>Seedlings (contracted):</strong> seedlings in those sites' contracts.</li>
+      <li><strong>Survival:</strong> the average survival from approved monitoring reports. The target is {{ threshold }}%.</li>
+    </ul>
+    <p>Click a number to jump to the map. Its summary line shows the same three numbers.</p>
+    {% endif %}
+  </div>
+</details>
+
+{% if not is_admin and not is_officer %}
+<details class="faq-item">
+  <summary>Whose sites does the map show?</summary>
+  <div class="faq-answer">
+    {% if org_status == 'active' %}
+    <p>Your organization's sites. Sites in your own barangay have a dark ring.</p>
+    {% else %}
+    <p>The sites in your barangay. Set or change your barangay in <a href="{{ url_for('dashboard.my_account') }}#barangay">My Account</a>.</p>
+    {% endif %}
+    <p>Once you are an approved member of an organization, the map shows its sites instead.</p>
+  </div>
+</details>
+{% endif %}
+
+<details class="faq-item">
+  <summary>Why is a location approximate?</summary>
+  <div class="faq-answer">
+    <p>Sites imported from DENR records have no coordinates. They are drawn as a <strong>hollow marker</strong> with "N sites" at the centre of their barangay.</p>
+    <p>A solid dot is a real position: a published GPS boundary, or the pin a requester dropped. A site gets one once the province publishes its boundary.</p>
+  </div>
+</details>
+
+{% if is_admin %}
+<details class="faq-item">
+  <summary>What is simulated data?</summary>
+  <div class="faq-answer">
+    <p>Made-up sites, loaded to show what a province-wide rollout would look like. They are labelled <strong>Simulated</strong> and drawn dashed on the map.</p>
+    <p>They are never used in the story, the chart titles, the ranking, the gauge or the scatter. Only real sites are.</p>
   </div>
 </details>
 
 <details class="faq-item">
   <summary>Why do I only see some municipalities?</summary>
   <div class="faq-answer">
-    <p>A CENRO account sees only its own CENRO's area. Province-wide accounts see all of Pangasinan.</p>
+    <p>A CENRO account sees only its own CENRO's area. Provincial and System Administrators see all of Pangasinan.</p>
   </div>
 </details>
 
 <details class="faq-item">
-  <summary>Why do the charts take a few seconds to load?</summary>
+  <summary>What are the boxes above the numbers?</summary>
   <div class="faq-answer">
-    <p>Each time you open the page, the system scores every barangay to find the best places to plant next. That takes a moment.</p>
-  </div>
-</details>
-
-<details class="faq-item">
-  <summary>How up to date are the numbers?</summary>
-  <div class="faq-answer">
-    <p>They are worked out fresh every time you open the page. Reload it to see the latest.</p>
+    <p>What is waiting: requests, monitoring reports and boundaries. Each box opens its queue.</p>
+    <p>Request and report review is a CENRO task, so for a Provincial Administrator those two open the Provincial Overview.</p>
   </div>
 </details>
 
 <h3 class="faq-group">Reading the charts</h3>
 
 <details class="faq-item">
-  <summary>What is the delivery rate?</summary>
+  <summary>Why does each chart title read like a sentence?</summary>
   <div class="faq-answer">
-    <p>Seedlings actually planted, as a percentage of the contracted target.</p>
-    <p>Because it is a percentage, a small municipality that planted everything ranks above a big one that fell short.</p>
+    <p>The title states what the chart shows, worked out from the data, for example "Contracting fell from 940 ha in 2017 to 120 ha in 2025". The current year is marked "(to date)" and left out of that trend.</p>
   </div>
 </details>
 
 <details class="faq-item">
   <summary>Where does the survival rate come from?</summary>
   <div class="faq-answer">
-    <p>From each site's planting record. When a CENRO approves a monitoring report, that report's survival rate is saved to the site.</p>
-    <p>The chart shows the average for each municipality. The dashed line marks the DENR {{ threshold }}% threshold.</p>
+    <p>From approved monitoring reports. When a CENRO approves a report, its survival rate is saved to the site. The target is the DENR {{ threshold }}%.</p>
   </div>
 </details>
 
 <details class="faq-item">
-  <summary>Why is a municipality missing from the survival chart?</summary>
+  <summary>Why does a municipality say "Too few sites"?</summary>
   <div class="faq-answer">
-    <p>None of its sites has a survival rate recorded yet.</p>
+    <p>A municipality is judged only when at least 3 of its sites have survival data. With fewer it is grey, never orange, and left out of the story and the scatter.</p>
   </div>
 </details>
 
@@ -72,14 +118,14 @@
 <details class="faq-item">
   <summary>How is "Where to plant next" worked out?</summary>
   <div class="faq-answer">
-    <p>Every barangay gets a suitability score from the species recommender.</p>
-    <p>"Highly suitable" means the top quarter of barangays by that score. The chart counts the highly suitable barangays that have no reforestation site yet.</p>
+    <p>Every barangay gets a suitability score from the species recommender. The list shows well-suited barangays that have no site yet.</p>
   </div>
 </details>
 
 <details class="faq-item">
-  <summary>What does "Most recommended species" mean?</summary>
+  <summary>How up to date are the numbers?</summary>
   <div class="faq-answer">
-    <p>How many barangays have that species in their top 5. A species high on this list suits many places.</p>
+    <p>They are worked out fresh every time you open the page. Reload it to see the latest.</p>
   </div>
 </details>
+{% endif %}

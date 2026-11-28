@@ -108,9 +108,10 @@ def initial_status(member):
 def org_action_problem(req, action, note):
     """Why an organization action cannot be applied, or None."""
     if action not in ORG_ACTIONS:
-        return "Choose what to do with this request."
+        return "Choose Forward, Return or Reject for this request."
     if req.status != ORG_PENDING:
-        return "This request is not waiting for the organization."
+        return ("This request has already moved on from the organization. "
+                "Its current status is shown below.")
     if action in ORG_ACTION_NOTE_REQUIRED and not note:
         return ("Write a reason. The member will see it."
                 if action == 'reject' else
@@ -131,7 +132,8 @@ def apply_org_action(req, action, note, user_id, now):
 def resubmit_problem(req, member):
     """Why this member cannot resubmit the request, or None."""
     if req.status != RETURNED:
-        return "This request was not returned for changes."
+        return ("Only a request returned for changes can be sent again. "
+                "Its current status is on its row.")
     if req.user_id != member.user_id:
         return "You can only resubmit your own request."
     if (not member.organization_id

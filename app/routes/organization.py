@@ -98,7 +98,7 @@ def join_page(token):
     user = _current_user()
     blocked = None
     if user.organization_id:
-        blocked = "Leave your current organization before joining another."
+        blocked = "Leave your current organization in My Account first, then open this link again."
     return render_template('Orgjoin.html', org=org, invalid=None,
                            blocked=blocked)
 
@@ -113,8 +113,8 @@ def join_request(token):
 
     user = _current_user()
     if user.organization_id:
-        flash("Leave your current organization before joining another.",
-              "danger")
+        flash("Leave your current organization in My Account first, then "
+              "open the invite link again.", "danger")
         return redirect(url_for('dashboard.index'))
 
     user.organization_id = org.organization_id
@@ -139,7 +139,7 @@ def leave_org():
         return redirect(url_for('dashboard.my_account'))
 
     if is_last_active_leader(user):
-        flash("Appoint another leader first.", "danger")
+        flash("You are the last leader. Ask your CENRO to appoint another leader, then leave.", "danger")
         return redirect(url_for('dashboard.my_account'))
 
     org = db.session.get(Organization, user.organization_id)
@@ -226,7 +226,7 @@ def approve_member(org_id, user_id):
         abort(403)
 
     if target.org_status != 'pending' or not target.email_verified:
-        flash("That member is not waiting for approval.", "warning")
+        flash("That person is no longer waiting for approval. The list below is up to date.", "warning")
         return redirect(_members_url(org))
 
     target.org_status = 'active'
@@ -280,7 +280,7 @@ def remove_member(org_id, user_id):
         abort(403)
 
     if target.org_status not in ('active', 'pending'):
-        flash("That user is not a member.", "warning")
+        flash("That person is no longer a member. The list below is up to date.", "warning")
         return redirect(_members_url(org))
 
     name = target.username
@@ -310,7 +310,7 @@ def appoint_leader(org_id, user_id):
         abort(403)
 
     if target.org_status != 'active':
-        flash("Only an active member can be made leader.", "warning")
+        flash("Approve them as a member first, then make them leader.", "warning")
         return redirect(_members_url(org))
     if target.org_role == 'leader':
         flash(f"{target.username} is already a leader.", "warning")

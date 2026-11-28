@@ -2,7 +2,35 @@
    lives in requests_page, cancel_request and services/request_site.py.
    Limits come from app_limits. #}
 
+<h3 class="faq-group">Who can request</h3>
+
+<details class="faq-item">
+  <summary>Why can't I request a site?</summary>
+  <div class="faq-answer">
+    <p>Only an approved member of a partner organization can request a site.</p>
+    <ul>
+      <li><strong>Individual</strong> (no organization): ask an organization's leader for an invite link, open it, and wait for approval.</li>
+      <li><strong>Pending Member</strong>: your leader has not approved you yet. Make sure your email is verified, then remind your leader.</li>
+      <li><strong>Staff</strong> do not send requests. CENRO staff create sites from approved requests.</li>
+    </ul>
+  </div>
+</details>
+
+<details class="faq-item">
+  <summary>I don't have an invite link</summary>
+  <div class="faq-answer">
+    <p>Ask the leader of the organization you want to join. If it has no leader yet, ask your CENRO office.</p>
+  </div>
+</details>
+
 <h3 class="faq-group">Making a request</h3>
+
+<details class="faq-item">
+  <summary>Why are my name, number and email already filled in?</summary>
+  <div class="faq-answer">
+    <p>They come from <a href="{{ url_for('dashboard.my_account') }}#profile">My Account</a>. You can change them on the form for this request. Fields you have not set in My Account stay empty.</p>
+  </div>
+</details>
 
 <details class="faq-item">
   <summary>Which request type should I choose?</summary>
@@ -56,7 +84,8 @@
 <details class="faq-item">
   <summary>Who reviews my request?</summary>
   <div class="faq-answer">
-    <p>The CENRO office for the barangay you chose. They are notified as soon as you submit.</p>
+    <p>If you are a Partner Org Member, your <strong>leader</strong> reviews it first. They forward it to the CENRO, return it for changes, or reject it.</p>
+    <p>Then the CENRO office for the barangay you chose reviews it. A leader's own request goes straight to the CENRO.</p>
   </div>
 </details>
 
@@ -64,7 +93,9 @@
   <summary>What do the statuses mean?</summary>
   <div class="faq-answer">
     <ul>
-      <li><strong>Submitted:</strong> received, not opened yet.</li>
+      <li><strong>Pending Org Approval:</strong> waiting for your organization's leader.</li>
+      <li><strong>Returned:</strong> your leader asked for changes. See their note.</li>
+      <li><strong>Pending CENRO:</strong> with the CENRO, not opened yet.</li>
       <li><strong>Under Review:</strong> the CENRO is checking it. For a new site, a field officer may visit the land.</li>
       <li><strong>Approved:</strong> accepted.</li>
       <li><strong>Rejected:</strong> not accepted. The reason is shown with it.</li>
@@ -76,7 +107,7 @@
 <details class="faq-item">
   <summary>Can I cancel a request?</summary>
   <div class="faq-answer">
-    <p>Yes, while it is still Submitted or Under Review. Press <strong>Cancel</strong> on its row.</p>
+    <p>Yes, while it is Pending Org Approval, Returned, Pending CENRO or Under Review. Press <strong>Cancel</strong> on its row.</p>
     <p>This deletes the request and its documents for good. Once it is approved or rejected, it can't be cancelled.</p>
     <p>It also can't be cancelled once the CENRO has created a site from it. Contact them instead.</p>
   </div>
@@ -85,6 +116,14 @@
 <details class="faq-item">
   <summary>Can I edit a request after sending it?</summary>
   <div class="faq-answer">
-    <p>No. Cancel it while it is still pending, then send a new one.</p>
+    <p>Only when your leader returns it. Otherwise cancel it while it is still pending, then send a new one.</p>
+  </div>
+</details>
+
+<details class="faq-item">
+  <summary>What does Returned for revision mean?</summary>
+  <div class="faq-answer">
+    <p>Your leader wants something changed before it goes to the CENRO. Their note says what.</p>
+    <p>Attach the document they asked for on the request's row and press <strong>Send again</strong>. It goes back to your leader.</p>
   </div>
 </details>

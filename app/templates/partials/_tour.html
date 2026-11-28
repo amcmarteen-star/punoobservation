@@ -15,109 +15,178 @@
    To change the wording, edit the lists below. #}
 {% set nav = '.sidebar-nav a[href="%s"]' %}
 {% set role = session.role %}
+{#
+  One branch per role, at most 6 steps, one idea per step. Detail lives in
+  the FAQ (press ?). "v": 3 marks a step added or rewritten in version 3:
+  someone who finished an older tour sees only those, once (tour_mode).
+  The branch follows what the person's screen shows:
+    Individual          normal user, no organization
+    Pending Member      asked to join, not approved yet
+    Partner Org Member  active member
+    Partner Org Leader  active leader
+#}
+{% set org_name = my_org.organization_name if my_org else '' %}
+{% if role == 'normal_user' or not role %}
+  {% if org_status == 'pending' %}{% set branch = 'pending' %}
+  {% elif org_role == 'leader' and org_status == 'active' %}{% set branch = 'leader' %}
+  {% elif org_status == 'active' %}{% set branch = 'member' %}
+  {% else %}{% set branch = 'individual' %}{% endif %}
+{% elif role == 'field_officer' %}{% set branch = 'officer' %}
+{% elif role == 'admin' and session.cenro %}{% set branch = 'cenro' %}
+{% elif role == 'admin' %}{% set branch = 'provincial' %}
+{% else %}{% set branch = 'system' %}{% endif %}
 
+{% set help_step = {"element": "#helpOpenBtn",
+   "title": "Help on every page",
+   "text": "Press ? for answers about the page you are on. You can replay this tour from there."} %}
+
+{% if branch == 'individual' %}
 {% set steps = [
   {"title": "Welcome, " ~ session.username ~ "!",
-   "text": "This short tour shows you around. It takes about a minute. Press Next, or use the arrow keys."},
-  {"element": nav|format(url_for('dashboard.index')), "in_menu": true,
-   "title": "Dashboard",
-   "text": "Your home page. Charts of the reforestation work in your area, and the best places to plant next."},
+   "text": "You are an Individual: not in a partner organization yet. This tour takes about a minute."},
+  {"element": ".dash-tiles", "v": 3,
+   "title": "Your barangay in numbers",
+   "text": "Sites, seedlings and survival for your barangay. Click a number to see it on the map."},
+  {"element": nav|format(url_for('dashboard.gis_map')), "in_menu": true, "v": 3,
+   "title": "Interactive GIS Map",
+   "text": "Every site on a map. Search a place or a site from the toolbar."},
+  {"element": nav|format(url_for('dashboard.requests_page')), "in_menu": true, "v": 3,
+   "title": "Requesting a site",
+   "text": "Only partner organization members can request a site. Ask an organization's leader for an invite link."},
+  {"element": ".topbar-account", "v": 3,
+   "title": "My Account",
+   "text": "Set your barangay and contact details. They fill your dashboard and your forms."},
+  help_step,
 ] %}
-
-{% if role == 'field_officer' %}
-{% set steps = steps + [
-  {"element": nav|format(url_for('dashboard.reports_page')), "in_menu": true,
-   "title": "Monitoring Report",
-   "text": "Record a survival count for a site. Take the photos with a GPS camera app, so their location is read automatically."},
-  {"element": nav|format(url_for('dashboard.my_reports_page')), "in_menu": true,
-   "title": "My Reports",
-   "text": "Everything you have submitted, and whether your CENRO approved it."},
-  {"element": nav|format(url_for('visits.index')), "in_menu": true,
-   "title": "Site Visits",
-   "text": "Visits assigned to you. See the request, check the land, walk its corners for the boundary, and confirm planting."},
+{% elif branch == 'pending' %}
+{% set steps = [
+  {"title": "Welcome, " ~ session.username ~ "!",
+   "text": "You asked to join " ~ org_name ~ ". You are a Pending Member until its leader approves you."},
+  {"element": ".notif-bell-btn", "v": 3,
+   "title": "You will be told",
+   "text": "A notification arrives when your leader approves you. Then you can request sites."},
+  {"element": ".dash-tiles", "v": 3,
+   "title": "Your barangay for now",
+   "text": "Until you are approved, the dashboard shows your barangay. Click a number to see it on the map."},
+  {"element": nav|format(url_for('dashboard.gis_map')), "in_menu": true, "v": 3,
+   "title": "Interactive GIS Map",
+   "text": "Every site on a map. Search a place or a site from the toolbar."},
+  {"element": ".topbar-account", "v": 3,
+   "title": "My Account",
+   "text": "Set your barangay and contact details. They fill your dashboard and your forms."},
+  {"element": "#helpOpenBtn",
+   "title": "Waiting too long?",
+   "text": "Press ? for what to do. You can replay this tour from there."},
+] %}
+{% elif branch == 'member' %}
+{% set steps = [
+  {"title": "Welcome, " ~ session.username ~ "!",
+   "text": "You are a Partner Org Member of " ~ org_name ~ ". This tour takes about a minute."},
+  {"element": ".dash-tiles", "v": 3,
+   "title": "Your organization in numbers",
+   "text": "Your organization's sites. Click a number to see them on the map. Sites in your barangay have a dark ring."},
+  {"element": nav|format(url_for('dashboard.requests_page')), "in_menu": true, "v": 3,
+   "title": "Request a site",
+   "text": "Your request goes to your leader first, then to CENRO. Your contact details are filled in for you."},
+  {"element": ".notif-bell-btn", "v": 3,
+   "title": "Follow your request",
+   "text": "Each step is a notification: forwarded, returned for changes, approved or rejected."},
   {"element": nav|format(url_for('dashboard.gis_map')), "in_menu": true,
    "title": "Interactive GIS Map",
-   "text": "Find a site on the map, then press its Monitoring Report button to start a report for it."},
+   "text": "Every site on a map. Search a place or a site from the toolbar."},
+  help_step,
 ] %}
-{% elif role == 'admin' and session.cenro %}
-{% set steps = steps + [
-  {"element": nav|format(url_for('admin.review_requests')), "in_menu": true,
+{% elif branch == 'leader' %}
+{% set steps = [
+  {"title": "Welcome, " ~ session.username ~ "!",
+   "text": "You are the Partner Org Leader of " ~ org_name ~ ". This tour takes about a minute."},
+  {"element": nav|format(url_for('organization.members_page')), "in_menu": true, "v": 3,
+   "title": "Invite and approve",
+   "text": "Share the invite link from My Organization, then approve the people who join."},
+  {"element": "#dash-queue", "v": 3,
+   "title": "Members' requests",
+   "text": "Forward a request to CENRO, return it for changes, or reject it. A note is needed to return or reject."},
+  {"element": ".dash-tiles", "v": 3,
+   "title": "Your organization in numbers",
+   "text": "Click a number to jump to the chart or list that explains it."},
+  {"element": nav|format(url_for('dashboard.requests_page')), "in_menu": true, "v": 3,
+   "title": "Your own requests",
+   "text": "A request you send yourself goes straight to CENRO."},
+  help_step,
+] %}
+{% elif branch == 'officer' %}
+{% set steps = [
+  {"title": "Welcome, " ~ session.username ~ "!",
+   "text": "You are a Field Officer. This tour takes about a minute."},
+  {"element": ".dash-tiles", "v": 3,
+   "title": "Your week",
+   "text": "Visits this week, overdue and awaiting approval. Click a number to jump to your to-do list."},
+  {"element": nav|format(url_for('visits.index')), "in_menu": true, "v": 3,
+   "title": "Site Visits",
+   "text": "Your assigned visits. If the land is not suitable, say why; the CENRO suggests another place."},
+  {"element": nav|format(url_for('dashboard.reports_page')), "in_menu": true, "v": 3,
+   "title": "Monitoring Report",
+   "text": "Record a survival count. Use a GPS camera app; photos without a location are marked for review."},
+  {"element": nav|format(url_for('dashboard.my_reports_page')), "in_menu": true,
+   "title": "My Reports",
+   "text": "Everything you sent, and whether your CENRO approved it."},
+  help_step,
+] %}
+{% elif branch == 'cenro' %}
+{% set steps = [
+  {"title": "Welcome, " ~ session.username ~ "!",
+   "text": "You are a CENRO Administrator for CENRO " ~ session.cenro ~ ". Press ? on any page for help."},
+  {"element": ".cd-actions", "v": 3,
+   "title": "What is waiting",
+   "text": "Requests, reports and boundaries waiting. Each one opens its queue."},
+  {"element": ".dash-tiles", "v": 3,
+   "title": "Your numbers",
+   "text": "Click a number to jump to the chart behind it."},
+  {"element": nav|format(url_for('admin.review_requests')), "in_menu": true, "v": 3,
    "title": "Review Requests",
-   "text": "Requests from your CENRO's area. Mark a new site request Under Review, then create a temporary site and assign an officer. The requester is told each time."},
+   "text": "Needs your action is on top. Requests still with an organization are read-only."},
   {"element": nav|format(url_for('admin.review_reports')), "in_menu": true,
    "title": "Review Reports",
    "text": "Survival counts from field officers. Approving one updates the site's survival rate."},
   {"element": nav|format(url_for('visits.index')), "in_menu": true,
    "title": "Site Visits",
-   "text": "Temporary sites and the officers sent to them. Assign later visits here, and approve what officers record."},
-  {"element": nav|format(url_for('admin.provincial_overview')), "in_menu": true,
-   "title": "CENRO Overview",
-   "text": "Everything your office has approved, in one place."},
+   "text": "Assign officers to temporary sites and approve what they record."},
 ] %}
-{% elif role == 'admin' %}
-{% set steps = steps + [
+{% elif branch == 'provincial' %}
+{% set steps = [
+  {"title": "Welcome, " ~ session.username ~ "!",
+   "text": "You are a Provincial Administrator. This tour takes about a minute."},
+  {"element": ".cd-actions", "v": 3,
+   "title": "What is waiting",
+   "text": "Boundaries waiting for you to publish, and the CENROs' queues."},
+  {"element": ".dash-tiles", "v": 3,
+   "title": "Province in numbers",
+   "text": "Click a number to jump to its chart. Simulated sites are labelled and left out of findings."},
   {"element": nav|format(url_for('admin.provincial_overview')), "in_menu": true,
    "title": "Provincial Overview",
-   "text": "Approved work from every CENRO in Pangasinan. This page is read-only."},
+   "text": "Approved work from every CENRO. This page is read-only."},
   {"element": nav|format(url_for('admin.publications')), "in_menu": true,
    "title": "Boundary Publications",
-   "text": "Site boundaries approved by a CENRO wait here. Publishing one puts it on the map for everyone."},
+   "text": "Publishing a boundary puts the site on the map for everyone."},
+  help_step,
 ] %}
-{% elif role == 'superadmin' %}
-{% set steps = steps + [
-  {"element": nav|format(url_for('admin.user_management')), "in_menu": true,
+{% else %}
+{% set steps = [
+  {"title": "Welcome, " ~ session.username ~ "!",
+   "text": "You are a System Administrator. This tour takes about a minute."},
+  {"element": nav|format(url_for('admin.user_management')), "in_menu": true, "v": 3,
    "title": "User Management",
-   "text": "Add accounts, reset forgotten passwords, and deactivate people who leave."},
+   "text": "System role and partner organization are separate. Only staff have a jurisdiction."},
   {"element": nav|format(url_for('admin.reference_dataset')), "in_menu": true,
    "title": "Reference Dataset",
-   "text": "Import the official DENR contract Excel files. Re-importing a file updates sites instead of copying them."},
+   "text": "Import the DENR contract Excel files. Importing again updates sites instead of copying them."},
   {"element": nav|format(url_for('admin.audit_log')), "in_menu": true,
    "title": "Audit Log",
    "text": "A permanent record of sign-ins and important actions."},
-] %}
-{% else %}
-{% set steps = steps + [
-  {"element": nav|format(url_for('dashboard.gis_map')), "in_menu": true,
-   "title": "Interactive GIS Map",
-   "text": "Every reforestation site on a map. Click a town or barangay to see its sites and their history."},
-  {"element": nav|format(url_for('dashboard.recommendations')), "in_menu": true,
-   "title": "Species Recommendation",
-   "text": "Pick a barangay to see which tree species suit it best."},
-  {"element": nav|format(url_for('dashboard.requests_page')), "in_menu": true,
-   "title": "Request Reforestation Site",
-   "text": "Ask DENR for a new planting site, seedlings or technical help, and follow each request's status."},
+  help_step,
 ] %}
 {% endif %}
-
-{% if role not in ['admin', 'field_officer'] %}
-{% set steps = steps + [
-  {"element": ".topbar-account", "v": 2,
-   "title": "Set your barangay",
-   "text": "My Account now holds your barangay. It decides which species and sites your dashboard shows."},
-] %}
-{% endif %}
-{% if org_role == 'leader' and org_status == 'active' %}
-{% set steps = steps + [
-  {"element": nav|format(url_for('organization.members_page')), "in_menu": true, "v": 2,
-   "title": "My Organization",
-   "text": "As Partner Org Leader, approve members and review site requests from your organization. Share the invite link from here."},
-] %}
-{% endif %}
-
-{% set steps = steps + [
-  {"element": "#helpOpenBtn",
-   "title": "Help on every page",
-   "text": "Press ? for answers about the page you are on. You can replay this tour from there too."},
-  {"element": ".notif-bell-btn",
-   "title": "Notifications",
-   "text": "Updates about your work appear here. The red number counts the unread ones."},
-  {"element": ".topbar-account",
-   "title": "My Account",
-   "text": "Change your password and the text size here."},
-  {"title": "You're all set",
-   "text": "Press ? at the top of any page whenever you need help."},
-] %}
-{% set new_steps = steps | selectattr('v', 'equalto', 2) | list %}
+{% set new_steps = steps | selectattr('v', 'equalto', tour_version) | list %}
 
 <script>
   (function () {

@@ -8,13 +8,18 @@
       <li>A CENRO approved or rejected your monitoring report.</li>
       <li>The province published or declined a boundary from your report.</li>
       {% elif session.role == 'admin' %}
-      <li>A new request or monitoring report for your office to review.</li>
+      <li>A new request or monitoring report for your office to review. A member's request reaches you only after their leader forwards it.</li>
       <li>A requester cancelled a request.</li>
       <li>A boundary is waiting for publication (province-wide accounts).</li>
       {% elif session.role == 'superadmin' %}
       <li>Monitoring reports approved across the province.</li>
       {% else %}
-      <li>Your request's status changed: under review, approved or rejected.</li>
+      <li>Your request moved on: forwarded by your leader, returned for changes, under review, approved or rejected.</li>
+      <li>Your leader approved you as a member, or did not.</li>
+      {% if org_role == 'leader' and org_status == 'active' %}
+      <li>Someone asked to join your organization.</li>
+      <li>A member sent a request for you to forward, return or reject.</li>
+      {% endif %}
       {% endif %}
     </ul>
   </div>

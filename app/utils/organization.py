@@ -118,7 +118,8 @@ STAFF_ROLES = ('admin', 'superadmin', 'field_officer')
 REQUEST_BLOCK_TEXT = {
     'individual': "Only organization members can request sites. Ask your "
                   "organization leader for an invite link.",
-    'pending': "You can request sites once your leader approves you.",
+    'pending': "You can request sites once your leader approves you. "
+               "Check that your email is verified, then remind your leader.",
     'staff_admin': "Staff create sites from approved requests.",
     'staff_field': "Field officers record visits and reports. Site requests "
                    "come from organizations.",

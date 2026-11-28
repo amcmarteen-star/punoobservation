@@ -41,19 +41,24 @@
   </div>
 </details>
 
-{% if purpose_choices %}
+{# Always listed: before any species is tagged it says so, instead of
+   describing a filter the page does not show. #}
 <details class="faq-item">
   <summary>What does the Purpose filter do?</summary>
   <div class="faq-answer">
+    {% if purposes_classified() %}
     <p>It ranks only the species tagged for that use, such as Timber or Agroforestry. The scores themselves do not change.</p>
     <p>Choose <strong>All species</strong> to rank every species again.</p>
+    {% else %}
+    <p>Species purposes are not classified yet, so there is no Purpose filter for now. Every species is ranked.</p>
+    {% endif %}
   </div>
 </details>
-{% endif %}
 
 <details class="faq-item">
   <summary>Why can't I find my barangay?</summary>
   <div class="faq-answer">
+    <p>Type part of its name in the box: "sanman" finds San Manuel. Spaces and dots are ignored.</p>
     <p>Only barangays with measured elevation, climate and soil data are listed.</p>
     <p>If you are signed in to a CENRO account, you only see municipalities in your CENRO's area.</p>
   </div>

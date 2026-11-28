@@ -1724,17 +1724,19 @@ def cancel_request(request_id):
 
     req = db.session.get(Request, request_id)
     if req is None:
-        flash("That request no longer exists.", "warning")
+        flash("That request no longer exists; it may have been cancelled. "
+              "Your requests are listed below.", "warning")
         return redirect(back)
 
     if req.user_id != user_id:
-        flash("You can only cancel requests you submitted.", "danger")
+        flash("You can only cancel requests you sent. Ask the person who "
+              "sent it to cancel it.", "danger")
         return redirect(back)
 
     if req.status not in PENDING_REQUEST_STATUSES:
         flash(
             f"This request was already {req.status.lower()} and can no "
-            "longer be cancelled.",
+            "longer be cancelled. Send a new request if you need to.",
             "warning",
         )
         return redirect(back)
@@ -1799,7 +1801,8 @@ def resubmit_request(request_id):
     member = db.session.get(User, session.get('user_id'))
     req = db.session.get(Request, request_id)
     if req is None:
-        flash("That request no longer exists.", "warning")
+        flash("That request no longer exists; it may have been cancelled. "
+              "Your requests are listed below.", "warning")
         return redirect(back)
 
     problem = resubmit_problem(req, member)

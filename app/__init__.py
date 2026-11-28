@@ -47,6 +47,15 @@ def create_app():
 
     # Role words, one source: app/utils/roles.py.
     from app.utils import roles
+    from app.utils.tour import TOUR_VERSION
+    app.jinja_env.globals['tour_version'] = TOUR_VERSION
+
+    # True once any species has a purpose (SpeciesCategory rows). The
+    # Recommendations FAQ says the Purpose filter is not available before.
+    def purposes_classified():
+        from app.models import SpeciesCategory
+        return db.session.query(SpeciesCategory.query.exists()).scalar()
+    app.jinja_env.globals['purposes_classified'] = purposes_classified
     for _name in ('system_role_label', 'org_position_label',
                   'user_role_label', 'user_org_label'):
         app.jinja_env.globals[_name] = getattr(roles, _name)
@@ -102,6 +111,11 @@ def create_app():
         'dashboard.notifications_page': 'partials/faq/_notifications.html',
         'dashboard.my_account': 'partials/faq/_my_account.html',
         'dashboard.requests_page': 'partials/faq/_requests.html',
+        # partner organizations: members page, invite link, list
+        'organization.members_page': 'partials/faq/_organization.html',
+        'organization.org_members_page': 'partials/faq/_organization.html',
+        'organization.join_page': 'partials/faq/_organization.html',
+        'organization.organizations_list': 'partials/faq/_organization.html',
         # field officers
         'dashboard.reports_page': 'partials/faq/_reports.html',
         'dashboard.my_reports_page': 'partials/faq/_my_reports.html',
